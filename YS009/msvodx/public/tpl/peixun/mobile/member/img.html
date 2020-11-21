@@ -1,0 +1,171 @@
+{include file="common/head"}
+    <style>
+        .v .v-metadata{padding: 10px 0;}
+        .subtitle, .subtitle i{font-size: 12px;color:#888;}
+    </style>
+
+    <ul class="content-list">
+        {notempty name="atlas_list"}
+        {volist name="atlas_list" id='v'}
+            <li class="v" id="li_{$v['id']}">
+                <a href="{:url('member/pic',['atlasid'=>$v['id']])}">
+                    <div class="v-thumb">
+                        <div class="v-pic-real" style="background-image:url('{$v['cover']}');"></div>
+                    </div>
+                </a>
+                <div class="edit-box">
+                    <i class="btn fn-down-bold"></i>
+                    <div class="editBox" style="display: none;">
+                        <span onclick="location.href='{:url('member/editAtlas',['atlasid'=>$v['id']])}'"><i class="btn fn-bianji1"></i>编辑</span>
+                        <span class="deleteAtlas" data-id="{$v['id']}" data-title="{$v['title']}"><i class="btn fn-shanchu""></i>删除</span>
+                    </div>
+                </div>
+                {if condition="$v['status'] neq 1"}
+                <span class="btn fn-jiaobiao"><i>已禁用</i></span>
+                {else/}
+                {if condition="$v['is_check'] eq 0"}<span class="btn fn-jiaobiao aspect"><i>审核中</i></span> {/if}
+                {if condition="$v['is_check'] eq 2"}<span class="btn fn-jiaobiao"><i>已拒绝</i></span> {/if}
+                {/if}
+                <div class="v-metadata">
+                    <div class="v-title">{$v['title']}</div>
+                    <div class="subtitle"><i class="btn fn-time"></i>{$v['add_time']|date='Y/m/d',###} &nbsp; <span><i class="btn fn-bofang"></i>{$v['click']}</span></div>
+                </div>
+            </li>
+        {/volist}
+        {else/}
+        <div class="not-comment not">您还没上传过相册哦 ~</div>
+        {/notempty}
+    </ul>
+    <a href="{:url('member/addAtlas')}" target="_self" class="upload"><i class="btn fn-shangchuan1"></i>创建</a>
+</div>
+    <script>
+        function del(id,title) {
+            var reqData={table:'atlas',id:id};
+            layer.open({
+                content:'确定删除相册<b style="color:red">'+title+'</b>吗？',
+                btn: ['确定','取消'],
+                yes:function(){
+                    $.ajax({
+                        type: 'POST',
+                        url: "{:url('api/del')}",
+                        data: reqData,
+                        dataType : "json",
+                        success: function(data){
+                            if(data.resultCode==0){
+                                layer.open({
+                                    content:'已成功删除',
+                                    time:2,
+                                    skin:'msg',
+                                });
+                                $('#li_'+id).slideUp("200", function() {
+                                    $('#li_'+id).remove();
+                                });
+                            }else{
+                                layer.open({
+                                    content:'删除失败，原因：'+data.error,
+                                    time:2,
+                                    skin:'msg'
+                                });
+                            }
+                        },
+                    });
+
+                }
+            });
+        }
+        $(function () {
+            /*点击图册上按钮效果*/
+            $(".edit-box .fn-down-bold").click(function () {
+                $(this).siblings().slideToggle();
+            });
+
+            /*我的图集删除*/
+            $(".deleteAtlas").click(function(){
+                var id = $(this).data('id');
+                var title = $(this).data('title');
+                del(id,title);
+            });
+
+        });
+        var status = 1;
+        var page  = 0;
+        var user_id = "{$user_id}";
+        $(window).scroll(function(){
+            var srollPos = $(window).scrollTop();
+            var data = {
+                "page" : page ,
+                "type" : 'atlas',
+                "offset" : 20,
+                "where" :  'user_id = '+user_id,
+            };
+            if(srollPos+$(window).height() > $(document).height() - 80){
+                if(status == 1) {
+                    status = 0;
+                    $.ajax({
+                        type: "POST",
+                        data: data,
+                        dataType: "JSON",
+                        url: "{:url('Api/moreData')}",
+                        success: function (data) {
+                            if(data.resultCode == 0){
+                                var datas = data.data.list;
+                                if(datas){
+                                    var html = '';
+                                    datas.forEach(function(item) {
+                                        var  url =  '/member/pic/atlasid/'+item['id'];
+                                        var update_time = item['update_time'];
+                                        var newDate = new Date(update_time * 1000);
+                                        html += '<li class="v" id="li_'+item['id']+'">';
+                                        html += '    <a href="'+url+'">';
+                                        html += '    <div class="v-thumb">';
+                                        html += '    <div class="v-pic-real" style="background-image:url('+item['cover']+');"></div>';
+                                        html += '    </div>';
+                                        html += '    </a>';
+                                        html += '    <div class="edit-box">';
+                                        html += '    <i class="btn fn-down-bold"></i>';
+                                        html += '    <div class="editBox" style="display: none;">';
+                                        html += '    <span class="editAtlas" data-id="'+item['id']+'"><i class="btn fn-bianji1"></i>编辑</span>';
+                                        html += '    <span class="deleteAtlas" data-id="'+item['id']+'" data-title="'+item['title']+'"><i class="btn fn-shanchu""></i>删除</span>';
+                                        html += '</div>';
+                                        html += '</div>';
+                                        html += '<div class="v-metadata">';
+                                        html += '    <div class="v-title">'+item['title']+'</div>';
+                                        html += '    <div class="subtitle">'+(newDate.getMonth() + 1)+'/'+newDate.getDate()+'&nbsp; <span>'+item['click']+'次播放</span></div>';
+                                        html += '</div>';
+                                        html += '</li>';
+
+                                    });
+                                    $('.not-comment').remove();
+                                    $('.content-list').append(html);
+                                    $(".edit-box .fn-down-bold").unbind();
+                                    $(".edit-box .fn-down-bold").on('click',function(){
+                                        $(this).siblings().slideToggle();
+                                    });
+                                    /*我的图集删除*/
+                                    $(".deleteAtlas").on('click',function(){
+                                        var id = $(this).data('id');
+                                        var title = $(this).data('title');
+                                        del(id,title);
+                                    });
+                                    $(".editAtlas").on('click',function(){
+                                        var id = $(this).data('id');
+                                        var url = '/member/editAtlas/atlasid/'+id;
+                                        location.href = url;
+                                    });
+                                    page++;
+                                    status = 1;
+                                }else{
+                                    console.log('没有更多数据了！');
+                                }
+                            }else{
+                                console.log('没有更多数据了！');
+                            }
+                        }
+                    });
+                }
+            }
+        })
+    </script>
+
+
+{include file="common/footer"}

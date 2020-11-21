@@ -1,0 +1,370 @@
+{extend name="common/baselist" /}
+{block name="search_box"}
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入优惠券名称查询" autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="store_id" id="store_id" style="width: 200px;" class="select2" lay-ignore></select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+{/block}
+
+{block name="tool_box"}
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnAdd" class="layui-btn layui-btn-primary layui-btn-sm">新增</a>
+        <a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchEnable" class="layui-btn layui-btn-primary layui-btn-sm">启用</a>
+        <a href="javascript:;" id="btnBatchUnEnable" class="layui-btn layui-btn-primary layui-btn-sm">禁用</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchHot" class="layui-btn layui-btn-primary layui-btn-sm">推荐</a>
+        <a href="javascript:;" id="btnBatchUnHot" class="layui-btn layui-btn-primary layui-btn-sm">取消推荐</a>
+    </div>
+
+</div>
+{/block}
+{block name="tool_template"}
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnEdit">编辑</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDelete">删除</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnGetLog">查看领取记录</a>
+</script>
+<script type="text/html" id="dataActivity">
+    <input type="checkbox" name="is_activity" value="{{d.id}}" lay-skin="switch" lay-text="开启|关闭" lay-filter="is_activity" {{ d.is_activity == 1 ? 'checked' : '' }}>
+</script>
+{/block}
+{block name="table_config"}
+<script type="text/html" id="getStatus">
+    {{# if(d.gettype == 1){ }}付费领取{{# } }}
+    {{# if(d.gettype == 2){ }}转发领取{{# } }}
+    {{# if(d.gettype == 3){ }}免费领取{{# } }}
+</script>
+<script type="text/html" id="stock">
+    {{# if(d.num == 0){ }}不限量{{# } }}
+    {{# if(d.num>0){ }}{{d.num}}{{# } }}
+</script>
+<input type="hidden" id="modelName" value="coupon" url_name="coupon">
+<script>
+
+    layui.use('table', function () {
+        var table = layui.table;
+
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_coupon_list')}"
+            , where: { modelName: 'Coupon' }
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'name', width:150, title: '优惠券标题',fixed:'left'},
+                {field:'sname', width:120, title: '商家名称',fixed:'left'},
+                {field:'use_starttime', width:180, title: '开始使用时间',sort:true},
+                {field:'end_time', width:180, title: '到期时间',sort:true},
+                {field:'gettype', width:100, title: '领取类型',sort:true,templet:'#getStatus'},
+                {field:'num', width:80, title: '库存',sort:true,templet:'#stock'},
+                {field:'sales_num', width:80, title: '领取数',sort:true},
+                {field:'read_num', width:80, title: '关注数',sort:true},
+                {field:'limit_num', width:80, title: '每人限量',sort:true},
+                {field:'state',fixed:'right', width:100, title: '启用状态',sort:true,templet: '#dataState'},
+                {field:'is_recommend',fixed:'right', width:100, title: '推荐状态',sort:true,templet: '#dataRecommend'},
+                {field:'o',fixed:'right',width:300, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+    })
+    layui.use(['table','form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        $('#btnSearch').unbind('click').click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    store_id: $('#store_id').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        store_id: $('#store_id').val(),
+                    }
+                });
+            }
+        })
+        //查看详情
+        $(document).on('click','.btnGetLog',function(e){
+            var id = $(this).data('id')
+            var index = layer.open({
+                type: 2,
+                title: '查看领取记录',
+                shadeClose: true,
+                shade: false,
+                maxmin: true, //开启最大化最小化按钮
+                area: ['900px', '600px'],
+                content: "{:adminurl('getlist')}&cid="+id,
+            });
+            layer.full(index);
+            return false;
+        })
+        //监听启用状态切换操作
+        form.on('switch(state)', function(obj){
+            if (obj.elem.checked){
+                var url = "{:adminurl('batchenable')}";
+                var msg = "启用";
+            }else{
+                var url = "{:adminurl('batchunenable')}";
+                var msg = "禁用";
+            }
+            console.log(111);
+            $.post(url, {ids:obj.value,type:3}, function(data){
+                if (typeof data == 'string'){
+                    data = $.parseJSON(data);
+                }
+                if (data.code == 0) {
+                    layer.msg(msg+'成功',{icon: 6,anim: 6});
+                    // table.reload('laytable',{});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        });
+        //启用
+     /*   $('#btnBatchEnable').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            console.log(123456);
+            return false;
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                var url = "{:adminurl('batchenable')}";
+                $.post(url, {ids:ids.join(','),type:3}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('启用成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })*/
+        //禁用
+   /*     $('#btnBatchUnEnable').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                var url = "{:adminurl('batchunenable')}";
+                $.post(url, {ids:ids.join(','),type:3}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('禁用成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })*/
+        // 批量删除
+        $('#btnBatchDelete').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                layer.confirm('即将删除 '+data.length+' 条记录', {
+                    btn: ['确定','取消'] //按钮
+                }, function(){
+                    var url = "{:adminurl('delete')}";
+                    $.post(url, {ids:ids.join(','),type:3}, function(data){
+                        if (typeof data == 'string'){
+                            data = $.parseJSON(data);
+                        }
+                        if (data.code == 0) {
+                            layer.msg('删除成功',{icon: 6,anim: 6});
+                            table.reload('laytable',{});
+                        }else{
+                            layer.msg(data.msg,{icon: 5,anim: 6});
+                        }
+                    });
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+        // 删除
+        $(document).on('click','.btnDelete',function(e){
+            var id = $(this).data('id')
+            layer.confirm('即将删除 1 条记录', {
+                btn: ['确定','取消'] //按钮
+            }, function(){
+                var url = "{:adminurl('delete')}";
+                $.post(url, {ids:id,type:3}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('删除成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            });
+            return false;
+        })
+        require(['select2'], function () {
+            $('.select2').select2();
+            $.get("{:adminurl('selectrules','Cstore')}", function (ret) {
+                if (typeof ret == "string"){
+                    ret = JSON.parse(ret);
+                }
+                ret.map(function (obj) {
+                    obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                    if(obj.id == "{$info.id??''}"){
+                        obj.selected = true;
+                    }
+                    return obj;
+                });
+                $('#store_id').select2({
+                    data: ret,
+                })
+            })
+        })
+        //监听活动切换操作
+        form.on('switch(is_activity)', function(obj){
+            if (obj.elem.checked){
+                var url = "{:adminurl('btnBatchAddActivity')}";
+                var msg = "启用";
+            }else{
+                var url = "{:adminurl('btnBatchDelActivity')}";
+                var msg = "关闭";
+            }
+            console.log(obj);
+            $.post(url, {ids:obj.value}, function(data){
+                if (typeof data == 'string'){
+                    data = $.parseJSON(data);
+                }
+                if (data.code == 0) {
+                    layer.msg(msg+'成功',{icon: 6,anim: 6});
+                    // table.reload('laytable',{});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        });
+        //添加到活动列表
+        $('#btnBatchAddActivity').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                var url = "{:adminurl('btnBatchAddActivity')}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('设置成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+        //删除添加到活动列表
+        $('#btnBatchDelActivity').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                var url = "{:adminurl('btnBatchDelActivity')}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('设置成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+    })
+
+    require(['select2'], function () {
+        $('.select2').select2();
+        var ret = [
+            {"id":1,"text":"待付款"},
+            {"id":2,"text":"已支付"},
+            {"id":3,"text":"已取车"},
+            {"id":4,"text":"已还车"},
+            {"id":5,"text":"已完成"},
+            {"id":6,"text":"已取消"},
+        ];
+        ret.unshift({id: '', text: '请选择订单状态'});
+        ret.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            return obj;
+        });
+        $('#type').select2({
+            data: ret,
+        })
+    })
+
+</script>
+{/block}

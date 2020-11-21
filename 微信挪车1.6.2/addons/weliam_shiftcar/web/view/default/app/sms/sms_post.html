@@ -1,0 +1,131 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+	<li class="active"><a href="{php echo web_url('app/sms/post')}">添加短信模板</a></li>
+</ul>
+<form action="" method="post" class="form-horizontal form" >
+	<div class="panel panel-default">
+		<div class="panel-heading">添加短信模板</div>
+		<div class="panel-body">
+		    <div class="form-group">
+				<label class="col-md-2 control-label">短信模板说明</label>
+				<div class="col-md-8">
+					<div class="alert alert-warning">
+						<h5 style="text-indent: 18px;">注: 短信模板暂时仅支持【阿里大于】。</h5>
+						<h5 style="text-indent: 18px;">公共变量：【系统名称】【系统版权】</h5>
+						<h5 style="text-indent: 18px;">身份验证变量：【验证码】</h5>
+						<h5 style="text-indent: 18px;">通知变量：【挪车人手机号】【挪车人昵称】【车主手机号】【车主昵称】【车牌】【当前位置】</h5>
+						<h5 style="text-indent: 18px;">违章变量：【违章时间】【违章地点】【违章内容】【扣分】【罚款】【车主手机号】【车主昵称】【车牌】</h5>
+					</div>
+				</div>
+			</div>
+		    <div class="form-group">
+		        <label class="col-sm-2 control-label must">模板名称</label>
+		        <div class="col-sm-8 col-xs-12">
+		            <input type="text" name="name" class="form-control" value="{$item['name']}" placeholder="模版名称"></div>
+		    </div>
+		    <div class="form-group">
+		        <label class="col-sm-2 control-label must">服务商</label>
+		        <div class="col-sm-8 col-xs-12">
+		            <label class="radio-inline">
+		                <input type="radio" class="sms-type valid" data-template="1" name="type" value="dayu" {if empty($item['type']) || $item['type']=='dayu'}checked="checked"{/if}>阿里大于（阿里云）
+		            </label>
+		            <label class="radio-inline">
+		                <input type="radio" class="sms-type valid" data-template="1" name="type" value="ytx" {if $item['type']=='ytx'}checked="checked"{/if}>云通讯
+		            </label>
+		            <div class="help-block">默认阿里大于（阿里云），云通讯不支持自定义语音通知</div>
+		        </div>
+		    </div>
+		    <div class="form-group sms-template-1">
+		        <label class="col-sm-2 control-label must">模板ID</label>
+		        <div class="col-sm-8 col-xs-12">
+		            <input type="text" name="smstplid" class="form-control" value="{$item['smstplid']}" placeholder="短信模板ID，例：SMS_13045962" >
+		            <div class="help-block">阿里大于或云通讯提供的模板ID</div></div>
+		    </div>
+		    <div class="form-group splitter sms-template-1"></div>
+		    <div id="datas" class="sms-template-1" style="display:block;">
+		        {if empty($item['data'])}
+                	{php include wl_template('app/sms/sms_tpl');}
+                {else}
+                    {loop $item['data'] $data}
+                    	{php include wl_template('app/sms/sms_tpl');}
+                    {/loop}
+                {/if}
+		    </div>
+		    <div class="form-group sms-template-1" style="display:block;">
+		        <label class="col-sm-2 control-label"></label>
+		        <div class="col-sm-8 col-xs-12">
+		            <a class="btn btn-default btn-add-type" href="javascript:;" onclick="addType();">
+		                <i class="fa fa-plus" title=""></i>增加一条数据值</a>
+		        </div>
+		    </div>
+		    <div class="form-group">
+		        <label class="col-sm-2 control-label must">状态</label>
+		        <div class="col-sm-8 col-xs-12">
+		            <label class="radio-inline"><input type="radio" name="status" value="0" {if empty($item['status'])}checked{/if}> 禁用</label>
+                	<label class="radio-inline"><input type="radio" name="status" value="1" {if !empty($item['status'])}checked{/if}> 启用</label>
+                	<div class="help-block">关闭后将不能调用</div>
+		        </div>
+		    </div>
+		</div>
+	</div>
+	<div class="form-group col-sm-12">
+		<input type="submit" name="submit" value="提交" class="btn btn-primary col-lg-1" />
+		<input type="hidden" name="token" value="{$_W['token']}" />
+		<input type="hidden" name="id" value="{$item['id']}" />
+	</div>
+</form>
+<script language="javascript">
+$(function () {
+    $(document).on('click', '.data-item-delete', function () {
+        var len = $(".data-item").length;
+        if(len==1){
+            layer.msg('必须保留一条!');
+            return;
+        }
+        $(this).closest('.data-item').remove();
+    });
+});
+
+var kw = 1;
+function addType() {
+    $(".btn-add-type").button("loading");
+    $.ajax({
+        url: "{php echo web_url('app/sms/tpl')}&kw="+kw,
+        cache: false
+    }).done(function (html) {
+        $(".btn-add-type").button("reset");
+        $("#datas").append(html);
+    });
+    kw++;
+}
+
+$('form').submit(function(){
+    var smstype = $("input[name='type']:checked").val();
+    if(!smstype){
+        layer.msg('请选择短信服务商!');
+        return false;
+    }
+    var type = $("input[name='type']:checked").data('template');
+    if(type){
+        if($('.data-item').length<=0){
+            layer.msg('请添加一条键!');
+            return false;
+        }
+        var checkkw = true;
+        $("#datas input").each(function(){
+            if ( $.trim( $(this).val() ) ==''){
+                checkkw = false;
+                layer.msg('变量不能为空!');
+                $(this).focus();
+                return false;
+            }
+        });
+        if( !checkkw){
+            return false;
+        }
+    }
+    $('form').removeAttr('stop');
+    return true;
+});
+</script>
+{php include wl_template('common/footer');}

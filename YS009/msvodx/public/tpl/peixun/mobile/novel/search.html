@@ -1,0 +1,151 @@
+{include file="common/header"}
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/mobile/static/css/n-list.css">
+<style>
+    .panel{margin-top: 0;}
+</style>
+<!--对联-左-->
+<div class="ads_dl ads-box" id="ads_dl" style="width:30%;float:left;position:fixed;left:0;z-index:1000;top:40%;padding-bottom: 0;border-radius: 0;">
+  <span class="ads-close"><a style="width:12px;height:12px;display:block;" onclick="document.getElementById('ads_dl').style.display='none'" href="javascript:void(0);"></a></span>
+  <script language="javascript" src="{:url('/poster/index',array('pid'=>2))}"></script>
+</div>
+<!--对联-右-->
+<div class="ads_dr ads-box" id="ads_dr" style="width:30%;float:right;position:fixed;right:0;z-index:1000;top:40%;padding-bottom: 0;border-radius: 0;">
+  <span class="ads-close"><a style="width:12px;height:12px;display:block;" onclick="document.getElementById('ads_dr').style.display='none'" href="javascript:void(0);"></a></span>
+  <script language="javascript" src="{:url('/poster/index',array('pid'=>3))}"></script>
+</div>
+<!--底部-->
+<div class="ads_b ads-box" id="ads_b" style="position:fixed;z-index:1000;bottom:51px;background:#000000ba;width:100%;text-align:center;padding-bottom: 0;border-radius: 0;">
+  <span class="ads-close"><a style="width:12px;height:12px;display:block;" onclick="document.getElementById('ads_b').style.display='none'" href="javascript:void(0);"></a></span>
+  <script language="javascript" src="{:url('/poster/index',array('pid'=>4))}"></script>
+</div>
+<div class="item" style="border-bottom: 1px solid #eee;">
+    <label>排序：</label>
+    <ul id="orderCode">
+        <li id="lastTime"  {if condition="$orderCode eq 'lastTime'"}class="current"{/if} ><a href="#">最新</a></li>
+        <li id="hot" {if condition="$orderCode eq 'hot'"}class="current"{/if}  ><a href="#">最热</a></li>
+    </ul>
+</div>
+<div class="panel">
+    <ul class="novel-list">
+        {notempty name="list"}
+        {volist name="list" id="v"}
+        <li>
+            <a href="{:url('novel/show',array('id'=>$vo['id']))}">
+                <div class="novelPic">
+                    <img src="{$v['thumbnail']}">
+                </div>
+                <div class="novel-box">
+                    <p>
+                        <?php
+                                    $regex  = '/('.$key_word.')/i';
+                                    preg_match_all($regex,$v['title'],$rs);
+                                    foreach($rs[1] as $val){
+                                        $keywords =$val;
+                                          $v['title'] = str_replace( $keywords,"<font>$keywords</font>",$v['title']);
+                        }
+                        ?>
+                        {$v['title']}
+                    </p>
+                    <span class="text">{$vo['short_info']|default="暂没短说明"}</span>
+                    <div>
+                        <div class="box-f">
+                            <span><i class="btn fn-time"></i>{:date('m/d',$v['update_time'])}</span>
+                            <span><i class="btn fn-see"></i>{$v['click']}</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+        {/volist}
+        {else/}
+        <div class="not-comment not">暂时没有数据 ~</div>
+        {/notempty}
+    </ul>
+</div>
+<form action="" method="get" id="forms">
+    <input type="hidden" id="current_orderCodes"  name="orderCode" value="{$orderCode|default='0'}" >
+    <input type="hidden" id="key_word"  name="key_word" value="{$key_word|default=''}" >
+    <input type="hidden"  name="type" value="{$type|default='video'}" >
+</form>
+
+{include file="common/footer"}
+<script type="text/javascript">
+    $(function () {
+        $('#orderCode').find('li').click(function(){
+            $('#current_orderCodes').val($(this).attr('id'));
+            $('#forms').submit();
+        })
+    })
+    var status = 1;
+    var page  = 0;
+    $(window).scroll(function(){
+        var srollPos = $(window).scrollTop();
+        var orderCode = $('#current_orderCodes').val();
+        var key_word =  $('#key_word').val();
+        var where =" and title like '%"+$('#key_word').val()+"%'";
+        var data = {
+            "page" : page ,
+            "orderCode" : orderCode,
+            "offset" : 10,
+            "type" : 'novel',
+            "where" :where,
+        };
+        if(srollPos+$(window).height() > $(document).height() - 80){
+            if(status == 1) {
+                status = 0;
+                $.ajax({
+                    type: "POST",
+                    data: data,
+                    dataType: "JSON",
+                    url: "{:url('Api/moreData')}",
+                    success: function (data) {
+                        if(data.resultCode == 0){
+                            var datas = data.data.list;
+                            if(datas){
+                                var html = '';
+                                datas.forEach(function(item) {
+                                    var update_time = item['update_time'];
+                                    var newDate = new Date(update_time * 1000);
+                                    var url = '/novel/show/id/'+item['id'];
+                                    var reg = '/'+key_word+'/g';
+                                    reg=eval(reg);
+                                    item['title'] = item['title'].replace(reg, "<font>"+key_word+"</font>");
+                                    if(item['short_info']){
+                                        var short_info = item['short_info'];
+                                    }else{
+                                        var short_info = "暂没短说明";
+                                    }
+                                    html += '<li>';
+                                    html += '<a href="'+url+'">';
+                                    html += '    <div class="novelPic">';
+                                    html += '    <img src="'+item['thumbnail']+'">';
+                                    html += '    </div>';
+                                    html += '    <div class="novel-box">';
+                                    html += '    <p>'+item['title']+'</p>';
+                                    html += '<span class="text">'+short_info+'</span>';
+                                    html += '    <div>';
+                                    html += '    <div class="box-f">';
+                                    html += '    <span><i class="btn fn-time"></i>'+(newDate.getMonth() + 1)+'-'+newDate.getDate()+'</span>';
+                                    html += '<span><i class="btn fn-see"></i>'+item['click']+'</span>';
+                                    html += '</div>';
+                                    html += '</div>';
+                                    html += '</div>';
+                                    html += '</a>';
+                                    html += '</li>';
+                                });
+                                $('.not-comment').remove();
+                                $('.novel-list').append(html);
+                                page++;
+                                status = 1;
+                            }else{
+                                console.log('没有更多数据了！');
+                            }
+                        }else{
+                            console.log('没有更多数据了！');
+                        }
+                    }
+                });
+            }
+        }
+    })
+</script>

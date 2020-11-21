@@ -1,0 +1,1 @@
+document.write('<div class=\"adblock\"><div class=\"img\"><a href=\"#\" ><img class=\"img-fluid lazy1\" src=\"/template/RX03/html/style/images/buyme.jpg\" /></a></div></div>'); 

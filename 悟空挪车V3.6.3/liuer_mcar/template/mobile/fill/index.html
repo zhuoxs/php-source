@@ -1,0 +1,200 @@
+{template 'header'}
+<style>
+    .pageIndex{
+        background: #ffffff;
+    }
+.tbanner{
+    width: 100%;
+}
+.tbanner img{
+    width: 100%;
+    max-width: 100%;
+}
+    .tfield{
+        width:calc(100% - 30px);
+        margin:0 auto;
+        background: #ffffff;
+        height: 300px;
+        position: relative;
+        top: 0px;
+        border-radius: 5px;
+    }
+    .wrapper{
+        padding: 12px;
+    }
+    .tfield-title{
+        font-size: 16px;
+        color: #666666;
+    }
+    .tfield-input{
+        border-bottom:1px solid #eaeaea;
+    }
+    .chepaihao{
+        text-align: center;
+        width: 100%;
+        font-size: 16px;
+        background: #ffffff;
+        padding: 10px;
+        color: #323232;
+        border: none;
+        margin: 0;
+    }
+    .search,.sao{
+        margin-top: 20px;
+        display: block;
+        height: 40px;
+        line-height: 40px;
+        color: #ffffff;
+        background: #ff680b;
+        font-size: 15px;
+        text-align: center;
+    }
+    .sao{
+        margin-top: 15px;
+        background: #176afb;
+    }
+</style>
+<?php
+$config = get_module_info();
+$fill_banner = $config['fill_banner'] ? tomedia($config['fill_banner']) : ASSETS . '/images/fill.gif';
+?>
+<body class="pageIndex">
+<div id="hook-app">
+    <div class="tbanner">
+        <img src="{$fill_banner}" alt="">
+    </div>
+    <div class="tfield">
+        <div class="wrapper">
+
+            <yd-cell-group>
+                <yd-cell-item>
+                    <span slot="left" style="width: 100px;">车牌号</span>
+                    <!-- <a href="">京</a>
+                     <a href="">A</a>-->
+                    <div class="yd-cell-right yd-cell-wrapper" slot="right">
+                        <a href="javascript:;" @click.prevent="provinceModal = true">{{province}}</a>
+                        <a href="javascript:;" @click.prevent="wordModal = true">{{word}}</a>
+                        <input type="text" placeholder="输入号码" v-model="chepaihao" style="text-transform: uppercase" maxlength="6" @blur="fixScroll"/>
+                    </div>
+                </yd-cell-item>
+            </yd-cell-group>
+
+            <!--<div class="tfield-title">车牌号码</div>-->
+            <!--<div class="tfield-input">
+                <input type="text" placeholder="输入车牌号" class="chepaihao" id="chepaihao">
+            </div>-->
+            <div class="tfield-do">
+                <a href="javascript:;" class="search"><i class="fa fa-search"></i> 查询车辆</a>
+                <a href="javascript:;" class="sao" id="bindMa"><i class="fa fa-camera"></i> 扫码挪车</a>
+            </div>
+        </div>
+
+    </div>
+    <yd-popup v-model="provinceModal" position="center" width="auto">
+        <div style="background-color:#fff;" class="modal-wrap">
+            <ul class="province-list">
+                <li v-for="(item,index) in allProvince" :key="index" @click="choseMe(index,'province')" :class="{active:province == item}">{{item}}</li>
+            </ul>
+        </div>
+    </yd-popup>
+    <yd-popup v-model="wordModal" position="center" width="auto">
+        <div style="background-color:#fff;">
+            <ul class="word-list">
+                <li v-for="(item,index) in allWord" :key="index" @click="choseMe(index,'word')" :class="{active:word == item}">{{item}}</li>
+            </ul>
+        </div>
+    </yd-popup>
+</div>
+<!--<div class="copyright">
+    提供技术支持
+</div>-->
+
+<script>
+var searchUrl = "{php echo $this->createMobileUrl('fill',['op'=>'search']);}";
+$(function(){
+    $('#bindMa').click(function(){
+        wx.scanQRCode({
+            needResult: 1, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
+            scanType: ["qrCode","barCode"], // 可以指定扫二维码还是一维码，默认二者都有
+            success: function (res) {
+                console.log(res);
+                var result = res.resultStr; // 当needResult 为 1 时，扫码返回的结果
+                location.href = result;
+            }
+        });
+        return false;
+    });
+
+    $('.search').click(function(){
+        var chepaihao = app.chepaihao;
+        /*alert(chepaihao);
+        return ;
+        var chepaihao = $('#chepaihao').val();*/
+        if(!chepaihao){
+            alert('车牌号不能为空');
+            return false;
+        }
+        chepaihao = app.province + app.word + app.chepaihao;
+        $.post(searchUrl,{chepaihao:chepaihao},function(resp){
+            console.log(resp);
+            if(resp.error == 1){
+                alert(resp.msg);
+                return false;
+            }else{
+                location.href = resp.url;
+                return false;
+            }
+        },'json')
+    })
+})
+
+    var app = new Vue({
+        el: '#hook-app',
+        data: {
+            indexGuanzhu: 0,
+            chepaihao: '',
+            mobile: '',
+            verifyCode: '',
+            start: false,
+            provinceModal:false,
+            province: '{$config["area"]}',
+            allProvince:[
+                '京','津','沪','渝','蒙',
+                '新','藏','宁','桂','港',
+                '澳','黑','吉','辽','晋',
+                '冀','青','鲁','豫','苏',
+                '皖','浙','闽','赣','湘',
+                '鄂','粤','琼','甘','陕',
+                '贵','云','川'
+            ],
+            wordModal:false,
+            word: "{php echo $config['area_prefix'] ? $config['area_prefix'] : 'A'}",
+            allWord:[
+                'A','B','C','D','E',
+                'F','G','H','I','J',
+                'K','L','M','N','O',
+                'P','Q','R','S','T',
+                'U','V','W','X','Y',
+                'Z'
+            ],
+            needGuanzhu: 0
+        },
+        methods: {
+            choseMe: function(index,type) {
+                if(type == 'province'){
+                    this.province = this.allProvince[index];
+                    this.provinceModal = false;
+                }else{
+                    this.word = this.allWord[index];
+                    this.wordModal = false;
+                }
+            },
+            fixScroll:function(){
+                window.scrollTo(0,0);
+            },
+        }
+
+    });
+</script>
+</body>
+</html>

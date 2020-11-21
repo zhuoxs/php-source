@@ -1,0 +1,139 @@
+<div class="main">
+    <div class="alert alert-info">
+        <h4>
+            <i class="fa fa-info-circle"></i>
+            说明:提现申请审核后微信账号会自动打款，其他类型账号需要管理员手动打款，打款后标记对应的提现申请处理成功!
+        </h4>
+        <p style="color: red">&nbsp;&nbsp;&nbsp;&nbsp;商户结算数据涉及钱款操作，请认真审核，谨慎操作！</p>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="weisrc_dish" />
+                <input type="hidden" name="do" value="business" />
+                <input type="hidden" name="op" value="adminbusinesslog" />
+                <input type="hidden" name="status" value="{$_GPC['status']}" />
+                <input type="hidden" name="business_type" value="{$_GPC['business_type']}" />
+                <div class="form-group" style="margin-left: 40px">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">提现状态</label>
+                    <div class="col-sm-8 col-lg-10 col-xs-12">
+                        <div class="btn-group">
+                            <a href="{php echo $this->createWebUrl('business', array('op' => 'adminbusinesslog', 'business_type' => $_GPC['business_type']))}" class="btn {if $_GPC['status'] == ''}btn-primary{else}btn-default{/if}" style="width: 80px">不限</a>
+                            <a href="{php echo $this->createWebUrl('business', array('op' => 'adminbusinesslog', 'status' => 0, 'business_type' => $_GPC['business_type']))}"
+                               class="btn {if $_GPC['status'] == 0 && isset($_GPC['status']) && $_GPC['status'] != ''}btn-primary{else}btn-default{/if}">待处理</a>
+                            <a href="{php echo $this->createWebUrl('business', array('op' => 'adminbusinesslog', 'status' => 1, 'business_type' => $_GPC['business_type']))}" class="btn {if $_GPC['status'] == 1}btn-primary{else}btn-default{/if}">已提现</a>
+                            <a href="{php echo $this->createWebUrl('business', array('op' => 'adminbusinesslog', 'status' => -1, 'business_type' => $_GPC['business_type']))}" class="btn {if $_GPC['status'] == -1}btn-primary{else}btn-default{/if}">提现失败</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-left: 40px">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">账号类型</label>
+                    <div class="col-sm-8 col-lg-10 col-xs-12">
+                        <div class="btn-group">
+                            <a href="{php echo $this->createWebUrl('business', array('op' => 'adminbusinesslog', 'status' => $_GPC['status']))}" class="btn {if $_GPC['business_type'] == ''}btn-primary{else}btn-default{/if}" style="width: 80px">不限</a>
+                            <a href="{php echo $this->createWebUrl('business', array('op' => 'adminbusinesslog', 'business_type' => 1, 'status' => $_GPC['status']))}" class="btn {if $_GPC['business_type'] == 1}btn-primary{else}btn-default{/if}">微信</a>
+                            <a href="{php echo $this->createWebUrl('business', array('op' => 'adminbusinesslog', 'business_type' => 2, 'status' => $_GPC['status']))}" class="btn {if $_GPC['business_type'] == 2}btn-primary{else}btn-default{/if}">支付宝</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-left: 40px">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" >下单时间</label>
+                    <div class="col-sm-7 col-lg-3 col-xs-12">
+                        <div class="input-group-btn">
+                            {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d', $starttime),'endtime'=>date('Y-m-d', $endtime)));}
+                            <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                            <button class="btn btn-success" name="out_put" value="output"><i class="fa fa-file"></i> 导出</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <form action="" method="post" class="form-horizontal form">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="row-fluid">
+                    <div class="span3 control-group">
+                        已提现金额:<strong class="text-danger">{$total_price}</strong>
+                        ,已提现手续费:<strong class="text-danger">{$total_charges}</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="table-responsive panel-body">
+                <table class="table table-hover">
+                    <thead class="navbar-inner">
+                    <tr>
+                        <th style="width:23%;">(ID)申请时间</th>
+                        <th style="width:10%;">提现金额</th>
+                        <th style="width:10%;">手续费</th>
+                        <th style="width:10%;">到帐金额</th>
+                        <th style="width:15%;">账号信息</th>
+                        <th style="width:12%;">所属门店</th>
+                        <th style="width:10%;">状态</th>
+                        <th style="width:10%;">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {loop $list $item}
+                    <tr>
+                        <td>
+                            ({$item['id']})
+                            {php echo date("Y-m-d H:i:s", $item['dateline'])}
+                            {if $item['business_type']== 1 && $item['status'] == 1}
+                            <br/>
+                            <span class="label label-success">商户单号:{$item['trade_no']}</span>
+                            <br/>
+                            <span class="label label-success">微信单号:{$item['payment_no']}</span>
+                            {/if}
+                        </td>
+                        <td>
+                            {$item['price']}元
+                        </td>
+                        <td>
+                            {$item['charges']}元
+                        </td>
+                        <td>
+                            {$item['successprice']}元
+                        </td>
+                        <td>
+                            {if $item['business_type']!=0}
+                            {if $item['business_type']== 1}
+                            微信账号:{$stores[$item['storeid']]['business_wechat']}<br/>
+                            {else}
+                            支付宝:{$stores[$item['storeid']]['business_alipay']}<br/>
+                            {/if}
+                            姓名:{$stores[$item['storeid']]['business_username']}
+                            {/if}
+                        </td>
+                        <td>
+                            {$stores[$item['storeid']]['title']}
+                        </td>
+                        <td>
+                            {if $item['status'] == 1}
+                            <span class="label label-success">已提现</span>
+                            {elseif $item['status'] == -1}
+                            <span class="label label-danger">提现失败</span>
+                            <br/>
+                            {$item['result']}
+                            {else}
+                            <span class="label label-danger">待审核</span>
+                            {/if}
+                        </td>
+                        <td>
+                            {if $item['status'] == 0}
+                            <a class="btn btn-success btn-sm" href="{php echo $this->createWebUrl('business', array('id' => $item['id'], 'op' => 'setstatus'))}" title="管理" onclick="return confirm('确认操作吗？');return false;"> 审核</a>
+                            <a class="btn btn-danger btn-sm" href="{php echo $this->createWebUrl('business', array('id' => $item['id'], 'op' => 'delete'))}" title="删除" onclick="return confirm('确认操作吗？');return false;"> 删除</a>
+                            {/if}
+                        </td>
+                    </tr>
+                    {/loop}
+                    </tbody>
+                </table>
+                {$pager}
+            </div>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,157 @@
+{template 'web/common/common'}
+{template 'web/system/navbar'}
+<blockquote class="layui-elem-quote layui-text">
+    自定义小程序底部导航栏
+</blockquote>
+<style>
+    .nav-item{
+        border: 1px solid #eee;
+        border-radius: 3px;
+        margin: 0 5px 5px 0;
+        display: inline-block;
+        padding: 6px;
+        width: 80px;
+        height: 80px;
+        overflow: hidden;
+        position: relative;
+        vertical-align: middle;
+    }
+    .nav-icon{
+        display: block;
+        width: 35px;
+        height: 35px;
+        margin: 0 auto 10px auto;
+    }
+    .nav-text{
+        display: block;
+        text-align: center;
+        font-size: .75rem;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
+    .nav-delete{
+        background: rgba(255, 69, 68, 0.73);
+        border-radius: 0 0 2px 0;
+        right: 0;
+        left: auto;
+        position: absolute;
+        bottom: 0;
+        color: #fff !important;
+        font-size: .75rem;
+        width: 50%;
+        text-align: center;
+        display: block;
+        padding: 2px 0;
+        visibility: hidden;
+        opacity: 0;
+        transition: 200ms;
+    }
+    .nav-edit{
+        position: absolute;
+        bottom: 0;
+        color: #fff !important;
+        font-size: .75rem;
+        width: 50%;
+        text-align: center;
+        display: block;
+        padding: 2px 0;
+        visibility: hidden;
+        opacity: 0;
+        transition: 200ms;
+        background: rgba(0, 102, 212, 0.73);
+        border-radius: 0 0 0 2px;
+        left: 0;
+    }
+    .nav-item:hover .nav-delete,
+    .nav-item:hover .nav-edit {
+        visibility: visible;
+        opacity: 1;
+    }
+
+</style>
+<div class="layui-card">
+    <div id="app">
+
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                {if in_array('system.updateTarBar',$perm)}
+                <a class="layui-btn layui-btn-sm" href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'updateTarBar','action'=>'system')}">增加</a>
+                {/if}
+                {if in_array('system.loadTarBar',$perm)}
+                <a class="layui-btn layui-btn-primary layui-btn-sm" id="loadTarbar">加载默认数据</a>
+                {/if}
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                {loop $data['list'] $key $val}
+                <div class="nav-item">
+                    <img src="{$val['icon']}" class="nav-icon" alt="">
+                    <div class="nav-text">{$val['name']}</div>
+                    {if in_array('system.deleteTarbar',$perm)}
+                    <a class="nav-delete" data-index="{$val['id']}" href="javascript:">删除</a>
+                    {/if}
+                    {if in_array('system.updateTarBar',$perm)}
+                    <a class="nav-edit" href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'updateTarBar','id'=>$val['id'],'action'=>'system')}" data-index="{$val['id']}">编辑</a>
+                    {/if}
+                </div>
+                {/loop}
+            </div>
+        </div>
+        <div class="layui-form-item" style="margin-top: 70px;">
+            <div class="layui-input-block">
+                <!--<span style="color: gray;">提示：请尽量将小程序的第一个导航链接设置为首页!</span>-->
+            </div>
+        </div>
+
+    </div>
+</div>
+{template 'common/footer'}
+<script src="../addons/kundian_farm/resource/js/jquery-1.11.1.min.js" charset="utf-8"></script>
+<script src="../addons/kundian_farm/resource/layui.js" charset="utf-8"></script>
+<script>
+    layui.use(['form','laypage', 'layer'], function() {
+
+        $(".nav-delete").click(function () {
+            var that=$(this);
+            var id=$(this).attr("data-index");
+            layer.confirm('确认删除吗', {icon: 3, title:'确认'}, function(index){
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/admin',array('m'=>$_GPC['m'],'op'=>'deleteTarbar','action'=>'system')}",
+                    data:{id:id},
+                    dataType:'json',
+                    success:function(res){
+                        if(res.status==0){
+                            layer.alert('删除成功');
+                            that.parent().remove();
+                        }else{
+                            layer.alert('删除失败');
+                        }
+                        layer.close(index);
+
+                    }
+                })
+
+            });
+        })
+
+        $("#loadTarbar").click(function () {
+            var url="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'loadTarBar','action'=>'system')}";
+            layer.confirm('还原默认数据将清空原来的导航数据，清空后无法找回，确认要加载默认数据吗？', {icon: 3, title:'确认'}, function(index){
+                $.ajax({
+                    type:"post",
+                    url:url,
+                    dataType:'json',
+                    success:function(res){
+                        layer.alert(res.msg,function () {
+                            window.location.reload();
+                        });
+                        layer.close(index);
+                    }
+                })
+            });
+        })
+    })
+</script>

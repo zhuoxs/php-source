@@ -1,0 +1,104 @@
+{php include wl_template('common/header');}
+<link rel="stylesheet" href="{URL_MODULE}web/resource/diy/css/diy.min.css">
+<link rel="stylesheet" href="{URL_MODULE}web/resource/diy/css/template.css">
+<ul class="nav nav-tabs">
+    <li class="active"><a href="javascript:;">模板列表</a></li>
+</ul>
+<div class="app-content">
+    <div class="app-filter">
+        <div class="filter-list">
+            <form class="form-horizontal" action="{php echo web_url($backUrl)}" method="post">
+                <div class="form-group">
+                    <div class="col-sm-2 control-label">模板分类</div>
+                    <div class="col-sm-10">
+                        <div class="btn-group">
+                            <a class="btn {if $_GPC['cate']==''}btn-primary{else}btn-default{/if}" href="{php echo web_url($backUrl, array('cate'=>''))}">全部分类</a>
+                            <a class="btn {if $_GPC['cate']=='0'}btn-primary{else}btn-default{/if}" href="{php echo web_url($backUrl, array('cate'=>0))}">未分类</a>
+                            {loop $category $item}
+                            <a class="btn {if $_GPC['cate']==$item['id']}btn-primary{else}btn-default{/if}" href="{php echo web_url($backUrl, array('cate'=>$item['id']))}">{$item['name']}</a>
+                            {/loop}
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-2 control-label">模板名称</div>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" name="temp_name" value="" placeholder="请输入模板名称">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-2 control-label"></div>
+                    <div class="col-sm-6">
+                        <button class="btn btn-primary" type="submit">搜索</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="app-table-list">
+        {loop $list $item}
+        <div class="item">
+            <img src="{php echo tomedia($item['preview'])}" onerror="this.src='../addons/{MODULE_NAME}/web/resource/images/nopic.png'" />
+            <div class="cate">
+            	{if $item['uniacid']==0}
+					<span class="label label-primary">系统</span>
+				{/if}
+                <span class="label label-{$allpagetype[$item['type']]['class']}">{$allpagetype[$item['type']]['name']}</span>
+            </div>
+            <div class="title">{if !empty($item['name'])}{$item['name']}{else}未命名{/if}</div>
+            <div class="mask">
+                <div class="btns">
+                    <a href="{php echo web_url('diy/diy/editPage',array('tid'=>$item['id'],'page_class'=>$pageClass,'back_url'=>$backUrl,'type'=>$item['type']))}" class="btn btn-primary btn-block">使用模板</a>
+                    {if !empty($item['uniacid'])}
+                    <a class="btn btn-default btn-block delete" data-tid="{$item['id']}">删除模板</a>
+                    {/if}
+                </div>
+            </div>
+        </div>
+        {/loop}
+        <div class="app-table-foot clearfix">
+			<div class="pull-left">
+			</div>
+			<div class="pull-right">
+				{$pager}
+			</div>
+		</div>
+    </div>
+</div>
+<script>
+    $(".item").hover(function () {
+        $(this).find('.mask').stop().fadeIn();
+        $(this).find('.title').stop().fadeIn();
+    }, function () {
+        $(this).find('.mask').stop().fadeOut();
+        $(this).find('.title').stop().fadeOut();
+    });
+    $(".delete").unbind('click').click(function () {
+        var _this = $(this);
+        var status = _this.data('status');
+        var tid = _this.data('tid');
+        if(status) {
+            tip.msgbox.err("正在删除中，请稍候。");
+        }
+        if(!tid){
+            tip.msgbox.err("模板参数错误，请刷新重试！");
+            return;
+        }
+        tip.confirm("删除后不可恢复，确定创建此模板？", function () {
+            _this.data('status',1).text('删除中..');
+            $.post("{php echo web_url('diy/diy/delTemp')}", {id: tid,}, function (r) {
+                if (r.status==0) {
+                    tip.msgbox.suc("删除成功！");
+                    _this.closest('.item').fadeOut().remove();
+                    setTimeout(function () {
+                        location.reload();
+                    }, 500);
+                } else {
+                    tip.msgbox.err(r.result.message);
+                    _this.data('status',0).text('删除模板');
+                }
+            }, 'json');
+        });
+    });
+</script>
+{php include wl_template('common/footer');}

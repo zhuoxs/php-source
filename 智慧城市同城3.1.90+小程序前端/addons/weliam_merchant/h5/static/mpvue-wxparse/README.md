@@ -1,0 +1,147 @@
+# mpvue-wxParse 适用于 Mpvue 的微信小程序富文本解析组件
+
+> 支持 Html、Markdown 转 Wxml 可视化，修改自: [wxParse](https://github.com/icindy/wxParse)
+
+[![npm package](https://img.shields.io/npm/v/mpvue-wxparse.svg)](https://npmjs.org/package/mpvue-wxparse)
+[![npm downloads](http://img.shields.io/npm/dm/mpvue-wxparse.svg)](https://npmjs.org/package/mpvue-wxparse)
+
+
+## 扫码体验
+![小程序码](./static/qrcode.jpg)
+
+
+## 属性
+
+| 名称              | 类型           | 默认值        | 描述               |
+| -----------------|--------------- | ------------- | ----------------  |
+| loading          | Boolean        | false         | 数据加载状态       |
+| className        | String         | —             | 自定义 class 名称  |
+| content          | String         | —             | 渲染内容           |
+| noData           | String         | 数据不能为空   | 空数据时的渲染展示  |
+| startHandler     | Function       | 见源码         | 自定义 parser 函数 |
+| endHandler       | Function       | null          | 自定义 parser 函数 |
+| charsHandler     | Function       | null          | 自定义 parser 函数 |
+| imageProp        | Object         | 见下文        | 图片相关参数        |
+
+### 自定义 parser 函数具体介绍
+
+* 传入的参数为当前节点 `node` 对象及解析结果 `results` 对象，例如 `startHandler(node, results)`
+* 无需返回值，通过对传入的参数直接操作来完成需要的改动
+* 自定义函数会在原解析函数处理之后执行
+
+### imageProp 对象具体属性
+
+| 名称              | 类型           | 默认值        | 描述                |
+| -----------------|--------------- | ------------- | ------------------ |
+| mode             | String         | 'aspectFit'   | 图片裁剪、缩放的模式 |
+| padding          | Number         | 0             | 图片内边距          |
+| lazyLoad         | Boolean        | false         | 图片懒加载          |
+| domain           | String         | ''            | 图片服务域名        |
+
+## 事件
+
+| 名称             | 参数              | 描述              |
+| -----------------|----------------- | ----------------  |
+| preview          | 图片地址，原始事件 | 预览图片时触发     |
+| navigate         | 链接地址，原始事件 | 点击链接时触发     |
+
+## 基本使用方法
+
+* 安装
+
+``` bash
+npm i mpvue-wxparse
+```
+
+* 使用
+
+``` vue
+<template>
+  <div>
+    <wxParse :content="article" @preview="preview" @navigate="navigate" />
+  </div>
+</template>
+
+<script>
+import wxParse from 'mpvue-wxparse'
+
+export default {
+  components: {
+    wxParse
+  },
+  data () {
+    return {
+      article: '<div>我是HTML代码</div>'
+    }
+  },
+  methods: {
+    preview(src, e) {
+      // do something
+    },
+    navigate(href, e) {
+      // do something
+    }
+  }
+}
+</script>
+
+<style>
+@import url("~mpvue-wxparse/src/wxParse.css");
+</style>
+```
+
+
+## 渲染 Markdown
+
+> 先将 markdown 转换为 html 即可
+
+``` bash
+npm install marked
+```
+
+``` js
+import marked from 'marked'
+import wxParse from 'mpvue-wxparse'
+
+export default {
+  components: {
+    wxParse
+  },
+  data () {
+    return {
+      article: marked(`#hello, markdown!`)
+    }
+  }
+}
+```
+
+
+## Tips
+
+* v0.6 之后的版本样式文件需自行引入
+
+* 打包时出错 `ERROR in static/js/vendor.js from UglifyJs`
+
+参照以下配置使 babel 处理 mpvue-wxparse，或更新 UglifyJs 插件
+
+``` js
+// webpack.base.conf.js
+{
+  test: /\.js$/,
+  include: [resolve('src'), /mpvue-wxparse/],
+  use: [
+    'babel-loader',
+    {
+      loader: 'mpvue-loader',
+      options: {
+        checkMPEntry: true
+      }
+    }
+  ]
+}
+```
+
+
+## 感谢
+
+[@stonewen](https://github.com/stonewen)| [@Daissmentii](https://github.com/Daissmentii)        | [@wuyanwen](https://github.com/wuyanwen)           | [@vcxiaohan](https://github.com/vcxiaohan)

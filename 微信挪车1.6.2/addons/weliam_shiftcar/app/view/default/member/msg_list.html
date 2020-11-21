@@ -1,0 +1,73 @@
+{php include wl_template('common/header');}
+<div class="page-group">
+    <div class="page page-current" id="page-record">
+		<header class="bar bar-nav">
+		    <h1 class="title">我的挪车记录</h1>
+		</header>
+		{php include wl_template('common/footerbar');}
+		<div class="content native-scroll">
+			<div class="content-block-title">发起、通知挪车记录列表</div>
+		    <div class="list-block media-list">
+		      <ul class="recordlist">
+		      	
+		      </ul>
+		    </div>
+		    <div class="loading_more" style="text-align: center;display: none;">努力加载中......</div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="relist">
+{{# for(var i = 0, len = d.length; i < len; i++){ }}
+<li>
+  <a href="{{ d[i].url }}" class="item-link item-content">
+  	<div class="item-media"><img src="{{ d[i].avatar }}" style="width: 3rem;"></div>
+    <div class="item-inner">
+      <div class="item-title-row">
+        <div class="item-title">{{ d[i].carcard }}</div>
+        <div class="item-after">{{ d[i].createtime }}</div>
+      </div>
+      <div class="item-subtitle">{{ d[i].nickname }}</div>
+      <div class="item-text" style="height: 1.05rem;">{{ d[i].location }}</div>
+    </div>
+  </a>
+</li>	
+{{# } }}
+</script>
+<script type="text/javascript">
+	$(function () {
+      	$(document).on("pageInit", "#page-record", function(e, id, page) {
+			var loading = false;
+			var thispagesize = 10;
+			var thispage = 1;
+			
+			function addItems(thispage, thispagesize) {
+				$.post("{php echo app_url('member/record')}",{page:thispage,pagesize:thispagesize},function(data){
+					if (data.length > 0) {
+						var gettpl = document.getElementById('relist').innerHTML;
+						laytpl(gettpl).render(data, function(html){
+						    $(".recordlist").append(html);
+						});
+					} else {
+						$(".loading_more").show();
+						$('.loading_more').html('全部数据加载完毕');
+					}
+				},"json");
+			}
+			
+			addItems(thispage, thispagesize);
+			$(page).on('infinite', function() {
+				if (loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+					loading = false;
+					thispage++;
+					addItems(thispage, thispagesize);
+					$.refreshScroller();
+				}, 500);
+			});
+		});
+	    $.init();
+	});
+</script>
+{php include wl_template('common/footer');}

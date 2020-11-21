@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>{$_W['slwl']['lang']['sys_name']}</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="">
+	{template 'public/header'}
+
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+	{template 'public/top'}
+	{template 'public/left'}
+
+	<div class="layui-body">
+		<div class="layui-main">
+			<div class="layui-tab">
+				<ul class="layui-tab-title">
+					<li {if $operation == 'display'} class="layui-this" {/if}>
+						<a href="{php echo webUrl('',['do'=>'store/commission'])}">分销商管理</a>
+					</li>
+					{if ($one['id']) && $operation == 'post'}
+					<li class="layui-this">
+						<a href="{php echo webUrl('',['do'=>'store/commission','op'=>'post','id'=>$one['id']])}">编辑</a>
+					</li>
+					{/if}
+					<li {if $operation == 'set'} class="layui-this" {/if}>
+						<a href="{php echo webUrl('',['do'=>'store/commission','op'=>'set'])}">配置</a>
+					</li>
+					{if $operation == 'order_com'}
+					<li class="layui-this">
+						<a href="{php echo webUrl('',['do'=>'store/commission','op'=>'order_com'])}">分销订单</a>
+					</li>
+					{/if}
+					{if $operation == 'downline'}
+					<li class="layui-this">
+						<a href="{php echo webUrl('',['do'=>'store/commission','op'=>'downline'])}">推广下线</a>
+					</li>
+					{/if}
+					<li {if $operation == 'brokerage'} class="layui-this" {/if}>
+						<a href="{php echo webUrl('',['do'=>'store/commission','op'=>'brokerage'])}">提现管理</a>
+					</li>
+					{if $operation == 'post_brokerage'}
+					<li class="layui-this">
+						<a href="{php echo webUrl('',['do'=>'store/commission','op'=>'post_brokerage'])}">编辑</a>
+					</li>
+					{/if}
+				</ul>
+			</div>
+
+		{if $operation == 'display'}
+			<div>
+				<div class="layui-form">
+					<div class="box-tools">
+						<div class="box-search">
+							<form action="{php echo webUrl('', ['do'=>'store/commission'])}" method="post">
+								<div class="layui-input-inline">
+									<input type="text" name="keyword" value="{$keyword}" class="layui-input" placeholder="昵称">
+								</div>
+								<div class="layui-input-inline">
+									<button class="layui-btn" lay-submit lay-filter="table-search" id="table-search">搜索</button>
+								</div>
+							</form>
+						</div>
+					</div>
+					<div class="box-list-img">
+						<table id="superior-table" lay-filter="superior-table"></table>
+					</div>
+				</div>
+
+				<div class="script">
+					<script type="text/html" id="thumb">
+						<div class="box-table-img">
+							<img src="{{d.avatar_url}}" data-url="{{d.avatar_url}}"
+								onerror="this.src='{MODULE_URL}template/public/image/nopic.png'">
+						</div>
+					</script>
+					<script type="text/html" id="userInfo">
+						<div class="table-multi-line"><span>昵称：</span>
+							<a class="color-link-main" href="javascript:;" lay-event="edit">{{d.nicename_format}}</a>
+						</div>
+						<div class="table-multi-line"><span>姓名：{{d.real_name}}</span></div>
+						<div class="table-multi-line"><span>电话：{{d.tel_format}}</span></div>
+					</script>
+					<script type="text/html" id="userSuperior">
+						<div class="box-avatar">
+							<img src="{{d.userSuperior.avatar_url}}" data-url="{{d.userSuperior.avatar_url}}"
+								onerror="this.src='{MODULE_URL}template/public/image/nopic.png'">
+							<span class="line"></span>
+							{{# if (d.userSuperior.id === 0) { }}
+								<span class="text">{{d.userSuperior.nicename}}</span>
+							{{# } else { }}
+								<a class="text color-link-main" href="javascript:;" lay-event="editSuperior">
+									<span>{{d.userSuperior.nicename}}</span>
+								</a>
+							{{# } }}
+						</div>
+					</script>
+					<script type="text/html" id="tpl_status">
+						<input type="checkbox" name="status_commission" lay-skin="switch" lay-filter="status_commission"
+							lay-text="已审核|未审核" data-uid="{{d.id}}"
+							{{# if(d.status_commission == 1){ }}
+								checked
+							{{# } }} >
+					</script>
+					<script type="text/html" id="userSubordinate">
+						{{# if (d.count_downline === '0') { }}
+							<span>{{d.count_downline}}</span> <span>人</span>
+						{{# } else { }}
+							<a class="color-link-main" href="javascript:;" lay-event="downline">
+								<span>{{d.count_downline}}</span> <span>人</span>
+							</a>
+						{{# } }}
+					</script>
+					<script type="text/html" id="operation">
+						<div style="font-size: 0;">
+							<a href="javascript:;" class="layui-btn layui-btn-sm" lay-event="edit">编辑</a>
+							<a href="javascript:;" class="layui-btn layui-btn-sm" lay-event="order">订单</a>
+						</div>
+					</script>
+					<script>
+						layui.use(['laypage', 'layer', 'table', 'form'], function() {
+							my_laypage = layui.laypage;
+							my_layer = layui.layer;
+							my_table = layui.table;
+							my_form = layui.form;
+
+							url_post = "{php echo webUrl('', ['do'=>'store/commission','op'=>'post'])}";
+							url_list = "{php echo webUrl('', ['do'=>'store/commission','op'=>'display_table'])}";
+							url_delete = "{php echo webUrl('', ['do'=>'store/commission','op'=>'delete'])}";
+							let url_list_order = "{php echo webUrl('', ['do'=>'store/commission', 'op'=>'order_com'])}";
+							let url_downline = "{php echo webUrl('', ['do'=>'store/commission', 'op'=>'downline'])}";
+
+							table_list = my_table.render({
+								elem: '#superior-table'
+								, toolbar: '#toolbar'
+								, even: false
+								, url: url_list
+								, cols: [[
+									// type: 'numbers',
+									// {type: 'checkbox'}
+									{field: 'id', width: 60, title: 'ID', sort: true}
+									, {field: 'thumb', width: 90, title: '头像', templet: '#thumb'}
+									, {field: 'user_info', title: '用户信息', templet: '#userInfo'}
+									, {field: 'userSuperior', title: '上级', templet: '#userSuperior'}
+									, {field: 'time_add_format', title: '加入时间', sort: true}
+									, {field: 'status', width: 110, title: '状态', templet: '#tpl_status'}
+									, {field: 'userSubordinate', width: 90, title: '下级', templet: '#userSubordinate'}
+									, {field: 'mark', title: '备注', sort: true}
+									, {title: '操作', templet: '#operation'}
+								]]
+								, height: 'full-190'
+								, page: {
+									theme: '#1E9FFF'
+								}
+							});
+
+							//头工具栏事件
+							my_table.on('toolbar(superior-table)', function (obj)
+							{
+								var checkStatus = my_table.checkStatus(obj.config.id);
+								switch (obj.event) {
+									case 'add':
+										window.location.href = url_post;
+										break;
+									case 'delete':
+										var obj_data = checkStatus.data;
+
+										if (obj_data == '') {
+											layer.msg('至少也得选一个吧', {offset: '20%'});
+											return false;
+										}
+										var ids = [];
+										if (obj_data.length > 0) {
+											$.each(obj_data, function (i, e) {
+												ids.push(e.id);
+											});
+
+											funDelete(url_delete, ids, function(rst) {
+												if (rst && rst['code']=='0') {
+													table_list.reload(); // 表格重载
+													layer.msg('成功删除', {
+														offset: '20%',
+													});
+												} else {
+													if (rst) {
+														layer.msg(rst['msg'], {
+															offset: '20%',
+														});
+													} else {
+														layer.msg('未知错误', {
+															offset: '20%',
+														});
+													}
+												}
+											});
+										} else {
+											console.log(obj_data)
+											layer.msg('对象为空', {icon: 2});
+											return false;
+										}
+										break;
+									case 'isAll':
+										layer.msg(checkStatus.isAll ? '全选' : '未全选');
+										break;
+								};
+							});
+
+							//监听行工具事件
+							my_table.on('tool(superior-table)', function (obj)
+							{
+								var obj_data = obj.data;
+								console.log(obj.event)
+
+								if (obj.event === 'del') {
+									var ids = [];
+									ids.push(obj_data.id);
+
+									funDelete(url_delete, ids, function(rst) {
+										if (rst && rst['code']=='0') {
+											obj.del();
+											layer.msg('成功删除', {
+												offset: '20%',
+											});
+										} else {
+											if (rst) {
+												layer.msg(rst['msg'], {
+													offset: '20%',
+												});
+											} else {
+												layer.msg('未知错误', {
+													offset: '20%',
+												});
+											}
+										}
+									});
+
+								} else if (obj.event === 'edit'){
+									window.location.href = url_post + '&id=' + obj_data.id;
+
+								} else if (obj.event === 'editSuperior'){
+									window.location.href = url_post + '&id=' + obj_data.userSuperior.id;
+
+								} else if (obj.event === 'order'){
+									window.location.href = url_list_order + '&id=' + obj_data.id;
+
+								} else if (obj.event === 'downline'){
+									window.location.href = url_downline + '&uid=' + obj_data.id;
+
+								}
+							});
+
+							// 状态
+							my_form.on('switch(status_commission)', function(obj)
+							{
+
+								let _this = this;
+								let $s_status = '0';
+								let $uid = this.dataset.uid;
+
+								if (obj.elem.checked) {
+									$s_status = '1';
+								}
+
+								layer.confirm('确定要调整吗？', {
+									offset: '20%',
+									btn: ['再想想', '调整'],
+									scrollbar: false,
+									closeBtn: 0,
+								}, function (i) {
+									$(_this).prop('checked', (_this.checked ? false : true));
+									my_form.render('checkbox'); //刷新
+
+								layer.close(i);
+								}, function (i) {
+									let $url = "{php echo webUrl('', ['do'=>'store/commission', 'op'=>'status_com'])}";
+
+									$.ajax({
+										type: "POST",
+										url: $url,
+										dataType: 'json',
+										data: {
+											uid: $uid,
+											status: $s_status
+										},
+										success: function (rs) {
+
+											if (rs && rs.code.toString() === '0') {
+												layer.msg('调整成功！', {
+													time: 500
+												});
+											} else {
+												layer.alert(rs.msg, {
+													offset: '20%',
+													area: '500px',
+												});
+
+												$(_this).prop('checked', (_this.checked ? false : true));
+												my_form.render('checkbox'); //刷新
+											}
+										},
+										error: function () {
+											layer.msg('保存过程发生错误，请与管理员联系', {
+												offset: '20%',
+											});
+										}
+									});
+								});
+							});
+						});
+					</script>
+				</div>
+			</div>
+
+
+		{else if $operation == 'post'}
+			<div>
+				<form class="layui-form" action="" method="post" enctype="multipart/form-data">
+					<input type="hidden" name="id" value="{$one['id']}" />
+					<!-- 上级分销商 -->
+					<div class="layui-form-item">
+						<label class="layui-form-label">上级分销商</label>
+						<div class="layui-input-block">
+							{php echo slwl_tpl_form_show_user('agentid', $one_agent);}
+							<div class="layui-form-mid layui-word-aux">
+								<span>修改后， 只有关系链改变, 以往的订单佣金都不会改变,</span>
+								<span>新的订单才按新关系计算佣金 ,请谨慎选择</span>
+							</div>
+						</div>
+					</div>
+					<!-- 昵称 -->
+					<div class="layui-form-item">
+						<label class="layui-form-label">昵称</label>
+						<div class="layui-input-block">
+							<input type="text" name="nicename" readonly class="layui-input readonly" value="{$one['nicename']}">
+						</div>
+					</div>
+					<!-- 姓名 -->
+					<div class="layui-form-item">
+						<label class="layui-form-label">姓名</label>
+						<div class="layui-input-block">
+							<input type="text" name="real_name" class="layui-input" value="{$one['real_name']}" lay-verify="required">
+						</div>
+					</div>
+					<!-- 电话 -->
+					<div class="layui-form-item">
+						<label class="layui-form-label">电话</label>
+						<div class="layui-input-block">
+							<input type="text" name="mobile" class="layui-input" value="{$one['mobile']}" lay-verify="required">
+						</div>
+					</div>
+					<!-- 会员分组 -->
+					<div class="layui-form-item">
+						<label class="layui-form-label">会员分组</label>
+						<div class="layui-input-block">
+							{loop $list_user_label $index $item}
+								<input type="checkbox" name="options[id_user_label][]" value="{$item['id']}" lay-skin="primary"
+									   title="{$item['title']}" {if $item['checked']==1 }checked{/if}>
+							{/loop}
+						</div>
+					</div>
+					<!-- 备注 -->
+					<div class="layui-form-item">
+						<label class="layui-form-label">备注</label>
+						<div class="layui-input-block">
+							<textarea name="mark" placeholder="备注" class="layui-textarea">{$one['mark']}</textarea>
+						</div>
+					</div>
+
+					<div class="layui-form-item">
+						<div class="layui-input-block">
+							<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+							<input type="hidden" name="token" value="{$_W['token']}" />
+						</div>
+					</div>
+				</form>
+
+				<script>
+					layui.use('form', function(){
+						var form = layui.form;
+
+						form.on('submit(save)', function(data){
+							let url = "{php echo webUrl('', ['do'=>'store/commission', 'op'=>'post'])}";
+							var $obj = $(this);
+
+							if (!$obj.hasClass('lock')) {
+								$obj.addClass('lock'); // 不能再点击
+
+								$.ajax({
+									type: "POST",
+									url: url,
+									dataType: 'json',
+									data: data.field,
+									success: function (rs) {
+										if (rs && rs.code.toString() === '0') {
+											layer.msg('保存成功' , {
+												time: 500
+											}, function () {
+												window.location.href = "{php echo webUrl('', ['do'=>'store/commission'])}";
+											});
+										} else {
+											layer.msg(rs.msg, {
+												offset: '20%',
+											});
+										}
+										$obj.removeClass('lock');
+									},
+									error: function () {
+										layer.msg('保存过程发生错误，请与管理员联系', {
+											offset: '20%',
+										});
+										$obj.removeClass('lock');
+									}
+								});
+							}
+
+							return false;
+						});
+					});
+				</script>
+			</div>
+
+
+		{else if $operation == 'set'}
+			<div>
+				<form class="layui-form" action="" method="post" enctype="multipart/form-data">
+					<div class="layui-form-item">
+						<label class="layui-form-label">分销层级</label>
+						<div class="layui-input-block">
+							<input type="radio" name="options[level]" value="0"
+								title="不开启" {if empty($one_set['level']) }checked{/if}>
+							<input type="radio" name="options[level]" value="1"
+								title="一级分销" {if $one_set['level']==1 }checked{/if}>
+							<input type="radio" name="options[level]" value="2"
+								title="二级分销" {if $one_set['level']==2 }checked{/if}>
+							<input type="radio" name="options[level]" value="3"
+								title="三级分销" {if $one_set['level']==3 }checked{/if}>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label">分销返佣</label>
+						<div class="layui-input-inline w400">
+							<div class="input-group form-group">
+								<span class="input-group-addon pad-trim-10">一级分销</span>
+								<input type="number" class="layui-input center" name="options[commission1_rate]"
+									min="1" oninput="if(value.length>8)value=value.slice(0,8)"
+									value="{$one_set['commission1_rate']}"/>
+								<span class="input-group-addon pad-trim-10">%</span>
+								<input type="number" class="layui-input center" name="options[commission1_fixed]"
+									min="1" oninput="if(value.length>8)value=value.slice(0,8)"
+									value="{$one_set['commission1_fixed']}"/>
+								<span class="input-group-addon pad-trim-10">元</span>
+							</div>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label"></label>
+						<div class="layui-input-inline w400">
+							<div class="input-group form-group">
+								<span class="input-group-addon pad-trim-10">二级分销</span>
+								<input type="number" class="layui-input center" name="options[commission2_rate]"
+									min="1" oninput="if(value.length>8)value=value.slice(0,8)"
+									value="{$one_set['commission2_rate']}"/>
+								<span class="input-group-addon pad-trim-10">%</span>
+								<input type="number" class="layui-input center" name="options[commission2_fixed]"
+									min="1" oninput="if(value.length>8)value=value.slice(0,8)"
+									value="{$one_set['commission2_fixed']}"/>
+								<span class="input-group-addon pad-trim-10">元</span>
+							</div>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label"></label>
+						<div class="layui-input-inline w400">
+							<div class="input-group form-group">
+								<span class="input-group-addon pad-trim-10">三级分销</span>
+								<input type="number" class="layui-input center" name="options[commission3_rate]"
+									min="1" oninput="if(value.length>8)value=value.slice(0,8)"
+									value="{$one_set['commission3_rate']}"/>
+								<span class="input-group-addon pad-trim-10">%</span>
+								<input type="number" class="layui-input center" name="options[commission3_fixed]"
+									min="1" oninput="if(value.length>8)value=value.slice(0,8)"
+									value="{$one_set['commission3_fixed']}"/>
+								<span class="input-group-addon pad-trim-10">元</span>
+							</div>
+							<div class="layui-form-mid layui-word-aux">如果比例为空，则使用固定规则，如果都为空则无分销佣金</div>
+						</div>
+					</div>
+					<!-- <div class="layui-form-item">
+						<label class="layui-form-label">成为分销商条件</label>
+						<div class="layui-input-block">
+							<input type="radio" name="options[become]" value="0"
+								title="无条件" {if empty($one_set['become']) }checked{/if}>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label"></label>
+						<div class="layui-input-block">
+							<div>
+								<input type="radio" name="options[become_check]" value="0"
+									title="需要" {if empty($one_set['become_check']) }checked{/if}>
+								<input type="radio" name="options[become_check]" value="1"
+									title="不需要" {if $one_set['become_check']==1 }checked{/if}>
+							</div>
+							<div class="layui-form-mid layui-word-aux">是否需要审核</div>
+						</div>
+					</div> -->
+					<div class="layui-form-item">
+						<label class="layui-form-label">结算天数</label>
+						<div class="layui-input-block">
+							<input type="number" name="options[settledays]" class="layui-input"
+								min="1" oninput="if(value.length>8)value=value.slice(0,8)"
+								value="{$one_set['settledays']}">
+							<div class="layui-form-mid layui-word-aux">
+								<div>当订单完成后的n天后，佣金才能申请提现,设置0或空，订单完成就可以结算</div>
+								<div>建议设置的结算天数大于【设置-交易设置-退款申请】中设置的天数，否则会出现佣金结算后商品被维权的情况</div>
+							</div>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label">最小提现金额</label>
+						<div class="layui-input-block">
+							<input type="number" name="options[withdraw_min]" class="layui-input"
+								min="1" oninput="if(value.length>8)value=value.slice(0,8)"
+								value="{$one_set['withdraw_min']}">
+							<div class="layui-form-mid layui-word-aux">
+								<div>单位元</div>
+							</div>
+						</div>
+					</div>
+
+
+					<div class="layui-form-item">
+						<div class="layui-input-block">
+							<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+							<input type="hidden" name="token" value="{$_W['token']}" />
+						</div>
+					</div>
+				</form>
+
+				<script>
+					layui.use('form', function(){
+						var form = layui.form;
+
+						form.on('submit(save)', function(data){
+							let url = "{php echo webUrl('',['do'=>'store/commission','op'=>'set'])}";
+							var $obj = $(this);
+
+							if (!$obj.hasClass('lock')) {
+								$obj.addClass('lock'); // 不能再点击
+
+								$.ajax({
+									type: "POST",
+									url: url,
+									dataType: 'json',
+									data: data.field,
+									success: function (rs) {
+										if (rs && rs.code.toString() === '0') {
+											layer.msg('保存成功' , {
+												time: 500
+											}, function () {
+												window.location.href = "{php echo webUrl('',['do'=>'store/commission','op'=>'set'])}";
+											});
+										} else {
+											layer.msg(rs.msg, {
+												offset: '20%',
+											});
+										}
+										$obj.removeClass('lock');
+									},
+									error: function () {
+										layer.msg('保存过程发生错误，请与管理员联系', {
+											offset: '20%',
+										});
+										$obj.removeClass('lock');
+									}
+								});
+							}
+
+							return false;
+						});
+					});
+				</script>
+			</div>
+
+
+		{else if $operation == 'order_com'}
+			<div>
+				<div class="layui-form">
+					<div class="box-tools">
+						<div class="box-search">
+							<div class="layui-input-inline">
+								<input type="text" name="keyword" value="{$keyword}" class="layui-input" placeholder="订单号、姓名、电话">
+							</div>
+							<div class="layui-input-inline">
+								<button class="layui-btn" lay-submit lay-filter="table-search" id="table-search">搜索</button>
+							</div>
+						</div>
+					</div>
+					<div class="box-list-img">
+						<table id="sl-table" lay-filter="sl-table"></table>
+					</div>
+				</div>
+
+				<div class="script">
+					<script type="text/html" id="order">
+						<div class="table-multi-line">
+							<span>订单：</span>
+							<span>{{d.ordersn}}</span>
+						</div>
+						<div class="table-multi-line">
+							<span>姓名：</span>
+							<span>{{d.address.realname}}</span>
+						</div>
+						<div class="table-multi-line">
+							<span>电话：</span>
+							<span>{{d.address.mobile}}</span>
+						</div>
+					</script>
+					<script type="text/html" id="status">
+						<div class="box-status">
+							{{d.status_format}}
+						</div>
+					</script>
+					<script type="text/html" id="money">
+						<div class="table-multi-line">
+							<span>总价(元)：</span>
+							<span>{{d.price_format}}</span>
+						</div>
+						<div class="table-multi-line">
+							<span>下单时间：</span>
+							<span>{{d.addtime}}</span>
+						</div>
+					</script>
+					<script>
+						layui.use(['laypage', 'layer', 'table', 'form'], function() {
+							my_laypage = layui.laypage;
+							my_layer = layui.layer;
+							my_table = layui.table;
+							my_form = layui.form;
+
+							url_list = "{php echo webUrl('',['do'=>'store/commission','op'=>'order_com_list'])}";
+
+							table_list = my_table.render({
+								elem: '#sl-table'
+								, toolbar: '#toolbar'
+								, even: false
+								, url: url_list
+								, cols: [[
+									// type: 'numbers',
+									// {type: 'checkbox'}
+									{field: 'id', width: 60, title: 'ID', sort: true}
+									, {field: 'order', title: '订单信息', sort: true, templet: '#order'}
+									, {field: 'money', title: '金钱', sort: true, templet: '#money'}
+									, {field: 'status', title: '状态', width: 80, sort: true, templet: '#status'}
+								]]
+								, height: 'full-190'
+								, page: {
+									theme: '#1E9FFF'
+								}
+							});
+						});
+					</script>
+				</div>
+			</div>
+
+
+		{else if $operation == 'downline'}
+			<div>
+				<div class="layui-form">
+					<div class="box-tools">
+						<div class="box-search">
+							<form action="{php echo webUrl('', ['do'=>'store/commission'])}" method="post">
+								<div class="layui-input-inline">
+									<input type="text" name="keyword" value="{$keyword}" class="layui-input" placeholder="昵称">
+								</div>
+								<div class="layui-input-inline">
+									<button class="layui-btn" lay-submit lay-filter="table-search" id="table-search">搜索</button>
+								</div>
+							</form>
+						</div>
+					</div>
+					<div class="box-list-img">
+						<table id="superior-table" lay-filter="superior-table"></table>
+					</div>
+				</div>
+
+				<div class="script">
+					<script type="text/html" id="thumb">
+						<div class="box-table-img">
+							<img src="{{d.avatar_url}}" data-url="{{d.avatar_url}}"
+								onerror="this.src='{MODULE_URL}template/public/image/nopic.png'">
+						</div>
+					</script>
+					<script type="text/html" id="userInfo">
+						<div class="table-multi-line"><span>昵称：</span>
+							<a class="color-link-main" href="javascript:;" lay-event="edit">{{d.nicename_format}}</a>
+						</div>
+						<div class="table-multi-line"><span>姓名：{{d.real_name}}</span></div>
+						<div class="table-multi-line"><span>电话：{{d.tel_format}}</span></div>
+					</script>
+					<script type="text/html" id="userSuperior">
+						<div class="box-avatar">
+							<img src="{{d.userSuperior.avatar_url}}" data-url="{{d.userSuperior.avatar_url}}"
+								onerror="this.src='{MODULE_URL}template/public/image/nopic.png'">
+							<span class="line"></span>
+							{{# if (d.userSuperior.id === 0) { }}
+								<span class="text">{{d.userSuperior.nicename}}</span>
+							{{# } else { }}
+								<a class="text color-link-main" href="javascript:;" lay-event="editSuperior">
+									<span>{{d.userSuperior.nicename}}</span>
+								</a>
+							{{# } }}
+						</div>
+					</script>
+					<script type="text/html" id="tpl_status">
+						<input type="checkbox" name="status_commission" lay-skin="switch" lay-filter="status_commission"
+							lay-text="已审核|未审核" data-uid="{{d.id}}"
+							{{# if(d.status_commission == 1){ }}
+								checked
+							{{# } }} >
+					</script>
+					<script type="text/html" id="userSubordinate">
+						{{# if (d.count_downline === '0') { }}
+							<span>{{d.count_downline}}</span> <span>人</span>
+						{{# } else { }}
+							<a class="color-link-main" href="javascript:;">
+								<span>{{d.count_downline}}</span> <span>人</span>
+							</a>
+						{{# } }}
+					</script>
+					<script type="text/html" id="operation">
+						<div style="font-size: 0;">
+							<a href="javascript:;" class="layui-btn layui-btn-sm" lay-event="edit">编辑</a>
+							<a href="javascript:;" class="layui-btn layui-btn-sm" lay-event="order">订单</a>
+						</div>
+					</script>
+					<script>
+						layui.use(['laypage', 'layer', 'table', 'form'], function() {
+							my_laypage = layui.laypage;
+							my_layer = layui.layer;
+							my_table = layui.table;
+							my_form = layui.form;
+
+							url_post = "{php echo webUrl('',['do'=>'store/commission','op'=>'post'])}";
+							url_list = "{php echo webUrl('',['do'=>'store/commission','op'=>'downline_table','uid'=>$uid])}";
+							url_delete = "{php echo webUrl('',['do'=>'store/commission','op'=>'delete'])}";
+							let url_list_order = "{php echo webUrl('',['do'=>'store/commission','op'=>'order_com'])}";
+
+							table_list = my_table.render({
+								elem: '#superior-table'
+								, toolbar: '#toolbar'
+								, even: false
+								, url: url_list
+								, cols: [[
+									// type: 'numbers',
+									// {type: 'checkbox'}
+									{field: 'id', width: 60, title: 'ID', sort: true}
+									, {field: 'thumb', width: 90, title: '头像', templet: '#thumb'}
+									, {field: 'user_info', title: '用户信息', templet: '#userInfo'}
+									, {field: 'userSuperior', title: '上级', templet: '#userSuperior'}
+									, {field: 'time_add_format', title: '加入时间', sort: true}
+									, {field: 'status', title: '状态', templet: '#tpl_status'}
+									, {field: 'userSubordinate', title: '下级', templet: '#userSubordinate'}
+									, {field: 'mark', title: '备注', sort: true}
+									, {title: '操作', templet: '#operation'}
+								]]
+								, height: 'full-190'
+								, page: {
+									theme: '#1E9FFF'
+								}
+							});
+
+							//头工具栏事件
+							my_table.on('toolbar(superior-table)', function (obj)
+							{
+								var checkStatus = my_table.checkStatus(obj.config.id);
+								switch (obj.event) {
+									case 'add':
+										window.location.href = url_post;
+										break;
+									case 'delete':
+										var obj_data = checkStatus.data;
+
+										if (obj_data == '') {
+											layer.msg('至少也得选一个吧', {offset: '20%'});
+											return false;
+										}
+										var ids = [];
+										if (obj_data.length > 0) {
+											$.each(obj_data, function (i, e) {
+												ids.push(e.id);
+											});
+
+											funDelete(url_delete, ids, function(rst) {
+												if (rst && rst['code']=='0') {
+													table_list.reload(); // 表格重载
+													layer.msg('成功删除', {
+														offset: '20%',
+													});
+												} else {
+													if (rst) {
+														layer.msg(rst['msg'], {
+															offset: '20%',
+														});
+													} else {
+														layer.msg('未知错误', {
+															offset: '20%',
+														});
+													}
+												}
+											});
+										} else {
+											console.log(obj_data)
+											layer.msg('对象为空', {icon: 2});
+											return false;
+										}
+										break;
+									case 'isAll':
+										layer.msg(checkStatus.isAll ? '全选' : '未全选');
+										break;
+								};
+							});
+
+							//监听行工具事件
+							my_table.on('tool(superior-table)', function (obj)
+							{
+								var obj_data = obj.data;
+								console.log(obj.event)
+
+								if (obj.event === 'del') {
+									var ids = [];
+									ids.push(obj_data.id);
+
+									funDelete(url_delete, ids, function(rst) {
+										if (rst && rst['code']=='0') {
+											obj.del();
+											layer.msg('成功删除', {
+												offset: '20%',
+											});
+										} else {
+											if (rst) {
+												layer.msg(rst['msg'], {
+													offset: '20%',
+												});
+											} else {
+												layer.msg('未知错误', {
+													offset: '20%',
+												});
+											}
+										}
+									});
+
+								} else if (obj.event === 'edit'){
+									window.location.href = url_post + '&id=' + obj_data.id;
+
+								} else if (obj.event === 'editSuperior'){
+									window.location.href = url_post + '&id=' + obj_data.userSuperior.id;
+
+								} else if (obj.event === 'order'){
+									window.location.href = url_list_order + '&id=' + obj_data.id;
+
+								}
+							});
+
+							// 状态
+							my_form.on('switch(status_commission)', function(obj)
+							{
+								let _this = this;
+								let $s_status = '0';
+								let $uid = this.dataset.uid;
+
+								if (obj.elem.checked) {
+									$s_status = '1';
+								}
+
+								layer.confirm('确定要调整吗？', {
+									offset: '20%',
+									btn: ['再想想', '调整'],
+									scrollbar: false,
+									closeBtn: 0,
+								}, function (i) {
+									$(_this).prop('checked', (_this.checked ? false : true));
+									my_form.render('checkbox'); //刷新
+
+								layer.close(i);
+								}, function (i) {
+									let $url = "{php echo webUrl('', ['do'=>'store/commission', 'op'=>'status_com'])}";
+
+									$.ajax({
+										type: "POST",
+										url: $url,
+										dataType: 'json',
+										data: {
+											uid: $uid,
+											status: $s_status
+										},
+										success: function (rs) {
+											console.error(rs);
+											if (rs && rs.code.toString() === '0') {
+												layer.msg('调整成功！', {
+													time: 500
+												});
+											} else {
+												layer.alert(rs.msg, {
+													offset: '20%',
+													area: '500px',
+												});
+
+												$(_this).prop('checked', (_this.checked ? false : true));
+												my_form.render('checkbox'); //刷新
+											}
+										},
+										error: function () {
+											layer.msg('保存过程发生错误，请与管理员联系', {
+												offset: '20%',
+											});
+										}
+									});
+								});
+							});
+						});
+					</script>
+				</div>
+			</div>
+
+
+		{else if $operation == 'brokerage'}
+			<div>
+				<div class="layui-form">
+					<div class="box-tools">
+						<div class="box-search">
+							<div class="layui-input-inline">
+								<input type="text" name="keyword" value="{$keyword}" class="layui-input" placeholder="标题">
+							</div>
+							<div class="layui-input-inline">
+								<button class="layui-btn" lay-submit lay-filter="table-search" id="table-search">搜索</button>
+							</div>
+						</div>
+					</div>
+					<div class="box-list-img">
+						<table id="sl-table" lay-filter="sl-table"></table>
+					</div>
+				</div>
+
+				<div class="script">
+					<script type="text/html" id="toolbar">
+						<!-- <div class="layui-btn-container">
+							<button class="layui-btn layui-btn-sm" lay-event="add">添加</button>
+							<button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delete">批量删除</button>
+						</div> -->
+					</script>
+					<script type="text/html" id="thumb">
+						<div class="box-table-img">
+							<img src="{{d.avatar}}" data-url="{{d.avatar}}"
+								onerror="this.src='{MODULE_URL}template/public/image/nopic.png'">
+						</div>
+					</script>
+					<script type="text/html" id="operation">
+						<a href="javascript:;" class="layui-btn layui-btn-sm" lay-event="edit">编辑</a>
+						<a href="javascript:;" class="layui-btn layui-btn-sm layui-btn-danger" lay-event="del">删除</a>
+					</script>
+					<script>
+						layui.use(['laypage', 'layer', 'table', 'form'], function() {
+							my_laypage = layui.laypage;
+							my_layer = layui.layer;
+							my_table = layui.table;
+							my_form = layui.form;
+
+							url_post = "{php echo webUrl('',['do'=>'store/commission','op' =>'post_brokerage'])}";
+							url_list = "{php echo webUrl('',['do'=>'store/commission','op'=>'brokerage_table'])}";
+							url_delete = "{php echo webUrl('',['do'=>'store/commission','op'=>'delete'])}";
+
+							table_list = my_table.render({
+								elem: '#sl-table'
+								, toolbar: '#toolbar'
+								, even: false
+								, url: url_list
+								, cols: [[
+									// type: 'numbers',
+									// {type: 'checkbox'}
+									{field: 'id', width: 60, title: 'ID', sort: true}
+									, {field: 'thumb', title: '图片', templet: '#thumb'}
+									, {field: 'name', title: '姓名', sort: true}
+									, {field: 'money_format', title: '提现金额', sort: true}
+									, {field: 'status_format', title: '状态', sort: true}
+									, {field: 'mark', title: '备注', sort: true}
+									, {title: '操作', templet: '#operation'}
+								]]
+								, height: 'full-190'
+								, page: {
+									theme: '#1E9FFF'
+								}
+							});
+						});
+					</script>
+				</div>
+			</div>
+
+
+		{else if $operation == 'post_brokerage'}
+			<div>
+				<form class="layui-form" action="" method="post" enctype="multipart/form-data">
+					<input type="hidden" name="id" value="{$one['id']}" />
+					<!-- 状态 -->
+					<div class="layui-form-item">
+						<label class="layui-form-label">状态</label>
+						<div class="layui-input-block">
+							<select name="status">
+								<option value="1" {if empty($one['status']) || $one['status'] == '1'}selected{/if}>通过申请</option>
+								<option value="2" {if $one['status'] == '2'}selected{/if}>拒绝申请</option>
+								<option value="3" {if $one['status'] == '3'}selected{/if}>已打款</option>
+								<option value="4" {if $one['status'] == '4'}selected{/if}>拒绝打款</option>
+							</select>
+							<div class="layui-form-mid layui-word-aux">通过申请需要手动打款这里只是备注操作</div>
+						</div>
+					</div>
+					<!-- 备注 -->
+					<div class="layui-form-item">
+						<label class="layui-form-label">备注</label>
+						<div class="layui-input-block">
+							<textarea name="mark" placeholder="备注" class="layui-textarea">{$one['mark']}</textarea>
+						</div>
+					</div>
+
+					<div class="layui-form-item">
+						<div class="layui-input-block">
+							<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+							<input type="hidden" name="token" value="{$_W['token']}" />
+						</div>
+					</div>
+				</form>
+
+				<script>
+					layui.use('form', function(){
+						var form = layui.form;
+
+						form.on('submit(save)', function(data){
+							let url = "{php echo webUrl('', ['do'=>'store/commission', 'op'=>'post_brokerage'])}";
+							var $obj = $(this);
+
+							if (!$obj.hasClass('lock')) {
+								$obj.addClass('lock'); // 不能再点击
+
+								$.ajax({
+									type: "POST",
+									url: url,
+									dataType: 'json',
+									data: data.field,
+									success: function (rs) {
+										if (rs && rs.code.toString() === '0') {
+											layer.msg('保存成功' , {
+												time: 500
+											}, function () {
+												window.location.href = "{php echo webUrl('', ['do'=>'store/commission','op'=>'brokerage'])}";
+											});
+										} else {
+											layer.msg(rs.msg, {
+												offset: '20%',
+											});
+										}
+										$obj.removeClass('lock');
+									},
+									error: function () {
+										layer.msg('保存过程发生错误，请与管理员联系', {
+											offset: '20%',
+										});
+										$obj.removeClass('lock');
+									}
+								});
+							}
+
+							return false;
+						});
+					});
+				</script>
+			</div>
+
+
+		{/if}
+		</div>
+	</div>
+
+	{template 'public/copyright'}
+</div>
+
+	{if $operation == 'display'}
+		<div id="qrcode" class="box-code"><img src=""></div>
+	{/if}
+
+
+{template 'public/footer'}
+</body>
+</html>

@@ -1,0 +1,152 @@
+{include file="common/head"}
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/mobile/static/css/i-list.css">
+<!--<link rel="stylesheet" href="__ROOT__/tpl/peixun/mobile/static/css/fsgallery.css">-->
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/mobile/static/css/touchTouch.css">
+
+<!--<script src="__ROOT__/tpl/peixun/mobile/static/js/fs_forse.js"></script>-->
+<script src="__ROOT__/tpl/peixun/mobile/static/js/jquery-1.10.2.js"></script>
+<script src="__ROOT__/tpl/peixun/mobile/static/js/touchTouch.jquery.js"></script>
+
+<div class="my-gallery">
+    <ul class="thumbnails" id="gallery">
+        {notempty name='img_list'}
+        {volist name='img_list' id='v'}
+        <li id="img_{$v['id']}" class="span3">
+            <a href="{$v['url']}">
+                <img src="{$v['url']}" alt="" />
+            </a>
+            <span class="favorite" data-collid="{$vo['id']}"><i class="btn fn-shoucang1"></i></span>
+        </li>
+        {/volist}
+        {else/}
+        <div class="not-comment not" id="not-comment">当前相册暂无图片 ~</div>
+        {/notempty}
+    </ul>
+</div>
+<a href="{:url('member/addimges',array('atlasid'=>$atlasid))}" class="upload"><i class="btn fn-shangchuan1"></i>上传</a>
+
+    <script type="text/javascript">
+        $(function(){
+
+            $(".span3 a").touchTouch();
+
+            /*设置图片宽高*/
+            var _height = $(".my-gallery .span3").width();
+            $(".my-gallery .span3").height(_height);
+            $(".my-gallery .span3").css("line-height",_height +"px");
+
+            $(".fn-shanchu").click(function () {
+                var _this=$(this);
+                layer.open({
+                    content:"您确定要删除这张图片吗？",
+                    btn:['确定','取消'],
+                    yes:function () {
+                        var respData={aId:_this.data('atlas_id'),iId:_this.data('id')};
+                        console.log(respData);
+                        if(respData.aId<=0 || respData.iId<=0) return false;
+
+                        $.post("{:url('api/deleteMyselfImg')}",respData,function(resp){
+                            console.log(resp);
+                            if(resp.statusCode==0){
+                                layer.open({skin:'msg',time:2,content:'删除成功'});
+                                $("#img_"+_this.data('id')).hide(500,function(){
+                                    $(this).remove();
+                                })
+                            }else{
+                                layer.open({skin:'msg',time:2,content:'删除失败!'+resp.message});
+                            }
+                        },'json');
+                    }
+                });
+
+                event.stopPropagation()
+            });
+
+        });
+
+
+    </script>
+
+
+</div>
+
+{include file="common/footer"}
+<script>
+    var status = 1;
+    var page  = 0;
+    var atlas_id = "{$atlasid}";
+    $(window).scroll(function(){
+        var srollPos = $(window).scrollTop();
+        var data = {
+            "page" : page ,
+            "type" : 'image',
+            "offset" : 20,
+            "where" :  'atlas_id = '+atlas_id,
+        };
+        if(srollPos+$(window).height() > $(document).height() - 80){
+            if(status == 1) {
+                status = 0;
+                $.ajax({
+                    type: "POST",
+                    data: data,
+                    dataType: "JSON",
+                    url: "{:url('Api/moreData')}",
+                    success: function (data) {
+                        if(data.resultCode == 0){
+                            var datas = data.data.list;
+                            if(datas){
+                                var html = '';
+                                datas.forEach(function(item) {
+                                    html += '<figure id="img_'+item['id']+'" itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">';
+                                    html += '    <a href="'+item['url']+'" itemprop="contentUrl" data-size="1024x1024">';
+                                    html += '    <img src="'+item['url']+'" itemprop="thumbnail" alt="Image description"/>';
+                                    html += '    </a>';
+                                    html += '    <span class="btn fn-shanchu" data-id="'+item['id']+'" data-atlas_id="'+item['atlas_id']+'" ></span>';
+                                    html += '</figure>';
+                                    html += '<li>';
+                                });
+                                $('#not-comment').remove();
+                                $('.my-gallery').append(html);
+                                var _height = $("figure").width();
+                                $("figure").height(_height);
+                                $("figure").css("line-height",_height +"px");
+                                $(".fn-shanchu").click(function () {
+                                    var _this=$(this);
+                                    layer.open({
+                                        content:"您确定要删除这张图片吗？",
+                                        btn:['确定','取消'],
+                                        yes:function () {
+                                            var respData={aId:_this.data('atlas_id'),iId:_this.data('id')};
+                                            console.log(respData);
+                                            if(respData.aId<=0 || respData.iId<=0) return false;
+
+                                            $.post("{:url('api/deleteMyselfImg')}",respData,function(resp){
+                                                console.log(resp);
+                                                if(resp.statusCode==0){
+                                                    layer.open({skin:'msg',time:2,content:'删除成功'});
+                                                    $("#img_"+_this.data('id')).hide(500,function(){
+                                                        $(this).remove();
+                                                    })
+                                                }else{
+                                                    layer.open({skin:'msg',time:2,content:'删除失败!'+resp.message});
+                                                }
+                                            },'json');
+                                        }
+                                    });
+
+                                    event.stopPropagation()
+                                });
+                                page++;
+                                status = 1;
+                            }else{
+                                console.log('没有更多数据了！');
+                            }
+                        }else{
+                            console.log('没有更多数据了！');
+                        }
+                    }
+                });
+            }
+        }
+    })
+</script>

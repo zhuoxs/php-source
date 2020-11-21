@@ -1,0 +1,2 @@
+<?php
+ namespace app\api\validate; class Share extends BaseValidate { protected $rule = array("\x6e\141\x6d\145" => "\x72\x65\x71\165\151\162\x65", "\160\x68\x6f\x6e\x65" => "\162\145\161\165\151\x72\145"); protected $message = array("\156\141\155\145" => "\350\257\xb7\350\xbe\223\xe5\205\xa5\345\xa7\x93\345\x90\215", "\160\150\157\156\145" => "\xe8\xaf\xb7\xe8\xbe\x93\xe5\205\245\346\211\213\xe6\x9c\272\xe5\x8f\267\347\xa0\x81"); protected $scene = array("\163\x75\x62\155\x69\x74" => array("\156\141\x6d\x65", "\x70\150\x6f\x6e\x65")); }

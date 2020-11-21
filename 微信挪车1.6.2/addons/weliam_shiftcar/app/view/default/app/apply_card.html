@@ -1,0 +1,133 @@
+{php include wl_template('common/header');}
+<div class="page-group">
+    <div class="page page-current" id="page-apply_card">
+    	<header class="bar bar-nav">
+			<h1 class="title">申请挪车卡</h1>
+		</header>
+		<div class="content native-scroll">
+		  <div class="list-block" style="margin-bottom: 15px;">
+		  	<div class="content-block-title" style="text-align: center;">请认真填写信息，以免无法收到挪车卡</div>
+		    <ul>
+		      <li>
+		        <div class="item-content">
+		          <div class="item-inner">
+		            <div class="item-title label">姓名</div>
+		            <div class="item-input">
+		              <input type="text" placeholder="请输入您的姓名" id="username" value="{$order['name']}">
+		            </div>
+		          </div>
+		        </div>
+		      </li>
+		      <li>
+		        <div class="item-content">
+		          <div class="item-inner">
+		            <div class="item-title label">电话</div>
+		            <div class="item-input">
+		              <input type="tel" placeholder="请输入您的电话号码" id="Telephone" value="{$order['mobile']}">
+		            </div>
+		          </div>
+		        </div>
+		      </li>
+		      <li>
+		        <div class="item-content">
+		          <div class="item-inner">
+		            <div class="item-title label">地区</div>
+		            <div class="item-input">
+		              <input type="text" id='city-picker' value="{if $order['area']}{$order['area']}{else}{$_W['wlsetting']['apply']['defaultarea']}{/if}" />
+		            </div>
+		          </div>
+		        </div>
+		      </li>
+		      <li>
+		        <div class="item-content">
+		          <div class="item-inner">
+		            <div class="item-title label">详细地址</div>
+		            <div class="item-input">
+		              <input type="text" placeholder="请输入您的详细地址" id="detaiaddre" value="{$order['address']}"/>
+		            </div>
+		          </div>
+		        </div>
+		      </li>
+		      	<input type="hidden" class="youfei" value="{$postage}" />
+		  	</div>
+			<div class="nckinfo">
+				{if $times != 0}<p><i style="margin-right: 5px;font-size: 20px;" class="icon iconfont icon-friend"></i>每人最多申请<span>{$times}</span>张挪车卡。</p>{/if}
+				{if $postage != 0}<p><i style="margin-right: 5px;font-size: 20px;" class="icon iconfont icon-recharge"></i>每张挪车卡收取<span>{$postage}</span>元邮费。</p>{/if}
+				{if $nckexplain != ''}<p><i style="margin-right: 5px;font-size: 20px;" class="icon iconfont icon-info"></i>{$nckexplain}</p>{/if}
+			</div>
+			<style>
+				.nckinfo{padding-left: 20px;padding-right: 20px;}
+				.nckinfo p{margin: 0;}
+				.nckinfo p span{color: orangered;}
+			</style>
+			<div class="content-block" style="margin-top: 15px;">
+			    <div class="row">
+			      <div class="col-50" style="width: 90%;margin-left:7%;"><a href="#" class="button button-big button-fill button-success">提交</a></div>
+			    </div>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	$(function() {
+		$("#city-picker").cityPicker({
+		    toolbarTemplate: '<header class="bar bar-nav">\
+		    <button class="button button-link pull-right close-picker">确定</button>\
+		    <h1 class="title">选择地址</h1>\
+		    </header>'
+		  });
+		$.init();
+	});
+	$(".col-50").click(function(){
+		var name = $("#username").val();
+		var phoneumber = $("#Telephone").val();
+		var address = $("#city-picker").val();
+		var deaddress = $("#detaiaddre").val();
+		if(!name){
+		 	$.toast("请输入姓名");
+		 	return false;
+		}
+		if(!deaddress){
+		 	$.toast("请输入详细地址");
+		 	return false;
+		}
+		if(!address){
+		 	$.toast("请选择地区");
+		 	return false;
+		}
+		var reg = /^0?1[3|4|5|7|8][0-9]\d{8}$/;
+		if(!reg.test(phoneumber)){     
+			$.toast("请输入正确的手机号");
+			return false;
+		}
+		var postage = $('.youfei').val();
+		$.post("{php echo app_url('app/apply/times');}",{},function(d){
+			if (d.result == 1) {
+				$.post("{php echo app_url('app/apply/post',array('id' => $order['id']));}",{name:name,phoneumber:phoneumber,address:address,deaddress:deaddress,postage:postage},function(d){
+				//	alert(JSON.stringify(d));
+					if(d.result == 1){
+						if (postage != 0) {
+							$.alert('正在前往支付页面', function () {
+					        location.href = "{php echo app_url('app/apply/pay');}&orderno="+d.orderno;
+						});
+						}else{
+							$.alert('申请成功,请耐心等待发货', function () {
+					        location.href = "{php echo app_url('app/apply/list')}";
+						});
+						}
+					}else if(d.result == 2){
+						$.toast(d.msg);
+					}else{
+						$.toast("未知错误");
+					}
+				},"json");
+			}else{
+				$.toast("您申请次数已超过最大次数");
+			}
+		},'json');
+		
+		
+		
+	})
+</script>
+{php include wl_template('common/footer');}

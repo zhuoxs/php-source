@@ -1,0 +1,155 @@
+{template 'common/header'}
+<div class="we7-page-title"> &nbsp; </div>
+<ul class="we7-page-tab">
+<li><a href="{php echo $this->createWebUrl('supreadily')}">随手拍</a></li>
+<li class="active"><a href="{php echo $this->createWebUrl('supproposal')}">建言献策</a></li>
+<li><a href="{php echo $this->createWebUrl('supmailbox')}">书记信箱</a></li>
+<li><a href="{php echo $this->createWebUrl('supreport')}">匿名举报</a></li>
+</ul>
+
+<div class="btn-group we7-btn-group we7-margin-bottom">
+<a class="btn {php echo $op=='display'?'active':'';}" href="{php echo $this->createWebUrl('supproposal')}">建言献策管理</a>
+{if !empty($id)}
+<a class="btn {php echo $op=='post'?'active':'';}" href="{php echo $this->createWebUrl('supproposal',array('op'=>'post','id'=>$id))}">建言献策详情</a>
+{/if}
+</div>
+
+{if $op == 'display'}
+<table class="table we7-table table-hover vertical-middle">
+    <thead class="navbar-inner">
+        <tr>
+            <th style="width:10%;">ID</th>
+            <th style="width:40%;">主题</th>
+            <th style="width:10%;">状态</th>
+            <th style="width:20%;">时间</th>
+            <th style="width:20%;text-align:right;">操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {loop $list $row}
+        <tr>
+            <td><input type="checkbox" name="check" value="{$row['id']}"> {$row['id']}</td>
+            <td>{$row['title']}</td>
+            <td>
+                {if $row['status']==1}
+                <span class="label label-primary">待回复</span>
+                {elseif $row['status']==2}
+                <span class="label label-success">已回复</span>
+                {/if}
+            </td>
+            <td>{php echo date("Y-m-d H:i",$row['createtime']);}</td>
+            <td style="text-align:right;">
+
+                <a class="btn btn-primary btn-sm" href="{php echo $this->createWebUrl('supproposal',array('op'=>'post','id'=>$row['id']));}"><i class="fa fa-edit"></i> 详情</a>
+
+                <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('supproposal',array('op'=>'delete','id'=>$row['id']));}"  onclick="return confirm('删除后不可恢复,确定要删除吗?')"><i class="fa fa-times"></i> 删除</a>
+            </td>
+        </tr>
+        {/loop}
+        <tr>
+            <td colspan="5">
+              <span class="btn btn-success btn-sm checkall" id="checkall"><i class="fa fa-check-square-o"></i> 全选</span>
+              <span class="btn btn-success btn-sm uncheckall" id="uncheckall"><i class="fa fa-square-o"></i> 全不选</span>
+              <input type="button" class="btn btn-primary btn-sm deleteall" id="deleteall" name="deleteall" value="删除选择的" />
+            </td>
+        </tr>
+    </tbody>
+</table>
+<div class="text-right">{$pager}</div>
+<script>
+    $(function(){
+        $('.checkall').bind('click',function(){
+            $("input[name='check']").each(function(){
+               $(this).prop("checked","checked");
+            });
+        });
+        $('.uncheckall').bind('click',function(){
+            $("input[name='check']").each(function(){
+               $(this).prop("checked",false);
+            });
+        });
+
+        $('#deleteall').click(function(){
+            var check = $("input:checked");
+            if(check.length<1){
+                alert("请选择要删除的记录!");
+                return false;
+            }
+            if(confirm("确认要删除选择的记录?")){
+                var id = new Array();
+                check.each(function(i){ id[i] = $(this).val(); });
+                $.post("<?php echo $this->createWebUrl('supproposal',array('op'=>'deleteall')); ?>",{idArr:id},         
+                    function(data){
+                        if(data == 'error'){
+                           alert('删除失败！');
+                           location.reload();
+                        }else{
+                           alert('删除成功！');
+                           location.reload();
+                        }
+                    }
+                );
+            }
+        });
+    });
+</script>
+{elseif $op == 'post'}
+<form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+<input type="hidden" name="c" value="site" />
+<input type="hidden" name="a" value="entry" />
+<input type="hidden" name="m" value="vlinke_cparty" />
+<input type="hidden" name="do" value="supproposal" />
+<input type="hidden" name="op" value="post" />
+<input type="hidden" name="id" value="{$id}" />
+<div class="panel panel-default">
+    <div class="panel-heading">
+        建言献策信息
+    </div>
+    <div class="panel-body">
+        <div class="form-group">
+            <label class="col-sm-2 control-label">主题</label>
+            <div class="col-sm-10">
+                <p class="form-control-static">{$supproposal['title']}</p>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">上报人信息</label>
+            <div class="col-sm-10">
+                <p class="form-control-static">{$supproposal['realname']} - {$supproposal['mobile']}</p>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">内容描述</label>
+            <div class="col-sm-10">
+                <p class="form-control-static">{php echo str_replace("\n","<br />",$supproposal['details']);}</p>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">上报时间</label>
+            <div class="col-sm-10">
+                <p class="form-control-static">{php echo date("Y-m-d H:i",$supproposal['createtime']);}</p>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label"> 处理结果</label>
+            <div class="col-sm-10">
+                <textarea name="reply" class="form-control" rows="5">{$supproposal['reply']}</textarea>
+                <div class="help-block"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label"> 状态</label>
+            <div class="col-sm-10">
+                <label class="radio-inline"><input type="radio" name="status" value="1" {if $supproposal['status']=='1'}checked{/if}> 待回复 </label>
+                <label class="radio-inline"><input type="radio" name="status" value="2" {if $supproposal['status']=='2'}checked{/if}> 已回复 </label>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="form-group col-sm-12">
+    <input type="hidden" name="token" value="{$_W['token']}" />
+    <input type="submit" name="submit" value="提交" class="btn btn-primary btn-submit" />
+</div>
+</form>
+{/if}
+{template 'common/footer'}

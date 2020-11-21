@@ -1,0 +1,535 @@
+{template 'common/header'}
+<div class="main">
+	<style>
+	.right-content{padding-top:0px !important;}
+    .we7-form .form-group, form .form-group{margin-bottom:10px !important;}
+	.right-content .nav.nav-tabs{margin-bottom:20px !important;}
+	.text-center i{ line-height:40px; font-style:normal;}
+	.nav-tabs{margin-bottom:20px;}
+    </style>
+	<ul class="nav nav-tabs" role="tablist">
+		<li role="presentation"><a href="{php echo $this->createWebUrl('mlist');}&version_id=0" aria-controls="home" role="tab">返回列表</a></li>
+        <li role="presentation" ><a href="{php echo $this->createWebUrl('mcode', array('mo'=>'list','fid'=>$_GPC['fid']));}" aria-controls="home" role="tab">数据列表</a></li>
+        <li role="presentation" class="active"><a href="#" aria-controls="home" role="tab">创建数据</a></li>
+    </ul>
+	
+    <div class="category">
+		<form action="" method="post" class="form-horizontal form" id="setting-form" onsubmit="return validForm();">
+		<div class="panel panel-default">
+			<div class="panel-heading">创建分类</div>
+			<div class="panel-body">
+			
+				{if $_GPC['id']!=''}
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">更改防伪</label>
+					<div class="col-sm-8">
+						<select class="form-control" name="data[fid]">
+						 
+							{loop $gicai_fwyzm $key $item}
+							<option value="{$item['id']}" {if $item['id']==$_GPC['fid']}selected="selected"{/if}>{$item['title']}</option>
+							{/loop}
+							 
+						</select>
+						<span class="help-block">注意：修改防伪批次要确定原有的是否有指定产品，修改后需要重新设置。</span>
+					</div>
+				</div>
+				{/if}
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">指定产品</label>
+					<div class="col-sm-8">
+						<select class="form-control" name="data[zhiding]">
+						
+							<option value="0" {if $account['zhiding']=='0' || $account['zhiding']==''}selected="selected"{/if}>未设置指定产品</option>
+							{loop $prize_d $key $item}
+							<option value="{$item['id']}" {if $item['id']==$account['zhiding']}selected="selected"{/if}>{$item['title']}</option>
+							{/loop}
+							 
+						</select>
+					</div>
+				</div>
+			<div style="color: red !important;">&#22823;&#37327;&#28304;&#30721;&#65292;&#25345;&#32493;&#26356;&#26032;&#65306;&#119;&#119;&#119;&#46;&#108;&#97;&#110;&#114;&#101;&#110;&#122;&#104;&#105;&#106;&#105;&#97;&#46;&#99;&#111;&#109;</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">数据名称</label>
+					<div class="col-sm-8">
+						<input type="text" name="data[title]" class="form-control" value="{$account['title']}" placeholder="请输入防伪码名称！" />
+					</div>
+				</div>
+                
+                <div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">数据描述</label>
+					<div class="col-sm-8"> 
+						<textarea style="height:80px;" class="form-control" cols="70" name="data[description]" autocomplete="off" placeholder="防伪码描述！">{$account['description']}</textarea>
+					</div>
+				</div>
+                
+                <div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">防伪码时效</label>
+					<div class="col-sm-8">
+						{php echo tpl_form_field_daterange('data[time]', array('start' => date('Y-m-d',$account['startime']),'end' => date('Y-m-d',$account['endtime'])),'')}
+                      	 
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">二维码LOGO</label>
+					<div class="col-sm-8"> 
+						{php echo tpl_form_field_image('data[qrimages]',$account['qrimages']);}
+					</div>
+				</div>
+				 
+				 
+						 
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">微信标签组限制</label>
+					<div class="col-sm-8">
+						{if $result['tags']=='no'}
+							<div style="padding-top:7px;">{$result['message']}</div>
+							 
+						{else}
+							{php $m = 0;}
+					 		{loop $result['tags']['tags'] $k $i}
+								 
+								<label style="float:left;padding:5px;"><input name="data[part][]" type="checkbox" {if $part[$i['id']]=='1'} checked="checked" {/if} value="{$i['id']}" class="form-control" style="width:20px;height:20px; float:left;" /> <span style=" line-height:25px;padding-left:5px;"> {$i['name']}</span></label> 
+							{/loop}
+						{/if}
+						<span class="help-block" style="clear:both; overflow:hidden;">可根据粉丝组(标签)来进行参与限制，不支持借权！不限制则留空即可！</span>
+						<span class="help-block">开启限制后指定标签组才能领取奖励！</span>
+					</div>
+				</div>
+				 
+			 
+						 
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">平台会员分组限制</label>
+					<div class="col-sm-8">
+						 
+						
+						{php $m = 0;}
+						 
+						{loop $groups $k $i}
+							<label style="float:left;padding:5px;"><input name="data[groups][]" type="checkbox" {if $grou[$i['groupid']]=='1'} checked="checked" {/if} value="{$i['groupid']}" class="form-control" style="width:20px;height:20px; float:left;" /> <span style=" line-height:25px;padding-left:5px;"> {$i['title']}</span></label> 
+						{/loop}
+						<span class="help-block" style="clear:both; overflow:hidden;">可根据会员分组来进行参与限制，不支持借权！不限制则留空即可！</span>
+						<span class="help-block">开启限制后指定会员组才能领取奖励！</span>
+					</div>
+				</div>
+				
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">标签分组限领提示</label>
+					<div class="col-sm-8">
+						 
+							<label class="radio-inline">
+								<input type="radio" name="data[bqfzxl]" onclick="$('.bqfzxl').hide();" {if $account['bqfzxl']=='0' || $account['bqfzxl']==''}checked="checked"{/if} value="0" /> 不提示
+							</label>
+                    	  	<label class="radio-inline">
+								<input type="radio" name="data[bqfzxl]" onclick="$('.bqfzxl').show();" {if $account['bqfzxl']=='1'}checked="checked"{/if} value="1" /> 提示
+							</label>
+							<span class="help-block">开启限领后【微信标签组限制】【平台会员分组限制】进行勾选，如果不满足则进行提示！</span>
+                    </div>
+				</div>
+				
+				<div class="form-group bqfzxl" {if $account['bqfzxl']=='1'}{else}style="display:none;"{/if}>
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">不满足提示</label>
+					<div class="col-sm-8">
+						{if $account['noalert']==''}
+							{php $account['noalert'] = '您不满足领取条件！';}
+						{/if}
+						<input type="text" name="data[noalert]" class="form-control" value="{$account['noalert']}" style="width:200px;"  />
+					</div>
+				</div>
+				<div class="form-group bqfzxl" {if $account['bqfzxl']=='1'}{else}style="display:none;"{/if}>
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">不满足跳转链接</label>
+					<div class="col-sm-8">
+						{if $account['nohttp']==''}
+							{php $account['nohttp'] = 'http://www.xxx.com';}
+						{/if}
+						<input type="text" name="data[nohttp]" class="form-control" value="{$account['nohttp']}" style="width:200px;"  />
+					</div>
+				</div>
+				
+                <div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">首次登记信息</label>
+					<div class="col-sm-8">
+						 	<label class="radio-inline">
+								<input type="radio" name="data[scdjxx]" onclick="$('.scdjxx').hide();" {if $account['scdjxx']=='0' || $account['scdjxx']==''}checked="checked"{/if} value="0" /> 关闭
+							</label>
+                    	  	<label class="radio-inline">
+								<input type="radio" name="data[scdjxx]" onclick="$('.scdjxx').show();" {if $account['scdjxx']=='1'}checked="checked"{/if} value="1" /> 开启
+							</label>
+							<span class="help-block">开启后首次扫描需要提交信息，提交成功后防伪码可以正常使用！</span>
+                    </div>
+				</div>
+				
+				<div class="form-group scdjxx" {if $account['scdjxx']=='1'}{else}style="display:none;"{/if}>
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">前台展现</label>
+					<div class="col-sm-8">
+						 	<label class="radio-inline">
+								<input type="radio" name="data[scqtzx]" {if $account['scqtzx']=='0' || $account['scqtzx']==''}checked="checked"{/if} value="0" /> 显示
+							</label>
+                    	  	<label class="radio-inline">
+								<input type="radio" name="data[scqtzx]" {if $account['scqtzx']=='1'}checked="checked"{/if} value="1" /> 隐藏
+							</label>
+							<span class="help-block">隐藏后权限身份可见！</span>
+                    </div>
+				</div>
+                <style>
+				 
+				.gicai_shop_list{ height:auto;}
+				.gicai_shop_list ul{padding:0px;margin:0px 0px 0px 15px;clear:both;overflow:hidden;}
+				.gicai_shop_list ul li{  float:left;height:auto; line-height:35px; text-decoration:none; list-style-type:none; text-align:center;margin-right:5px;margin-bottom:5px;}
+				.gicai_shop_list .img-thumbnail{ display:none;}
+				 
+				 
+				 
+				</style>
+                <script type="text/javascript">
+                var djslk	= '{$dengjicount}';
+				function addfieldk(){
+					 
+					if(djslk==''){djslk=0;}
+					var sk	= djslk++;
+					var fieldk = '<ul id="fieldk_id_'+sk+'" class="fieldclassk"><li style="width:80px;"><input type="text" name="data[dengji]['+sk+'][fieldpx]"	id="fieldname" class="form-control" style="width:100%;" value="0" /></li><li style="width:120px;"><select class="form-control" name="data[dengji]['+sk+'][fieldlx]" id="fieldlx"><option value="text">文本字段</option><option value="tel">电话字段</option><option value="select">下拉字段</option><option value="radio">单选框</option><option value="checkbox">多选框</option><option value="textarea">文本域</option><option value="address">地区选择</option><option value="images">图片上传</option></select></li><li style="width:120px;"><input type="text" name="data[dengji]['+sk+'][fieldzdm]"	id="fieldzdm" class="form-control" style="width:100%;" value=""  placeholder="英文字母" /></li><li style="width:120px;"><input type="text" name="data[dengji]['+sk+'][fieldname]"	id="fieldname" class="form-control" style="width:100%;" value="" /></li><li style="width:120px;"><input type="text" name="data[dengji]['+sk+'][fieldatt]"	id="fieldatt" class="form-control" style="width:100%;" value=""/></li><li style="width:80px; cursor:pointer;" class=" btn-primary" onClick="delfieldk('+sk+');">删除</li></ul>';
+					$("#fieldk_div_dom").append(fieldk);
+					 
+				}
+				function delfieldk(s){
+					var sl	= $(".fieldclassk").length;
+					 
+					$("#fieldk_id_"+s).remove();
+					
+				}
+                </script>
+                <div class="form-group scdjxx" {if $account['scdjxx']=='1'}{else}style="display:none;"{/if}>
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">登记字段</label>
+					<div class="col-sm-8" style="padding:0px;margin:0px; ">
+						<div class="gicai_shop_list" style="padding:0px;margin:0px; ">
+							<ul>
+                            	<li style="width:80px;text-align:left;">字段排序</li>
+								<li style="width:120px;text-align:left;">字段类型</li>
+								<li style="width:120px;text-align:left;">字段名(英文)</li>
+								<li style="width:120px;text-align:left;">字段名称</li>
+								<li style="width:120px;text-align:left;">字段提示</li>
+								<li style="width:80px; cursor:pointer;" class=" btn-primary" onclick="addfieldk();">添加字段</li>
+							</ul>
+                            
+                            
+							<div id="fieldk_div_dom">
+							{loop $dengji $key $item}<ul id="fieldk_id_{$key}" class="fieldclassk"><li style="width:80px;"><input type="text" name="data[dengji][{$key}][fieldpx]"	id="fieldname" class="form-control" style="width:100%;" value="{$item['fieldpx']}" /></li><li style="width:120px;"><select class="form-control" name="data[dengji][{$key}][fieldlx]" id="fieldlx"><option value="text" {if $item['fieldlx'] =='text'}selected="selected"{/if}>文本字段</option><option value="tel" {if $item['fieldlx'] =='tel'}selected="selected"{/if}>电话字段</option><option value="select" {if $item['fieldlx'] =='select'}selected="selected"{/if}>下拉字段</option><option value="radio" {if $item['fieldlx'] =='radio'}selected="selected"{/if}>单选框</option><option value="checkbox" {if $item['fieldlx'] =='checkbox'}selected="selected"{/if}>多选框</option><option value="textarea" {if $item['fieldlx'] =='textarea'}selected="selected"{/if}>文本域</option><option value="address" {if $item['fieldlx'] =='address'}selected="selected"{/if}>地区选择</option><option value="images" {if $item['fieldlx'] =='images'}selected="selected"{/if}>图片上传</option></select></li><li style="width:120px;"><input type="text" name="data[dengji][{$key}][fieldzdm]" id="fieldzdm" class="form-control" style="width:100%;" value="{$item['fieldzdm']}"  placeholder="英文字母" /></li><li style="width:120px;"><input type="text" name="data[dengji][{$key}][fieldname]"	id="fieldname" class="form-control" style="width:100%;" value="{$item['fieldname']}" /></li><li style="width:120px;"><input type="text" name="data[dengji][{$key}][fieldatt]"	id="fieldatt" class="form-control" style="width:100%;" value="{$item['fieldatt']}"/></li><li style="width:80px; cursor:pointer;" class=" btn-primary" onClick="delfieldk({$key});">删除</li></ul>{/loop}
+
+							 
+							</div>
+							 
+							
+							 
+						</div>
+						<div style="padding-left:20px; color:red;">以上全为必填项，字段名必须英文，下拉、单选、多选数据源格式：男||女||未知，请填写到字段提示中;</div>
+					</div>
+				</div>
+			 
+				
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">地区统计限制</label>
+					<div class="col-sm-8">
+						 
+							<label class="radio-inline">
+								<input type="radio" name="data[diqu]" onclick="$('.reside').hide();" {if $account['diqu']=='0' || $account['diqu']==''}checked="checked"{/if} value="0" /> 不限制
+							</label>
+                    	  	<label class="radio-inline">
+								<input type="radio" name="data[diqu]" onclick="$('.reside').show();" {if $account['diqu']=='1'}checked="checked"{/if} value="1" /> 开启限制
+							</label>
+							<span class="help-block">开启限制后会统计地区验证的次数与跟踪。</span>
+                    </div>
+				</div>
+				<div class="form-group reside" {if $account['diqu']=='0' || $account['diqu']==''}style="display:none;"{/if}>
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label"><span class="text-danger">*</span> 区域</label>
+					<div class="col-sm-8">
+						{php echo tpl_fans_form('reside',array('province' => $account['province'], 'city' => $account['city'],'district' => $account['district']));}
+						<span class="help-block">开启限制后该地区验证会获得奖励(仅支持微信模式)</span>
+					</div>
+				</div>
+				 
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">首次验证奖励</label>
+					<div class="col-sm-8">
+						 
+							<label class="radio-inline">
+								<input type="radio" name="data[type]" onclick="$('.type_1').hide();$('.type_2').hide();$('.type_3').hide();" class="radiotype" {if $account['type']=='0' || $account['type']==''}checked="checked"{/if} value="0" /> 无奖励
+							</label>
+                    	  	<label class="radio-inline">
+								<input type="radio" name="data[type]" onclick="$('.type_1').hide();$('.type_2').show();$('.type_3').hide();" class="radiotype" {if $account['type']=='1'}checked="checked"{/if} value="1" /> 奖励积分
+							</label>
+							<label class="radio-inline">
+								<input type="radio" name="data[type]" onclick="$('.type_1').hide();$('.type_2').hide();$('.type_3').show();" class="radiotype" {if $account['type']=='2'}checked="checked"{/if} value="2" /> 奖励金额
+							</label>
+							<label class="radio-inline">
+								<input type="radio" name="data[type]" onclick="$('.type_1').show();$('.type_2').hide();$('.type_3').hide();" class="radiotype" {if $account['type']=='3'}checked="checked"{/if} value="3" /> 奖励红包
+							</label>
+							 
+                    </div>
+				</div>
+				
+				<div class="form-group type_1" {if $account['type']=='3'}{else}style="display:none;"{/if}>
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">红包</label>
+					<div class="col-sm-8">
+						<input type="text" name="data[redbao]" class="form-control" value="{$account['redbao']}" />
+						<span class="help-block">可设置随机金额，格式：1-10，代表1元到10元直接随机；如固定金额则直接写数值即可(仅支持微信模式).</span>
+					</div>
+				</div>
+				 
+				<div class="form-group type_2" {if $account['type']=='1'}{else}style="display:none;"{/if}>
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">积分</label>
+					<div class="col-sm-8">
+						<input type="text" name="data[jifen]" class="form-control" value="{$account['jifen']}" />
+						<span class="help-block">可设置随机积分，格式：1-10，代表1到10直接随机；充值到会员系统中(仅支持微信模式).</span>
+					</div>
+				</div>
+				<div class="form-group type_3" {if $account['type']=='2'}{else}style="display:none;"{/if}>
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">金额</label>
+					<div class="col-sm-8">
+						<input type="text" name="data[jine]" class="form-control" value="{$account['jine']}" />
+						<span class="help-block">可设置随机金额，格式：1-10，代表1元到10元直接随机；充值到会员系统中(仅支持微信模式).</span>
+					</div>
+				</div>
+				{if $_GPC['id']==''}
+                
+               	{if $_GPC['batch']=='1'}
+                <div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">设置批量</label>
+					<div class="col-sm-8">
+						 
+                        <input type="number" name="data[batch]" style="width:450px !important;" min="" class="form-control" value="5" />
+                      	<span class="help-block">注解：设置数量后同等于复制该批次，但防伪码不会进行复制而是自动生成；只是节省时间不用每次手动设置生成防伪码了；</span>
+                        <span class="help-block">必须数字否则会出现系统错误！</span>
+					</div>
+				</div>
+                {/if}
+               	<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">生成数量</label>
+					<div class="col-sm-8">
+						 
+                        <input type="number" name="data[number]" style="width:450px !important;" min="100" class="form-control" value="{$account['number']}" />
+                      	<span class="help-block">本系统采用批量分布业务处理，可创建多组，每组建议最多5万数据，可创建多组，对服务器无压力。</span>
+                        <span class="help-block">每组项目5万信息则可精准无误导出数据，强烈建议采用分组进行项目验证防伪。</span>
+						<span class="help-block">数字防伪码采用6位数字，所以每组建议不要生成太多！</span>
+					</div>
+				</div>
+				 
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">数据码长度</label>
+					<div class="col-sm-8">
+						 
+                        <input type="number" name="data[lengths]" style="width:450px !important;" class="form-control" value="{$account['lengths']}" />
+                      	<span class="help-block">建议在11位长度最佳，越短重复几率越大，最短8位数。</span>
+						<span class="help-block">除前缀外的位数。</span>
+					</div>
+				</div>
+                
+                <div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">随机字符串</label>
+					<div class="col-sm-8">
+						
+                        <input type="text" name="data[lengval]" style="width:450px !important;" class="form-control" value="{$account['lengval']}" />
+                      	<span class="help-block">从以上字符串中进行随机，如果存数字可填写1234567890即可；</span>
+						<span class="help-block">如果留空或者位数过少在生成的时候会出现问题</span>
+					</div>
+				</div>
+                
+                
+                <div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">防伪码前缀</label>
+					<div class="col-sm-8">
+						 
+                        <input type="text" name="data[prefix]" style="width:450px !important;" class="form-control" value="{$account['prefix']}" />
+                      	<span class="help-block">前缀如：GI，则生成后的验证码是GIxxxxxxxxx码，x代表系统随机值，99%不重复。</span>
+						<span class="help-block">前缀不计算到数位中。</span>
+					</div>
+				</div>
+                {/if}
+				<style>
+				.gicai_fwyzm_list{ height:auto;}
+				.gicai_fwyzm_list ul{padding:0px;margin:0px 0px 0px 15px;clear:both;overflow:hidden;}
+				.gicai_fwyzm_list ul li{  float:left;height:auto; line-height:35px; text-decoration:none; list-style-type:none; text-align:center;margin-right:5px;margin-bottom:5px;}
+				.gicai_fwyzm_list .img-thumbnail{ display:none;}
+				.prsw input{ display:none !important;}
+				</style>
+				<script type="text/javascript">
+				$(document).ready(function(){
+					 
+				});
+				var djsl	= '{$count}';
+				function addfield(){
+					 
+					if(djsl==''){djsl=0;}
+					var s	= djsl++;
+					var field = '<ul id="field_id_'+s+'" class="fieldclass"><li style="width:120px;"><select class="form-control" name="data[fields]['+s+'][fieldlx]" id="fieldlx"><option value="2">代理商</option><option value="3">经销商</option></select></li><li style="width:120px;"><input type="text" name="data[fields]['+s+'][fieldzdm]"	id="fieldzdm" class="form-control" style="width:100%;" value=""  placeholder="职务/职称" /></li><li style="width:120px;"><input type="text" name="data[fields]['+s+'][fieldname]"	id="fieldname" class="form-control" style="width:100%;" value="" /></li><li style="width:120px;"><input type="text" name="data[fields]['+s+'][fieldatt]" onclick="tjzfun('+s+',`u`);" id="tjzu_'+s+'" class="form-control" style="width:100%;" value=""/></li><li style="width:80px; cursor:pointer;" class=" btn-primary" onClick="delfield('+s+');">删除</li></ul>';
+					$("#field_div_dom").append(field);
+					 
+				}
+				 
+				function delfield(s){
+					var sl	= $(".fieldclass").length;
+				 
+					$("#field_id_"+s+' li input').val(null);
+					$("#field_id_"+s).hide();
+					
+				}
+				var tjz_id	= 0;
+				var type_id	= '';
+				 
+				
+				
+			 
+				 
+				</script>
+				
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">短连接设置</label>
+					<div class="col-sm-8">
+						<label class="radio-inline">
+                            <input type="radio" name="data[minurl]" {if $account['minurl']=='0' || $account['minurl']==''}checked="checked"{/if} value="0" /> 正常连接(推荐)
+                        </label> 
+                    	<label class="radio-inline">
+                            <input type="radio" name="data[minurl]" {if $account['minurl']=='1' }checked="checked"{/if} value="1" /> 微信官方（m.url.cn）
+                        </label>
+						<label class="radio-inline">
+                            <input type="radio" name="data[minurl]" {if $account['minurl']=='2' }checked="checked"{/if} value="2" /> 百度（dwz.cn）
+                        </label>
+						<label class="radio-inline">
+                            <input type="radio" name="data[minurl]" {if $account['minurl']=='3' }checked="checked"{/if} value="3" /> 本站短连接（伪静态）
+                        </label>
+                      	<span class="help-block">选择短连接后，在生成的数据的时候同时生成短连接这个过程非常慢，如果您无需求短连接形式请选择正常连接。</span>
+						<span class="help-block">选择伪静态需要服务器支持伪静态设置，将下面规则加入到伪静态中，LINUX格式如下：</span>
+						<span class="help-block">rewrite "^/fw/([0-9]+)/([0-9]+)/([a-zA-Z0-9]+)$" /app/index.php?i=$1&c=entry&fid=$2&codekey=$3&do=index&m=gicai_fwyzm last;</span>
+						<span class="help-block">Windows的自己转换设置下</span>
+						 
+					</div>
+				</div> 
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">前台显示权限</label>
+					<div class="col-sm-8">
+						 
+							<label class="radio-inline">
+								<input type="radio" name="data[shows]" class="radiotype" {if $account['shows']=='0' || $account['shows']==''}checked="checked"{/if} value="0" /> 隐藏
+							</label>
+                    	  	<label class="radio-inline">
+								<input type="radio" name="data[shows]" class="radiotype" {if $account['shows']=='1'}checked="checked"{/if} value="1" /> 显示
+							</label>
+							
+							 
+                    </div>
+				</div>
+				 
+                <div class="form-group infodjdiv">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">添加角色</label>
+					<div class="col-sm-8" style="padding:0px;margin:0px;">
+						<div class="gicai_fwyzm_list" style="padding:0px;margin:0px; ">
+                        	<ul>
+								<li style="width:120px;text-align:left;">权限设置</li>
+								<li style="width:120px;text-align:left;">职务/职称</li>
+								<li style="width:120px;text-align:left;">微信名称</li>
+								<li style="width:120px;text-align:left;">OPENID</li>
+								<li style="width:80px; cursor:pointer;" class=" btn-primary" onclick="addfield();">添加角色</li>
+							</ul>
+                            <div id="field_div_dom">
+							{loop $account['fields'] $key $item}<ul id="field_id_{$key}" class="fieldclass"><li style="width:120px;"><select class="form-control" name="data[fields][{$key}][fieldlx]" id="fieldlx"> <option value="2" {if $item['fieldlx'] =='2'}selected="selected"{/if}>代理商</option><option value="3" {if $item['fieldlx'] =='3'}selected="selected"{/if}>经销商</option></select></li><li style="width:120px;"><input type="text" name="data[fields][{$key}][fieldzdm]" id="fieldzdm" class="form-control" style="width:100%;" value="{$item['fieldzdm']}"  placeholder="英文字母" /></li><li style="width:120px;"><input type="text" name="data[fields][{$key}][fieldname]"	id="fieldname" class="form-control" style="width:100%;" value="{$item['fieldname']}" /></li><li style="width:120px;"><input type="text" name="data[fields][{$key}][fieldatt]" id="tjzu_{$key}" class="form-control" onclick="tjzfun('{$key}','u');" style="width:100%;" value="{$item['fieldatt']}"/></li><li style="width:80px; cursor:pointer;" class=" btn-primary" onClick="delfield({$key});">删除</li><input type="hidden" name="data[fields][{$key}][fieldid]" id="fieldid" class="form-control" value="{$item['id']}" /></ul>{/loop}
+
+                             
+                        	</div>
+                             
+                            
+                             
+                        </div>
+                        <div style="padding-left:20px; color:red;">设置后尽量不删除，如果删除后出现混乱请重新添加，管理员可在线添加！</div>
+					</div>
+				</div>
+				<div id="modal-module-menus"  class="modal fade" tabindex="-1">
+					<div class="modal-dialog">
+						<div class="modal-content">
+							<div class="modal-header">
+								<button aria-hidden="true" data-dismiss="modal" class="close" type="button">×</button>
+								<h3>选择要设置的管理员</h3>
+							</div>
+							<div class="modal-body" >
+								<div class="row">
+									<div class="input-group">
+										<input type="text" class="form-control" name="keyword" value="" id="search-kwd" placeholder="请输入微信名进行查询已报名的会员列表！" />
+										<span class='input-group-btn'>
+										<button type="button" class="btn btn-default" onclick="search_entries(tjz_id);">搜索</button>
+										</span>
+									</div>
+									<div class="input-group" style="width:100% !important;">
+										<div id="module-menus" style="padding-top:10px;"></div>
+									</div>
+									
+								</div>
+								 
+							</div>
+							<div style="margin-bottom:20px;"></div>
+						</div>
+					</div>
+				</div>
+				
+                <div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">状态</label>
+					<div class="col-sm-8">
+                    	<label class="radio-inline">
+                            <input type="radio" name="data[state]" {if $account['state']=='1' || $account['state']==''}checked="checked"{/if} value="1" /> 正常
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" name="data[state]" {if $account['state']=='0'}checked="checked"{/if} value="0" /> 失效
+                        </label> 
+					</div>
+				</div> 
+                 
+			 
+				<div class="form-group">
+					<div class="col-xs-12 col-sm-9 col-md-10 col-lg-10 col-sm-offset-3 col-md-offset-2 col-lg-offset-2">
+						<input name="submit" type="submit" value="提交" class="btn btn-primary" />
+						<input type="hidden" name="token" value="{$_W['token']}" />
+					</div>
+				</div>
+			</div>
+	</form>
+	</div>
+    </div>
+</div>
+<script type="text/javascript">
+$(document).ready(function(){
+	 
+});
+function tjzfun(id,type){
+	tjz_id	= id;
+	type_id = type;
+	$('#module-menus').html('');
+	$('#modal-module-menus').modal();
+}
+
+function search_entries(id) {
+ 
+	var kwd = $.trim($('#search-kwd').val());
+	if(kwd=='' || kwd == null){
+		util.message('请输入查询的名称;');
+		 
+	}else{
+		 
+		$.post("{php echo $this->createWebUrl('muser',array('mo'=>'userss'));}", {keyword: kwd,tjz:id}, function(dat){
+	
+			$('#module-menus').html(dat);
+	
+		});
+	}
+
+}
+
+function select_entry(o,tjz) {
+
+	$("#modal-module-menus .close").click();
+ 	 
+	if(type_id=='u'){
+		$("#tjzu_"+tjz).val(o.openid);
+	}else{
+		$("#tjz_"+tjz).val(o.openid);
+	}
+	 
+}
+</script>
+{template 'common/footer'}

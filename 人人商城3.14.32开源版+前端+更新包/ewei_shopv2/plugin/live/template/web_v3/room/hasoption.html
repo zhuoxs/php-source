@@ -1,0 +1,221 @@
+<style type="text/css">
+    .modal-dialog{width:920px;}
+    /*#param-items{height:600px;overflow-y: auto;width:858px;display: block;}
+    #param-items tr{width:858px;display: block;}
+    #param-items tr td{display: table-cell;}*/
+    .modal-dialog .input-group-addon{
+        padding:0;
+    }
+    .modal-dialog .fa-angle-double-down{
+        margin-right: 0;
+    }
+    .content .table{border-collapse:collapse;border:none;}
+    .content .table tr{border-collapse: collapse;border-left:1px solid #ededed;border-right:1px solid #ededed;}
+    .content .table > tbody > tr > td{border-top:1px solid #ededed;border-left:0;border-right:0;}
+</style>
+<div class="content_hasoption">
+    <!--<form class="form-horizontal form-validate" action="{php echo webUrl('sale/fullback/hasoption')}" method="post" enctype="multipart/form-data">-->
+        <input type='hidden' name='pid' value='{$pid}' />
+        <input type='hidden' name='goodsid' value='{$goodsid}' />
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button data-dismiss="modal" class="close hasoption-close" type="button">×</button>
+                    <h4 class="modal-title">设置</h4>
+                </div>
+                <div class="modal-body content">
+                    <div class="alert alert-info">提示：直播商品的价格需低于商品在商城的价格。</div>
+                    <table class="table" border="1" cellspacing="0" width="100%" cellpadding="0">
+                        <thead style="background: #f7f7f7;">
+                        <tr>
+                            <th style="">{if $option}规格{else}商品{/if}名称</th>
+                            <th style="width:80px;">原价</th>
+                            <th style="width:100px;" class="fullprice">
+                                {if $option}
+                                <div style="padding-bottom:10px;text-align:center;">直播间价格</div>
+                                <div class="input-group">
+                                    <input type="text" class="form-control input-sm option_liveprice_all"  VALUE=""/>
+                                    <span class="input-group-addon">
+                                        <a href="javascript:;" class="fa fa-angle-double-down" title="批量设置" onclick="setCol('option_liveprice');"></a>
+                                    </span>
+                                </div>
+                                {else}直播间价格{/if}
+                            </th>
+                            {if $option}
+                            <th style="width:50px;text-align: right;">全选 <input type='checkbox' /></th>
+                            {/if}
+                        </tr>
+                        </thead>
+                        <tbody id="param-items" class="ui-sortable">
+                        {if $option}
+                        {loop $option $item}
+                        <tr class="multi-product-item option-item" data-id="{$item['id']}">
+                            <td>{$item['title']}</td>
+                            <td>&yen;{$item['marketprice']}</td>
+                            <td style="" class="fullprice" data-price="{$item['marketprice']}">
+                                <input name="option_liveprice_{$item['id']}" type="text" class="form-control option_liveprice option_liveprice_{$item['id']}" placeholder="0" value="{if empty($item['liveprice'])}{$item['marketprice']}{/if}">
+                            </td>
+                            <td style="text-align: right;"><input type='checkbox' name="optionid" {if !empty($item['liveprice'])}checked{/if} value="{$item['id']}"/></td>
+                        </tr>
+                        {/loop}
+                        {else}
+                            <tr class="multi-product-item goods-item" data-id="{$item['id']}">
+                                <td>{$goods['title']}</td>
+                                <td>&yen;{$goods['marketprice']}</td>
+                                <td style="" class="fullprice" data-price="{$goods['marketprice']}">
+                                    <input name="liveprice{$goodsid}" type="text" class="form-control liveprice liveprice{$goodsid}" placeholder="0" value="{if empty($goods['liveprice'])}{$goods['marketprice']}{/if}">
+                                    <input type="hidden" name="live_goods" data-goodsid="{$goodsid}" data-id="{$goods['id']}">
+                                </td>
+
+                            </tr>
+                        {/if}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="button" id="option_submit">确认</button>
+                    <button data-dismiss="modal" class="btn btn-default" type="button">取消</button>
+                </div>
+            </div>
+    <!--</form>-->
+
+</div>
+
+<script type="text/javascript">
+    $(function(){
+        $(".option_liveprice").blur(function () {
+            var price = parseFloat($(this).parent("td").attr("data-price"));
+            var liveprice = $(this).val();
+            if(price<=liveprice){
+                $(this).val(price);
+            }else{
+                $(this).val(liveprice);
+            }
+            if(liveprice<=0){
+                $(this).val(0);
+            }
+        });
+        $(".liveprice").blur(function () {
+            var price = parseFloat($(this).parent("td").attr("data-price"));
+            var liveprice = $(this).val();
+            if(price<=liveprice){
+                $(this).val(price);
+            }else{
+                $(this).val(liveprice);
+            }
+            if(liveprice<=0){
+                $(this).val(0);
+            }
+        })
+
+        $(".option-item input[name=optionid]").removeProp('checked');
+        var optionid = $("#livegoods"+{$goodsid}+"").val()
+        if({$hasoption} && optionid){
+            var opArray = optionid.split(",");
+            $(opArray).each(function(index){
+                var specs = $("input[name='livegoodsoption"+this+"']").val();
+                if(specs){
+                    var specsArray = specs.split(",");
+                    $(".option_liveprice_"+this+"").val(specsArray[0]);
+                }
+
+            });
+        }else{
+            var liveprice = $("input[name='goods"+{$goodsid}+"']").val();
+            if(liveprice){
+                $(".liveprice"+{$goodsid}+"").val(liveprice);
+            }
+        };
+
+        $(".option-item").each(function(){
+            if(optionid.indexOf($(this).find("input[name=optionid]").val()) >= 0){
+                $(this).find("input[name=optionid]").prop('checked','true');
+            }
+        })
+        //是否有规格提交
+        $("#option_submit").on("click",function(){
+            var option = [];
+            var optoinhtml = '';
+            var livegoods = [];
+            var liveprice = 0;
+            $("#param-items .option-item").each(function (index) {
+                if($(this).find("input[name='optionid']").prop("checked")){
+                    var price = parseFloat($(this).find("td.fullback").attr("data-price"));
+                    option[index] = $(this).find("input[name='optionid']").val();
+                    liveprice = $(this).find("input[name^='option_liveprice']").val() ? parseFloat($(this).find("input[name^='option_liveprice']").val()).toFixed(2) : 0;
+                    if(price<=liveprice){
+                        liveprice = price;
+                    }
+                    if(liveprice<=0){
+                        liveprice = 0;
+                    }
+                    livegoods[index] = [liveprice];
+                    optoinhtml += '<input type="hidden" value="'+livegoods[index]+'" name="livegoodsoption'+option[index]+'" >';
+                }
+            })
+
+            if(option.length > 0){
+                $.ajax({
+                    url:"{php echo webUrl('live/room/option',array('type'=>'option'))}",
+                    type:'get',
+                    data:{option:option},
+                    dataType:'json',
+                    async : false, //默认为true 异步
+                    success:function(data){
+                        $("#livegoods"+{$goodsid}+"").val(option);
+                        if(!data.result.title){
+                            $("#optiontitle"+{$goodsid}+"").html("设置");
+                        }else{
+                            $("#optiontitle"+{$goodsid}+"").html(""+data.result.title+"...");
+                            var $objOption = $("#livegoods"+{$goodsid}+"").nextAll();
+                            if($objOption){
+                                $objOption.remove();
+                            }
+                            $("#livegoods"+{$goodsid}+"").after(optoinhtml)
+                        }
+
+                    }
+                });
+            }else{
+                //无规格提交
+                var goodsid = $("input[name='live_goods']").attr("data-goodsid");
+
+                var price = parseFloat($("#param-items .fullprice").attr("data-price"));
+                var livegoods = $("input[name='liveprice"+goodsid+"']").val();
+                if(price <= livegoods){
+                    livegoods = price;
+                }
+
+                var livegoodshtml = '<input type="hidden" value="'+livegoods+'" name="goods'+{$goodsid}+'" >';
+                if($("input[name='goods"+goodsid+"']").val()){
+                    $("input[name='goods"+goodsid+"']").remove();
+                    $("#optiontitle"+goodsid+"").after(livegoodshtml);
+                }else{
+                    $("#optiontitle"+goodsid+"").after(livegoodshtml)
+                }
+                $("#optiontitle"+goodsid+"").html("&yen;"+livegoods+"")
+            }
+
+            //关闭弹窗
+            $('.hasoption-close').trigger('click');
+        })
+    })
+    function setCol(cls){
+        $("."+cls).val( $("."+cls+"_all").val());
+        $(".option-item").each(function () {
+            var opid = $(this).attr("data-id");
+            var option_allprice = parseFloat(Math.abs($("input.option_liveprice_"+opid+"").val())).toFixed(2);
+            var price = parseFloat($(this).find("td.fullprice").attr("data-price"));
+            if(price<=option_allprice){
+                $("input.option_liveprice_"+opid+"").val(price);
+            }else{
+                $("input.option_liveprice_"+opid+"").val(option_allprice);
+            }
+
+        })
+    }
+
+</script>
+
+
+

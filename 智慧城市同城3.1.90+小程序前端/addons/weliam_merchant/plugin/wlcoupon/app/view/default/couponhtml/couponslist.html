@@ -1,0 +1,401 @@
+{php include wl_template('common/header');}
+<div class="page-group">
+	<div class="page page-current" id="page-index">
+		{php include wl_template('common/menu');}
+		{if !empty($advdata)}
+		{php include wl_template('diypage/advdata');}
+		{/if}
+		<div class="content infinite-scroll-bottom infinite-scroll" data-distance="300">
+			{if !$base['search'] || $base['search'] == 0}{php include wl_template('dashboard/search');}{/if}
+			<style>
+				.change-tab .buttons-tab .button.active {
+					border-bottom: .15rem solid #efeff4;
+					display: block;
+				}
+				.change-tab .buttons-tab .button.active span {
+					display: inline;
+				}
+				.change-tab.x-tab .buttons-tab {
+					margin-bottom: -0.15rem;
+					display: block;
+				}
+				.buttons-tab-ind {
+					height: .15rem;
+					width: 45px;
+					-webkit-border-radius: .15rem;
+					border-radius: .15rem;
+					background-color: #FE433F;
+					position: absolute;
+					left: 4%;
+					bottom: 0;
+					z-index: 999;
+					transition: all .3s ease;
+				}
+				{if $opennum>4 }
+				.buttons-tab-d {display: -webkit-flex;display: flex;justify-content: flex-start;position: relative;}
+				{else}
+				.buttons-tab-d {display: -webkit-flex;display: flex;justify-content: center;position: relative;}
+				{/if}
+				.buttons-tab-b {
+					width: 100%;
+					height: .15rem;
+					background-color: #efeff4;
+					position: absolute;
+					left: 0;
+					bottom: 0;
+				}
+				.buttons-tab .button {
+					width: auto;
+					height: 2.15rem;
+					line-height: 2.15rem;
+					border-bottom: .15rem solid #efeff4;
+					-webkit-flex: 0 0 20%;
+					flex: 0 0 20%;
+				}
+			</style>
+			{if !empty($advs)}
+			<section class="banner-header">
+				<div class="swiper-container" id="banner_header">
+					<div class="swiper-wrapper">
+						{loop $advs $adv}
+						<div class="swiper-slide">
+							<div class="banner-img">
+								<a href="{$adv['link']}"><img style="width: 100%;" src="{php echo tomedia($adv['thumb'])}"/></a>
+							</div>
+						</div>
+						{/loop}
+					</div>
+					<div class="swiper-pagination" id="banner_header_page"></div>
+				</div>
+			</section>
+			{/if}
+			<section class="banner-tab">
+				<div class="swiper-container">
+					<div class="swiper-wrapper">
+						<div class="swiper-slide">
+							<ul class="tab-list">
+								{loop $coupons $type}
+								{if $type['status']}
+								<li class="typetab">
+									<img  src="{php echo tomedia($type['img'])}" />
+									<span type = "{$type['id']}" {if $typeid == $type['id']} class="c-red" {/if}>{if $type['newname']}{$type['newname']}{else}{$type['name']} {/if}</span>
+								</li>
+								{/if}
+								{/loop}
+							</ul>
+						</div>
+					</div>
+				</div>
+			</section>
+			<section class="change-tab x-tab">
+				<div class="buttons-main">
+					<div class="buttons-tab no-after">
+						<div class="buttons-tab-ind"></div>
+						<div class="buttons-tab-d">
+							<a href="javascript:;" storetype = '0' class="tab-link button active">
+								<text>全部</text>
+							</a>
+							{loop $storecategory $cate}
+							<a href="javascript:;" storetype = "{$cate['id']}" class="tab-link button">
+								<text>{$cate['name']}</text>
+							</a>
+							{/loop}
+						</div>
+						<div class="buttons-tab-b"></div>
+					</div>
+					<div class="tabs" style="background-color: #EFEFF4;padding: 0;">
+						<div class="content-block list-block media-list" style="padding: 0;margin-top: 0;">
+							<div id="recommend" class="tab active">
+
+							</div>
+							<div class="infinite-scroll-preloader">
+								<div class="weui-loadmore">
+									<i class="weui-loading"></i>
+									<span class="weui-loadmore__tips">正在加载</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+		</div>
+	</div>
+</div>
+{php include wl_template('htmltpl/couponlist');}
+
+
+<script>
+
+	var loading = false,
+			nothing = false,
+			page = 1,
+			type = 0,
+			storetype = 0,
+			pagesize = 8,
+			endmark = 1;
+
+
+	var latitude = 0, longitude = 0,addflag = 1;
+
+	$(document).ready(function($) {
+		var swiper = new Swiper('#banner_header', {
+			loop: true,
+			speed:500,
+			autoplay: 3000,
+			autoplayDisableOnInteraction : false,
+			setWrapperSize:true,
+			pagination: '#banner_header_page',
+			paginationClickable: true
+		});
+	});
+
+
+	$('.typetab').click(function(){
+		page = 1;
+		endmark = 1;
+		nothing = false;
+		$('.typetab').each(function(){
+			$(this).children('span').removeClass('c-red');
+		});
+		$(this).children('span').addClass('c-red');
+		addItems();
+	});
+	var his_store_ck = 0;
+	$('.button').click(function(){
+		page = 1;
+		endmark = 1;
+		nothing = false;
+		$('.infinite-scroll-preloader').show();
+		$('#recommend').html("");
+		$('.button').each(function(){
+			$(this).removeClass('active');
+		});
+		$(this).addClass('active');
+		var storety = $(this).attr('storetype');
+		if(storety == 0){
+			$('.typetab').each(function(){
+				$(this).children('span').removeClass('c-red');
+			});
+		}
+		addItems();
+	});
+
+
+
+	if(window.history.state && window.history.state.data){
+		$('#recommend').html(window.history.state.data);
+		$('.content').scrollTop(window.history.state.scrollTop);
+		page = window.history.state.page;
+		type = window.history.state.type;
+		storetype = window.history.state.storetype;
+		$('.banner-tab .tab-list li span').removeClass('c-red');
+		$('.banner-tab .tab-list li').each(function(){
+			if($(this).find('span').attr('type') == window.history.state.type){
+				$(this).find('span').addClass('c-red');
+			}
+		});
+		$('.change-tab .buttons-tab .button').removeClass('active');
+		$('.change-tab .buttons-tab .button').each(function(){
+			if($(this).attr('storetype') == window.history.state.storetype){
+				var tagsIndex = 0;
+				var tabInd_w = $('.buttons-tab-d').innerWidth();
+				var window_w = $(window).width();
+				var tabInd_w = 45;
+				var init_l = 0;
+				if($('.tab-link').length<5){
+					init_l = $('.tab-link:eq(0)').offset().left;
+				}
+				var this_index = $(this).index();
+				var this_w = $('.tab-link:eq('+this_index+')').innerWidth();
+				var this_offect_l = $('.tab-link:eq('+this_index+')').offset().left;
+				var this_offect_r = window_w - this_offect_l - this_w;
+				var scrollL = $(".buttons-tab").scrollLeft();
+				var scrollL_w = 0;
+				for(var i=0; i<=this_index; i++){
+					scrollL_w += $('.tab-link:eq('+i+')').innerWidth();
+				}
+				$(this).addClass('active');
+				$('.buttons-tab-ind').css("left",(scrollL_w - this_w + (this_w - tabInd_w) / 2 + init_l)+"px");
+			}
+		});
+	}
+
+
+	var hisDataIs = 0;
+	if(sessionStorage.hisData){
+		var hisData = JSON.parse(sessionStorage.hisData);
+		hisData.forEach(function(item, index){
+			if(item.hisUrl == encodeURI(window.location.href+"&aid={$_W['aid']}")){
+				hisDataIs = 1;
+				$('#recommend').html(item.data);
+				$('.content').scrollTop(item.scrollTop);
+				page = item.page;
+				type = item.type;
+				storetype = item.storetype;
+				$('.banner-tab .tab-list li span').removeClass('c-red');
+				$('.banner-tab .tab-list li').each(function(){
+					if($(this).find('span').attr('type') == item.type){
+						$(this).find('span').addClass('c-red');
+					}
+				});
+				$('.change-tab .buttons-tab .button').removeClass('active');
+				$('.change-tab .buttons-tab .button').each(function(){
+					if($(this).attr('storetype') == item.storetype){
+						var tagsIndex = 0;
+						var tabInd_w = $('.buttons-tab-d').innerWidth();
+						var window_w = $(window).width();
+						var tabInd_w = 45;
+						var init_l = 0;
+						if($('.tab-link').length<5){
+							init_l = $('.tab-link:eq(0)').offset().left;
+						}
+						var this_index = $(this).index();
+						var this_w = $('.tab-link:eq('+this_index+')').innerWidth();
+						var this_offect_l = $('.tab-link:eq('+this_index+')').offset().left;
+						var this_offect_r = window_w - this_offect_l - this_w;
+						var scrollL = $(".buttons-tab").scrollLeft();
+						var scrollL_w = 0;
+						for(var i=0; i<=this_index; i++){
+							scrollL_w += $('.tab-link:eq('+i+')').innerWidth();
+						}
+						$(this).addClass('active');
+						$('.buttons-tab-ind').css("left",(scrollL_w - this_w + (this_w - tabInd_w) / 2 + init_l)+"px");
+					}
+				});
+
+			}
+		});
+	}
+
+	setTimeout(function(){
+		if(addflag){addItems();}
+	},2000);
+
+	common.Geolocation(function(data){
+		latitude = data.lat; // 纬度，浮点数，范围为90 ~ -90
+		longitude = data.lng; // 经度，浮点数，范围为180 ~ -180。
+		if(hisDataIs == 0){
+			addItems();
+		}
+	},function(data){
+		$.toast('获取地理位置失败，请刷新！');
+		if($('.sp_item').length == 0){
+			addItems();
+		}
+	});
+
+	function addItems(){
+		addflag = 0;
+		$('#recommend').html('');
+		$('.infinite-scroll-preloader').show();
+		if($('#recommend').next().attr('class') == 'loadmore-lms'){
+			$('#recommend').next().remove();
+		}
+		type = $('.c-red').attr('type');
+		storetype = $('.tab-link.active').attr('storetype');
+		var posturl = "{php echo app_url('wlcoupon/coupon_app/getListInfo')}"+"&lng="+longitude+"&lat="+latitude+"&type="+type+"&storetype="+storetype;
+		$.post(posturl,function(data){
+			if(JSON.stringify(data).length < 10){
+				var nothing_html = "<div class='loadmore-lms' style='background-color: #efeff4;'>" +
+						'<div class="weui-loadmore weui-loadmore_line"><span style="background-color: #efeff4;"  class="weui-loadmore__tips">暂无更多数据</span></div></div>';
+				$('#recommend').after(nothing_html);
+				$('.infinite-scroll-preloader').hide();
+			}else{
+				sessionStorage.setItem("demokey",JSON.stringify(data));
+				var contentdata = data.slice(0,pagesize);
+				apphtml(contentdata);
+			}
+		}, 'json');
+	}
+
+	function apphtml(contentdata){
+		var gettpl = document.getElementById('couponlist_tpl').innerHTML;
+		if($('#recommend').next().attr('class') == 'loadmore-lms'){
+			$('#recommend').next().remove();
+		}
+		laytpl(gettpl).render(contentdata, function(html){
+			$('#recommend').append(html);
+		});
+		console.log(contentdata.length);
+		if(contentdata.length == 0) {
+			if(!nothing) {
+				var nothing_html = "<div class='loadmore-lms' style='background-color: #efeff4;'>" +
+						'<div class="weui-loadmore weui-loadmore_line"><span style="background-color: #efeff4;"  class="weui-loadmore__tips">暂无更多数据</span></div></div>';
+				$('#recommend').after(nothing_html);
+				endmark = 0;
+				nothing = true;
+			}
+		}
+		$('.infinite-scroll-preloader').hide();
+		loading = false;
+		page++;
+	}
+
+	$(document).on('infinite', '.infinite-scroll-bottom', function() {
+		if(loading) return;
+		loading = true;
+		if(endmark){
+			$('.infinite-scroll-preloader').show();
+			setTimeout(function() {
+				var dt = JSON.parse(sessionStorage.getItem("demokey"));
+				var xxx = dt.slice((page-1)*pagesize ,(page-1)*pagesize+pagesize);
+				apphtml(xxx);
+			}, 800);
+		}
+	});
+	$.init();
+	tagsChange();
+	function tagsChange(){
+		var tagsIndex = 0;
+		var tabInd_w = $('.buttons-tab-d').innerWidth();
+		var window_w = $(window).width();
+		var tabInd_w = 45;
+		var this_old_index = -1;
+		var init_l = 0;
+		if($('.tab-link').length<5){
+			init_l = $('.tab-link:eq(0)').offset().left;
+		}
+		if(hisDataIs == 0){
+			setTimeout(function(){
+				$('.buttons-tab-ind').css("left",(init_l + ($('.tab-link:eq(0)').innerWidth() - tabInd_w) / 2)+"px");
+			},10);
+		}
+		$('.tab-link').click(function(){
+			var this_index = $(this).index();
+			var this_w = $('.tab-link:eq('+this_index+')').innerWidth();
+			var this_offect_l = $('.tab-link:eq('+this_index+')').offset().left;
+			var this_offect_r = window_w - this_offect_l - this_w;
+			var scrollL = $(".buttons-tab").scrollLeft();
+			var scrollL_w = 0;
+			for(var i=0; i<=this_index; i++){
+				scrollL_w += $('.tab-link:eq('+i+')').innerWidth();
+			}
+			$('.buttons-tab-ind').css("left",(scrollL_w - this_w + (this_w - tabInd_w) / 2 + init_l)+"px");
+			if(this_index > this_old_index){
+				if(this_offect_r < this_w / 2){
+					$(".buttons-tab").animate({scrollLeft: scrollL + this_w},300);
+				}
+			}else{
+				if(this_offect_l < this_w / 2){
+					$(".buttons-tab").animate({scrollLeft: scrollL - this_w},300);
+				}
+			}
+			this_old_index = $(this).index();
+		});
+	}
+
+	window.onunload = function(){
+		var hisDataItem = {};
+		hisDataItem.hisUrl = encodeURI(window.location.href+"&aid={$_W['aid']}");
+		hisDataItem.data = $('#recommend').html();
+		hisDataItem.scrollTop = $('.content').scrollTop();
+		hisDataItem.page = page;
+		hisDataItem.type = type;
+		hisDataItem.storetype = storetype;
+		common.History_pag(hisDataItem);
+	}
+
+</script>
+
+
+{php include wl_template('common/footer');}

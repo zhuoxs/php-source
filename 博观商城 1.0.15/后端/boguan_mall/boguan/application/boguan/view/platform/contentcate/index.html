@@ -1,0 +1,150 @@
+{include file="common/header"}
+<!--彈窗修改-->
+<link href="__PUBLIC__/css/popModal.min.css" rel="stylesheet">
+<!--main-body-->
+<section class="main-body">
+    <div class="main_content">
+        <!--second sidebar-->
+        {include file="platform/pub/content-nav"}
+        <!--main body content-->
+        <div class="main_mbody">
+            <div class="col-xs-12">
+                <div class="main_mbody-title">
+                    <h5>栏目管理</h5>
+                </div>
+                <div class="main-con">
+                    <form action="">
+                        <div class="toggle-tipsbox">
+                          <div class="tipBox more">
+                            <h5><i class="iconfont icon-tishi"></i>温馨提示</h5>
+                            <ul>
+                              <li><span>可设置文章的序号，序号越大的文章越靠前</span></li>
+                            </ul>
+                          </div>
+                        </div>
+                        <ul class="nav-contral clearit">
+                            <li><a href="{:url('boguan/platform.contentcate/add')}?type=1" class="btn"><i class="iconfont icon-jia"></i>添加顶级栏目</a></li>
+                            <li><a href="{:url('boguan/platform.contentcate/add')}?type=2" class="btn"><i class="iconfont icon-jia"></i>添加子栏目</a></li>
+
+                        </ul>
+                        <div class="main-table table-responsive">
+                            <table class="table table-hover table-condensed">
+                                <thead>
+                                <tr>
+                                    <th style="width: 5%; text-align: left;">ID</th>
+                                    <th style="width: 30%; ">栏目名称</th>
+                                    <th style="width: 20%;">数据量</th>
+                                    <th style="width: 5%;">排序</th>
+                                    <th style="width: 30%;">操作</th>
+                                </tr>
+                                </thead>
+                                <tbody>{volist name="cate" id="vo"}<tr class="del-{$vo.id}">
+                                    <td>{$vo.id}</td>
+                                    <td >{$vo.name}</td>
+                                    <td>{:countContent($vo.id)}</td>
+                                    <td>
+                                        <div class="sorting-box">
+                                            <span class="serial_number">{$vo.sort}</span>
+                                            <a href="javascript:;" class="sorting">
+                                                <i class="iconfont icon-bianji"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <a href="{:url('boguan/platform.contentcate/edit',array('id'=> $vo.id))}">编辑</a>
+                                        <span class="split">|</span>
+                                        <a href="javascript:;" onclick="del('{$vo.id}', 'del-{$vo.id}')">删除</a>
+
+                                    </td>
+                                </tr>{volist name="$vo.child" id="v" key="k"}<tr class="del-{$v.id}">
+                                    <td>{$v.id}</td>
+                                    <td >{if count($vo['child']) == $k}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ {$v.name}{else}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ {$v.name}{/if}</td>
+                                    <td>{:countContent($v.id)}</td>
+                                    <td>
+                                        <div class="sorting-box">
+                                            <span class="serial_number">{$v.sort}</span>
+                                            <a href="javascript:;" class="sorting">
+                                                <i class="iconfont icon-bianji"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <a href="{:url('boguan/platform.contentcate/edit',array('id'=> $v.id))}">编辑</a>
+                                        <span class="split">|</span>
+                                        <a href="javascript:;" onclick="del('{$v.id}', 'del-{$v.id}')">删除</a>
+
+                                    </td>
+                                </tr>{/volist}{/volist}</tbody>
+
+                            </table>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {include file="common/copyright"}
+        </div>
+    </div>
+</section>
+{include file="common/footer"}
+<!--彈窗修改-->
+<script src="__PUBLIC__/js/popModal.min.js"></script>
+<script>
+    $(function(){
+        $('.sorting-box .sorting').click(function(){
+            var that = this;
+            $(this).popModal({
+                html : '<div class="sorting-content"><input type="number"class="control-input"onkeyup="positiveInteger(this)"><div class="control"><a href="javascript:;"data-popModalBut="ok"class="btn control-save">保存</a><a href="javascript:;"data-popModalBut="close"class="btn control-cancel">取消</a></div></div>',
+                placement : 'bottomRight',
+                showCloseBut : false,
+                onDocumentClickClose : true,
+                onOkBut : function(ev){
+                    console.log($(ev.target).parent().siblings().val())
+                    // console.log($(that).siblings('.serial_number').val())
+                    $(that).siblings('.serial_number').text($(ev.target).parent().siblings().val());
+                },
+                onCancelBut : function(){},
+                onLoad : function(){},
+                onClose : function(){}
+            });
+
+        });
+    })
+</script>
+<script>
+
+    /*删除*/
+    function del(id,key){
+
+        layui.use(['layer','form'], function(){
+            var layer = layui.layer,form = layui.form;;
+
+            layer.confirm('确认删除吗？', {btn:['确认'], yes:function(index){
+                    //按钮【按钮一】的回调
+                    //此处请求后台程序，下方是成功后的前台处理……
+                    $.ajax({
+                        type: 'POST',
+                        url: '{:url("boguan/platform.contentcate/del")}',
+                        data:{'id':id},
+                        success: function(data) {
+                            console.log(data);
+                            if (data.errorCode == 1) {
+
+                                layer.msg(data.msg,{icon: 1})
+                                $('.'+key).remove();
+                            } else {
+                                layer.msg(data.msg,{icon: 2})
+                            }
+                        },
+                        error: function (data) {
+                            console.log(data.responseText);
+                            layer.msg(data.msg,{icon: 2})
+                        }
+                    });
+                    layer.close(index);
+                }});
+        })
+
+    }
+</script>

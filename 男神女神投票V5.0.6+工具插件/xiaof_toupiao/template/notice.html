@@ -1,0 +1,227 @@
+{template 'common/header'}
+<link href="//cdn.bootcss.com/bootstrap-select/2.0.0-beta1/css/bootstrap-select.min.css" rel="stylesheet">
+<script src="//cdn.bootcss.com/bootstrap-select/2.0.0-beta1/js/bootstrap-select.min.js"></script>
+<ul class="nav nav-tabs">
+    <li {if $act == 'display'}class="active"{/if}><a href="{php echo $this->createWebUrl('notice', array('act' => 'display', 'version_id' => $_GPC['version_id']));}">列表</a></li>
+    {if empty($item['id'])}
+    <li {if $act == 'post'}class="active"{/if}><a href="{php echo $this->createWebUrl('notice', array('act' => 'post', 'pid' => 0, 'version_id' => $_GPC['version_id']))}">添加</a></li>
+    {else}
+    <li class="active"><a href="{php echo $this->createWebUrl('notice', array('act' => 'post', 'id' => $id, 'version_id' => $_GPC['version_id']));}">编辑</a></li>
+    {/if}
+</ul>
+<style type="text/css">
+    .bootstrap-select:not([class*=col-]):not([class*=form-control]):not(.input-group-btn){
+        width: 100% !important;
+    }
+    .category_img{
+        width: 60px;
+    }
+</style>
+{if $act == 'display'}
+<form method="post">
+    <div class="panel panel-default ">
+        <div class="table-responsive panel-body">
+            <table class="table table-hover">
+                <thead class="navbar-inner">
+                <tr>
+                    <th width="90">排序</th>
+                    <th width="150">标题</th>
+                    <th>简要</th>
+                    <!--<th width="200">封面图</th>-->
+                    <th width="80">状态</th>
+                    <th width="120" class="text-right">操作</th>
+                </tr>
+                </thead>
+                <tbody id="category_body">
+                {if $list}
+                {loop $list $parent}
+                <tr>
+                    <td>
+                        <input type="text" class="form-control text-center" name="displayorder[{$parent['id']}]" value="{$parent['displayorder']}">
+                    </td>
+                    <td>
+                        {$parent['title']}
+                    </td>
+                    <td>
+                        {$parent['concise']}
+                    </td>
+                    <!--<td>
+                        {loop $parent['cover'] $co}
+                        <img class="category_img" src="{php echo tomedia($co)}" onerror="this.src='{php echo $this->superman_placeholder}'"/>
+                        {/loop}
+                    </td>-->
+                    <td>
+                        {if $parent['isshow'] == 1}
+                        <span class="label label-success">显示</span>
+                        {else}
+                        <span class="label label-danger">隐藏</span>
+                        {/if}
+                    </td>
+                    <td class="text-right">
+                        <a href="{php echo $this->createWebUrl('notice', array('act' => 'post', 'id' => $parent['id'], 'pid' => 0, 'level' => 1, 'version_id' => $_GPC['version_id']))}"><i class="fa fa-pencil"></i> 编辑</a>
+                        <a href="{php echo $this->createWebUrl('notice', array('act' => 'delete', 'id' => $parent['id'], 'version_id' => $_GPC['version_id']))}" class="text-danger"  style="padding: 0 .5rem" onclick="return confirm('确认删除此公告吗？');return false;"><i class="fa fa-remove"></i> 删除</a>
+                    </td>
+                </tr>
+                </tbody>
+                </tbody>
+                {/loop}
+                {/if}
+            </table>
+        </div>
+    </div>
+    <input name="submit" type="submit" value="更新排序" class="btn btn-primary col-lg-1" />
+    <input type="hidden" name="token" value="{$_W['token']}" />
+</form>
+<script>
+    require(['jquery', 'util'], function($, u){
+        $('.toggle_collapse').click(function(){
+            if ($('i', this).hasClass('fa-plus')) {
+                $('i', this).removeClass('fa-plus').addClass('fa-minus');
+                $(this).parent().parent().parent().next().fadeIn();
+
+            } else if ($('i', this).hasClass('fa-minus')) {
+                $('i', this).removeClass('fa-minus').addClass('fa-plus');
+                $(this).parent().parent().parent().next().fadeOut();
+            }
+        });
+    })
+</script>
+{else}
+<style>
+    .qrcode_wrap {
+        position: fixed;
+        top: 10rem;
+        right: 2rem;
+    }
+    .qrcode_wrap img {
+        width:11rem;
+    }
+    .qrcode_wrap > span {
+        display: block;
+        text-align: center;
+    }
+</style>
+<form class="form-horizontal form" action="" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="id" value="{$item['id']}">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            {if empty($item['id'])}
+            添加公告
+            {else}
+            编辑公告
+            {/if}
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label"><span style='color:red'>*</span>标题</label>
+                <div class="col-sm-8 col-xs-12">
+                    <input type="text" class="form-control" placeholder="" name="title" value="{$item['title']}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label"><span style='color:red'></span>简要</label>
+                <div class="col-sm-8 col-xs-12">
+                    <textarea type="text" class="form-control" placeholder="" name="concise" value="">{$item['concise']}</textarea>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label" for="">公告详情</label>
+                <div class="col-sm-8 col-xs-12">
+                    <?php if(!empty($item['noticecontent'])){$details['noticecontent'] = $item['noticecontent'];}?>
+                    {php echo tpl_ueditor('noticecontent', $details['noticecontent']);}
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label"><span style='color:red'>*</span>封面图</label>
+                <div class="col-sm-8 col-xs-12">
+                    {php echo tpl_form_field_image('cover', $item['cover'])}
+                    <span class="help-block">活动列表公告图片</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">访问地址</label>
+                <div class="col-sm-8 col-md-8 col-xs-12">
+                    <input type="text" class="form-control" placeholder="" name="url" value="{$item['url']}">
+                    <span class="help-block">点击封面图跳转的链接，外链需要加http://</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">选择区域</label>
+                <div class="col-sm-8 col-xs-12">
+                    <select class="selectpicker" multiple style="width: 100%" name="area[]" style="width: 100%;">
+                        {if $area}
+                        {loop $area $category}
+                        <optgroup label="{$category['title']}">
+                            {if $category['childs']}
+                            <!--二级分类-->
+                            {loop $category['childs'] $child}
+                            <option value="{$child['id']}"{if $child['childs']}disabled{/if} {if !empty($item['area']) && in_array($child['id'], $item['area'])}selected{/if}>{$child['title']}</option>
+                                <!--三级分类-->
+                                {if $child['childs']}
+                                {loop $child['childs'] $ch}
+                                <option class="area_three" style="margin-left: 20px;" value="{$ch['id']}" {if !empty($item['area']) && in_array($ch['id'], $item['area'])}selected{/if}>{$ch['title']}</option>
+                                {/loop}
+                                {/if}
+                            {/loop}
+
+                            <!--一级分类-->
+                            {elseif !$category['childs']}
+                            <option value="{$category['id']}" {if !empty($item['area']) && in_array($category['id'], $item['area'])}selected{/if}>{$category['title']}</option>
+                            {/if}
+
+                        </optgroup>
+                        {/loop}
+                        {/if}
+                    </select>
+                    <span class="help-block">该公告显示的区域</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">是否显示</label>
+                <div class="col-sm-6 col-md-8 col-xs-12">
+                    <div class="input-group">
+                        <label class="radio-inline">
+                            <input type="radio" name="isshow" value="1" {if $item['isshow']}checked{/if}> 是
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" name="isshow" value="0" {if !$item['isshow']}checked{/if}> 否
+                        </label>
+                    </div>
+                    <span class="help-block"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+	<div>&#25042;&#20154;&#28304;&#30721;&#119;&#119;&#119;&#46;&#108;&#97;&#110;&#114;&#101;&#110;&#122;&#104;&#105;&#106;&#105;&#97;&#46;&#99;&#111;&#109;&#32;&#20840;&#31449;&#36164;&#28304;&#50;&#48;&#22359;&#20219;&#24847;&#19979;&#36733;</div>
+    <div class="form-group">
+        <div class="col-sm-12">
+            <input name="submit" type="submit" value="提交" class="btn btn-primary col-lg-1">
+            <input type="hidden" name="token" value="{$_W['token']}" />
+        </div>
+    </div>
+</form>
+<script>
+    require(['jquery', 'util'], function($, u){
+        $('form').submit(function(){
+            var title = $('input[name=title]');
+            if (title.val() == '') {
+                u.message('请输入公告标题！', '', 'error');
+                return false;
+            }
+            var cover = $('input[name=cover]');
+            if (cover.val() == '') {
+                u.message('请选择封面图！', '', 'error');
+                return false;
+            }
+            return true;
+        });
+    })
+    $('select[name="itemids[]"]').selectpicker({
+        noneSelectedText:'所有商品'
+    });
+    $('select[name="area[]"]').selectpicker({
+        noneSelectedText:'所有分类'
+    });
+</script>
+{/if}
+{template 'common/footer'}

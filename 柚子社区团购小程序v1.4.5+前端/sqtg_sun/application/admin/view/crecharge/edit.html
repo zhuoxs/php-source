@@ -1,0 +1,153 @@
+{extend name="common/edit_table" /}
+{block name="content"}
+<div class="layui-form-item">
+    <label class="layui-form-label">是否开启自定义充值</label>
+    <div class="layui-input-block">
+        <input type="radio" lay-filter="type" name="state" value="1" title="开启" {php}echo (isset($info['state']) && $info['state'] == 1) ?"checked" :""{/php}>
+        <input type="radio" lay-filter="type" name="state" value="0" title="关闭" {php}echo (isset($info['state']) && $info['state'] == 0) ?"checked" :""{/php}>
+    </div>
+</div>
+<div class="layui-form-item">
+    <label class="layui-form-label">最低充值金额</label>
+    <div class="layui-input-block">
+        <input autocomplete="off" type="text" name="recharge_lowest" placeholder="请输入最低充值金额,最低为0.01元" class="layui-input" value="{$info.recharge_lowest??''}">
+    </div>
+</div>
+<div class="layui-form-item">
+    <label class="layui-form-label">充值卡优惠活动</label>
+    <div class="layui-input-block">
+        <!--工具栏-->
+        <div class="tool-box">
+            <div class="layui-btn-group">
+                <a href="javascript:;" id="btnAdd" class="layui-btn layui-btn-primary layui-btn-sm">新增</a>
+                <a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+            </div>
+        </div>
+        <!--数据表-操作列-->
+        <script type="text/html" id="dataTool">
+            <!--<a href="javascript:;" lay-event="del" class="layui-btn layui-btn-danger layui-btn-xs">删除</a>-->
+            <a href="javascript:;" lay-event="edit" class="layui-btn layui-btn-xs">编辑</a>
+        </script>
+        <!--数据表-->
+        <div class="table-box">
+            <table class="layui-hide" id="laytable"></table>
+        </div>
+    </div>
+</div>
+<style>
+    .choose ul{
+        height: 530px;
+        overflow: auto;
+    }
+    .choose li{
+        position: relative;
+    }
+    .choose label{
+        height: 35px;
+        line-height: 35px;
+        width: 100%;
+        position: relative;
+        color: #666;
+        cursor: pointer;
+        border-bottom: 1px solid #ddd;
+        padding: 0px 30px;
+    }
+    .choose .disabled{
+        cursor: pointer;
+        color: #aaa;
+    }
+    .choose input{
+        height: 20px;
+        width: 20px;
+        position: absolute;
+        top: 4px;
+        right: 30px;
+    }
+</style>
+<script>
+            layui.use(['table','form'],function () {
+                var table = layui.table;
+                var form = layui.form;
+                table.render({
+                    elem: '#laytable'
+                    , data: {php}echo (isset($info['details']) && $info['details']) ? ($info['details']):"[]"{/php}
+                    , cols: [[
+                    {type: 'numbers', fixed: 'left'},
+                    {type: 'checkbox', fixed: 'left'},
+                    {field: 'money', fixed: 'left', width: 250, title: '充值金额', sort: true, edit: true},
+                    {field: 'send_money', width: 250, title: '赠送金额', sort: true, edit: true},
+                    // {field: 'o', fixed: 'right', width: 200, title: '操作', toolbar: '#dataTool'},
+                ]]
+                    // , page: true
+                    , limit: 90
+                    // , height: 'full-420',
+                });
+
+                $('#btnAdd').click(function () {
+                    var data = [];
+                    data = layui.table.data.laytable;
+                    data.push({
+                        'money':'',
+                        'send_money':'',
+                    });
+                    table.reload('laytable', {
+                        data: data,
+                    });
+                })
+                //        批量删除
+                $('#btnBatchDelete').click(function () {
+                    var data = [];
+                    data = layui.table.data.laytable;
+                    if (data.length > 0) {
+                        var new_data = [];
+                        for (var i in data) {
+                            if (!data[i]['LAY_CHECKED']) {
+                                new_data.push(data[i]);
+                            }
+                        }
+                        table.reload('laytable', {
+                            data: new_data,
+                        });
+                    } else {
+                        layer.msg('请选择记录');
+                    }
+                })
+
+                // 新增界面、保存、取消事件
+                form.on('submit', function(data){
+                    if(!$(data.elem).is('button')){
+                        return false;
+                    }
+                    var data = data.field;
+                    data.details = JSON.stringify(table.data.laytable);
+                    var url = "{:adminurl('save')}";
+                    $.post(url,data,function(res){
+                        if (typeof res == 'string'){
+                            res = $.parseJSON(res);
+                        }
+                        if (res.code == 0) {
+                            // var index=parent.layer.getFrameIndex(window.name);
+                            // parent.layer.close(index);
+                            layer.msg('保存成功',{icon: 6,anim: 6});
+                            layui.table.reload('laytable',{});
+                        }else{
+                            layer.msg(res.msg,{icon: 5,anim: 6});
+                        }
+                    });
+                    return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                });
+                form.on('radio(type)', function(data){
+                    table.reload('laytable',{
+                        cols: [[
+                            {type: 'numbers', fixed: 'left'},
+                            {type: 'checkbox', fixed: 'left'},
+                            {field: 'money', fixed: 'left', width: 250, title: '充值金额', sort: true, edit: true},
+                            {field: 'send_money', width: 250, title: '赠送金额', sort: true, edit: true},
+                            // {field: 'o', fixed: 'right', width: 200, title: '操作', toolbar: '#dataTool'},
+                        ]]
+                    });
+                });
+            })
+
+</script>
+{/block}

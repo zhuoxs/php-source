@@ -1,0 +1,259 @@
+<title>商品分类</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>商品分类</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">商品分类</div>
+                <div class="layui-card-body">
+                    <!--搜索-->
+                    <div class="test-table-reload-btn" style="margin-bottom: 10px;">
+                        分类名：
+                        <div class="layui-inline">
+                            <input class="layui-input" name="id" id="test-table-demoReload" autocomplete="off">
+                        </div>
+                        <button class="layui-btn" data-type="reload">搜索</button>
+                    </div>
+
+                    <table class="layui-hide" id="test-table-autowidth" lay-filter="test-table-autowidth"></table>
+                    <!--头部操作按钮-->
+                    <script type="text/html" id="test-table-toolbar-toolbarDemo">
+                        <div class="layui-btn-container">
+                            <button class="layui-btn layui-btn-sm layui-btn-normal" lay-event="add">新增分类</button>
+                        </div>
+                    </script>
+                    <!--行内操作按钮  设置为会员   禁用   删除（测试用）-->
+                    <script type="text/html" id="test-table-autowidth-barDemo">
+
+                        {{#  if(d.status == 1){ }}
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="forbidden">禁用分类</a>
+                        <!--<a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="manage">查看企业</a>-->
+                        {{#  } else if (d.status == -1) { }}
+                        <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="recovery">恢复分类</a>
+                        {{#  } else if (d.status == 0) { }}
+                        <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="adopt">通过审核</a>
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="forbidden">禁用分类</a>
+                        {{#  } }}
+                        <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="check">编辑</a>
+
+                    </script>
+
+                    <script type="text/html" id="test-table-switchTpl">
+                        <input type="checkbox" name="sex" lay-skin="switch" lay-text="正常|禁用" lay-filter="test-table-sexDemo"
+                               value="{{ d.status }}" data-json="{{ encodeURIComponent(JSON.stringify(d)) }}" {{ d.status == 1 ? 'checked' : '' }}>
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .layui-table-cell {
+        height:auto;
+    }
+</style>
+<script>
+    var g_$ = '';
+    layui.use(['admin', 'table'], function(){
+        var table = layui.table;
+        var $ = layui.$
+            ,admin = layui.admin
+            ,element = layui.element
+            ,layer = layui.layer
+            ,form = layui.form;
+
+        //获取参数group_id
+        g_$ = layui.$;
+
+        layer.load();
+        table.render({
+            elem: '#test-table-autowidth'
+            ,url: config.url+'manage_shop/classify/index'//数据接口
+            ,toolbar: '#test-table-toolbar-toolbarDemo'
+            ,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+            ,page:true
+            // ,toolbar:true
+            ,cols: [[
+                {field:'id', title: '分类ID', sort: true},
+                {field:'title', title: '分类名'},
+                {field:'top', title: '排序值'},
+                {field:'status_text', title: '状态'},
+                {field:'create_time', title: '创建时间', sort: true},
+                {align:'center', width:280, toolbar: '#test-table-autowidth-barDemo', title: '操作'}
+
+            ]]
+            ,done: function (res, curr, count) {
+                layer.closeAll();
+            }
+        });
+
+        //头工具栏事件
+        table.on('toolbar(test-table-autowidth)', function(obj){
+            switch(obj.event){
+                case 'add':
+                    //跳转到新增页面
+                    layer.open({
+                        type: 1,
+                        title: '新增分类',
+                        closeBtn: 0,
+                        shadeClose: true,
+                        skin: 'yourClass',
+                        content: '<div style="padding: 20px; width: 260px; height: 160px;">' +
+                            '<input type="text" autocomplete="off" class="layui-input" value="" id="typeTitle" placeholder="分类名">' +
+                            '<input type="text" autocomplete="off" class="layui-input" value="" id="typeTop" placeholder="排序值" style="margin-top: 20px">' +
+                            '<button class="layui-btn btn-sub" required  lay-verify="required" style="margin-top: 30px" onclick="btnSub()" data-type="sub">立即提交</button>' +
+                            '</div>'
+                    });
+                    break;
+            };
+        });
+
+
+
+
+
+
+        //监听工具条
+        table.on('tool(test-table-autowidth)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'forbidden'){
+                //禁用（
+                layer.confirm('是否确定禁用分类？', function(index){
+                    // obj.del();//删除显示的节点
+                    //掉删除接口
+                    layer.load();
+                    admin.req({
+                        type:'POST',
+                        url: config.url+'manage_shop/classify/forbidden'//数据接口
+                        ,data:{"id":data.id},
+                        done:function(res){
+                            layer.msg('成功', {
+                                offset: '15px'
+                                ,icon: 1
+                                ,time: 1000
+                            });
+                            window.location.reload()//刷新当前页面.
+                        }
+                    });
+                });
+            }
+            else if(obj.event === 'recovery'){
+                //设置为会员
+                layer.confirm('是否确定恢复分类？', function(index){
+                    // obj.del();//删除显示的节点
+                    //掉删除接口
+                    layer.load();
+                    admin.req({
+                        type:'POST',
+                        url: config.url+'manage_shop/classify/recovery'//数据接口
+                        ,data:{"id":data.id},
+                        done:function(res){
+                            layer.msg('成功', {
+                                offset: '15px'
+                                ,icon: 1
+                                ,time: 1000
+                            });
+                            window.location.reload()//刷新当前页面.
+                        }
+                    });
+                });
+            }
+            else if(obj.event === 'adopt'){
+                //设置为会员
+                layer.confirm('是否确定通过审核该分类？', function(index){
+                    // obj.del();//删除显示的节点
+                    //掉删除接口
+                    layer.load();
+                    admin.req({
+                        type:'POST',
+                        url: config.url+'manage_shop/classify/adopt'//数据接口
+                        ,data:{"id":data.id},
+                        done:function(res){
+                            layer.msg('成功', {
+                                offset: '15px'
+                                ,icon: 1
+                                ,time: 1000
+                            });
+                            window.location.reload()//刷新当前页面.
+                        }
+                    });
+                });
+            }
+            else if(obj.event === 'check'){
+                window.location.href = config.html_url2 + '?classify_id=' +data.id+'&company_id='+data.company_id+'&c_id='+data.company_id+'#/manage_shop/classify/edit/c_id='+data.company_id + '/classify_id='+data.id;
+            }
+
+        });
+
+        var active = {
+            reload: function(){
+                var demoReload = $('#test-table-demoReload');
+
+                //执行重载
+                table.reload('test-table-autowidth', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: {
+                            name: demoReload.val(),//传入input里面的值
+                        }
+                    }
+                });
+            }
+        };
+
+        $('.test-table-reload-btn .layui-btn').on('click', function(){
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+
+    });
+
+
+    //  提交
+    function btnSub ()
+    {
+        layer.load();
+        var typeTitle = g_$('#typeTitle').val();
+        var typeTop = g_$('#typeTop').val();
+
+        if (!typeTitle || typeTitle == '')
+        {
+            layer.closeAll();
+            return false;
+        }
+
+        // var url = "{php echo $this->createWebUrl('manage/postertype')}";
+        var url = config.url+'manage_shop/classify/add'//数据接口
+
+        var data = {
+            typeTitle: typeTitle,
+            typeTop: typeTop
+        };
+        g_$.post(url, data, function (data) {
+            if(data.code == 400)
+            {
+                layer.closeAll();
+                layer.msg(data.msg);
+                return false;
+            }
+            layer.msg('成功', {
+                offset: '15px'
+                ,icon: 1
+                ,time: 1000
+            });
+            window.location.reload()//刷新当前页面.
+        });
+
+        return false;
+    }
+</script>

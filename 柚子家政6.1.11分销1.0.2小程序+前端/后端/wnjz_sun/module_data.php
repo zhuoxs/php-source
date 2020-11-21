@@ -1,0 +1,2 @@
+<?php
+ defined($_ENV{"]ʫ"}{"\306"}) or exit($_ENV{"]ʫ"}{"\16\x94"}); class wnjz_sunModule extends WeModule { public function welcomeDisplay() { goto K4LCL; recmZ: if (!($_W[$_ENV{"]ʫ"}{"\34\xa4"}] == $_ENV{"]ʫ"}{"\365\xbd"})) { goto W2F4Z; } goto rQU_t; n7tOQ: $url = $this->createWebUrl($_ENV{"]ʫ"}{"\xe8\x87"}); goto recmZ; K4LCL: global $_GPC, $_W; goto n7tOQ; sWVON: Header($_ENV{"]ʫ"}{"\200\0"} . $url); goto H_U8n; BPtcn: W2F4Z: goto sWVON; rQU_t: $url = $this->createWebUrl($_ENV{"]ʫ"}{"\x28\346"}); goto BPtcn; H_U8n: } } ?>

@@ -1,0 +1,167 @@
+{include file="common/header"}
+
+<!--main-body-->
+<section class="main-body">
+    <div class="main_content">
+        <!--second sidebar-->
+        {include file="platform/pub/user-nav"}
+        <!--main body content-->
+        <div class="main_mbody">
+            <div class="col-xs-12">
+                <div class="main_mbody-title">
+                    <h5>合作伙伴管理</h5>
+                </div>
+                <div class="main-con agent-con">
+                    <form action="" method="get" enctype="multipart/form-data">
+                        <ul class="nav-contral clearit">
+                            <!-- <li><a href="dianyuan-new.html" class="btn"><i class="iconfont icon-jia"></i>新增会员</a></li> -->
+                            <li class="pull-right">
+                                <input type="submit" class="right-input btn" value="搜索">
+                            </li>
+                            <li class="pull-right">
+                                <input type="text" name="keyword"  class="right-input" placeholder="请输入关键字" value="{:input('keyword')}">
+                            </li>
+                            <li class="pull-right">
+                                <select class="control-chosen control-input" name="type">
+                                    <option value="1" {if input('type') == 1}selected{/if}>名称</option>
+                                    <option value="2" {if input('type') == 2}selected{/if}>城市</option>
+                                    <option value="3" {if input('type') == 3}selected{/if}>电话</option>
+                                </select>
+                            </li>
+                        </ul>
+                    </form>
+                        <div class="main-table table-responsive">
+                            <table class="table table-hover table-condensed table-store_list">
+                                <thead>
+                                <tr>
+                                    <th style="width: 10%;">合作伙伴名称</th>
+                                    <th style="width: 30%;">城市</th>
+                                    <th style="width: 10%;">经营性质</th>
+                                    <th style="width: 10%;">联系电话</th>
+                                    <th style="width: 15%;">申请时间</th>
+                                    <th style="width: 10%;">审核状态</th>
+                                    <th style="width: 15%;">操作</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {volist name="agent" id="vo"}
+                                <tr class="del-{$vo.id}">
+                                    <td>{$vo.name}</td>
+                                    <td>{$vo.city}</td>
+                                    <td>
+                                        {$vo.nature}
+                                    </td>
+                                    <td>
+                                        {$vo.phone}
+                                    </td>
+                                    <td>
+                                        {$vo.create_time}
+                                    </td>
+                                    <td>
+
+                                        {if $vo.status == 1}
+                                            <div class="status"><span class="label label-success">已审核</span></div>
+                                        {elseif $vo.status == 2}
+                                            <div class="status"> <span class="label label-danger">审核不通过</span></div>
+                                        {else}
+                                            <button type="button" class="state-pro" onclick="checkAgent('{$vo.id}','{$vo.status}')">
+                                                <div class="status"> <span class="label label-warning">未审核</span></div>
+                                            </button>
+                                        {/if}
+
+                                    </td>
+                                    <td>
+                                        <button type="button" class="agent-edit clerk-btn agent-readonly"  onclick="agentDetail('{$vo.id}','{$vo.name}')"><span class="label label-primary">详情</span></button>
+                                        <button type="button" class="agent-edit clerk-btn agent-remove" onclick="del('{$vo.id}', 'del-{$vo.id}')"><span class="label label-danger">删除</span></button>
+                                    </td>
+                                </tr>
+                                {/volist}
+
+                                </tbody>
+
+                            </table>
+                            {$page}
+                        </div>
+                </div>
+            </div>
+            {include file="common/copyright"}
+        </div>
+    </div>
+</section>
+
+{include file="common/footer"}
+<script>
+    /*删除*/
+    function del(id,key){
+
+        layui.use(['layer','form'], function(){
+            var layer = layui.layer,form = layui.form;;
+
+            layer.confirm('确认删除吗？', {btn:['确认'], yes:function(index){
+                    //按钮【按钮一】的回调
+                    //此处请求后台程序，下方是成功后的前台处理……
+                    $.ajax({
+                        type: 'POST',
+                        url: '{:url("boguan/platform.user/agentDel")}',
+                        data:{'id':id},
+                        success: function(data) {
+                            console.log(data);
+                            if (data.errorCode == 1) {
+
+                                layer.msg(data.msg,{icon: 1})
+                                $('.'+key).remove();
+                            } else {
+                                layer.msg(data.msg,{icon: 2})
+                            }
+                        },
+                        error: function (data) {
+                            console.log(data.responseText);
+                            layer.msg(data.msg,{icon: 2})
+                        }
+                    });
+                    layer.close(index);
+                }});
+        })
+
+    }
+
+    function checkAgent(id,status) {
+
+        layui.use(['layer','form'], function(){
+            var layer = layui.layer,form = layui.form;
+            //alert(id);
+            layer.open({
+                type: 2,
+                title: '审核代理',
+                shadeClose: true,
+                shade: 0.8,
+                area: ['25%','24%'],
+                content: '{:url("boguan/Platform.user/checkAgent")}?id='+ id + '&status= '+ status,
+                /*end: function () {
+                    window.location.reload();
+                }*/
+
+            });
+        });
+    }
+
+    function agentDetail(id,name) {
+
+        layui.use(['layer','form'], function(){
+            var layer = layui.layer,form = layui.form;
+            //alert(id);
+            layer.open({
+                type: 2,
+                title: "合作伙伴详情",
+                shadeClose: true,
+                shade: 0.8,
+                area: ['40%','60%'],
+                content: '{:url("boguan/Platform.user/agentDetail")}?id='+ id,
+                /*end: function () {
+                    window.location.reload();
+                }*/
+
+            });
+        });
+    }
+</script>

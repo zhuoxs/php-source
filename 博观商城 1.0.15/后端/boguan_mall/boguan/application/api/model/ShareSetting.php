@@ -1,0 +1,2 @@
+<?php
+ namespace app\api\model; class ShareSetting extends BaseModel { public function getWithdrawTypeAttr($data) { goto uJK8s; lRPuO: return json_decode($data, true); goto NIiEb; uJK8s: if (!empty($data)) { goto K4sKG; } goto aeIS_; kMwX6: K4sKG: goto lRPuO; aeIS_: return null; goto kMwX6; NIiEb: } public function getPosterAttr($data) { goto KFbq1; wMDVV: return json_decode($data, true); goto vK1og; dG8oz: return null; goto WHB0Y; KFbq1: if (!empty($data)) { goto QiIby; } goto dG8oz; WHB0Y: QiIby: goto wMDVV; vK1og: } }

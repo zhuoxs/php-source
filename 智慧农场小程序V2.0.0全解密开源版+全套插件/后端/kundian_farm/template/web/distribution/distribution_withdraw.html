@@ -1,0 +1,87 @@
+{template 'web/common/common'}
+{template 'web/distribution/navbar'}
+<div class="layui-card">
+    <div class="layui-form">
+        <table class="layui-table" lay-skin="line">
+            <thead>
+            <tr>
+                <th>用户UID</th>
+                <th>头像</th>
+                <th>用户昵称</th>
+                <th>姓名</th>
+                <th>提现金额</th>
+                <th>打款账号</th>
+                <th>状态</th>
+                <th>申请时间</th>
+                <th>备注</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $data['list'] $key $item}
+            <tr>
+                <td>{$item['uid']}</td>
+                <td><img src="{$item['avatarurl']}" style="width: 40px;height: 40px;" alt=""></td>
+                <td>{$item['nickname']}</td>
+                <td>{$item['name']}</td>
+                <td>{$item['price']}元</td>
+                <td>{$item['wx_account']}</td>
+                <td>
+                    {if $item['status']==0}
+                    <span class="layui-badge layui-bg-gray">待审核</span>
+                    {else if $item['status']==1}
+                    <span class="layui-badge layui-bg-green">已打款</span>
+                    {else if $item['status']==2}
+                    <span class="layui-badge layui-bg-orange">已拒绝</span>
+                    {/if}
+                </td>
+                <td><?php echo date("Y-m-d H:i:s",$item['create_time']);?></td>
+                <td>{$item['remark']}</td>
+                <td>
+                    {if $item['status']==0}
+                    <button class="layui-btn layui-btn-xs agreeWithdraw" data-id="{$item['id']}">打款</button>
+                    <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','id'=>$item['id'],'op'=>'deny_withdraw','action'=>'distribution')}">
+                        <button class="layui-btn layui-btn-xs layui-btn-danger">拒绝</button>
+                    </a>
+                    {else}
+                    --
+                    {/if}
+                </td>
+            </tr>
+            {/loop}
+            </tbody>
+        </table>
+        <div style="text-align: right;">
+            {$data['pager']}
+        </div>
+    </div>
+</div>
+{template 'common/footer'}
+<script src="../addons/kundian_farm/resource/layui.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function() {
+        var form = layui.form, layer = layui.layer;
+        $(".agreeWithdraw").click(function(){
+            var that=$(this);
+            var id=$(this).attr('data-id');
+            layer.confirm('确认已经打款了吗？',function (index) {
+                var load=layer.load();
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'agreeWithdraw','action'=>'distribution')}",
+                    data:{id:id},
+                    dataType:'json',
+                    success:function(res){
+                        layer.close(load);
+                        layer.alert(res.msg);
+                        if(res.status==0){
+                            window.location.reload();
+                        }
+                        layer.close(index);
+                    }
+                })
+            })
+        })
+
+    })
+</script>

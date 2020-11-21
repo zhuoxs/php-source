@@ -1,0 +1,441 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs" id="myTab">
+	<li {if $_W['method'] == 'goods_list'}class="active"{/if}><a href="{php echo web_url('consumption/goods/goods_list')}">商品列表</a></li>
+	{if $_W['method'] == 'goods_post'}
+	<li class="active"><a href="{php echo web_url('consumption/goods/goods_post')}">编辑商品</a></li>
+	{/if}
+</ul>
+<div class="app-content">
+{if $_W['method'] == 'goods_post'}
+<style>
+	.category-container .category-item {position: relative; height: 80px; border: 1px solid #eee; margin-bottom: 10px;}
+	.category-container .btn-del {height: 0; width: 100%; display: block; position: relative;}
+	.category-container .btn-del::before {content: "×"; position: absolute; height: 16px; width: 16px; text-align: center; line-height: 14px; color: rgb(255, 255, 255); cursor: pointer; top: -6px; right: -6px; z-index: 10; background: rgba(0, 0, 0, 0.3); border-radius: 16px;}
+	.category-container .category-item img {width: 100%; height: 80px;}
+	.category-container .category-item .title {position: absolute; height: 20px; left: 0; right: 0; bottom: -1px; background: rgba(0,0,0,0.5); color: #fff; text-align: center; font-size: 12px; line-height: 20px; cursor: pointer;}
+</style>
+<div class="app-form">
+	<form class="form-horizontal form form-validate" id="form1" action="" method="post" enctype="multipart/form-data">
+		<div class="form-group-title">编辑商品</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">排序</label>
+			<div class="col-sm-9">
+				<input type="text" class="form-control" name="displayorder" value="{$item['displayorder']}">
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">商品标题</label>
+			<div class="col-sm-9">
+				<input type="text" class="form-control" name="title" value="{$item['title']}" required="true">
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">商品缩略图</label>
+			<div class="col-sm-9">
+				{php echo tpl_form_field_image('thumb', $item['thumb']);}
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">商品图集</label>
+			<div class="col-sm-9 col-xs-12">
+				{php echo tpl_form_field_multi_image('advs',$advs);}
+				<span class="help-block">第商品图集为商品详情幻灯片，建议640X300</span>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">商品分类</label>
+			<div class="col-sm-9">
+				<select class="form-control" name="creditshop_category_id" >
+					{loop $categorys $category}
+						<option value="{$category['id']}" {if $category['id'] == $item['category_id']}selected{/if}>{$category['name']}</option>
+					{/loop}
+				</select>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">商品类型</label>
+			<div class="col-sm-9">
+				<div class="radio radio-inline" onclick="changetype('goods')">
+					<input type="radio" name="type" id="type-1" value="goods" {if !$item['type'] || $item['type'] == 'goods'}checked{/if} >
+					<label for="type-1">商品</label>
+				</div>
+				<div class="radio radio-inline" onclick="changetype('credit2')">
+					<input type="radio" name="type" id="type-2" value="credit2" {if $item['type'] == 'credit2'}checked{/if}>
+					<label for="type-2">余额</label>
+				</div>
+				<div class="radio radio-inline" onclick="changetype('halfcard')">
+					<input type="radio" name="type" id="type-4" value="halfcard" {if $item['type'] == 'halfcard'}checked{/if}>
+					<label for="type-4">一卡通会员</label>
+				</div>
+				<!--<div class="radio radio-inline" onclick="$('#credit').hide();$('#redpacket').show();">
+					<input type="radio" name="type" id="type-3" value="redpacket" {if $item['type'] == 'redpacket'}checked{/if}>
+					<label for="type-3">红包</label>
+				</div>-->
+			</div>
+		</div>
+		<div class="form-group" id="halfcard" style="display: {if $item['type'] == 'halfcard'}block{else}none{/if};" >
+			<label class="col-sm-2 control-label">一卡通类型</label>
+			<div class="col-sm-9">
+				<select name="halfcardid" class="form-control select2 col-sm-7 col-xs-6" style="width: 100%;">
+					<option value="">请选择适配的一卡通类型</option>
+					{loop $halfcardlist $half}
+					<option value="{$half['id']}" {if $item['halfcardid'] == $half['id']}selected="selected"{/if}>{$half['name']}</option>
+					{/loop}
+				</select>
+			</div>
+		</div>
+		<div class="form-group" id="credit" style="display: {if $item['type'] == 'credit2'}block{else}none{/if};" >
+			<label class="col-sm-2 control-label">设置余额</label>
+			<div class="col-sm-9">
+				<div class="input-group">
+					<div class="input-group-addon">余额</div>
+					<input type="text" class="form-control" name="credit2" value="{$item['credit2']}">
+					<div class="input-group-addon">元</div>
+				</div>
+			</div>
+		</div>
+		<div class="form-group" id="expresstemplate" style="display: {if $item['type'] == 'goods'}block{else}none{/if};">
+			<label class="col-xs-12 col-sm-3 col-md-2 control-label">运费模板</label>
+			<div class="col-sm-4 col-xs-4">
+				<select name ='expressid' class="form-control" >
+					<option value="">请选择运费模板</option>
+					{loop $express $vv}
+					<option value="{$vv['id']}" {if $item['expressid'] == $vv['id']}selected="selected"{/if}>{$vv['name']}</option>
+					{/loop}
+				</select>
+			</div>
+			<div class="help-block col-md-10 col-lg-offset-2">不选择运费模板即为包邮。</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">商品原价</label>
+			<div class="col-sm-9">
+				<div class="input-group">
+					<input type="text" class="form-control" name="old_price" value="{$item['old_price']}">
+					<div class="input-group-addon">元</div>
+				</div>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">商品库存</label>
+			<div class="col-sm-9">
+				<div class="input-group">
+					<input type="text" class="form-control" name="stock" value="{$item['stock']}">
+					<div class="input-group-addon">份</div>
+				</div>
+				<div class="help-block">
+					填0或者不填则为无限库存的商品
+				</div>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">兑换限制</label>
+			<div class="col-sm-9">
+				<div class="input-group">
+					<div class="input-group-addon">每人共</div>
+					<input type="number" class="form-control" name="chance" value="{$item['chance']}" required="true">
+					<div class="input-group-addon">次</div>
+					<!--<div class="input-group-addon">次,每天提供</div>-->
+					<!--<input type="number" class="form-control" name="totalday" value="{$item['totalday']}" required="true">-->
+					<!--<div class="input-group-addon">份</div>-->
+				</div>
+				<div class="help-block">
+					不限制兑换次数请填入0
+				</div>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">活动消耗</label>
+			<div class="col-sm-9">
+				<div class="input-group">
+					<div class="input-group-addon">消耗</div>
+					<input type="text" class="form-control" name="use_credit1" value="{$item['use_credit1']}" required="true">
+					<div class="input-group-addon">积分+金额</div>
+					<input type="text" class="form-control" name="use_credit2" value="{$item['use_credit2']}">
+					<div class="input-group-addon">元</div>
+				</div>
+				<div class="help-block">
+					可任意组合，可以单独积分兑换，积分必须是正整数，或者积分+现金形式兑换(积分必须大于0)
+				</div>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-xs-12 col-sm-3 col-md-2 control-label">会员优惠</label>
+			<div class="col-sm-9 col-xs-12">
+				<label class="radio-inline" onclick="$('#vipprice').hide();" >
+                    <input type="radio" value="0" name="vipstatus" {if $item['vipstatus']==0} checked {/if}>无
+                </label>
+                <label class="radio-inline" onclick="$('#vipprice').show();">
+                    <input type="radio" value="1" name="vipstatus" {if $item['vipstatus']==1} checked {/if}>会员特价
+                </label>
+                <label class="radio-inline" onclick="$('#vipprice').hide();">
+                    <input type="radio" value="2" name="vipstatus" {if $item['vipstatus']==2} checked {/if}>会员特供
+                </label>
+				<span class="help-block">会员特供即只有会员可以购买</span>
+			</div>
+		</div>
+		<div class="form-group" id="vipprice"   {if $item['vipstatus'] != 1} style="display: none;"  {/if} >
+			<label class="col-sm-2 control-label">会员消耗</label>
+			<div class="col-sm-9">
+				<div class="input-group">
+					<div class="input-group-addon">消耗</div>
+					<input type="text" class="form-control" name="vipcredit1" value="{$item['vipcredit1']}">
+					<div class="input-group-addon">积分+金额</div>
+					<input type="text" class="form-control" name="vipcredit2" value="{$item['vipcredit2']}">
+					<div class="input-group-addon">元</div>
+				</div>
+				<div class="help-block">
+					可任意组合，可以单独积分兑换，积分必须是正整数，或者积分+现金形式兑换(积分必须大于0)
+				</div>
+			</div>
+		</div>
+		{if $distriset['switch']}
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-3 col-md-2 control-label">是否参与分销</label>
+				<div class="col-sm-9 col-xs-12">
+					<label class="radio-inline">
+						<input type="radio" value="1" name="isdistri" {if $item['isdistri'] == 1} checked {/if} onclick="distri(1)"/> 参与
+					</label>
+					<label class="radio-inline">
+						<input type="radio" value="0" name="isdistri" {if $item['isdistri'] == 0 || empty($item['isdistri'])} checked {/if} onclick="distri(0)" /> 不参与
+					</label>
+				</div>
+			</div>
+			<div id="distridiv" class="form-group row" {if empty($item['isdistri'])}style="display: none;"{/if}>
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">一级分销结算金额</label>
+				<div class="col-xs-12 col-sm-8">
+					<div class="input-group">
+						<span class="input-group-addon">￥</span>
+						<input type="text" name="onedismoney" class="form-control" value="{$item['onedismoney']}" />
+					</div>
+					<span class="help-block">一级分销结算金额,不填按默认比例,最多保留两位小数</span>
+				</div>
+			</div>
+			{if $distriset['ranknum']>1}
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">二级分销结算金额</label>
+				<div class="col-xs-12 col-sm-8">
+					<div class="input-group">
+						<span class="input-group-addon">￥</span>
+						<input type="text" name="twodismoney" class="form-control" value="{$item['twodismoney']}" />
+					</div>
+					<span class="help-block">二级分销结算金额,不填按默认比例,最多保留两位小数</span>
+				</div>
+			</div>
+			{/if}
+			{if $distriset['ranknum']>2}
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">三级分销结算金额</label>
+				<div class="col-xs-12 col-sm-8">
+					<div class="input-group">
+						<span class="input-group-addon">￥</span>
+						<input type="text" name="threedismoney" class="form-control" value="{$item['threedismoney']}" />
+					</div>
+					<span class="help-block">三级分销结算金额,不填按默认比例,最多保留两位小数</span>
+				</div>
+			</div>
+			{/if}
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-3 col-md-2 control-label">分销佣金结算时间</label>
+				<div class="col-sm-9 col-xs-12">
+					<label class="radio-inline">
+						<input type="radio" value="0" name="dissettime" {if $item['dissettime']==0 || empty($item['dissettime'])} checked {/if}>订单完成时结算
+					</label>
+					<label class="radio-inline">
+						<input type="radio" value="1" name="dissettime" {if $item['dissettime']==1 } checked {/if}>订单支付时结算
+					</label>
+					<span class="help-block">注：若订单支付时结算，在订单退款时会扣除分销商对应的佣金，如果分销商可提现佣金不足，会扣至负数</span>
+				</div>	
+			</div>	
+			
+			</div>
+		{/if}
+		<div class="form-group">
+			<label class="col-sm-2 control-label">活动状态</label>
+			<div class="col-sm-9">
+				<div class="radio radio-inline">
+					<input type="radio" name="status" id="status-1" value="1" {if $item['status'] == 1}checked{/if}>
+					<label for="status-1">开启</label>
+				</div>
+				<div class="radio radio-inline">
+					<input type="radio" name="status" id="status-0" value="0" {if !$item['status']}checked{/if}>
+					<label for="status-0">关闭</label>
+				</div>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">商品详情</label>
+			<div class="col-sm-9">
+				{php echo tpl_ueditor('description', $item['description']);}
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label"></label>
+			<div class="col-sm-9">
+				<input type="hidden" name="token" value="{$_W['token']}">
+				<input type="submit" value="提交" class="btn btn-primary min-width">
+			</div>
+		</div>
+	</form>
+</div>
+<script>
+	function distri(flag){
+		if (flag == 1) {
+			$('#distridiv').show();
+		} else{
+			$('#distridiv').hide();
+		}
+	}
+</script>
+
+{elseif $_W['method'] == 'goods_list'}
+<div class="app-filter">
+	<div class="filter-action">
+		<a href="{php echo web_url('consumption/goods/goods_post')}" class="btn btn-primary">添加商品</a>
+	</div>
+	<div class="filter-list">
+		<form action="./index.php" class="form-horizontal form-filter">
+			{php echo tpl_form_filter_hidden('consumption/goods/goods_list');}
+			<input type="hidden" name="ta" value="list"/>
+			<div class="form-group">
+				<label class="col-sm-2 control-label">商品类型</label>
+				<div class="col-sm-9">
+					<div class="btn-group">
+						<a class="btn {if !$type}btn-primary{else}btn-default{/if}" href="{php echo web_url('consumption/goods/goods_list')}">不限</a>
+						<a class="btn {if $type == 'goods'}btn-primary{else}btn-default{/if}" href="{php echo web_url('consumption/goods/goods_list', array('type' => 'goods'))}">商品</a>
+						<a class="btn {if $type == 'credit2'}btn-primary{else}btn-default{/if}" href="{php echo web_url('consumption/goods/goods_list', array('type' => 'credit2'))}">余额</a>
+						<a class="btn {if $type == 'halfcard'}btn-primary{else}btn-default{/if}" href="{php echo web_url('consumption/goods/goods_list', array('type' => 'halfcard'))}">会员</a>
+						<!--<a class="btn {if $type == 'redpacket'}btn-primary{else}btn-default{/if}" href="{php echo web_url('consumption/goods/goods_list', array('type' => 'redpacket'))}">红包</a>-->
+					</div>
+				</div>
+			</div>
+			<div class="form-group form-inline">
+				<label class="col-sm-2 control-label">筛选</label>
+				<div class="col-sm-9">
+					<div class="input-group">
+						<input class="form-control" name="keyword" id="" type="text" value="{$_GPC['keyword']}" placeholder="商品名称">
+					</div>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label"></label>
+				<div class="col-sm-9">
+					<button class="btn btn-primary">筛选</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="app-table-list">
+	{if !empty($lists)}
+	<div class="table-responsive js-table">
+		<table class="table table-hover">
+			<thead class="navbar-inner">
+				<tr>
+					<th width="15%" class="text-center">缩略图</th>
+					<th width="15%" class="text-center">商品原价</th>
+					<th width="15%" class="text-center">商品名称</th>
+					<th width="15%" class="text-center">排序</th>
+					<th width="15%" class="text-center">商品类型</th>
+					<th width="10%" class="text-center">是否上架(点击上/下架)</th>
+					<th width="15%" class="text-center">操作</th>
+				</tr>
+			</thead>
+			<tbody>
+				{loop $lists $item}
+				<input type="hidden" name="ids[]" value="{$item['id']}">
+				<tr class="text-center">
+					<td><img src="{php echo tomedia($item['thumb']);}" width="38" style="border-radius: 3px;"></td>
+					<td>
+						￥{$item['old_price']}
+					</td>
+					<td>
+						{$item['title']}
+					</td>
+					<td>
+						{$item['displayorder']}
+					</td>
+					<td>
+						{if $item['type'] == 'goods'}
+							商品
+						{else if $item['type'] == 'credit2'}
+							余额
+						{else if $item['type'] == 'halfcard'}
+							一卡通会员	
+						{else}
+							红包
+						{/if}
+					</td>
+					<td class="upperShelf" style="cursor: pointer;" >
+						{if $item['status'] == 1}
+							<span class="label label-primary isUpperShelf" data-status="{$item['status']}" data-id="{$item['id']}">上架</span>
+						{else}
+							<span class="label label-default isUpperShelf" data-status="{$item['status']}" data-id="{$item['id']}">下架</span>
+						{/if}
+					</td>
+					<td>
+						<a href="{php echo web_url('consumption/goods/goods_post', array('id' => $item['id']))}" class="btn btn-default btn-sm" title="编辑" data-toggle="tooltip" data-placement="top"><i class="fa fa-edit"> </i></a>
+						<a href="{php echo web_url('consumption/goods/goods_del', array('id' => $item['id']))}" class="btn btn-default btn-sm" data-toggle='ajaxPost' title="删除" data-confirm="删除后将不可恢复，确定删除吗?"><i class="fa fa-times"> </i></a>
+					</td>
+				</tr>
+				{/loop}
+			</tbody>
+		</table>
+		<div class="app-table-foot clearfix">
+			<div class="pull-left"></div>
+			<div class="pull-right">
+				{$pager}
+			</div>
+		</div>
+	</div>
+	{else}
+	<div class="no-result">
+		<p>还没有相关数据</p>
+	</div>
+	{/if}
+</div>
+{/if}
+</div>
+<script>
+	$(".upperShelf").on('click',function () {
+	    var the = $(this);
+		var isUpperShelf = the.children(".isUpperShelf");
+		var status = isUpperShelf.data("status");//1=上架中要修改为下架。0=下架中要修改为上架
+		var id = isUpperShelf.data("id");
+        var url = biz.url('consumption/goods/isUpperShelf');
+        //请求后台 进行上下架操作
+		$.post(url,{status:status,id:id},function (res) {
+		    var result = res.data['status'];
+            isUpperShelf.data("status",result);
+		    if(result == 1){
+                the.html('<span class="label label-primary isUpperShelf" data-status="'+result+'" data-id="'+id+'">上架</span>');
+			}else{
+                the.html('<span class="label label-default isUpperShelf" data-status="'+result+'" data-id="'+id+'">下架</span>');
+			}
+        },'json');
+    });
+    
+    function changetype(type){
+    	if(type == 'goods'){
+    		$('#credit').hide();
+    		$('#redpacket').hide();
+    		$('#expresstemplate').show();
+    		$('#halfcard').hide();
+    	}else if(type == 'credit2'){
+    		$('#credit').show();
+    		$('#redpacket').hide();
+    		$('#expresstemplate').hide();
+    		$('#halfcard').hide();
+    	}else if(type == 'halfcard'){
+    		$('#credit').hide();
+    		$('#redpacket').hide();
+    		$('#expresstemplate').hide();
+    		$('#halfcard').show();
+    	}
+    	
+    }
+    
+</script>
+
+
+{php include wl_template('common/footer');}

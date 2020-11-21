@@ -1,0 +1,244 @@
+{php include wl_template('common/header');}
+<div class="panel">
+	    <div class="panel-body">
+            <form action="" method="get" class="form-horizontal" role="form" id="form1">
+                <input type="hidden" name="c" value="site" />
+	            <input type="hidden" name="a" value="entry" />
+	            <input type="hidden" name="m" value="feng_fightgroups" />
+	            <input type="hidden" name="do" value="goods" />
+				<input type="hidden" name="ac" value="goods" />
+				<input type="hidden" name="op" value="warehouse" />
+                <div class="form-group">
+                     <div class="col-md-4">
+                     	<div class="input-group">
+                     		{php echo tpl_form_field_category_2level('category', $categoryData, $childs, '','' )}
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <select name="uniacid" class="form-control">
+                        	<option value="">公众号名称</option>
+                        	{loop $allUniacidData $u}
+                            <option value="{$u['uniacid']}" {if $_GPC['uniacid']==$u['uniacid']}selected="selected"{/if}>{$u['name']}</option>
+                            {/loop}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select name="keywordtype" class="form-control">
+                        	<option value="">关键字类型</option>
+                            <option value="1" {if $_GPC['keywordtype']==1}selected="selected"{/if}>商品名称</option>
+                            <option value="2" {if $_GPC['keywordtype']==2}selected="selected"{/if}>公众号名称</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+						<div class="input-group">
+							<input type="text" name="keyword" class="form-control" value="{$_GPC['keyword']}"  placeholder="请输入关键字"/>
+							<span class="input-group-addon" id="search">搜索</span>
+						</div>
+					</div>
+				</div>
+            </form>
+	    </div>
+	</div>
+	<script type="text/javascript">
+		$("#search").click(function(){
+			$('#form1')[0].submit();
+		});
+	</script>
+<form  class="form-horizontal" action="" method="post">
+<div class="panel panel-default">
+	<div class="table-responsive">
+		<table class="table table-hover">
+			<thead>
+			<tr>
+				<th style="width:40px;">
+					<input type="checkbox" name="checkall" value="" id="checkall" onclick="var ck = this.checked; $(':checkbox').each(function(){this.checked = ck});"/>
+				</th>
+				<th style="width:40px;">
+					ID
+				</th>
+				<th style="width:10%;">商品图</th>
+				<th style="width:35%;">商品名</th>
+				<th class="text-center" style="width:10%;">所属公众号</th>
+				<th class="text-center" style="width:10%;">价格</th>
+				<th class="text-center" style="width:10%;">总销量 / 库存</th>
+				<th class="text-center" style="width:25%;">操作</th>
+			</tr>
+			</thead>
+			<tbody>
+			{loop $goodsData $goods}
+			<tr data-toggle="popover" data-trigger="hover" data-placement="left" class="js-goods-img">
+				<td><input type="checkbox" name="items[]" value="{$goods['id']}" class="items" /></td>
+				<td>{$goods['id']}</td>
+				<td><img class="scrollLoading" src="{IMAGE_PIXEL}" data-url="{php echo tomedia($goods['gimg'])}" onerror="this.src='{IMAGE_NOPIC_SMALL}'" height="50" width="50"/></td>
+				<td class="line-feed">
+					{php echo cutstr($goods['gname'], 30, true);}
+					<br />
+					{if $_W['isfounder']}
+					<label data="{$goods['uniacid']}" class='label label-default {if  in_array('1',$goods['visible_level'])}label-info{/if}' onclick="setProperty(this,{$goods['id']},'1')">强制推广</label>
+					<label data="{$goods['uniacid']}" class='label label-default {if  in_array('2',$goods['visible_level'])}label-info{/if}' onclick="setProperty(this,{$goods['id']},'2')">其他公众号可见</label>
+					<!--<label data="{$goods['uniacid']}" class='label label-default {if  in_array('3',$goods['visible_level'])}label-info{/if}' onclick="setProperty(this,{$goods['id']},'3')">系统管理员可见</label>
+					{/if}-->
+				</td>
+				<td class="line-feed">
+					{php echo cutstr($goods['uniacidName'], 30, true);}
+				</td>
+				<td class="text-center" style="line-height:25px;">
+					<span class="label label-success">￥{php echo number_format($goods['gprice'], 2)}</span><br>
+					<span class="text-muted small">￥{php echo number_format($goods['oprice'], 2)}</span>
+				</td>
+				<td class="text-center">
+					<span>{$goods['salenum']} / {$goods['gnum']}</span>
+				</td>
+				<td  style="position:relative;text-align: center;">
+					<a href="javascript:;" data-id="{$goods['id']}"  data-url="{php echo app_url('goods/detail',array('id'=>$goods['id']))}" id="js-copy{$goods['id']}" class="js-copy">复制链接</a>
+					- <a href="javascript:;" class="js-goods-copy" goods-id="{$goods['id']}" class="pull-right">复制商品</a>
+				</td>
+			</tr>
+			{/loop}
+			<tr>
+				<td><input type="checkbox" name="checkall" value="" id="checkall" onclick="var ck = this.checked; $(':checkbox').each(function(){this.checked = ck});" /></td>
+				<td colspan="8">
+					<input name="submit" type="submit" class="btn btn-primary min-width" value="复制商品">
+				</td>
+			</tr>
+			</tbody>
+		</table>
+	</div>
+	
+	<input type="hidden" name="token" value="{$_W['token']}" />
+</div>
+{$pager}
+</form>
+<script type="text/javascript">
+	require(['jquery', 'util'], function($, util){
+		$('.js-copy').each(function(){
+			var id=$(this).attr('data-id');
+			util.clip($("#js-copy"+id), $(this).attr('data-url'));
+		});
+	});
+</script>
+<script>
+
+	function setProperty(obj,id,type){
+		$(obj).html($(obj).html() + "...");
+		$.post("{php echo web_url('goods/goods/setgoodsproperty')}"
+			,{id:id,type:type, data: obj.getAttribute("data")}
+			,function(d){
+				$(obj).html($(obj).html().replace("...",""));
+				if(type=='isshow'){
+				 $(obj).html( d.data=='1'?'上架':'下架');
+				}
+				$(obj).attr("data",d.data);
+				if(d.result==1){
+					$(obj).toggleClass("label-info");
+				}
+			}
+			,"json"
+		);
+	}
+	$(function(){
+		$(".js-displayorder").blur(function(e){
+			e.stopPropagation();
+			var $this = $(this);
+			var good_id = $this.data("id");
+			var displayorder = parseInt($this.val());
+			if (isNaN(displayorder)) {
+				$this.parent().addClass('has-error');
+				util.tips('必须为数字', 2000);
+				return false;
+			};
+			$.post("{php echo url('goods/goods/display/displayorder');}", {good_id : good_id, displayorder : displayorder}, function(data){
+				$this.parent().removeClass('has-error');
+				util.tips(data.message, 2000);
+			},'json');
+		});
+		$(".js-goods-copy").click(function(e){
+			e.stopPropagation();
+			var html="复制本商品为本公众号拼团商品,将保存在【拼团商品】【下架的商品】中！";
+			var id = $(this).attr('goods-id');
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				$.post("{php echo web_url('goods/goods/copy',array('copy'=>1));}", {id:id}, function(data){
+					if(!data.errno){
+						util.tips("复制成功");
+						location.href = "{php echo web_url('goods/goods/display',array('status'=>2));}";
+					};
+				}, 'json');
+			}, {html: html});
+		});
+		$('.js-batch').click(function(e){
+			e.stopPropagation();
+			var goods_ids = [];
+			var $checkboxes = $('.items:checkbox:checked');
+			$checkboxes.each(function() {
+				if (this.checked) {
+					goods_ids.push(this.value);
+				};
+			});
+
+			if (goods_ids.length == 0) {
+				util.tips('请选择要操作的商品!', 2000);
+				return false;
+			}
+			var op = '';
+			var html = '';
+			if ($(this).hasClass('js-on-shelves')) {
+				op = 'on_shelves';
+				html = '确认上架?';
+			} else if ($(this).hasClass('js-off-shelves')) {
+				op = 'off_shelves';
+				html = '确认下架?';
+			} else if ($(this).hasClass('js-delete')) {
+				op = 'delete';
+				html = '确认删除?';
+			} else if ($(this).hasClass('js-remove')) {
+				op = 'remove';
+				html = '确认选中彻底删除?';
+			}
+			var $this = $(this);
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				$.post("{php echo web_url('goods/goods/batch');}", {funcop : op, goods_ids : goods_ids}, function(data){
+					if(!data.errno){
+						$checkboxes.each(function() {
+							$(this).parent().parent().remove();
+						});
+					};
+					util.tips(data.message, 2000);
+				}, 'json');
+			}, {html: html});
+		});
+
+		$('.js-delete-goods, .js-off-shelves-goods, .js-on-shelves-goods, .js-remove-goods,.js-sellout-goods').click(function(e) {
+			e.stopPropagation();
+			var id = $(this).attr('goods-id');
+			var _this = $(this).parent().parent();
+			if ($(this).hasClass('js-on-shelves-goods')) {
+				op = 'on_shelves';
+				html = '确认上架?';
+			} else if ($(this).hasClass('js-off-shelves-goods')) {
+				op = 'off_shelves';
+				html = '确认下架?';
+			} else if ($(this).hasClass('js-delete-goods')) {
+				op = 'delete';
+				html = '确认删除?';
+			} else if ($(this).hasClass('js-remove-goods')) {
+				op = 'remove';
+				html = '确认选中彻底删除?';
+			} else if ($(this).hasClass('js-sellout-goods')) {
+				op = 'sellout';
+				html = '确认设置售罄?';
+			}
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				$.post("{php echo web_url('goods/goods/single_op')}", {funcop : op, id : id}, function(data){
+					if(!data.errno){
+						_this.remove();
+					}
+					util.tips(data.message, 2000);
+				}, 'json');
+			}, {html: html});
+		});
+	});
+</script>
+{php include wl_template('common/footer');}

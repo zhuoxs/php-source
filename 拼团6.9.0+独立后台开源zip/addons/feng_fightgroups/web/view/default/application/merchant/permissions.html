@@ -1,0 +1,111 @@
+{php include wl_template('common/header');}
+<div class="clearfix">
+	<form method="post" action="" onsubmit="return chkfrm();" name="frm" class="form-horizontal">
+		<style>
+			.select-role tr:first-child td:first-child{border-top:none;}
+			label{font-weight:normal;}
+		</style>
+		<div class="panel panel-default select-role">
+			<div class="panel-heading"><label class="checkbox-inline"><input class="js-check-all" type="checkbox" value="" name="" />勾选拥有的权限</label></div>
+			<div class="panel-body table-responsive">
+				<table class="table table-hover">
+					<tbody>
+					{loop $nodes $node}
+					<tr>
+						<td>
+							<div class="checkbox">
+								<label><input type="checkbox" name="node_ids[]" value="{$node['id']}" gid="{$node['id']}" class="js-grandfather js-gid-{$node['id']}" {if in_array($node['id'], $role['node_ids'])}checked="checked"{/if}/>{$node['name']}</label>
+							</div>
+						</td>
+					</tr>
+					{loop $node['children'] $child}
+					<tr>
+						<td class="text-left">
+							<div style="padding-left:50px;background:url('./resource/images/bg_repno.gif') no-repeat -245px -545px;">
+								<div class="checkbox">
+									<label><input type="checkbox" name="node_ids[]" value="{$child['id']}" gid="{$node['id']}" fid="{$child['id']}" class="js-father js-gid-{$node['id']} js-fid-{$child['id']}" {if in_array($child['id'], $role['node_ids'])}checked="checked"{/if}/>{$child['name']}</label>
+								</div>
+							</div>
+						</td>
+					</tr>
+					{if !empty($child['children'])}
+					<tr>
+						<td class="text-left line-feed">
+							<div style="padding-left:50px;margin-left:50px; background:url('./resource/images/bg_repno.gif') no-repeat -245px -545px;">
+								{loop $child['children'] $grandson}
+								<div class="checkbox-inline">
+									<label><input type="checkbox" name="node_ids[]" value="{$grandson['id']}" gid="{$node['id']}" fid="{$child['id']}" cid="{$grandson['id']}" class="js-child js-gid-{$node['id']} js-fid-{$child['id']}" {if in_array($grandson['id'], $role['node_ids'])}checked="checked"{/if} />{$grandson['name']}</label>
+								</div>
+								{/loop}
+							</div>
+						</td>
+					</tr>
+					{/if}
+					{/loop}
+					{/loop}
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<div class="col-md-offset-1 col-md-10">
+			<input type="hidden" name="id" value="{$id}">
+			<input name="submit" id="submit" type="submit" value="保存" class="btn btn-primary min-width">
+			<input type="hidden" name="token" value="{$_W['token']}" />
+		</div>
+	</form>
+</div>
+
+<script type="text/javascript">
+	$('.js-check-all').click(function() {
+		var checked = this.checked;
+
+		$(this).parent().parent().next().find('input:checkbox').each(function() {
+			this.checked = checked;
+		});
+	});
+	$('.js-grandfather').click(function() {
+		var checked = this.checked;
+		var gid = $(this).attr('gid');
+		$('.js-gid-'+gid).each(function(){
+			this.checked = checked;
+		});
+	});
+
+	$('.js-father').click(function() {
+		var checked = this.checked;
+		var gid = $(this).attr('gid');
+		var fid = $(this).attr('fid');
+		
+		$('.js-child.js-fid-'+fid).each(function(){
+			this.checked = checked;
+		});
+		
+		checked = $('.js-father.js-fid-'+fid+':checked, .js-child.js-gid-'+gid+':checked').length > 0;
+		$('.js-grandfather.js-gid-'+gid).each(function(){
+			this.checked = checked;
+		});
+	});
+
+	$('.js-child').click(function() {
+		var fid = $(this).attr('fid');
+		var gid = $(this).attr('gid');
+		
+		var fatherchecked = $('.js-child.js-fid-'+fid+':checked').length > 0;
+		$('.js-father.js-fid-'+fid).each(function(){
+			this.checked = fatherchecked;
+		});
+		
+		var grandfatherchecked = $('.js-father.js-gid-'+gid+':checked, .js-child.js-gid-'+gid+':checked').length > 0;
+		$('.js-grandfather.js-gid-'+gid).each(function(){
+			this.checked = grandfatherchecked;
+		});
+	});
+	function chkfrm(){
+		if($('#name').val()==''){
+			util.message('角色名不能为空！');
+			$('#name').focus();
+			return false;
+		}
+	}
+</script>
+{php include wl_template('common/footer');}

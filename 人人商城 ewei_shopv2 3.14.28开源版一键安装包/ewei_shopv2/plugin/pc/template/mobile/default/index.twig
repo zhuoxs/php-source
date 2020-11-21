@@ -1,0 +1,486 @@
+{% extends 'common/layout.twig' %}
+
+{% block css %}
+    <link rel="stylesheet" href="{{ basePath }}/css/swiper-3.4.2.min.css">
+    <link rel="stylesheet" href="{{ basePath }}/css/index.css?v="{{ v }}>
+{% endblock %}
+
+{% block content %}
+    <!-- 轮播图  -->
+    <div class="carousel">
+        {% if count(advs.banner.banners) > 1 %}
+            <div class="swiper-container">
+                <div class="swiper-wrapper">
+                    {% for item in  advs.banner.banners %}
+                        <div class="swiper-slide">
+                            <a href="{{ item.url }}">
+                                <img src="{{ item.img }}" alt="">
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Add Pagination -->
+                <div class="swiper-pagination dot"></div>
+                <!-- Add Arrows -->
+                <div class="swiper-button-next"></div>
+                <div class="swiper-button-prev"></div>
+            </div>
+        {% elseif count(advs.banner.banners)  == 1 %}
+            <div class="banner-img">
+                <a href="{{ advs.banner.banners[0].url }}">
+                    <img src="{{ advs.banner.banners[0].img }}" alt="">
+                </a>
+            </div>
+        {% else %}
+            <div class="banner-img">
+                <a href="javascript:void(0)">
+                    <img src="{{ basePath }}/images/banner.png" alt="">
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="inner">
+        <!-- 广告  -->
+        {% if advs.banner.adv.bottom_adv_image %}
+            <div class="ad">
+                <a href="{{ advs.banner.adv.bottom_adv_image_link }}">
+                    <img height="100px" width="100%" src="{{ advs.banner.adv.bottom_adv_image }}"/>
+                </a>
+            </div>
+        {% endif %}
+
+        {% for item in global.layout.sortBlock %}
+
+            <!-- 限时秒杀  -->
+            {% if item.block == "seckill" and global.layout.seckill.display == "true" %}
+                {% if seckill %}
+                    <div class="seckillBox flex">
+                        <input type="hidden" value="{{ seckill.endtime - time() }}" id="seckill_end_time">
+                        <div class="seckill">
+                            <h3>限时秒杀</h3>
+                            <p>距离结束仅剩</p>
+                            <div class="seckill-time flex">
+                                <span id="hour_show">00</span>
+                                <span class="maohao">:</span>
+                                <span id="minute_show">00</span>
+                                <span class="maohao">:</span>
+                                <span id="second_show">00</span>
+                            </div>
+                            <a href="{{ pcUrl('pc.list.seckill') }}">查看全部</a>
+                        </div>
+                        <!-- 商品-->
+                        {% for goods in seckill.goods %}
+                            <a href="{{ pcUrl('pc.goods.detail', {'id': goods.id}) }}">
+                                <div class="goods-item">
+
+                                    <img src="{{ goods.thumb }}" height="180" width="180"/>
+                                    <h6>{{ goods.title }}</h6>
+                                    <span class="price">￥{{ goods.price }}</span>
+                                    <span class="original-price">￥{{ goods.marketprice }}</span>
+                                </div>
+                            </a>
+                        {% endfor %}
+
+                    </div>
+                {% endif %}
+            {% endif %}
+            <!-- 为你优选  -->
+            {% if item.block == "select" and global.layout.select.display %}
+                <div class="title">
+                    <h3>为你优选</h3>
+                </div>
+                <div class="prefer flex">
+                    {% if advs.recommend %}
+                        {% for item in advs.recommend %}
+                            <div class="item">
+                                <a href="{{ item.url }}">
+                                    <img src="{{ item.img }}"/>
+                                </a>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="item">
+                            <a href="javascript:void(0)">
+                                <img src="{{ basePath }}/images/为你优选.png"/>
+                            </a>
+                        </div>
+
+                    {% endif %}
+                </div>
+            {% endif %}
+            <!-- 商品组 -->
+            {% if item.block == "goods" and global.layout.goods.display %}
+                {% if goodsGroups %}
+                    <div class="stairs">
+                        {% for goodsGroup in goodsGroups %}
+                            {% if goodsGroup.goods %}
+                                <div class="block_{{ goodsGroup.id }}">
+                                    <div class="title flex">
+                                        <h3>{{ goodsGroup.title }}</h3>
+                                        {% if goodsGroup.description %}
+                                            <span>&nbsp;&nbsp;/&nbsp;&nbsp;</span>
+                                            <span>
+                                        <a href="javascript:void(0)">{{ goodsGroup.description }}</a>
+                                    </span>
+                                        {% endif %}
+
+                                        {% if count(goodsGroup.goods) >= 8 %}
+                                            <a href="{{ pcUrl('pc.list', {group_id: goodsGroup.id}) }}"
+                                               class="more">查看更多</a>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if  goodsGroup.top_image %}
+                                        <div class="ad">
+                                            <a href="{{ goodsGroup.top_url }}">
+                                                <img height="100px" width="100%" src="{{ goodsGroup.top_image }}"/>
+                                            </a>
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="part flex">
+                                        <div class="img">
+                                            <a href="{{ goodsGroup.import_url }}">
+                                                <img src="{{ goodsGroup.import_image }}"/>
+                                            </a>
+                                        </div>
+
+                                        <div class="part-goods flex">
+                                            {% for index,goods in goodsGroup.goods %}
+                                                <div class="goods-item">
+                                                    <a href="{{ goods.url }}" {% if goods.total == 0 %} class="img"{% endif %}>
+                                                        <img src="{{ goods.thumb }}"/>
+                                                        {% if goods.total == 0 %}
+                                                            <div class="sold-out">
+                                                                <span>已售完</span>
+                                                                <span>SOLD OUT</span>
+                                                            </div>
+                                                        {% endif %}
+
+                                                    </a>
+                                                    <h6>{{ goods.title }}</h6>
+                                                    <span class="price">￥{{ goods.marketprice }}</span>
+                                                </div>
+                                            {% endfor %}
+
+
+                                        </div>
+                                    </div>
+
+                                    {% if goodsGroup.bottom_image %}
+
+                                        <div class="ad">
+                                            <a href="{{ goodsGroup.bottom_url }}">
+                                                <img height="100px" width="100%" src="{{ goodsGroup.bottom_image }}"/>
+                                            </a>
+                                        </div>
+                                    {% endif %}
+
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="stairs">
+                        <div class="ad"><img src="{{ basePath }}/images/通栏广告.png"/></div>
+                        <!-- 护肤用品版块-->
+                        <div class="block_1">
+                            <div class="title flex">
+                                <h3>示例标题</h3>
+                                <span>&nbsp;&nbsp;/&nbsp;&nbsp;</span>
+                                <span>示例副标题</span>
+                                <a href="javascript:void(0)" class="more">查看更多</a>
+                            </div>
+                            <div class="part flex">
+                                <div class="img">
+                                    <img src="{{ basePath }}/images/竖着大图.png"/>
+                                </div>
+                                <div class="part-goods flex">
+                                    <div class="goods-item">
+                                        <img src="{{ basePath }}/images/商品图片.png"/>
+                                        <h6>示例商品</h6>
+                                        <span class="price">￥68.8</span>
+                                    </div>
+                                    <div class="goods-item">
+                                        <img src="{{ basePath }}/images/商品图片.png"/>
+                                        <h6>示例商品</h6>
+                                        <span class="price">￥68.8</span>
+                                    </div>
+                                    <div class="goods-item">
+                                        <img src="{{ basePath }}/images/商品图片.png"/>
+                                        <h6>示例商品</h6>
+                                        <span class="price">￥68.8</span>
+                                    </div>
+                                    <div class="goods-item">
+                                        <img src="{{ basePath }}/images/商品图片.png"/>
+                                        <h6>示例商品</h6>
+                                        <span class="price">￥68.8</span>
+                                    </div>
+                                    <div class="goods-item">
+                                        <img src="{{ basePath }}/images/商品图片.png"/>
+                                        <h6>示例商品</h6>
+                                        <span class="price">￥68.8</span>
+                                    </div>
+                                    <div class="goods-item">
+                                        <img src="{{ basePath }}/images/商品图片.png"/>
+                                        <h6>示例商品</h6>
+                                        <span class="price">￥68.8</span>
+                                    </div>
+                                    <div class="goods-item">
+                                        <img src="{{ basePath }}/images/商品图片.png"/>
+                                        <h6>示例商品</h6>
+                                        <span class="price">￥68.8</span>
+                                    </div>
+                                    <div class="goods-item">
+                                        <img src="{{ basePath }}/images/商品图片.png"/>
+                                        <h6>示例商品</h6>
+                                        <span class="price">￥68.8</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ad"><img src="{{ basePath }}/images/通栏广告.png"/></div>
+
+                    </div>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+
+        <!-- 猜你喜欢版块-->
+        {% block favor %}
+            <div class="title flex">
+                <h3>猜你喜欢</h3>
+            </div>
+            <div class="love flex">
+                {% for goods in guessFavorGoods %}
+
+                    <a href="{{ goods.url }}">
+                        <div class="goods-item">
+                            <img src="{{ goods.thumb }}"/>
+                            <h6>{{ goods.title }}</h6>
+                            <span class="price">￥{{ goods.marketprice }}</span>
+                        </div>
+                    </a>
+                {% endfor %}
+
+            </div>
+        {% endblock %}
+    </div>
+    <div class="tag-lift">
+        <div class="sn-nav-wrapper">
+            {% for goodsGroup in goodsGroups %}
+                {% if goodsGroup.goods %}
+                    <div>
+                        <a href="#_{{ goodsGroup.id }}">{{ goodsGroup.title|format }}</a>
+                        <div class="line"></div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+
+            <a href="javascript:void(0)" class="go-top"><span class="iconfont back-top">&#xe65f;</span>TOP</a>
+        </div>
+    </div>
+    <!-- footer  -->
+    <div class="tag-right">
+        <div class="sidebarcom-nav">
+            <div class="sidebarcom-nav-cnt">
+                <div class="sidebarcom-oper">
+                    <!-- 个人信息 -->
+                    <div class="sidebarcom-my" onclick="location.href='{{ pcUrl('pc.member') }}'"><i class="iconfont">&#xe64e;</i>
+                    </div>
+                    <!-- 购物车 -->
+                    <div class="sidebarcom-cart" onclick="location.href='{{ pcUrl('pc.member.cart') }}'">
+                        <i class="iconfont">&#xe604;</i>
+                        <p>购物车</p>
+                    </div>
+                    <!-- 收藏 -->
+                    {#                    <div class="sidebarcom-brand">#}
+                    {#                        <i class="iconfont">&#xe60c;</i>#}
+                    {#                    </div>#}
+                    <!-- 联系客服 -->
+                    <div class="contact">
+                        <i class="iconfont">&#xe61c;</i>
+                        <!-- 弹窗框 -->
+                        <div class="contact-list">
+                            {% for qqitem in global.setting.qq %}
+                                <div onclick="jumpqq({{ qqitem.qqnum }})">
+                                    <i>
+                                        <svg class="icon" aria-hidden="true">
+                                            <use xlink:href="#iconQQ1"></use>
+                                        </svg>
+                                    </i>
+                                    <span>{{ qqitem.nickname }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <!-- 微信 -->
+                    <div class="wechat">
+                        <i class="iconfont">&#xe660;</i>
+                        <!-- 弹窗框 -->
+                        <div class="wechat-mask">
+                            <div>
+                                <div class="img">
+                                    <img src="{{ global.setting.wx_img[0] }}"/>
+                                </div>
+                                <div class="weixin">
+                                    <i>
+                                        <svg class="icon" aria-hidden="true">
+                                            <use xlink:href="#iconweixin1"></use>
+                                        </svg>
+                                    </i>
+                                    <span>{{ global.setting.wx_nick[0] }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebarcom-nav-ft">
+                <div class="sidebarcom-top">
+                    <a href="javascript:void(0)" class="go-top"><i class="iconfont back-top">&#xe65f;</i>
+                        <p>TOP</p></a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block js %}
+    <script src="{{ basePath }}/font/iconfont.js"></script>
+    <script src="{{ basePath }}/js/swiper-3.4.2.min.js"></script>
+    <script src="{{ basePath }}/js/LiftEffect.js"></script>
+    <script src="{{ basePath }}/js/page/index/index.js"></script>
+
+    <script>
+
+        $(function () {
+            $('.sn-nav-wrapper a').click(function () {
+                $(this).addClass('current').siblings().removeClass('current');
+            })
+        })
+
+        window.onload = function () {
+            var swiper = new Swiper('.swiper-container', {
+                pagination: '.swiper-pagination',
+                nextButton: '.swiper-button-next',
+                prevButton: '.swiper-button-prev',
+                paginationClickable: true,
+                spaceBetween: 30,
+                centeredSlides: true,
+                autoplay: 2500,
+                autoplayDisableOnInteraction: false,
+                loop: true
+            });
+        }
+
+        $(function () {
+            $('.carousel')
+                .mouseenter(function () {
+                    $('.swiper-button-next').show();
+                    $('.swiper-button-prev').show();
+                })
+                .mouseleave(function () {
+                    $('.swiper-button-next').hide();
+                    $('.swiper-button-prev').hide();
+                });
+        })
+
+        $(function () {
+            //定义当前时间
+            // var startTime = new Date();
+            //定义结束时间
+            // var endTime = new Date("2019/5/31 10:25:00");
+
+            //算出中间差并且已毫秒数返回; 除以1000将毫秒数转化成秒数方便运算；
+            var intDiff = parseInt($('#seckill_end_time').val());
+            timer(intDiff);
+
+
+            $(".go-top").on("click", function () {
+                $('body,html').animate({
+                    scrollTop: 0
+                }, 200);
+                return false;
+            });
+
+            var arr = Array.prototype.slice.call($('[class^=block]'));
+            // $(".sn-nav-wrapper a").each(function(index, el) {
+            //     el.innerHTML = el.innerHTML.slice(0, 4);
+            // });
+            LiftEffect({
+                "control1": ".tag-lift", //侧栏电梯的容器
+                "control2": ".sn-nav-wrapper",  //需要遍历的电梯的父元素
+                "target": arr, //监听的内容，注意一定要从小到大输入
+                "current": "current"
+            });
+
+            $('.tag-lift .sn-nav-wrapper>div:first').hover(function () {
+                $(this).css("border-radius", "4px 4px 0 0");
+            });
+        });
+
+        window.GLOBAL = {{ global|json_encode|raw }}
+        var wechatArr = window.GLOBAL.setting.wx_img;
+        var nameArr = window.GLOBAL.setting.wx_nick;
+
+
+        /*点击回到顶部*/
+
+        // 随机微信客服
+        function token(imgArr, nameArr) {
+            var num = Math.floor(Math.random() * 4);
+            $('.wechat-mask .img img').attr('src', imgArr[num]);
+            $('.weixin span').html(nameArr[num]);
+        }
+
+        function jumpqq(num) {
+            if (num) {
+                // console.log('http://wpa.qq.com/msgrd?v=3&uin='+num+'&site=qq&menu=yes');
+                window.open('http://wpa.qq.com/msgrd?v=3&uin=' + num + '&site=qq&menu=yes');
+                return;
+            }
+        }
+
+
+        // 右侧切换
+        function bindMouse() {
+            var _hidediv2;
+            $(document).on("mouseenter", ".contact, .wechat", function () {
+                var _this = $(this);
+                console.log(_this);
+                var isContact = _this.hasClass("contact");
+                var isWechat = _this.hasClass("wechat");
+                if (isContact) {
+                    clearTimeout(_hidediv2);
+                    $('.contact-list').show();
+                    $('.wechat-mask').hide();
+                }
+                if (isWechat) {
+                    clearTimeout(_hidediv2);
+                    token(wechatArr, nameArr);
+                    $('.wechat-mask').show();
+                    $('.contact-list').hide();
+                }
+            });
+            $(document).on("mouseleave", ".contact, .contact-list", function () {
+                _hidediv2 = setTimeout(function () {
+                    $('.contact-list').hide();
+                }, 150)
+            });
+
+            $(document).on("mouseleave", ".wechat, .wechat-mask", function () {
+                _hidediv2 = setTimeout(function () {
+                    $('.wechat-mask').hide();
+                }, 150)
+            });
+
+        }
+
+
+        bindMouse();
+
+    </script>
+{% endblock %}
+

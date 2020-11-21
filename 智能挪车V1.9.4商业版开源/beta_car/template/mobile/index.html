@@ -1,0 +1,169 @@
+{template 'newheader'}
+<script type="text/javascript" src="https://api.map.baidu.com/api?v=2.0&ak=F51571495f717ff1194de02366bb8da9&s=1"></script>
+
+<style>
+    body{
+        overflow: hidden;
+    }
+    .view{
+        height: 100%;
+        width: 100%;
+    }
+    iframe{
+        display: none;
+    }
+    .fixed{
+        position: fixed;
+    }
+    .map{
+        height: 100%;
+    }
+    img{
+        width: 100%;
+    }
+    .ad{
+        top: 2rem;
+    }
+    .shangjia{
+        position: fixed;
+        bottom: 25%;
+        right: 5%;
+        width: 20%;
+    }
+
+    .scan{
+        width: 33%;
+        bottom: 0;
+        margin: 0 auto;
+        left: 33%;
+    }
+    .user{
+        width: 22%;
+        bottom: 0;
+        right: 5%;
+    }
+    .zengzhi{
+        width: 22%;
+        bottom: 0;
+        left: 5%;
+    }
+    .footer{
+        bottom: 0;
+        line-height: 0;
+
+    }
+    .footer_ff{
+        width: 100%;
+        height: 2rem;
+        background-color: #fff;
+    }
+</style>
+<div class="view">
+    <div id="allmap" class="map" ></div>
+    <div class="ad fixed" onclick="select()">
+        <img src="{MODULE_URL}/template/static/newui/index/img/index_ad.png">
+    </div>
+    <div class="shangjia" onclick="shangjia()">
+        <img src="{MODULE_URL}/template/res/img/vip.png">
+    </div>
+    <div class="footer fixed">
+        <img src="{MODULE_URL}/template/static/newui/index/img/footer_img.png">
+        <div class="footer_ff"></div>
+    </div>
+    <div class="scan fixed" onclick="scan()">
+        <img src="{MODULE_URL}/template/static/newui/index/img/scan.png">
+    </div>
+    <div class="zengzhi fixed" onclick="zengzhi()">
+        <img src="{MODULE_URL}/template/static/newui/index/img/zengzhi.png">
+    </div>
+    <div class="user fixed" onclick="user()">
+        <img src="{MODULE_URL}/template/static/newui/index/img/user.png">
+    </div>
+
+</div>
+<script type="text/javascript">
+    wx.ready(function () {
+    wx.getLocation({
+        type: 'wgs84', // 默认为wgs84的gps坐标，如果要返回直接给openLocation用的火星坐标，可传入'gcj02'
+        success: function (res) {
+            var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+            var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+            var speed = res.speed; // 速度，以米/每秒计
+            var accuracy = res.accuracy; // 位置精度
+            $.post("{php echo $this->createMobileUrl('coordinate_switchf')}",{x:latitude,y:longitude},function (data) {
+                // 百度地图API功能
+                console.log(data.result[0].x)
+                var map = new BMap.Map("allmap");
+                var point = new BMap.Point(data.result[0].x,data.result[0].y);
+                map.centerAndZoom(point,15);
+                var geolocation = new BMap.Geolocation();
+                var myIcon = new BMap.Icon("{MODULE_URL}/template/res/img/weizhi.png?"+{php echo time()}, new BMap.Size(35,35));
+                var mk = new BMap.Marker(point,{icon:myIcon});
+                mk.setAnimation(BMAP_ANIMATION_BOUNCE); //跳动的动画
+                map.addOverlay(mk);
+                map.panTo(point);
+                var mapPoints = {$json_map};
+                var i = 0;
+                map.enableScrollWheelZoom(true);
+                // 函数 创建多个标注
+                function markerFun (points,label,id) {
+                    var myIcon = new BMap.Icon("{MODULE_URL}/template/res/img/mapshangjia.png", new BMap.Size(0,0));
+                    var markers = new BMap.Marker(points,{icon:myIcon});
+                    map.addOverlay(markers);
+                    markers.setLabel(label);
+
+                    label.addEventListener("click",function (event) {
+                        window.location.href='{php echo $this->mobileurl("seller_info")}&id='+id;
+                    });
+                }
+                for (;i<mapPoints.length;i++) {
+                    var points = new BMap.Point(mapPoints[i].y,mapPoints[i].x);//创建坐标点
+                    var opts = {
+                        width:50,
+                        height: 100,
+                        title:mapPoints[i].title
+                    };
+                    var label = new BMap.Label(mapPoints[i].name,{
+                        offset:new BMap.Size(-30,-25)
+                    });
+                    var id = mapPoints[i].id;
+                    label.setStyle({
+                        "border": "0",
+                        "color": "#cc6d44",
+                        "height": "68px",
+                        "widht":'auto',
+                        "font-weight": "900",
+                        "cursor": "pointer",
+                        "line-height": "100px",
+                        "background":"url({MODULE_URL}/template/res/img/mapshangjia1.png?123)  no-repeat  center top"
+                    });
+                    markerFun(points,label,mapPoints[i].id);
+                }
+            },'json');
+        }
+
+    });   });
+    function scan() {
+        wx.scanQRCode({
+            needResult : 0, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
+            scanType : [ "qrCode"], // 可以指定扫二维码还是一维码，默认二者都有
+            success : function(res) {
+                var result = res.resultStr; // 当needResult 为 1 时，扫码返回的结果
+                //window.location.href = result;//因为我这边是扫描后有个链接，然后跳转到该页面
+            }
+        });
+    }
+    function select() {
+        document.location.href='{php echo $this->mobileurl("select_qrcode")}';
+    }
+    function shangjia() {
+        document.location.href='{php echo $this->mobileurl("seller")}';
+    }
+    function user() {
+        document.location.href='{php echo $this->mobileurl("user")}';
+    }
+    function zengzhi() {
+        document.location.href='{php echo $this->mobileurl("zengzhi")}';
+    }
+</script>
+

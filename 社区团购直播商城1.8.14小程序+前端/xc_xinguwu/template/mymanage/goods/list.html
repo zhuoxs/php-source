@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {template 'common/listhead'}
+    <script src="https://cdn.staticfile.org/clipboard.js/2.0.1/clipboard.js"></script>
+    <!--微擎 -->
+    <!--这个放在最后一切平白安全-->
+    <script type="text/javascript" src="./resource/js/require.js?v=20170915"></script>
+
+</head>
+
+<body class="nav-md">
+<div class="contai ner body">
+
+    <div class="main_container" style="overflow-x: hidden;min-height: 100vh;background-color: white">
+        <div class="">
+
+            <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">筛选</div>
+                    <div class="panel-body">
+                        <form action=" " method="get" class="form-horizontal" role="form" id="searchform" onsubmit="return false">
+
+                            <div class="col-xs-12 col-sm-3 col-md-3col-lg-3">
+                                <div class="input-group">
+                                    <span class="input-group-addon">名称</span>
+                                    <input class="form-control" name="seachkey">
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-3 col-md-3col-lg-3">
+                                <div class="input-group">
+                                    <span class="input-group-addon">分类</span>
+                                    <select class="form-control" name="cid" data-select="" id="xcid">
+                                        <option value="0">全部分类</option>
+                                        {loop $goodclass $index $newclassitem}
+                                        <option value='{$newclassitem["id"]}'>{$newclassitem["name"]}</option>
+                                        {/loop}
+                                    </select>
+                                </div>
+
+                                <input type="hidden" name='goods_id' value="{$id}">
+                            </div>
+
+                            <div class="col-xs-12 col-sm-4 col-md-3 col-lg-3">
+                                <button class="btn btn-default" type="reset" ><i class="fa fa-repeat"></i>
+                                    重置
+                                </button>
+                                <button class="btn btn-default" type="submit" id="btnseach"><i class="fa fa-search"></i>
+                                    搜索
+                                </button>
+
+                                <a class="btn btn-default" href="{php echo $this->createWebUrl($_GPC['do'], array('op'=>'edit','xtitleb'=>urlencode($xtitleb),'xtitlea'=>urlencode($xtitlea)));}">  增加</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="x_panel">
+                    <div class="x_title">
+                        <h2> {$xtitleb} > {$xtitlea}列表</h2>
+
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+
+                        <div class="ibox-content" id="pfrom">
+                            <!--data-detail-view="true"   data-detail-formatter="detailFormatter"-->
+                            <table id="table" class="dotable" data-toggle="table"
+                                   data-url="{php echo $this->createWebUrl($_GPC['do'], array('op'=>'getseachjson'))}"
+                                   data-sort-name="id" data-sort-order="desc" data-query-params="queryparams"
+                                   data-page-number="1" data-page-size="15" data-mobile-responsive="true"
+                                   data-show-refresh="true" data-show-toggle="true" 	>
+                                <thead>
+                                <tr>
+                                    <th data-checkbox="true"></th>
+                                    <th data-field="id" data-sortable="true">ID</th>
+                                    <th data-field="cid" data-sortable="true" data-formatter="format_cid">分类</th>
+                                    <th data-field="name" data-sortable="true">商品名称</th>
+                                    <th data-field="bimg" data-sortable="true" data-formatter="format_bimg">商品图片</th>
+                                    <th data-field="" data-sortable="true" data-formatter="format_info" data-align="left"
+                                        >商品信息
+                                    </th>
+                                    <th data-field="attrs" data-sortable="true" data-formatter="format_attr">商品属性</th>
+                                    <th data-field="sorts" data-sortable="true" data-formatter="format_sorts"
+                                        data-events="operate_sorts">排序
+                                    </th>
+                                    <th data-field="isindex" data-sortable="true" data-formatter="format_isindex"
+                                        data-events="operate_isindex">首页显示
+                                    </th>
+
+                                    <th data-field="status" data-sortable="true" data-formatter="format_status"
+                                        data-events="operate_status">状态
+                                    </th>
+                                    <th data-events="operateEvents" data-formatter="operateFormatter" data-width="16%"
+                                        data-title="操作" data-align="center">操作
+                                    </th>
+                                </tr>
+                                </thead>
+                            </table>
+                            <button type="button" class="btn btn-danger " style="margin-right:5px;" id="delselct">删除选中
+                            </button>
+
+                            <button type="button" class="btn btn-primary modifystate " style="margin-right:5px;"  data-value="1" >上架选中
+                            </button>
+
+                            <button type="button" class="btn btn-primary modifystate" style="margin-right:5px;"  data-value="-1" >下架选中
+                            </button>
+
+                            <br>
+                            <br>
+                            说明：
+                            <a class="btn btn btn-default btn-xs"> <i class="fa fa-square-o fa-lg"></i></a>禁用 <a
+                                class="btn btn-primary  btn-xs"> <i class="fa fa-check-square-o fa-lg"></i></a> 开启
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{template 'common/listfoot'}
+<script>
+
+    new ClipboardJS('.copytext');
+    function format_cid(value) {
+
+        var goodclass = {$godcl};
+        var val = '';
+        if (goodclass != '' && goodclass !=null && goodclass !='undefined'){
+            $.each(goodclass,function (i,n) {
+
+                if(n.id == value){
+                    val=n.name;
+                    return;
+                }
+            })
+        }
+
+        return val
+
+    }
+</script>
+<script type="text/javascript">
+
+
+    /*数据搜索*/
+    $(function () {
+        $("#btnseach").click(function () {
+            setseach();
+            $("#table").bootstrapTable('refresh');
+        })
+    });
+    $saechparas = null;
+    function setseach() {
+        $saechparas = {};
+        $saechparas = $("#searchform").serializeArray();
+    }
+    function queryparams(params) {
+
+        if ($saechparas == null) {
+            setseach()
+        }
+        $.each($saechparas, function (i, field) {
+            params[field.name] = field.value;
+        });
+
+        return params;
+    }
+    /*数据搜索*/
+
+    /* 数据表格参数设置*/
+    $.extend($.fn.bootstrapTable.defaults, {
+        striped: true, /* 隔行换色*/
+        iconsPrefix: 'fa',
+        icons: {
+            refresh: 'fa-refresh icon-refresh',
+            toggle: 'fa-list-alt icon-list-alt'
+        },
+        method: 'post',
+        pagination: true,
+        sidePagination: 'server',
+        contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+        onClickCell: function (field, value, row, $element) {
+        },
+        onLoadSuccess: function () {
+        },
+        rowStyle: function (row,index) {
+            var stockout = false;
+            var stockshort = false;
+                if(row.attrs !='' && row.attrs != null && row.attrs != 'undefined'){
+                    $.each(row.attrs,function (i,n){
+                        if(n.stock <= 0){
+                            stockout =true;
+                        }
+                        if(n.stock <=20){
+                            stockshort = true;
+                        }
+                    })
+                }
+                if (stockout){
+                    return {
+                        classes:'danger'
+                    }
+                }else if (stockshort){
+                    return {
+                        classes:'warning'
+                    };
+                }else{
+                    return {};
+                }
+        }
+    });
+
+    /* 数据表格_列参数设置*/
+    $.extend($.fn.bootstrapTable.columnDefaults, {
+        align: 'center',
+        valign: 'middle'
+    });
+
+
+
+    /*删除选中按钮*/
+    $(function () {
+
+
+
+        $("#delselct").click(function () {
+
+            $pdadta = $("#table").bootstrapTable('getSelections');
+            if ($pdadta.length < 1) {
+                swal({
+                    title: "错误",
+                    text: "选选择删除内容",
+                    type: "error",
+                    timer: 2000
+                });
+            }
+            else {
+                swal({
+                    title: '确认删除吗',
+                    text: "确认删除吗" + $pdadta.length + "记录",
+                    showCancelButton: true,
+                    closeOnConfirm: false,
+                    showLoaderOnConfirm: true,
+                    confirmButtonText: "确认",
+                    cancelButtonText: "取消",
+                    preConfirm: function () {
+                        return new Promise(function (resolve) {
+                            var _postdata = {};
+                            var ids = [];
+                            $.each($pdadta, function (i, field) {
+
+                                ids.push(field["id"]);
+                            });
+                            _postdata["ids"] = ids.join(",");
+                            $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'delete'));}", {
+                                method: 'POST',
+                                data: _postdata,
+                                dataType: 'json'
+                            }).done(function (response) {
+                                if (parseInt(response["status"]) === 1) {
+                                    message({
+                                        title: "提示",
+                                        text: "删除成功",
+                                        type: "success",
+                                        timer: 1500
+                                    });
+
+                                    $("#table").bootstrapTable('refresh');
+                                }
+                                else {
+                                    message({
+                                        title: "错误",
+                                        text: "删除失败",
+                                        type: "error",
+                                        timer: 2000
+                                    });
+                                }
+                            });
+                        });
+                    },
+                    allowOutsideClick: false
+                })
+            }
+        })
+
+
+
+        $(".modifystate").click(function () {
+
+            $pdadta = $("#table").bootstrapTable('getSelections');
+
+            var _postdata = {};
+            var ids = [];
+            $.each($pdadta, function (i, field) {
+
+                ids.push(field["id"]);
+            });
+
+            var  _postdata={};
+            _postdata["ids"] = ids.join(",");
+            _postdata["status"] =$(this).attr("data-value");
+
+            $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'modifystate'));}", {
+                method: 'POST',
+                data: _postdata,
+                dataType: 'json'
+            }).done(function (response) {
+                if (parseInt(response["status"]) === 1) {
+                    message({
+                        title: "提示",
+                        text: "操作成功",
+                        type: "success",
+                        timer: 1500
+                    });
+                    $("#table").bootstrapTable('refresh');
+                }
+                else {
+                    message({
+                        title: "错误",
+                        text: "操作失败",
+                        type: "error",
+                        timer: 2000
+                    });
+                }
+            });
+
+
+
+        })
+
+
+
+
+
+
+
+    });
+    /* 操作*/
+    function operateFormatter(value, row, index) {
+        var myhtml = [];
+        myhtml.push(
+            '<a class="btn btn-primary btn-xs" href="' + "{php echo $this->createWebUrl($_GPC['do'], array('op'=>'edit','xtitleb'=>urlencode($xtitleb),'xtitlea'=>urlencode($xtitlea)));}&id=" + row['id'] + '">',
+            '<i class="fa fa-edit" title="编辑" aria-hidden="true"></i> ',
+            '</a>  ',
+            '<a class="btn btn-danger btn-xs delete" href="javascript:void(0)"  >',
+            '<i class="fa fa-close"  title="删除"  aria-hidden="true"></i>',
+            '</a>  ',
+            '<a class="btn btn-info btn-xs copy" href="javascript:void(0)"  >',
+            '<i class="fa fa-files-o"  title="复制"  aria-hidden="true"></i>',
+            '</a>',
+            '<a class="btn btn-info btn-xs copytext" href="javascript:void(0)"  data-clipboard-text="xc_xinguwu/pages/base/base?share=/xc_xinguwu/pages/detail/detail?id='+row.id+'">',
+            '复制地址',
+            '</a>'
+        );
+        return myhtml.join('');
+    }
+    var operateEvents = {
+        /* 删除*/
+        "click a.delete": function (e, value, row, index) {
+            var _postdata = {};
+            _postdata["ids"] = row["id"];
+
+                swal({
+                    title: '确认删除吗',
+                    showCancelButton: true,
+                    closeOnConfirm: false,
+                    showLoaderOnConfirm: true,
+                    confirmButtonText: "确认",
+                    cancelButtonText: "取消",
+                    preConfirm: function () {
+                        return new Promise(function (resolve) {
+                            $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'delete'));}", {
+                                method: 'POST',
+                                data: _postdata,
+                                dataType: 'json'
+                            }).done(function (response) {
+                                if (parseInt(response["status"]) === 1) {
+                                    message({
+                                        title: "提示",
+                                        text: "删除成功",
+                                        type: "success",
+                                        timer: 1500
+                                    });
+
+                                    $("#table").bootstrapTable('refresh');
+                                }
+                                else {
+                                    message({
+                                        title: "错误",
+                                        text: "删除失败",
+                                        type: "error",
+                                        timer: 2000
+                                    });
+
+                                }
+                            });
+                        });
+                    },
+                    allowOutsideClick: false
+                })
+
+
+
+        },
+        "click a.copy": function (e, value, row, index) {
+            var _postdata = {};
+            _postdata["id"] = row["id"];
+
+                swal({
+                    title: '确认复制吗',
+                    showCancelButton: true,
+                    closeOnConfirm: false,
+                    showLoaderOnConfirm: true,
+                    confirmButtonText: "确认",
+                    cancelButtonText: "取消",
+                    preConfirm: function () {
+                        return new Promise(function (resolve) {
+                            $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'copy'));}", {
+                                method: 'POST',
+                                data: _postdata,
+                                dataType: 'json'
+                            }).done(function (response) {
+                                if (parseInt(response["status"]) === 1) {
+                                    message({
+                                        title: "提示",
+                                        text: "复制成功",
+                                        type: "success",
+                                        timer: 1500
+                                    });
+
+                                    $("#table").bootstrapTable('refresh');
+                                }
+                                else {
+                                    message({
+                                        title: "错误",
+                                        text: "复制失败",
+                                        type: "error",
+                                        timer: 2000
+                                    });
+
+                                }
+                            });
+                        });
+                    },
+                    allowOutsideClick: false
+                })
+
+
+
+        },
+
+
+
+    };
+
+    /* 改变状态*/
+    var operate_status = {
+        'click a': function (e, value, row, index) {
+
+            var _postdata = {};
+            _postdata["id"] = row["id"];
+            _postdata["status"] = value;
+            $actindex = index;
+
+                $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'midstatus'));}", {
+                    method: 'POST',
+                    data: _postdata,
+                    dataType: 'json'
+                }).done(function (response) {
+                    if (parseInt(response["status"]) === 1) {
+                        message({
+                            title: "提示",
+                            text: "操作成功",
+                            type: "success",
+                            timer: 1500
+                        });
+
+                        $("#table").bootstrapTable('updateRow', {
+                            index: $actindex,
+                            row: {
+                                status: -_postdata["status"]
+                            }
+                        });
+                    }
+                    else {
+                        message({
+                            title: "错误",
+                            text: "操作失败",
+                            type: "error",
+                            timer: 2000
+                        });
+                    }
+                });
+
+
+
+
+
+        }
+    };
+
+
+
+
+    /* 状态*/
+    function format_status(value, row, index) {
+        if (value == -1) {
+
+            return '<a class="btn btn btn-default btn-xs" data-value="-1"  data-filed="status" > <i class="fa fa-square-o fa-lg"></i></a> ';
+        }
+        else {
+            return '<a class="btn btn-primary  btn-xs"  data-value="1" data-filed="status" > <i class="fa fa-check-square-o fa-lg"></i></a>'
+        }
+    }
+
+    /* 改变首页显示*/
+    var operate_isindex = {
+        'click a': function (e, value, row, index) {
+
+            var _postdata = {};
+            _postdata["id"] = row["id"];
+            _postdata["status"] = value;
+            $actindex = index;
+
+
+                $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'midisindex'));}", {
+                    method: 'POST',
+                    data: _postdata,
+                    dataType: 'json'
+                }).done(function (response) {
+                    if (parseInt(response["status"]) === 1) {
+                        message({
+                            title: "提示",
+                            text: "操作成功",
+                            type: "success",
+                            timer: 1500
+                        });
+
+                        $("#table").bootstrapTable('updateRow', {
+                            index: $actindex,
+                            row: {
+                                isindex: -_postdata["status"]
+                            }
+                        });
+                    }
+                    else {
+                        message({
+                            title: "错误",
+                            text: "操作失败",
+                            type: "error",
+                            timer: 2000
+                        });
+                    }
+                });
+
+
+
+
+        }
+    };
+    /* 首页显示*/
+    function format_isindex(value, row, index) {
+        if (value == -1) {
+
+            return '<a class="btn btn btn-default btn-xs" data-value="-1"  data-filed="status" > <i class="fa fa-square-o fa-lg"></i></a> ';
+        }
+        else {
+            return '<a class="btn btn-primary  btn-xs"  data-value="1" data-filed="status" > <i class="fa fa-check-square-o fa-lg"></i></a>'
+        }
+    }
+
+    /*排序*/
+    function format_sorts(value, row, index) {
+        return '<input class="sorts" type="number" value="' + value + '"  min="1" style="width: 60px"/>'
+    }
+    /*改变排序*/
+    var operate_sorts = {
+        'blur input': function (e, value, row, index) {
+            var _postdata = {};
+            _postdata["id"] = row["id"];
+            _postdata["sorts"] = $(this).val();
+            $actindex = index;
+
+                $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'midsorts'));}", {
+                    method: 'POST',
+                    data: _postdata,
+                    dataType: 'json'
+                }).done(function (response) {
+                    if (parseInt(response["status"]) === 1) {
+                        message({
+                            title: "提示",
+                            text: "操作成功",
+                            type: "success",
+                            timer: 1500
+                        });
+                    }
+                    else {
+                        message({
+                            title: "错误",
+                            text: "操作失败",
+                            type: "error",
+                            timer: 2000
+                        });
+                        $("#table").bootstrapTable('refresh');
+                    }
+                });
+
+
+
+        }
+
+    };
+
+
+    /*商品图片*/
+    function format_bimg(value, row, index) {
+        return '<img src="' + value + '" width="100px" >'
+    }
+    /*商品属性*/
+    function format_attr(value, row, index) {
+
+        if (value == '') {
+            return
+        }
+        var html = '';
+        for (var key in value) {
+            html += '<div> ' + key + ': ¥' + value[key]['price'] + ' 库存:' + value[key]['stock'] + '</div>'
+        }
+        return html;
+    }
+
+    function format_info(value, row, index) {
+        var html = '';
+        html = '<div>销量:' + row.number + '</div>' +
+            '<div>价格:¥' + row.prices + ' / ' + row.unit + '</div>' +
+            '<div>原价:¥' + row.oprice + '</div>';
+        return html;
+    }
+
+    /*操作反馈*/
+    var xpagecss = {
+        xload: function () {
+
+            message({
+                title: "操作中",
+                text: "",
+                imageUrl: "../addons/{php echo $_GPC['m']}/resource/images/xload1.gif",
+                showConfirmButton: false,
+                allowOutsideClick: true
+            })
+        },
+        close: function () {
+            swal.close();
+        },
+        "ok": function () {
+            var $message = arguments[0] ? arguments[0] : "错误";
+            var $title = arguments[1] ? arguments[1] : "错误";
+            swal(
+                $title,
+                $message,
+                'success'
+            )
+        },
+        error: function () {
+            var $message = arguments[0] ? arguments[0] : "错误";
+            var $title = arguments[1] ? arguments[1] : "错误";
+            swal(
+                $title,
+                $message,
+                'error'
+            )
+        },
+        deleterows: function ($ids) {
+            var _postdata = {};
+            _postdata["ids"] = $ids;
+
+
+            $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'delete'));}}", {
+                method: 'POST',
+                data: _postdata,
+                dataType: 'json'
+            }).done(function (response) {
+                if (parseInt(response["status"]) === 1) {
+                    message({
+                        title: "提示",
+                        text: "删除成功",
+                        type: "success",
+                        timer: 1500
+                    });
+
+                    $("#table").bootstrapTable('refresh');
+                }
+                else {
+                    message({
+                        title: "错误",
+                        text: "删除失败",
+                        type: "error",
+                        timer: 2000
+                    });
+
+                }
+            });
+        }
+    };
+    function message($opdata) {
+
+            swal($opdata);
+
+
+    }
+
+
+</script>
+
+</body>
+</html>

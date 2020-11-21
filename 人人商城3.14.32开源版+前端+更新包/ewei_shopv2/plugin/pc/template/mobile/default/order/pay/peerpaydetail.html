@@ -1,0 +1,115 @@
+{template '_header'}
+<link rel="stylesheet" href="../addons/ewei_shopv2/static/js/app/biz/sale/peerpay.css?v={php echo time();}">
+<div class="fui-page  fui-page-current">
+    <div class="fui-content">
+        <div class="fui-payfor-header">
+                <span class="fui-payfor-header-user">
+                    <i class="fui-payfor-user"><img src="{$member['avatar']}" alt=""></i>
+                </span>
+            <div class="fui-payfor-header-title">等待真爱路过...</div>
+            <i class="fui-payfor-header-down"></i>
+        </div>
+        <div class="fui-payfor-speed">
+
+            <div class="fui-list fui-payfor-speed-bot" style="padding:0.2rem 0;">
+                <div class="fui-list-inner">已完成：<span class="price">{$rate}%</span></div>
+                <div class="fui-list-inner" style="text-align: right;">还差：<span class="price">{$rate_price}元</span></div>
+            </div>
+
+            <div class="fui-payfor-speed-top">
+                <i class="fui-payfor-speed-top-inner" style="width:{$rate}%"></i>
+            </div>
+        </div>
+        <div class="blank"></div>
+
+        <div class="fui-list-group-title fui-payfor-group-title">来自{$member['nickname']}的代付订单</div>
+        <div class="fui-list fui-payfor-list">
+            <div class="fui-list-media">
+                <img src="{php echo tomedia($goods['thumb'])}" alt="{$goods['title']}">
+            </div>
+            <div class="fui-list-inner fui-payfor-info">
+                <span class="fui-payfor-info-title">{$goods['title']}</span>
+                <div class="fui-list" style="padding:0;">
+                    <div class="fui-list-inner">
+                        <span>{$address['realname']} &nbsp;{php echo substr_replace($address['mobile'],'****',-4)}</span>
+                        <span>{$address['province']}  {$address['city']}  {$address['area']} ****</span>
+                        <span class="fui-payfor-info-price">&yen;{$peerpay['peerpay_realprice']}</span>
+                    </div>
+                    <div class="fui-list-media">
+                        <a href="{php echo mobileUrl('goods/detail',array('id'=>$goods['id']))}" class="btn btn-sm btn-default fui-payfor-btn">查看商品</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+{if $peerpay['peerpay_type'] == 1}
+        {loop $message $mk $mv}
+        <div class="peerpay-message-box">
+            <div class="peerpay-message-from">
+                <div class="peepay-message-headimg">
+                    <img src="{$mv['headimg']}">
+                </div>
+                <div class="peepay-message-nickname">{$mv['uname']}帮他付了 <span style="color:red">¥{$mv['price']}</span></div>
+                <div class="peepay-message-floor">{php echo $mk+1;}F</div>
+                <div class="peepay-message-time">{php echo date('m-d H:i');}</div>
+            </div>
+            <div class="peerpay-message-content">{$mv['usay']}</div>
+        </div>
+        {/loop}
+        {if !empty($message)}
+        <div style="float:left;height: 10px;width: 100%;background-color: #ededed;margin-top: -1px"></div>
+        {/if}
+        <div class="fui-text fui-cell-group" style="width: 100%;left: 0;background-color: #fff">
+            {if $rate_price > 0}
+            <div class="fui-cell">
+                <div class="fui-cell-info">
+                    <textarea rows="3" placeholder="给TA留言" maxlength="200" id="peerpaymessage">支持一下，么么哒!</textarea>
+                    <!--<div class="textarea_counter"><span>0</span>/200</div>-->
+                </div>
+            </div>
+            {/if}
+        </div>
+{/if}
+
+        {if $rate_price > 0}<div class="fui-text fui-cell-group"  style="width: 100%;left: 0;background-color: #fff">
+            <div class="fui-cell">
+                <div class="fui-cell-label">付款金额</div>
+                <div class="fui-cell-info fui-payfor-input-price">&yen;&nbsp;
+                    <input type="text" placeholder="" class="fui-input payfor-price-input" value="{$price}" id="peerprice" {if $peerpay['peerpay_type'] == 0}readonly="readonly"{/if}>
+                </div>
+            </div>
+        </div>
+        <a href="javascript:;" class="btn btn-danger paynow" style="display: block;">立即支付</a>{/if}
+        <a href="{php echo mobileUrl()}" class="btn btn-danger-o" style="display: block;">我也要去玩</a>
+        <a class="btn btn-success-o" style="display: block;" onclick="$('.alert-mask').show()">找小伙伴帮TA付款</a>
+    </div>
+</div>
+<div class="alert-mask" style="position: absolute;background: rgba(0, 0, 0, 0.8) none repeat scroll 0 0;width: 100%;height: 100%;left: 0;top: 0;z-index: 1000;-moz-transition-duration: 400ms;-webkit-transition-duration: 400ms;transition-duration: 400ms;display: none" onclick="$('.alert-mask').hide()">
+    <img src="../addons/ewei_shopv2/static/images/peerpayshare.png" alt="" width="100%" >
+    <div style='font-family: "Microsoft YaHei UI", "微软雅黑", "宋体";color: #fff;text-align: center;'>快去找人帮你付款吧</div>
+</div>
+<script>
+    $(function(){
+        $('.paynow').click(function () {
+
+            var total = {$rate_price};
+            var peerprice = $('#peerprice').val();
+            var maxpeerpay = {$peerpay['peerpay_selfpay']};
+            maxpeerpay = parseFloat(maxpeerpay);
+            var peerpaytype = {$peerpay['peerpay_type']};
+            var message = $('#peerpaymessage').val();
+            if (peerprice<=0){
+                FoxUI.alert('','请填写代付金额');
+                return;
+            } else if (peerpaytype!=0 && peerprice > maxpeerpay && maxpeerpay>0){
+                FoxUI.alert('','您最多代付'+maxpeerpay+'元');
+                return;
+            }else if(peerprice>total){
+                FoxUI.alert('','不能超付');
+                return;
+            }
+            location.href = "{php echo mobileUrl('order/pay',array('id'=>$peerpay['oid']),1);}&peerprice="+peerprice+"&peerpaymessage="+message;
+        });
+    });
+</script>
+{template '_footer'}

@@ -1,0 +1,191 @@
+{template 'web/common/common'}
+{template 'web/goods/navbar'}
+<blockquote class="layui-elem-quote layui-text">
+    溯源列表
+</blockquote>
+<style>
+    .icon-erweima{font-size: 20px;position: relative;top:5px;}
+</style>
+<div class="layui-card">
+    <form  method="get" class="form_table layui-form" role="form">
+        <div class="page-toolbar">
+            <div class="input-group" style="display: flex">
+                <input type="text" style="height: 30px;" class="form-control " name="source_code" value="{$_GPC['source_code']}" placeholder="请输入溯源编号进行搜索">
+                <button class="layui-btn layui-btn-sm" type="button" lay-filter="formSubmit" lay-submit="" >搜索</button>
+                <a href="#" class="layui-btn layui-btn-sm layui-btn-primary" id="goBack">返回列表</a>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="layui-card">
+    <form class="layui-form">
+        <div class="batch-opration" style="padding-left: 15px;">
+            <input type="checkbox" id="checkAll"  lay-filter="checkAll" lay-skin="primary" title="" >
+            <button class="layui-btn layui-btn-primary layui-btn-xs batchChangeSource" style="margin-left: 20px;" data-value="1" type="button"><i class="iconfont icon-shangjia2"></i>批量出库</button>
+            <button class="layui-btn layui-btn-primary layui-btn-xs batchChangeSource" data-value="2" type="button"><i class="iconfont icon-el-icon-dev-delete"></i>删除</button>
+        </div>
+        <table class="layui-table" lay-skin="line">
+            <thead>
+            <tr>
+                <th  style="width: 50px;"></th>
+                <th>ID</th>
+                <th>溯源编号</th>
+                <th>状态</th>
+                <th>查看次数</th>
+                <th>最后一次查看时间</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                {loop $data['list'] $index $item}
+                <td><input type="checkbox" class="goodsid" name="sourceid" lay-filter="check_one" value="{$item['id']}" lay-skin="primary"></td>
+                <td>{$item['id']}</td>
+                <td>{$item['source_code']}</td>
+                <td>
+                    {if $item['status']==0}
+                    <span class="layui-badge layui-bg-gray">未出售</span>
+                    {else}
+                    <span class="layui-badge layui-bg-blue">已出售</span>
+                    {/if}
+                </td>
+                <td>{$item['count']}</td>
+                <td>
+                    {if $item['update_time'] >0}
+                    {php echo date("Y-m-d H:i:s",$item['update_time'])}
+                    {else}
+                    --
+                    {/if}
+                </td>
+                <td>
+                    {if in_array('trace.getSourceQrcode',$perm)}
+                    <a href="#"  title="小程序码" class="operation showSourceQcode" data-id="{$item['id']}" style="padding: 6px 4px 4px 4px"><i class="iconfont icon-erweima"></i></a>
+                    {/if}
+                    {if in_array('trace.saleOut',$perm)}
+                    {if $item['status']==0}
+                    <a class="saleOut layui-btn layui-btn-xs" data-id="{$item['id']}"><i class="iconfont icon-more"></i>销售出库</a>
+                    {/if}
+                    {/if}
+                    {if in_array('trace.delSourceLi',$perm)}
+                    <a class="delete layui-btn layui-btn-xs layui-btn-danger" data-id="{$item['id']}"><i class="iconfont icon-el-icon-dev-delete"></i>删除</a>
+                    {/if}
+                </td>
+
+            </tr>
+            {/loop}
+            </tbody>
+        </table>
+    </form>
+    <div style="text-align: right;">
+        {$data['pager']}
+    </div>
+</div>
+{template 'common/footer'}
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form,layer = layui.layer;
+        $(".delete").click(function(){
+            var id=$(this).attr('data-id');
+            var url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'delSourceLi','action'=>'trace')}";
+            updateData(url,{id:id},'确认删除吗');
+        })
+        $(".saleOut").click(function(){
+            var id=$(this).attr('data-id');
+            var url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'saleOut','action'=>'trace')}";
+            updateData(url,{id:id},'确认将此条溯源信息销售出库吗');
+        })
+        $("#goBack").click(function () {
+            goBack();
+        })
+        /** 搜索查询*/
+        form.on('submit(formSubmit)',function (data) {
+            var formData = data.field;
+            let url = "{url 'site/entry/'.$_GPC['do'],array('m'=>'kundian_farm','op'=>'sourceList','action'=>'trace','id'=>$_GPC['id'])}";
+            if(formData['source_code']){
+                url+="&source_code="+formData['source_code'];
+            }
+            window.location.href=url;
+        })
+        //生成小程序码
+        $(".showSourceQcode").click(function(){
+            var id=$(this).attr("data-id");
+            var index = layer.load();
+            $.ajax({
+                type:"post",
+                url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'getSourceQrcode','action'=>'trace')}",
+                data:{id:id},
+                dataType:'json',
+                success:function(res){
+                    layer.close(index);
+                    layer.open({
+                        type: 1
+                        ,offset: "auto" //具体配置参考：http://www.layui.com/doc/modules/layer.html#offset
+                        ,id: 'layerDemo' //防止重复弹出
+                        ,content: '<img src="'+res.goods_qrcode+'" style="width:200px;height:200px;margin:20px;">'
+                        ,btn: '关闭'
+                        ,btnAlign: 'c' //按钮居中
+                        ,shade: 0.5 //不显示遮罩
+                        ,yes: function(){
+                            layer.closeAll();
+                        }
+                    });
+
+                }
+            })
+        })
+        //全选
+        form.on('checkbox(checkAll)', function(data){
+            var a = data.elem.checked;
+            if(a == true){
+                $(".goodsid").prop("checked", true);
+                form.render('checkbox');
+            }else{
+                $(".goodsid").prop("checked", false);
+                form.render('checkbox');
+            }
+        });
+
+        //其中一个不选，取消全选
+        form.on('checkbox(check_one)', function(data){
+            var item = $(".goodsid");
+            for(var i=0;i<item.length;i++){
+                if(item[i].checked == false){
+                    $("#checkAll").prop("checked", false);
+                    form.render('checkbox');
+                }
+            }
+        });
+
+        //批量操作
+        $(".batchChangeSource").click(function () {
+            let sourceid=[];
+            $("input:checkbox[name='sourceid']:checked").each(function() { // 遍历name=goodsid的多选框
+                sourceid.push($(this).val());
+            });
+            if(sourceid.length==0){
+                layer.alert('请选择要进行批量操作的商品！');return false;
+            }
+
+            let type=$(this).attr('data-value');
+
+            layer.confirm('确认批量操作吗？',{icon: 3, title:'提示'},function () {
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'batchChangeSource','action'=>'trace')}",
+                    data:{sourceid:sourceid,type:type},
+                    dataType:'json',
+                    success:function(res){
+                        layer.alert(res.msg, function(index){
+                            window.location.reload();
+                            layer.close(index);
+                        });
+                    }
+                })
+            })
+        })
+
+
+    });
+
+</script>

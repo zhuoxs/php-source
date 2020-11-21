@@ -1,0 +1,127 @@
+{~$title = "支付问题反馈"}
+<include file="Public:header"/>
+
+<body class="gray_bg">
+<!-- 头部部分 开始 -->
+<header class="top_header">
+    <div class="left"><a href="javascript:" class="return go-back"></a></div>
+    <div class="title">{$title}</div>
+</header>
+<div class="body_main mt">
+    <div class="task_box">
+        <div class="submission_task_form">
+            <form class="submit-ajax2" method="post" id="from1" enctype="multipart/form-data">
+                <input type="hidden" name="id" id="id" value="{$apply_data.id}">
+                <div>
+                    <p class="t">请选择要审核的订单：</p>
+                    <p class="c">
+                        <volist name="pay_list" id="vo">
+                            <label style="display: block;padding: 5px 0;"><input type="radio" name="order_no" value="{$vo.order_no}" style="width: 24px;height: 24px;"> 订单金额：￥{$vo.price}</label>
+                        </volist>
+                    </p>
+                </div>
+                <div>
+                    <p class="t">支付截图：</p>
+                    <p class="c">
+                        <span class="img-cont">
+                            <a href="javascript:;" class="file">上传支付截图凭据 <input type="file"  name="thumb" id="thumb" onchange='Image(this)'/> </a>
+                            <img id="image" src="/tpl/Public/images/timg.png" alt="" style="max-width: 100%" >
+                        </span>
+                    </p>
+                </div>
+                <div>
+                    <button type="submit" class="bala-btn" style="margin-top: 20px;margin-bottom: 20px;width: 260px;">提交凭据</button>
+                </div>
+            </form>
+            <div class="tip" style="color: #333;">
+                温馨提示：请上传微信支付<b>账单详情</b>的截图，账单需包含“支付单号”。<br>也可直接联系我们的微信客服：{~echo sp_cfg('wx_kf')}
+            </div>
+        </div>
+    </div>
+</div>
+
+<include file="Public:footer"/>
+</body>
+</html>
+<script>
+    /**
+     * ajax提交
+     */
+    $('.submit-ajax2').submit(function(){
+        var url = "{:U('pay_screenshot')}";
+        var order_no  = $("input[name=order_no]:checked").val();
+        var formData = new FormData();
+        formData.append("file",$("#thumb")[0].files[0]);
+        formData.append("order_no",order_no);
+        layer.open({
+            type: 2
+            ,content: '上传中，请稍后'
+        });
+
+        $.ajax({
+            url : url,
+            type : 'POST',
+            data : formData,
+            processData : false,
+            contentType : false,
+            beforeSend:function(){
+                console.log("正在进行，请稍候");
+            },
+            success : function(data) {
+                layer.closeAll('loading');
+                if( data.status == 1 ) {
+                    sp_alert_gourl(data.info,'知道了',data.url);
+                } else {
+                    sp_alert(data.info);
+                }
+            },
+            error : function(responseStr) {
+                console.log("error");
+            }
+        });
+        return false;
+    })
+</script>
+<script>
+    function PreviewImage(imgFile){
+        var pattern = /(\.*.jpg$)|(\.*.png$)|(\.*.jpeg$)|(\.*.gif$)|(\.*.bmp$)/;
+        if(!pattern.test(imgFile.value)){
+            alert('只支持jpg/jpeg/png/gif/bmp格式的图片！');
+            imgFile.focus();
+        }
+        else{
+            var path;
+            if(document.all){
+                imgFile.select();
+                path = document.selection.createRange().text;
+                document.$('#imageid').innerHTML="";
+                document.$('#imageid').style.filter =
+                        "progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled='true',sizingMethod='scale',src=\"" + path + "\")";
+            }else{
+                path =URL.createObjectURL(imgFile.files[0]);
+                $('#imageid').attr('src',path);
+            }
+        }
+    }
+
+    function Image(imgFile){
+        var pattern = /(\.*.jpg$)|(\.*.png$)|(\.*.jpeg$)|(\.*.gif$)|(\.*.bmp$)/;
+        if(!pattern.test(imgFile.value)){
+            alert('只支持jpg/jpeg/png/gif/bmp格式的图片！');
+            imgFile.focus();
+        }
+        else{
+            var path;
+            if(document.all){
+                imgFile.select();
+                path = document.selection.createRange().text;
+                document.$('#image').innerHTML="";
+                document.$('#image').style.filter =
+                        "progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled='true',sizingMethod='scale',src=\"" + path + "\")";
+            }else{
+                path =URL.createObjectURL(imgFile.files[0]);
+                $('#image').attr('src',path);
+            }
+        }
+    }
+</script>

@@ -1,0 +1,202 @@
+{template 'header'}
+<body>
+<script type="text/javascript" src="{$_W['siteroot']}app/resource/js/app/util.js"></script>
+<script type="text/javascript" src="{$_W['siteroot']}app/resource/js/lib/mui.min.js?v=20160906"></script>
+<style>
+    .good-price{
+        align-items: center;
+    }
+    .yd-spinner>input{
+        width: 35%!important;
+    }
+    .yd-spinner>span{
+        border-radius: 50%;
+    }
+    .yd-spinner{
+        border: none!important;
+    }
+    .yd-spinner-square:after, .yd-spinner-square:before{
+        border: none;
+        height: 0;
+    }
+    .yd-spinner-square{
+        padding-left: 15%;
+    }
+</style>
+<div id="hook-app">
+    <yd-navbar title="确认订单">
+        <a href="<?php echo $this->createMobileUrl('good'); ?>" slot="left">
+            <yd-navbar-back-icon></yd-navbar-back-icon>
+        </a>
+    </yd-navbar>
+    <div id="tixian">
+        <yd-cell-group v-if="chosedAddress">
+            <yd-cell-item arrow id="address" class="hookAddress">
+                <yd-icon name="location" slot="icon" size=".4rem" color="#999999"></yd-icon>
+                <div class="address" slot="left">
+                    <p><span>收货人：{{userName}}</span><span>{{telNumber}}</span></p>
+                    <p style="color: #999999;">{{address}}</p>
+                </div>
+                <span slot="right"></span>
+            </yd-cell-item>
+        </yd-cell-group>
+        <yd-cell-group v-if="!chosedAddress">
+            <yd-cell-item arrow id="fetchAddress" class="hookAddress">
+                <span slot="left"><yd-icon name="weixin" size=".4rem" color="#04be02"></yd-icon> <span style="position: relative;top: -2px;">获取微信收货地址</span></span>
+                <span slot="right"></span>
+            </yd-cell-item>
+        </yd-cell-group>
+        <div class="good-detail">
+            <h3><yd-icon name="footmark" size=".3rem" color="#666666"></yd-icon> {$config['sitename']}</h3>
+            <div class="good-item">
+                <div class="good-media">
+                    <img src="<?php echo tomedia($good['thumb']) ?>" alt="">
+                </div>
+                <div class="good-info">
+                    <div class="good-title">{$good['title']}</div>
+                    <div class="good-desc">{$good['desc']}</div>
+                    <div class="good-price">
+                        <span class="price"> ¥{$good['price']}</span>
+                        <span style="padding-top: 5px;"><yd-spinner v-model="number" height="25px"></yd-spinner></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <yd-accordion>
+            <yd-accordion-item title="查看详情" class="good-more">
+                <div slot="icon" style="color:#F00;"><yd-icon name="discover" size=".3rem" color="#666666" slot="icon"></yd-icon></div>
+                <div style="padding: .3rem;">
+                    {php echo htmlspecialchars_decode($good['content'])}
+                </div>
+            </yd-accordion-item>
+        </yd-accordion>
+        <yd-cell-group>
+            <yd-cell-item class="buy-message">
+                <span slot="left">买家留言</span>
+                <yd-input slot="right" placeholder="建议留言前先与商家沟通确认" v-model="buyer_message"></yd-input>
+            </yd-cell-item>
+        </yd-cell-group>
+        <yd-cell-group>
+            <?php if($config['postage'] == 0): ?>
+            <yd-cell-item style="border-bottom:1px solid #eaeaea;">
+                <span slot="left" style="font-size: 14px;">运费</span>
+                <span slot="right" class="postage" style="font-size: 14px;color: #666666;">包邮</span>
+            </yd-cell-item>
+            <?php else: ?>
+            <yd-cell-item style="border-bottom:1px solid #eaeaea;">
+                <span slot="left" style="font-size: 14px;">运费</span>
+                <span slot="right" class="postage" style="font-size: 14px;color: #666666;">+ ¥{$config['postage']}</span>
+            </yd-cell-item>
+            <?php endif; ?>
+            <yd-cell-item>
+                <span slot="left">应付款</span>
+                <span slot="right" class="total">¥{{totalPrice}}</span>
+            </yd-cell-item>
+        </yd-cell-group>
+        <yd-button-group>
+            <yd-button size="large" @click.native="handle" v-if="!paying">立即支付</yd-button>
+            <yd-button size="large" type="hollow" v-if="paying"><img src="{ASSETS}/images/loading.gif" alt="" style="position: relative;top: -2px;"> 正在支付</yd-button>
+        </yd-button-group>
+    </div>
+</div>
+
+<script>
+    var good_id = '<?php echo $good["id"] ?>';
+    var postage = parseFloat('<?php echo $config["postage"] ? $config["postage"] : 0?>');
+    var postage_plus = parseInt('<?php echo $config["postage_plus"] ? $config["postage_plus"] : 0?>');
+    var price = parseFloat("<?php echo $good['price']?>");
+    wx.ready(function () {
+        $('.hookAddress').click(function(){
+            wx.openAddress({
+                success: function(res){
+                    app.chosedAddress = 1;
+                    app.userName = res.userName;
+                    app.telNumber = res.telNumber;
+                    app.address = res.provinceName + res.cityName + res.countryName + res.detailInfo;
+                }
+            });
+            return false;
+        });
+    });
+
+    var url = "<?php echo $this->createMobileUrl('order',['op'=>'create']); ?>";
+    var app = new Vue({
+        el: '#hook-app',
+        data: {
+            paying: 0,
+            chosedAddress: 0,
+            number: 1,
+            total: 0,
+            userName: '',
+            telNumber: '',
+            address: '',
+            buyer_message: ''
+        },
+        computed: {
+            totalPrice: function(){
+                if(postage_plus){
+                    return ((price + postage) * this.number).toFixed(2);
+                }else{
+                    return (price * this.number + postage).toFixed(2);
+                }
+            }
+        },
+        methods: {
+            handle : function(){
+                if(this.address == ''){
+                    this.message("请先选择收货地址");
+                    return false;
+                }
+                //loading
+                this.$dialog.loading.open('下单中...');
+                this.paying = 1;
+                $.post(url,{
+                    good_id:good_id,
+                    number: this.number,
+                    truename:this.userName,
+                    mobile:this.telNumber,
+                    address:this.address,
+                    buyer_message: this.buyer_message
+                },function(resp) {
+                    app.$dialog.loading.close();
+
+                    if(resp.error){
+                        app.message(resp.msg);
+                    }else{
+                        //下单
+                        util.pay({
+                            orderFee : resp.fee,
+                            payMethod : 'wechat',
+                            orderTitle : resp.title,
+                            orderTid : resp.ordersn,
+                            module : 'liuer_mcar',
+                            success : function(result) {
+                                app.message('支付成功，即将跳转到订单页面','success');
+                                setTimeout(function(){
+                                    location.href = resp.url;
+                                },1500)
+                            },
+                            fail : function(result) {
+                                app.message('支付失败：'+result.message);
+                            },
+                            complete : function(result) {
+                                app.paying = 0;
+                            }
+                        });
+                    }
+                },'json');
+                return false;
+            },
+            message:function(msg,icon){
+                icon = icon || 'error'
+                this.$dialog.toast({
+                    mes: msg,
+                    timeout: 1500,
+                    icon:icon
+                });
+            },
+        }
+    });
+</script>
+</body>
+</html>

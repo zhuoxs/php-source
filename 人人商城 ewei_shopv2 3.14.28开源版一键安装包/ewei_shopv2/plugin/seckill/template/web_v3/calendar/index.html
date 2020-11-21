@@ -1,0 +1,416 @@
+{template '_header'}
+<div class='page-header'>
+    当前位置：<span class="text-primary">任务设置</span>
+</div>
+<style type="text/css">
+    #calendar .header {
+
+        width: 840px;
+        height: 40px;
+        margin-bottom: 40px;
+
+    }
+
+    #calendar .weeks {
+        border-bottom: 1px solid #ccc;
+        width: 840px;
+        height: 40px;
+        line-height: 40px;
+        background: #f2f2f2;
+    }
+
+    #calendar .weeks .col-sm-2 {
+        width: 120px;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    #calendar .dates {
+        width: 840px;
+        height: 120px;
+        text-align: center;
+
+    }
+
+    #calendar .dates .col-sm-2 {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        text-align: center;
+        background: #fefefe;
+        line-height: 110px;
+        border: 1px solid #f2f2f2;
+    }
+
+
+    #calendar .dates .col-sm-2 .btn {
+        margin: 0;
+
+        color:#fff;
+        overflow: hidden;
+
+        -ms-word-break: break-all;
+        word-break: break-all;
+        word-wrap: break-word;
+        white-space:normal;
+
+        max-height:50px;
+        background:#f2f2f2;
+        color:#333;
+
+    }
+    #calendar .dates .col-sm-2 .btn.btn-set-has {
+        background: #00aeff;
+        color:#fff;
+    }
+    #calendar .dates .col-sm-2 .date{
+        position:absolute;
+        right:0;top:5px;
+        font-size:14px;
+        color:#999;
+        line-height:20px;
+        display:inline-block;width:20px;height:20px;
+    }
+    #calendar .dates .col-sm-2 .link{
+        position:absolute;
+        right:0;bottom:5px;
+        font-size:14px;
+        color:#666;
+        line-height:20px;
+        text-align: center;
+        display:inline-block;width:120px;height:20px;
+        display: none;
+
+    }
+
+    #loading {
+        width:100%;
+        padding:20px 0;
+        text-align: center;;
+    }
+
+    #calendar .dates .col-sm-2.select {
+        /*background:#fefdeb;*/
+    }
+    #calendar .dates .col-sm-2 a {
+        color:#666;
+    }
+</style>
+<div class="page-content">
+<div class="row">
+    <div class="alert alert-danger">
+        <p>注意：秒杀任务使用Redis存储 , 设置好秒杀任务后 , 请勿清理平台系统缓存 , 以免秒杀任务丢失</p>
+    </div>
+    <div class="col-sm-12">
+        <div id="calendar">
+            <div class="header">
+                <div>
+                    <label for="" style="vertical-align: sub">批量设置:</label>
+                    <label class="checkbox-inline">
+                        <input type="checkbox"  value="all" checked /> 全月
+                    </label>     <label class="checkbox-inline" >
+                    <input type="checkbox"  value="1" checked /> 周一
+                </label>
+                    <label class="checkbox-inline" style="">
+                        <input type="checkbox"  value="2" checked /> 周二
+                    </label>   <label class="checkbox-inline" style="">
+                    <input type="checkbox"  value="3" checked /> 周三
+                </label>   <label class="checkbox-inline" style="">
+                    <input type="checkbox"  value="4" checked /> 周四
+                </label>   <label class="checkbox-inline" style="">
+                    <input type="checkbox"  value="5"  checked/> 周五
+                </label>   <label class="checkbox-inline" style="">
+                    <input type="checkbox"  value="6" checked /> 周六
+                </label>   <label class="checkbox-inline" style="">
+                    <input type="checkbox"  value="7" checked /> 周日
+                </label>
+
+                    <span class=" pull-right">
+                            <select class="form-control" style="width:100px;display:inline-block;"  id="year">
+                                {loop $years $y}
+                                <option value="{$y}" {if $currentyear==$y}selected{/if}>{$y}</option>
+                                {/loop}
+                            </select>
+                                    年
+                                    <select class="form-control" style="width:100px;display:inline-block;" id="month">
+                                        {loop $months $m}
+                                        <option value="{$m}" {if $currentmonth==$m}selected{/if}>{$m}</option>
+                                        {/loop}
+                                    </select>
+                                    月
+                        </span>
+                </div>
+
+                    <div class="input-group">
+                        <a href="javascript:;" class="btn btn-default btn-sm btn-batch-set" style="display:inline-block;margin-top:10px">批量设置</a>
+                        <a href="javascript:;" class="btn btn-default btn-sm btn-batch-delete" style="display:inline-block;margin-top:10px">批量取消</a>
+                        <a href="javascript:;" class="btn btn-default btn-sm btn-clear" style="display:inline-block;margin-top:10px">清空当月</a>
+                    </div>
+
+
+            </div>
+            <div class="weeks">
+                <div class="col-sm-2">日</div>
+                <div class="col-sm-2">一</div>
+                <div class="col-sm-2">二</div>
+                <div class="col-sm-2">三</div>
+                <div class="col-sm-2">四</div>
+                <div class="col-sm-2">五</div>
+                <div class="col-sm-2">六</div>
+            </div>
+            <div id="loading"><i class="fa fa-spinner fa-spin"></i> 正在加载数据</div>
+            <div id="dates" class="dates">
+
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<script language="javascript">
+    function getDates(){
+        year = $('#year').val();
+        month = $('#month').val();
+        $('#loading').show();
+        $('#dates').html('');
+        $.ajax({
+            url: "{php echo webUrl('seckill/calendar/dates')}",
+            data: {year:year,month:month},
+            cache:false,
+            dataType:'html',
+            type:'POST',
+            success:function(html){
+                $('#dates').html( html );
+                $('#loading').hide();
+                bindEvents();
+            }
+        })
+    }
+    var currentDate = null;
+    function bindEvents(){
+
+
+        $('.btn-set').click(function(){
+            var btn = $(this);
+            var item = btn.closest('.date-item');
+            currentDate = item.attr('date');
+            biz.selector_open.select({
+                'name': 'task_set',
+                'readonly': true,
+                'url':"{php echo webUrl('seckill/task/query')}",
+                'nokeywords':1,
+                'autosearch':1,
+                'placeholder':'请输入秒杀标题',
+                'callback':function(data,obj){
+
+                    var taskid = data.id;
+                    $.ajax({
+                        url: "{php echo webUrl('seckill/calendar/set')}",
+                        data: {taskid: taskid , date: currentDate},
+                        dataType:'json',
+                        type:'POST',
+                        success:function(ret){
+                            if(ret.status==1){
+                                btn.addClass('btn-set-has').html( "[" + taskid + "]"+ ret.result.title + "");
+                                item.attr('taskid',taskid).addClass('select').find('.link').show();
+                                var btngoods = item.find('.btn-goods');
+                                btngoods.attr('href' , btngoods.data('href') + "&taskid=" + taskid);
+
+                                var btnedit = item.find('.btn-edit');
+                                btnedit.attr('href' , btnedit.data('href') + "&id=" + taskid);
+                                bindHover();
+                                return;
+                            }
+                            tip.msgbox.err(ret.result.message);
+                        }
+                    });
+                }
+            });
+        });
+
+
+        $('.btn-delete').click(function(){
+            var btn = $(this);
+            var item = btn.closest('.date-item');
+            currentDate = item.attr('date');
+
+            tip.confirm('确认取消 ' + currentDate + " 的秒杀?",function(){
+
+                btn.button('loading');
+                $.ajax({
+                    url: "{php echo webUrl('seckill/calendar/delete')}",
+                    data: { date: currentDate},
+                    dataType:'json',
+
+                    type:'POST',
+                    success:function(ret){
+                        if(ret.status==1) {
+                            item.find('.btn-set').html('选择');
+                            btn.button('reset'),item.attr('taskid','').find('.link').hide();
+                            item.find('.btn-set').removeClass('btn-set-has');
+                            bindHover();
+                            return;
+                        }
+                        tip.msgbox.err(ret.result.message);
+                    }
+                });
+
+            });
+        });
+        bindHover();
+    }
+
+    function bindHover(){
+        $('.date-item').unbind('mouseover').mouseover(function(){
+
+            if( $(this).attr('taskid')){
+
+                $(this).find('.link').show();
+
+            }else{
+                $(this).find('.link').hide();
+            }
+
+        }).unbind('mouseout').mouseout(function(){
+            $(this).find('.link').hide();
+
+        })
+    }
+    $(function(){
+
+        getDates();
+
+        $('#year,#month').change(function(){
+            getDates();
+        });
+
+        $(':checkbox').click(function(){
+            var val  =$(this).val();
+            var checked = $(this).prop('checked');
+            if(val=='all'){
+                $(':checkbox').prop('checked',checked);
+            }else{
+                if( !checked){
+                    $(':checkbox[value="all"]').prop('checked',false);
+                }
+            }
+        });
+
+        $('.btn-clear').click(function(){
+            var btn = $(this);
+            year = $('#year').val();
+            month = $('#month').val();
+            tip.confirm('确认要清空 ' + month + "年" + month+"月份的秒杀吗?",function(){
+                btn.button('loading');
+                $.ajax({
+                    url: "{php echo webUrl('seckill/calendar/clear')}",
+                    data: { year: year,month:month},
+                    dataType:'json',
+                    type:'POST',
+                    success:function(ret){
+                        if(ret.status==1) {
+                            btn.button('reset');
+                            $('.date-item').each(function(){
+                                var obj = $(this);
+                                obj.removeClass('select').attr('taskid','');
+                                obj.find('.link').hide(),obj.find('.btn-set').removeClass('btn-set-has').html('选择');
+                            });
+                            bindHover();
+                            return;
+                        }
+                        tip.msgbox.err(ret.result.message);
+                    }
+                });
+            });
+        });
+
+
+        $('.btn-batch-set').click(function(){
+            var btn = $(this);
+
+            var days = $(':checkbox:checked').map(function () {
+                return $(this).val()
+            }).get();
+
+            year = $('#year').val();
+            month = $('#month').val();
+
+            biz.selector_open.select({
+                'name': 'task_batch_set',
+                'readonly': true,
+                'url':"{php echo webUrl('seckill/task/query')}",
+                'nokeywords':1,
+                'autosearch':1,
+                'placeholder':'请输入秒杀标题',
+                'callback':function(data,obj){
+
+                    var taskid = data.id;
+                    $.ajax({
+                        url: "{php echo webUrl('seckill/calendar/batch_set')}",
+                        data: {taskid: taskid , year:year,month:month, days: days},
+                        dataType:'json',
+                        type:'POST',
+                        success:function(ret){
+                            if(ret.status==1){
+                                $('.date-item').each(function(){
+
+                                    var item = $(this),btn = item.find('.btn-set');
+                                    if( ret.result.dates.indexOf(item.attr('date'))!=-1){
+
+                                        btn.addClass('btn-set-has').html( "[" + taskid + "]"+ ret.result.title );
+                                        item.attr('taskid',taskid).addClass('select').find('.link').show();
+                                        var btngoods = item.find('.btn-goods');
+                                        btngoods.attr('href' , btngoods.data('href') + "&taskid=" + taskid);
+
+                                        var btnedit = item.find('.btn-edit');
+                                        btnedit.attr('href' , btnedit.data('href') + "&id=" + taskid);
+                                    }
+
+                                });
+                                bindHover();
+                                return;
+                            }
+                            tip.msgbox.err(ret.result.message);
+                        }
+                    });
+                }
+            });
+        });
+
+
+        $('.btn-batch-delete').click(function(){
+            var btn = $(this);
+
+            var days = $(':checkbox:checked').map(function () {
+                return $(this).val()
+            }).get();
+
+            year = $('#year').val();
+            month = $('#month').val();
+            tip.confirm('确认要取消这些日期的秒杀吗?',function(){
+                $.ajax({
+                    url: "{php echo webUrl('seckill/calendar/batch_delete')}",
+                    data: {year:year,month:month, days: days},
+                    dataType:'json',
+                    type:'POST',
+                    success:function(ret){
+                        if(ret.status==1){
+                            $('.date-item').each(function(){
+
+                                var item = $(this),btn = item.find('.btn-set');
+                                if( ret.result.dates.indexOf(item.attr('date'))!=-1){
+                                    item.removeClass('select').attr('taskid','');
+                                    item.find('.link').hide(),item.find('.btn-set').removeClass('btn-set-has').html('选择');
+                                }
+
+                            });
+                            bindHover();
+                            return;
+                        }
+                        tip.msgbox.err(ret.result.message);
+                    }
+                });
+            });
+        });
+    })
+</script>
+{template '_footer'}

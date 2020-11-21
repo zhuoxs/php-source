@@ -1,0 +1,122 @@
+{template 'header'}
+<style>
+body{background: #F5F5F5;}
+#replystatus{display:none;}
+.weui-cell{padding: 15px 15px;}
+.weui-cell__hd img{width:40px;margin-right:8px;display:block;border-radius: 5px;}
+.weui-cell__ft{font-size:0.8em;}
+.weui-cell_primary p{    color: #333;    font-weight: 800;}
+.price{    font-size: 12px;
+    color: #F56800;}
+</style>
+
+<div class="weui-panel weui-panel_access" style="    margin-top: 0px;">
+            <div class="weui-panel__bd">
+                <a href="javascript:void(0);" class="weui-media-box weui-media-box_appmsg">
+                    <div class="weui-media-box__hd">
+                        <img class="weui-media-box__thumb" src="{$userinfo['avatar']}" alt="">
+                    </div>
+                    <div class="weui-media-box__bd">
+                        <h4 class="weui-media-box__title">{$userinfo['nickname']} </h4>
+						{if $vipuser['packname']==''}
+                        <p class="weui-media-box__desc">未开通会员</p>
+						{else}
+						<p class="weui-media-box__desc"> <i class="fa fa-user" style="color: #DC551F;"></i> {$vipuser['packname']}  <span style="float:right;color:#65AED4">还能查看 {$packnum} 次</span></p>
+						<p class="weui-media-box__desc"><i class="fa fa-dashboard" style="color: #DC551F;"></i> {php echo date('Y-m-d H:i:s',$vipuser['packtime'])}</p>
+						{/if}
+                    </div>			
+                </a>
+            </div>
+</div>
+<div class="weui-panel">
+            <div class="weui-panel__bd">
+                <div class="weui-media-box weui-media-box_small-appmsg">
+                    <div class="weui-cells">
+                        <a class="weui-cell weui-cell_access" href="{php echo $this->createMobileUrl('friendslist')}">
+                            <div class="weui-cell__hd"><img src="{MODULE_URL}/template/static/images/userlist.png" alt="" ></div>
+                            <div class="weui-cell__bd weui-cell_primary">
+                                <p>查看过的好友</p>
+                            </div>
+                            <span class="weui-cell__ft"></span>
+                        </a>
+				   
+                    </div>
+                </div>
+
+            </div>
+</div>
+<div class="weui-panel">
+            <div class="weui-panel__hd">会员套餐</div>
+            <div class="weui-panel__bd">
+                <div class="weui-media-box weui-media-box_small-appmsg">
+                    <div class="weui-cells packpay">
+					{loop $packata $index $item}
+                        <a class="weui-cell weui-cell_access packlist" dada-key="{$index}" href="javascript:;">
+                            <div class="weui-cell__hd"><img src="{$item['packicon']}" alt="" ></div>
+                            <div class="weui-cell__bd weui-cell_primary">
+                                <p>{$item['packname']}</p>
+								<span class="price">￥{$item['packprice']} / {$item['packtime']}天</span>
+                            </div>
+                            <span class="weui-cell__ft">可查看{$item['packnum']}位用户交友信息</span>
+                        </a>
+					{/loop}
+                    {if $packata=="" } 请管理员至后台设置套餐 {/if}
+                    </div>
+                </div>
+            </div>
+</div>
+
+<div class="page__bd page__bd_spacing"style="padding: 10px;">
+        <a href="javascript:history.go(-1);" class="weui-btn weui-btn_default">返回</a>
+    </div>
+<script>
+$(document).ready(function(){
+    var packid="";
+	$(".packpay .packlist").click(function(){
+		packid=$(this).attr("dada-key"); 
+		//开始支付
+		{if $reply['defaultpay']==0}
+	 
+		$.ajax({
+			type : "post",
+			url : "{php echo $this->createMobileUrl('user',array('ty'=>1))}",
+			data : { 
+				type : 1,
+				packid : packid,
+			},
+			dataType : "json",
+			beforeSend : function(XMLHttpRequest) {
+				loadingToast("跳转支付...");
+			},
+			success : function(res) {
+				if (res.status == 200) {
+					window.location.href = res.pay_url;
+				}else if(res.status == 201) {
+					dialog2(res.msg);
+					window.location.href = "{php echo $this->createMobileUrl('user')";
+				}else{
+					hidemod("loadingToast");
+					dialog2(res.msg);
+				}
+			},
+			error : function(res, type) {
+				hidemod("loadingToast");
+				dialog2(res.msg);
+			}
+		    });
+			
+		{else}
+		
+		    location.href ="{php echo $this->createMobileUrl('user', array('ty' => 1))}&type=1&packid="+packid;
+
+		{/if}
+		
+		
+
+		
+    });
+	
+});
+</script>
+
+{template 'footer'}

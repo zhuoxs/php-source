@@ -1,0 +1,164 @@
+{include file="common/top"}
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/static/css/viewer.min.css">
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/peixin/css/member.css">
+
+
+
+<script type="application/javascript" charset="utf-8" src="/static/UEditor/ueditor.config.js"></script>
+<script type="text/javascript" charset="utf-8" src="/static/UEditor/ueditor.all.min.js"></script>
+
+
+
+<div class="s-body">
+    <div class="content">
+        <!--左边选择-->
+        {include file="member/common"}
+        <!--右边内容-->
+        <div class="M-content">
+            <div class="M-info">
+                <!--我的资讯-->
+                <div class="block my-novel">
+                    <div class="establish novel-btn">
+                        <a>上传资讯</a>
+                    </div>
+                    <div class="novel-left">
+                        <ul>
+                            {notempty name="list"}
+                            {volist name="list" id="vo"}
+                            <li id="li_{:$vo['id']}">
+                                <a class="novel-a" href="{:url('novel/show',array('id'=>$vo['id']))}">
+                                    <div class="novelPic">
+                                        <img src="{:$vo['thumbnail']}" />
+                                        {if condition="$vo['status'] neq 1"}
+                                        <span class="btn fn-jiaobiao"><i>已禁用</i></span>
+                                        {else/}
+                                        {if condition="$vo['is_check'] eq 0"}<span class="btn fn-jiaobiao aspect"><i>审核中</i></span> {/if}
+                                        {if condition="$vo['is_check'] eq 2"}<span class="btn fn-jiaobiao"><i>已拒绝</i></span> {/if}
+                                        {/if}
+
+                                    </div>
+                                    <div class="novel-box">
+                                        <p>{:$vo['title']}</p>
+                                        <span class="text">{$vo['short_info']|default="暂没短说明"}</span>
+                                        <div>
+                                            <div class="box-f"><span><i class="btn fn-time"></i>{:date('Y-m-d H:i:s',$vo['update_time'])}</span><span><i class="btn fn-see"></i>{:$vo['click']}</span></div>
+                                            <div class="box-r">
+                                                {volist name="$tag[$vo['id']]" id="v"}
+                                                {if condition="isset($tags_list[$v])"}<span>{$tags_list[$v]}</span>{/if}
+                                                {/volist}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                                <div class="operate" >
+                                    <a class="edit" id="edit_{:$vo['id']}"><i class="btn fn-bianji1"></i>编辑</a>
+                                    <a class="delete" id="delete_{:$vo['id']}"><i class="btn fn-shanchu"></i>删除</a>
+                                </div>
+                            </li>
+                            {/volist}
+                            {else/}
+                            <div class="not-comment not">您还没有上传过资讯哦 ~</div>
+                            {/notempty}
+                        </ul>
+                    </div>
+                    <div class="sort-pager">
+                        {$pages}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+                    </div>
+                    </div>
+
+
+                    <script>
+                            $(function () {
+                            /*点击上传分类*/
+                            $(".text-box").click(function(){
+                                $(".drop-down").slideToggle();
+                            });
+                            $(".drop-down dl .children").click(function () {
+                                $(".drop-down").slideUp();
+                                $(".drop-down dl .children").removeClass("on");
+                                $(this).addClass("on");
+                                $(".form-box .text-box").html($(this).text()+"<i class='btn fn-triangle'></i>");
+                            });
+
+                            /*我的资讯、鼠标到列表上的效果*/
+                            $(".novel-left li").hover(function(){
+                                $(this).find(".operate").show();
+                                $(this).find(".operate").stop(false).animate({right:"0"});
+                            },function () {
+                                $(this).find(".operate").stop(false).animate({right:"-73"});
+                            });
+                                var $self = "{:url('member/editNovel')}";
+                            /*我的资讯、上传*/
+                            $(".novel-btn a").click(function () {
+                                layer.open({
+                                    type: 2,
+                                    title: '上传资讯',
+                                    area: ['700px', '800px'],
+                                    shadeClose: true,
+                                    skin: 'demo-class',
+                                    anim: 0,
+                                    content: "{:url('member/addNovel')}"
+                                });
+
+                            });
+
+
+                            console.info("http://client.msvodx.com"+$self);
+
+                            /*我的资讯、编辑*/
+                            $(".operate .edit").click(function () {
+                                var id = $(this).attr('id').substring(5);
+                                var url = "/member/editNovel/id/"+id;
+                                console.log(url);
+                                layer.open({
+                                    type: 2,
+                                    title: '编辑资讯',
+                                    area: ['700px', '800px'],
+                                    shadeClose: true,
+                                    skin: 'demo-class',
+                                    anim: 0,
+                                    content: url
+                                });
+                            });
+
+                            /*我的资讯删除*/
+                            /*我的视频、删除视频*/
+                            $(".operate .delete").click(function(){
+                                var id = $(this).attr('id').substring(7);
+                                var reqData={table:'novel',id:id};
+                                layer.confirm('确定删除吗？', {
+                                    btn: ['确定','取消'] //按钮
+                                }, function(){
+                                    $.ajax({
+                                        type: 'POST',
+                                        url: "{:url('api/del')}",
+                                        data: reqData,
+                                        dataType : "json",
+                                        success: function(data){
+                                            console.log(data);
+                                            if(data.resultCode==0){
+                                                layer.msg('已成功删除', {icon: 1});
+                                                $('#li_'+id).slideUp("200", function() {
+                                                    $('#li_'+id).remove();
+                                                });
+                                            }else{
+                                                layer.msg('删除失败，原因：'+data.error,{time:2000,icon:2});
+                                            }
+                                        },
+                                    });
+//                                    layer.msg('已成功删除', {icon: 1});
+                                });
+                            });
+
+                        });
+                    </script>
+
+
+                    {include file="common/bottom"}

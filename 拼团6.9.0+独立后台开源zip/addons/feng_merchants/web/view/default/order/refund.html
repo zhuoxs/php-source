@@ -1,0 +1,158 @@
+{php include wl_template('common/header');}
+<div class="panel panel-info">
+	<div class="panel-heading">筛选</div>
+	<div class="panel-body">
+		 <form action="./index.php" method="get" class="form-horizontal" role="form" id="form1">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="feng_merchants" />
+                <input type="hidden" name="do" value="order" />
+                <input type="hidden" name="ac" value="refund" />
+                <div class="form-group">
+					<label class="col-md-4 col-lg-1 control-label">所属商家</label>
+					<div class="col-md-4">
+						<select name="merchantid" class="form-control">
+							<option value="">{$_W['account']['name']}</option>
+						{loop $merchants $row}
+				            <option value="{$row['id']}" {if $_GPC['merchantid']==$row['id']}selected="selected"{/if}>{$row['name']}</option>
+						{/loop}}
+				        </select>
+					</div>
+					 <label class="col-md-4 col-lg-1 control-label">商名称</label>
+                    <div class="col-md-4">
+                        <select name="goodsid2" class="form-control">
+                            <option value="">--所有--</option>
+                            {loop $allgoods $key $type}
+                            <option value="{$type['id']}" {if $_GPC['goodsid2']==$type['id']}selected="selected"{/if}>{$type['gname']}</option>
+                            {/loop}
+                        </select>
+                    </div>
+				</div>
+                <div class="form-group">
+	            	<label class="col-md-4 col-lg-1 control-label">商品ID:</label>
+	                <div class="col-md-4 control-label">
+						<input type="text" name="goodsid" class="form-control" value="{$_GPC['goodsid']}" placeholder="可查询商品ID"/>
+					</div>
+					<label class="col-md-4 col-lg-1 control-label">订单号</label>
+                    <div class="col-md-4">
+                        <input class="form-control" name="keyword" id="" type="text" value="{$_GPC['keyword']}" placeholder="可查询订单号">
+                    </div>
+                 </div>
+                 <div class="form-group">
+                    <label class="col-md-4 col-lg-1 control-label">微信订单</label>
+                    <div class="col-md-4">
+                        <input class="form-control" name="transid" id="" type="text" value="{$_GPC['transid']}" placeholder="微信订单号">
+                    </div>
+                     <label class="col-md-4 col-lg-1 control-label">用户信息</label>
+                    <div class="col-md-4">
+                        <input class="form-control" name="member" id="" type="text" value="{$_GPC['member']}" placeholder="可查询手机号 / 姓名">
+                    </div>
+                </div>
+                <div class="form-group">
+                        <label class="col-md-4 col-lg-1 control-label">下单时间</label>
+                        <div class="col-sm-5 col-lg-7 col-xs-12">
+                            {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d H:m:s', $starttime),'endtime'=>date('Y-m-d H:m:s', $endtime)),true);}
+                        </div>
+                        <div class="col-sm-3 col-lg-2" style="text-align:right;"><button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                        </div>
+                </div>
+                <div class="form-group">
+                </div>
+            </form>
+	</div>
+</div>
+<div class="panel panel-default" ng-controller="advAPI">
+	<div class="table-responsive">
+		<table class="table table-hover">
+			<thead>
+			<tr>
+				<th style="width:40px;">
+					<input type="checkbox" name="checkall" value="" id="checkall" onclick="var ck = this.checked; $(':checkbox').each(function(){this.checked = ck});"/>
+				</th>
+				<th style="width:80px;">商品图</th>
+				<th style="width:300px;">商品名</th>
+				<th class="text-center" style="width:200px;">买家</th>
+				<th class="text-center" style="width:120px;">付款时间</th>
+				<th class="text-center" style="width:100px;">状态</th>
+				<th class="text-center" style="width:290px;">金额</th>
+			</tr>
+			</thead>
+			<tbody>
+			{loop $list $item}
+			<tr data-toggle="popover" data-trigger="hover" data-placement="left" class="js-goods-img">
+				<td><input type="checkbox" name="items[]" value="{$item['id']}" class="items" /></td>
+				<td><img class="scrollLoading" src="{IMAGE_PIXEL}" data-url="{$item['goods']['gimg']}" onerror="this.src='{IMAGE_NOPIC_SMALL}'" height="50" width="50"/></td>
+				<td class="line-feed">
+					{php echo cutstr($item['goods']['gname'], 30, true);}<br />
+				</td>
+				<td class="text-center" style="width:100px;">
+					<p>{if $item['cname']}{$item['cname']}{else}{$item['addname']}{/if}</p>
+					<p>{if $item['tel']}{$item['tel']}{else}{$item['mobile']}{/if}</p>
+				</td>
+				<td class="text-center" style="width:110px;">{php echo date('H:i:s', $item['ptime'])}<br>{php echo date('Y-m-d', $item['ptime'])}</td>
+				<td class="text-center" style="width:120px;">
+					<span class="label label-{$item['statuscss']}">{$item['status']}</span>
+				</td>
+				<td class="text-center" style="width:130px;">总额：{if empty($item['price'])}0.00{else}{$item['price']}{/if}元<br>实付：{if empty($item['pay_price'])}{$item['price']}{else}{$item['pay_price']}{/if}元<br>（含运费：{$item['freight']}）</td>
+			</tr>
+			{/loop}
+			<tr>
+				<td><input type="checkbox" name="checkall" value="" id="checkall" onclick="var ck = this.checked; $(':checkbox').each(function(){this.checked = ck});" /></td>
+				<td colspan="8">
+					<a href="javascript:;" class="btn btn-default min-width js-batch js-refund">退款选中订单</a>
+					<a href="javascript:;" class="btn btn-default min-width js-batch js-refundall">退款所有订单</a>
+				</td>
+			</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
+{$pager}
+<script>
+	
+	$(function(){
+		$(".scrollLoading").scrollLoading();
+		$(".js-refundall").click(function(e){
+			var num = {$total};
+			if(num==0){
+				util.tips('没有数据!', 2000);return false;
+			}
+			e.stopPropagation();
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				util.message('准备完毕，系统将开始退款所有待退款订单,请不要离开页面', "{php echo web_url('order/refund/initsync')}", 'success');
+			}, {html: "确认退款?"});
+			
+		});
+		$(".js-refund").click(function(e){
+			e.stopPropagation();
+			var order_ids = [];
+			var $checkboxes = $('.items:checkbox:checked');
+			$checkboxes.each(function() {
+				if (this.checked) {
+					order_ids.push(this.value);
+				};
+			});
+			if (order_ids.length == 0) {
+				util.tips('请选择要操作的订单!', 2000);
+				return false;
+			}
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				util.message('准备完毕，系统将开始退款所有待退款订单,请不要离开页面', "{php echo web_url('order/refund/initsync')}&order_ids="+order_ids, 'success');
+			}, {html: "确认退款?"});
+			
+		});
+		var $pop = null;
+		$('.scrollLoading').hover(function(){
+			var img = $(this).attr('src');
+			var obj = this;
+			var $pop = util.popover(obj, function($popover, obj){
+				obj.$popover = $popover;
+			}, '<div><img src="'+img+'" style="max-width:200px; max-height:200px;"></div>');
+		}, function(){
+			this.$popover.remove();
+		});
+	});
+</script>
+{php include wl_template('common/footer');}

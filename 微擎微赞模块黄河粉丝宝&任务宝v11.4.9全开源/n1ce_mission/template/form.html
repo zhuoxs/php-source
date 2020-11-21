@@ -1,0 +1,177 @@
+{template 'common'}
+{template 'common_2'}
+<script>
+require(['bootstrap.switch', 'util'], function($, u){
+	$(function(){
+		$('.make-switch').bootstrapSwitch();
+	});
+});
+</script>
+<style type='text/css'>
+    .tab-pane { padding:5px 0 5px 0;}
+</style>
+<input type="hidden" name="reply_id" value="{$reply['id']}" />
+<div class="main">
+    <div class="nav">
+      <ul class="nav nav-tabs" id="myTab">
+        <li class="active"><a href="#tab_post"><i class="fa fa-cog"></i> 海报基本设置</a></li>
+        <li><a href="#tab_rank"><i class="fa fa-line-chart"></i> 排行榜设置</a></li>
+        <li><a href="#tab_limit"><i class="fa fa-toggle-on"></i> 参与门槛设置</a></li>
+        {if $_W['account']['level'] > 3}
+        <li><a href="#tab_temp"><i class="fa fa-bell"></i> 服务号模板消息设置</a></li>
+        {else}
+        <li><a href="#tab_msg"><i class="fa fa-comments"></i> 订阅号消息设置</a></li>
+        {/if}
+        <li><a href="#tab_step"><i class="fa fa-comments"></i> 阶梯任务提醒</a></li>
+      </ul>
+    </div>
+    <div class="tab-content">
+      <!------------------- 红包参数设置 ---------------------->
+      <div class="tab-pane active" id="tab_post">{template 'basic/tab_post'}</div>
+      <!------------------- 红包参数设置 END ---------------------->
+
+      <!-------------------排行榜设置 ---------------------->
+      <div class="tab-pane" id="tab_rank">{template 'basic/tab_rank'}</div>
+      <!------------------- 红包参数设置 END ---------------------->
+
+      <!------------------- 海报间隔&相关提醒 ---------------------->
+      <div class="tab-pane" id="tab_limit">{template 'basic/tab_limit'}</div>
+      <!------------------- 海报间隔&相关提醒 END ---------------------->
+
+      <!------------------- 借权相关设置 ---------------------->
+      <div class="tab-pane" id="tab_temp">{template 'basic/tab_temp'}</div>
+      <!------------------- 借权相关设置 END ---------------------->
+
+
+      <!------------------- 有赞API设置---------------------->
+      <div class="tab-pane" id="tab_msg">{template 'basic/tab_msg'}</div>
+      <!------------------- 有赞API设置 END ---------------------->
+      <div class="tab-pane" id="tab_step">{template 'basic/tab_step'}</div>
+    </div>
+	<input type="hidden" name="data" value="" />
+</div>
+<script  src="../addons/{php echo $this->modulename}/template/js/poster.js" type="text/javascript"></script>
+<script>
+  function clearPost(){
+    var clearUrl = "{php echo $this->createWebUrl('clearPost')}";
+    var rule_id  = "{php echo $reply['rid']}";
+    $.ajax
+    ({
+      url: clearUrl,
+      type:'POST',
+      data: {
+        "rid":rule_id
+      },
+      dataType:'json',
+      error: function () {
+        alert('网络通讯异常，请稍后再试！');
+      },
+      success: function (result) {
+        util.message('清空缓存成功','','success');
+      }
+    });
+  }
+</script>
+<script type="text/javascript">
+$(function () {
+  $('#myTab a').click(function (e) {
+    e.preventDefault();//阻止a链接的跳转行为
+    $(this).tab('show');//显示当前选中的链接及关联的content
+  })
+});
+</script>
+<script>
+
+var gqrt = 0;
+var attachurl = "{$_W['attachurl']}";
+var ncounter = 0;
+    
+function tiger_bind(obj){
+var imgsset = $('#imgsset');
+var namesset = $("#namesset");
+ imgsset.hide();
+ namesset.hide();
+ deleteTimers();
+ var type = obj.attr('type');
+ if(type=='name'){
+      namesset.show();
+      var size = obj.attr('size') || "16";
+      var picker = namesset.find('.sp-preview-inner');
+      var input = namesset.find('input:first');
+      var namesize = namesset.find('#namesize');
+      var color = obj.attr('color') || "#ffffff";
+      input.val(color); namesize.val(size.replace("px",""));  
+      picker.css( {'background-color':color,'font-size':size});
+      ncounter = setInterval(function(){
+           obj.attr('color',input.val()).find('.text').css('color',input.val());
+           obj.attr('size',namesize.val() +"px").find('.text').css('font-size',namesize.val() +"px");
+       },100);
+ }  
+}
+var bscounter = 0 ;        
+$(function(){
+    {if !empty($reply['id'])}
+      $('.drag').each(function(){
+          dragEvent($(this));
+      });
+      var hasbg = "{$reply['bg']}";
+      var img = PreviewImg(attachurl+hasbg);
+      img.onload = function(){
+        $('#tiger_poster').css('width',img.width/2+'px').css('height',img.height/2+'px');
+      }
+    
+    {/if}
+      
+    	  $('.btn-poster').click(function(){
+              var imgsset = $('#imgsset');
+              var namesset = $("#namesset");
+              imgsset.hide();
+              namesset.hide();
+              deleteTimers();
+               var type = $(this).data('type');
+               var img = "";
+             	if(type=='img' || type=='thumb'){
+                   img = '<img src="../addons/{php echo $this->modulename}/template/images/default.jpg" id="pre_header"/>';
+               }else if(type=='name'){
+                   img = '<div class=text>昵称</div>';
+               }else if(type=='qr'){
+                   img = '<img src="../addons/{php echo $this->modulename}/template/images/qrcode_9.jpg" />';
+               }
+               var index = $('#tiger_poster .drag').length+1;
+               var obj = $('<div class="drag" type="' + type +'" index="' + index +'" style="z-index:' + index+'">' + img+'<div class="dRightDown"> </div><div class="dLeftDown"> </div><div class="dRightUp"> </div><div class="dLeftUp"> </div><div class="dRight"> </div><div class="dLeft"> </div><div class="rUp"> </div><div class="rDown"></div></div>');
+               $('#tiger_poster').append(obj);
+               dragEvent(obj);
+           });
+       
+            $('.drag').click(function(){
+                tiger_bind($(this));
+            })
+        
+})
+var imgcounter = 0 ;   
+$('form').submit(function(){
+var poster = [];
+$('.drag').each(function(){
+    var obj = $(this);
+    var type = obj.attr('type');
+    var left = obj.css('left');
+    var top = obj.css('top');
+    var d= {left:left,top:top,type:obj.attr('type'),width:obj.css('width'),height:obj.css('height')};
+    if(type=='name'){
+        d.size = obj.attr('size');
+        d.color = obj.attr('color');
+    }
+    poster.push(d);
+});
+$('input[name="data"]').val( JSON.stringify(poster));
+return true;
+});
+$(function(){
+require(['bootstrap.switch'],function($){
+   $('.flag:checkbox').bootstrapSwitch({onText: '限制', offText: '不限制'});
+	$('.flag:checkbox').on('switchChange.bootstrapSwitch', function(event, state) {
+	   var force_register = state ? 2 : 1;
+	});
+});
+});
+</script>

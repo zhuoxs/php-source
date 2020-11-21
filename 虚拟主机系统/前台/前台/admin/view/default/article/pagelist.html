@@ -1,0 +1,153 @@
+{{include file='common/head.html'}}
+<style type='text/css'>
+</style>
+<script type='text/javascript'>
+	var action = '{{$action}}';
+</script>
+<script type='text/javascript'>
+function go_export()
+{
+	var url = '?c=entkey&a=entkeyExport';
+	window.location = url;
+}
+var ddlog = null;
+function del_article(id)
+{
+	if (!confirm("确定删除?")) {
+		return ;
+	}
+	verificationAjax('?c=article&a=del','id='+id);
+}
+function piao_article_add(rowid)
+{
+	ddlog = null;
+	var html = '<form name="form2" action="{{$action}}" method="post">';
+		html += '<p id="type"></p>';
+		html += '<p>标题:<input size="70" id="articletitle" name="title"></p>';
+		html += '<p>内容:<textarea rows="12" id="articlebody" name="body" cols="68"></textarea></p>';
+		html += '<p><input type="button" onclick="article_add('+rowid+')" value="提交"></p>';
+		html += '</form>';
+	var dlog = art.dialog({id:'id22',content:'',icon: '',top:'30%'});
+	dlog.content(html);
+	dlog.title("添加文章 支持html");
+	ddlog = dlog;
+	$.ajax({url:'?c=article&a=getType',dataType:'json',async:false,success:function(ret){
+		var typehtml = '';
+		if (ret['code'] != 200) {
+			typehtml = '获取文章分类错误,请检查配置文件';
+		}else {
+			var type = ret['type'];
+			typehtml = '分类:<select name="type" id="articletype">';
+			for (var i in type) {
+				typehtml += '<option value="' + type[i]['key'] +'"' + '>' + type[i]['value'] + '</option>';
+			}
+			typehtml +='</select>';
+		}
+		typehtml += '&nbsp;<a href="?c=articletype&a=pageList" target=_blank>我要添加分类</a>'
+		$("#type").html(typehtml);
+	}});
+	if (rowid) {
+		$.ajax({url:'?c=article&a=get&id='+rowid,dataType:'json',async:false,success:function(ret) {
+			var row = ret['row'];
+			$("#articletitle").val(row['title']);
+			$("#articlebody").val(row['body']);
+			$("#articletype").val(row['type']);
+		}});
+	}
+}
+function show_edit_type()
+{
+	var dlog = art.dialog({id:'id223',content:'',icon: '',top:'30%'});	
+	dlog.content("请编辑/config.global.php文件");
+	dlog.time(5);
+	dlog.title("5秒后消失");
+}
+function article_add(id)
+{
+	var type = $("#articletype").val();
+	var title = $("#articletitle").val();
+	var body = $("#articlebody").val();
+	var url = '?c=article&a=add';
+	if (id) {
+		url = '?c=article&a=set&id=' + id;
+	}
+	$.ajax({url:url,data:{type:type,title:title,body:body},dataType:'json',success:function(ret){
+		if (ret['code'] != 200) {
+			ddlog.content('添加失败');
+			ddlog.time(2);
+		}else {
+			ddlog.content("添加成功");
+			ddlog.time(2);
+		}
+		setTimeout(function(){
+			window.location = window.location;
+		},2000);
+	}});
+}
+
+</script>
+<body bgcolor='#ffffff' text='#000000' leftmargin='0' topmargin='0'	>
+	<div align="center">
+		<div class="wid_main mar_main" align="left">
+			<div class="block_top" align="left">当前位置：文章管理 -->列表</div>
+			<table class="table_main2" cellpadding="0" cellspacing="1">
+				<tr>
+					<td align="left" class="td_bgc right_2">
+						<form name="form1" action='{{$action}}' method='post'>
+							搜索: <input name='search' size=32> <input type='submit' value='搜索'><input type='button' value='添加文章' onclick='piao_article_add()'>
+						</form>
+						
+					</td>
+					<td>
+						<form action='{{$action}}' method='post'>
+							直达:<input name='page' size='5'>&nbsp;页<input
+								type='submit' value='GO'>
+						</form>
+					</td>
+				</tr>
+			</table>
+			<table class="table_main2" cellpadding=0 cellspacing=1>
+				<tr bgcolor=ebf0fa>
+					<td class="td_bgc right_2">操作</td>
+					<td class="td_bgc right_2">序列号</td>
+					<td class="td_bgc right_2">分类</td>
+					<td class="td_bgc right_2">标题</td>
+					<td class="td_bgc right_2">内容</td>
+					<td class="td_bgc right_2">创建时间</td>
+					<td class="td_bgc right_2">状态</td>
+				</tr>
+				{{foreach from=$list item=row}}
+				<tr>
+					<td class="td_bgc right_2">
+						[<a	href='javascript:del_article({{$row.id}})'>删除</a>]
+						[<a	href='javascript:piao_article_add({{$row.id}})'>修改</a>]
+					</td>
+					<td class="td_bgc right_2">{{$row.id}}</td>
+					<td class="td_bgc right_2">{{$row.type}}</td>
+					<td class="td_bgc right_2" title='{{$row.title}}'>{{$row.title|truncate:16}}</td>
+					<td class="td_bgc right_2" title='{{$row.body}}'>{{$row.body|truncate:36}}</td>
+					<td class="td_bgc right_2">{{$row.createtime}}</td>
+					<td class="td_bgc right_2"><select name='status'
+						onChange="edit_status(this.value,'{{$row.id}}')"> {{for
+							$i=0; $i<2; $i++}}
+							<option value='{{$i}}' {{if $i==$row.status}}selected{{/if}}>
+								{{if $i==0}}显示{{else}}不显示{{/if}}</option> {{/for}}
+					</select></td>
+				</tr>
+				{{/foreach}}
+				<tr>
+					<td colspan="8" align="right">{{if $page>1}} <a
+						href='{{$action}}&page=0&search={{$search}}'>首页</a> <a
+						href='{{$action}}&page={{$page-1}}&search={{$search}}'>上一页</a>
+						{{else}} 首页 上一页 {{/if}} {{if $page!=$total_page}} <a
+						href='{{$action}}&page={{$page+1}}&search={{$search}}'>下一页</a> <a
+						href='{{$action}}&page={{$total_page}}&search={{$search}}'>尾页</a>
+						{{else}}下一页 尾页 {{/if}} {{$page}}/{{$total_page}}&nbsp;
+						共计{{$count}}记录&nbsp;
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</body>
+</html>

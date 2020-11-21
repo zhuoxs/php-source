@@ -1,0 +1,150 @@
+{template 'common/header'}
+
+<ul class="nav nav-tabs">
+    <li><a href="{php echo $this->createWebUrl('paylog', array('version_id' => $_GPC['version_id'], 'sid' => $_GPC['sid'],'edition' => $_GPC['edition']));}">现金充值记录</a></li>
+    <li><a href="{php echo $this->createWebUrl('givinglog', array('version_id' => $_GPC['version_id'], 'sid' => $_GPC['sid'],'edition' => $_GPC['edition']));}">礼物道具记录</a></li>
+    <li class="active"><a href="{php echo $this->createWebUrl('drawlists', array('version_id' => $_GPC['version_id'], 'sid' => $_GPC['sid'],'edition' => $_GPC['edition']));}">积分抽奖记录</a></li>
+    <li><a href="{php echo $this->createWebUrl('redpack', array('version_id' => $_GPC['version_id'], 'sid' => $_GPC['sid'],'edition' => $_GPC['edition']));}">赠送红包记录</a></li>
+</ul>
+
+<div class="main">
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site">
+                <input type="hidden" name="a" value="entry">
+                <input type="hidden" name="m" value="xiaof_toupiao">
+                <input type="hidden" id="do" name="do" value="drawlists">
+				
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">活动期数</label>
+                    <div class="col-xs-12 col-sm-8 col-lg-9">
+                        <select name="sid" class="form-control">
+                            {loop $settinglists $items}
+								<option {if $_GPC['sid'] === $items['id']} selected{/if} value="{$items['id']}">{$items['tit']}</option>
+							{/loop}
+                        </select>
+                    </div>               
+                </div>
+				
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">昵称</label>
+                    <div class="col-xs-12 col-sm-8 col-lg-9">
+                        <input class="form-control" name="key" id="" type="text" value="{$_GPC['key']}">
+                    </div>
+                </div>
+				
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">奖品类型</label>
+                    <div class="col-xs-12 col-sm-8 col-lg-9">
+										   <select name="attr" class="form-control">
+												<option value="0">不限</option>
+												<option value="1">实物</option>
+												<option value="2">赠送积分</option>
+												<option value="3">双倍投票半小时</option>
+												<option value="4">双倍投票一小时</option>
+												<option value="5">双倍投票二小时</option>
+												<option value="6">双倍投票八小时</option>
+											</select>	
+                    </div>                   
+                </div>	
+				
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">状态</label>
+                    <div class="col-xs-12 col-sm-6 col-lg-6">
+                        <select name="uses" class="form-control">
+                            <option {if $_GPC['uses'] === ''} selected{/if} value="">不限</option>
+                            <option {if $_GPC['uses'] === '1'} selected{/if} value="1">以使用</option>
+                            <option {if $_GPC['uses'] === '2'} selected{/if} value="2">未使用</option>
+                        </select>
+                    </div>
+                    <div class="col-xs-12 col-sm-1 col-lg-1">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>  	
+					<div class="col-xs-12 col-sm-1 col-lg-1">
+						<button class="btn btn-primary" onclick="$('#do').val('excledraw');">导出数据</button>
+					</div>                   
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <form action="?{$_SERVER['QUERY_STRING']}" method="post" id="form1">
+        <table class="table table-hover"  style="width:100%;z-index:-10;" cellspacing="0" cellpadding="0">
+            <thead class="navbar-inner">
+            <tr>
+                <th style="width:2%;">删？</th>
+                <th style="width:5%;">RID</th>
+				<th style="width:8%;">用户昵称</th>
+                <th style="width:10%;">奖品名称</th>
+				<th style="width:12%;">抽取时间</th>
+				<th style="width:12%;">核销操作员<br/>核销时间</th>
+				<th style="width:8%;">状态</th>
+				<th style="width:30%;">收货地址</th>
+                <th style="width:8%;" class="text-right">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $list $item}
+            <tr>
+                <td><input type="checkbox" name="delete[]" value="{$item['id']}" /></td>
+                <td>{$item['rid']} </td>
+				<td>{$item['uname']} </td>
+                <td>{$item['name']} </td>
+				<td>{php echo date("Y-m-d H:i",$item['created_at']);} </td>
+				<td>
+                    <p>
+                        {if !empty($item['vusername'])}{$item['vusername']}{elseif $item['uses'] === '1'}系统自动{/if}
+                    </p>
+                    <p>
+                        {if !empty($item['bdelete_at'])}{php echo date("Y-m-d H:i",$item['bdelete_at']);}{/if}
+                    </p>
+                </td>
+				<td>{if $item['uses'] === '1'}<span class="label label-danger">已核销</span>{else}<span class="label label-success">未核销</span>{/if}</td>
+				<td style="white-space: normal;">{if !empty($item['address'])}
+					{$item['address']['name']}-{$item['address']['phone']}<br/>
+					{$item['address']['addrs']}
+				{/if}</td>
+                <td class="text-right" style="overflow:visible;">
+						<div class="btn-group">
+							<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							核销<span class="caret"></span>
+							</button>
+							<ul class="dropdown-menu">
+								<li><a href="{php echo $this->createWebUrl('drawlists', array('use'=>'1','did'=>$item['id'], 'version_id' => $_GPC['version_id']));}" >核销</a></li>
+							</ul>
+						</div>	
+                </td>
+            </tr>
+            {/loop}
+            </tbody>
+        </table>
+
+        <table class="table table-hover">
+            <tr>
+                <td width="30">
+                    <input type="checkbox" onclick="var ck = this.checked;$(':checkbox').each(function(){this.checked = ck});" />
+                </td>
+                <td class="text-left">
+                    <input name="token" type="hidden" value="{$_W['token']}" />
+					<input type="submit" class="btn btn-primary span2" name="pass" value="批量核销" /> &nbsp;
+					<input type="submit" class="btn btn-primary span2" name="del" value="删除" />
+                </td>
+            </tr>
+        </table>
+        {$pager}
+    </form>
+</div>
+<script>
+    $('#form1').submit(function(){
+        if($(":checkbox[name='delete[]']:checked").size() > 0){
+            return confirm('确定执行该操作吗？');
+        }
+        alert('没有选择选手');
+        return false;
+    });
+</script>
+{template 'edition'}
+{template 'common/footer'}

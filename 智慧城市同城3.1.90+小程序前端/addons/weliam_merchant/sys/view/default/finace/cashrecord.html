@@ -1,0 +1,154 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+	<li class="active"><a href="{php echo web_url('finace/wlCash/cashrecord')}">账单明细</a></li>
+</ul>
+<div class="app-content">
+    <div class="app-filter">
+        <div class="filter-list">
+            <form action="{if is_agent()}./agent.php{else}./index.php{/if}" method="get" class="form-horizontal" role="form" id="form1">
+                {if !is_agent()}
+				<input type="hidden" name="c" value="site" />
+	            <input type="hidden" name="a" value="entry" />
+	            <input type="hidden" name="m" value="{MODULE_NAME}" />
+	            {/if}
+                <input type="hidden" name="p" value="{$_W['plugin']}" />
+				<input type="hidden" name="ac" value="{$_W['controller']}" />
+				<input type="hidden" name="do" value="{$_W['method']}" />
+				<input type="hidden" name="cashtype" value="{$cashtype}" />
+                <div class="form-group max-with-all">
+                    <label class="col-sm-2 control-label">结算类型</label>
+                    <div class="col-sm-9">
+                        <div class="btn-group">
+							<a href="{php echo wl_filter_url('cashtype:0');}" class="btn {if $cashtype == 0}btn-primary{else}btn-default{/if}">全部</a>
+							{if p('rush')}
+							<a href="{php echo wl_filter_url('cashtype:1');}" class="btn {if $cashtype == 1}btn-primary{else}btn-default{/if}">抢购</a>
+							{/if}
+							{if p('wlfightgroup')}
+							<a href="{php echo wl_filter_url('cashtype:2');}" class="btn {if $cashtype == 2}btn-primary{else}btn-default{/if}">拼团</a>
+							{/if}
+							{if p('wlcoupon')}
+							<a href="{php echo wl_filter_url('cashtype:3');}" class="btn {if $cashtype == 3}btn-primary{else}btn-default{/if}">卡券</a>
+							{/if}
+							{if p('halfcard')}
+							<a href="{php echo wl_filter_url('cashtype:4');}" class="btn {if $cashtype == 4}btn-primary{else}btn-default{/if}">一卡通</a>
+							{/if}
+							{if p('pocket')}
+							<a href="{php echo wl_filter_url('cashtype:5');}" class="btn {if $cashtype == 5}btn-primary{else}btn-default{/if}">掌上信息</a>
+							{/if}
+							<a href="{php echo wl_filter_url('cashtype:6');}" class="btn {if $cashtype == 6}btn-primary{else}btn-default{/if}">付费入驻</a>
+							<a href="{php echo wl_filter_url('cashtype:7');}" class="btn {if $cashtype == 7}btn-primary{else}btn-default{/if}">提现或驳回</a>
+							{if p('distribution')}
+							<a href="{php echo wl_filter_url('cashtype:8');}" class="btn {if $cashtype == 8}btn-primary{else}btn-default{/if}">分销合伙人</a>
+							{/if}
+							{if p('activity')}
+							<a href="{php echo wl_filter_url('cashtype:9');}" class="btn {if $cashtype == 9}btn-primary{else}btn-default{/if}">商家活动</a>
+							{/if}
+							{if p('groupon')}
+							<a href="{php echo wl_filter_url('cashtype:10');}" class="btn {if $cashtype == 10}btn-primary{else}btn-default{/if}">团购</a>
+							{/if}
+							<a href="{php echo wl_filter_url('cashtype:11');}" class="btn {if $cashtype == 11}btn-primary{else}btn-default{/if}">买单</a>
+							{if p('bargain')}
+							<a href="{php echo wl_filter_url('cashtype:12');}" class="btn {if $cashtype == 12}btn-primary{else}btn-default{/if}">砍价</a>
+							{/if}
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group form-inline">
+                    <label class="col-sm-2 control-label">搜索内容</label>
+                    <div class="col-sm-9">
+                    	<select name="keywordtype" class="form-control">
+                            <option value="">关键字类型</option>
+                            <option value="1" {if $_GPC['keywordtype']==1}selected="selected"{/if}>订单编号</option>
+                            <option value="2" {if $_GPC['keywordtype']==2}selected="selected"{/if}>订单金额大于</option>
+                            <option value="3" {if $_GPC['keywordtype']==3}selected="selected"{/if}>订单金额小于</option>
+                            <option value="4" {if $_GPC['keywordtype']==4}selected="selected"{/if}>代理收入大于</option>
+                            <option value="5" {if $_GPC['keywordtype']==5}selected="selected"{/if}>代理收入小于</option>
+                            <option value="6" {if $_GPC['keywordtype']==6}selected="selected"{/if}>商家名称</option>
+                        </select>
+                        <input type="text" name="keyword" class="form-control" value="{$_GPC['keyword']}"  placeholder="请输入关键字"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">时间段</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_daterange('time_limit',array('starttime' => date('Y-m-d',$starttime),'endtime' => date('Y-m-d',$endtime)));}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label"></label>
+                    <div class="col-md-9">
+                        <button class="btn btn-primary">筛选</button>
+                        <button class="btn btn-default min-width" name="export" type="submit" value="export"><i class="fa fa-download"></i>  导出记录</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="app-table-list">
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered">
+                <thead>
+                    <tr>
+                    	<th>订单编号(核销码)</th>
+                        <th>订单类型</th>
+                        <th>商品信息</th>
+                        <th>订单总金额</th>
+                        <th>商户收入</th>
+                        <th>分销佣金/分享佣金</th>
+                        <th>{if is_agent()}实际到账{else}代理收入{/if}</th>
+                        <th>结算时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {loop $records $item}
+                        <tr>
+                        	<td>
+	                            {$item['orderno']}{if $item['checkcode']}({$item['checkcode']}){/if}
+                            </td>
+                            <td>
+	                            <span class="label label-info">{$item['typename']}</span>
+                            </td>
+                            <td>
+                                <p>{$item['title']}</p>
+                                {if $item['storename']}<p>商家：{$item['storename']}</p>{/if}
+                            </td>
+                            <td>
+	                                                        ￥{$item['orderprice']}
+	                            {if $item['specialstatus'] == 1}<br /><span class="label label-warning">过期订单</span>{/if}
+                            </td>
+                            <td>
+                                {if $item['merchantmoney']>0}+{/if}{$item['merchantmoney']}
+	                            {if $item['merchantnowmoney']>0}<br /><span style="color: goldenrod;">({$item['merchantnowmoney']})</span> {/if}
+                            </td>
+                            <td>
+	                            +{$item['distrimoney']}<br/>
+	                            +{$item['sharemoney']}
+                            </td>
+                            <td>
+	                            <span style="color:{if $item['agentmoney']>0} orangered {else} green {/if};"> {if $item['agentmoney']>0}+{/if}{$item['agentmoney']}</span><br />
+	                            <span style="color: goldenrod;">({$item['agentnowmoney']})</span>
+                            </td>
+                            <td>
+                            	{php echo date('Y-m-d H:i:s',$item['createtime'])}
+                            </td>
+                            <td>
+                            	<a href="{$item['orderurl']}" class="btn btn-default btn-sm" target="_blank">查看订单</a>
+                            </td>
+                        </tr>
+                    {/loop}
+                </tbody>
+            </table>
+        </div>
+        <div class="app-table-foot clearfix">
+            <div class="pull-left">
+
+            </div>
+            <div class="pull-right">
+                {$pager}
+            </div>
+        </div>
+    </div>
+</div>
+{php include wl_template('common/footer');}

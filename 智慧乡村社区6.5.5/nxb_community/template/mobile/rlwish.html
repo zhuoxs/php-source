@@ -1,0 +1,192 @@
+{template 'header'}
+<link rel="stylesheet" href="{MODULE_URL}myui/css/peng.css">
+		<link rel="stylesheet" href="{MODULE_URL}myui/css/icons-extra.css">
+		<link rel="stylesheet" href="{MODULE_URL}myui/css/iconmore.css">
+<style>
+	.mui-input-group .mui-input-row {
+		height: 62px;
+	}
+	
+	.mui-input-row label {
+		margin-top: 11px;
+	}
+	
+	.mui-input-row label~input {
+		margin-top: 11px;
+	}
+	
+	.mui-input-row .mui-switch {
+		margin-top: 15px;
+	}
+	.fr{float:right;}
+	.b0{bottom:0 !important;}
+	.pl15{padding-left:15px;}
+	.pr15{padding-right:15px;}
+	.mui-btn-primary{background:#63AEFF;border:solid 1px #63AEFF !important;}
+	.t-red{color:#f30;}
+	.t-gre{color:#00953b}
+	.menuimg{width:40px;height:40px;}
+	.sendcode{position:absolute;right:40px;top:1em;padding-left:5px !important;padding-right:5px !important;}
+	
+	
+</style>
+
+<header class="mui-bar mui-bar-nav">
+	<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left t-blu"></a>	
+	<a class="mui-icon mui-icon-contact mui-pull-right t-blu" href="{php echo $this->createMobileUrl('usercenter',array());}"></a>
+	<a class="mui-icon mui-icon-home mui-pull-right ml05" style="margin-right:0px !important;color:#63AEFF !important;" href="{php echo $this->createMobileUrl('index',array());}"></a>
+	<h1 class="mui-title">认领微心愿</h1>
+
+</header>
+
+
+
+<div class="mui-content b0">
+	
+	<div class="mui-row">
+		<div class="mui-col-xs-12 pl15 pr05 pt1 pb1 ulev-1 t-gra">
+			感谢您认领此心愿，为了能够顺利完成此心愿，请您留下您的联系方式，谢谢！
+		</div>
+	</div>
+	<form class="mui-input-group" style="margin-top:0.5em;" action="" method="post">
+		<div class="mui-input-row dw">
+			<label>手机号码</label>
+			<input type="number" class="mui-input-clear" id="wishtel" placeholder="必填：填写您的手机号">
+			<button type="button" class="mui-btn mui-btn-primary sendcode" onclick="sendcode();">验证码</button>
+		</div>
+		<div class="mui-input-row">
+			<label>验证码</label>
+			<input type="text" class="mui-input-clear" id="wishcode"  placeholder="必填">
+		</div>
+		<div class="mui-input-row">
+			<label>称呼</label>
+			<input type="text" class="mui-input-clear" id="wishname" placeholder="{$n}">
+			
+		</div>
+		<div class="mui-input-row">
+			<label>您的单位</label>
+			<input type="text" class="mui-input-clear" id="wishcompany" placeholder="选填：您所在的单位">
+		</div>
+		<input type="hidden" id="p1" value="">
+		<input type="hidden" id="p2" value="">
+	</form>
+	
+	
+	
+	
+	<div class="mui-row">
+		<div class="mui-col-xs-12 pl15 pr15 pt1 pb1">
+			<button type="button" class="uw mui-btn mui-btn-primary" onclick="claim();">确认认领</button>
+		</div>
+	</div>
+	
+
+
+</div>
+{template 'footer'}
+
+<script>
+	function openurl(url){				
+		
+			location.href = url;  			
+	}
+	
+	function sendcode(){
+		
+		
+		
+		$umobile=$('#wishtel').val();
+		if($umobile=='' || $umobile.length!==11){
+			mui.toast('手机号格式不正确');
+			return;
+		}
+		
+		
+		//获取验证码
+		mui.ajax({
+			type: "get",
+			dataType: "json",
+			url: "{php echo $this->createMobileUrl('sendcode',array())}"+"&mobile="+$umobile,
+			data: {
+				
+			},
+
+			success: function(msg) {
+				
+				
+				//console.log(JSON.stringify(msg));		
+				if(msg.status==1){
+					mui.toast(msg.log);
+					$(".sendcode").removeAttr("onclick");
+            		$(".sendcode").text("120");
+            		$('#p1').val(msg.param);
+            		$('#p2').val(msg.telphone);
+					interval = setInterval(changetime, 1000);
+				}else{
+					mui.toast(msg.log);
+				}
+						
+			}
+		});
+		
+
+		
+	}
+	//倒计时
+	function changetime() {
+    	var time = $(".sendcode").text();
+    	time = parseInt(time);
+    	time--;
+    	$(".sendcode").text(time);
+    	if (time <= 0) {
+        	$(".sendcode").text("验证码");
+        	$(".sendcode").attr("onclick", "sendcode()");
+        	clearInterval(interval);
+    	}
+	}
+	
+	//认领心愿
+	function claim(){
+		$umobile=$('#wishtel').val();
+		if($umobile=='' || $umobile.length!==11){
+			mui.toast('手机号格式不正确');
+			return;
+		}
+		
+		$ucode=$('#wishcode').val();
+		if($ucode==''){
+			mui.toast('验证码不能为空');
+			return;
+		}
+		$uname=$('#wishname').val();
+		$ucompany=$('#wishcompany').val();
+		$pp1=$('#p1').val();
+		$pp2=$('#p2').val();
+		
+		//AJAX领取心愿
+		mui.ajax({
+			type: "get",
+			dataType: "json",
+			url: "{php echo $this->createMobileUrl('claimwish',array('nid'=>$id))}"+"&mobile="+$umobile+"&code="+$ucode+"&name="+$uname+"&company="+$ucompany+"&p1="+$pp1+"&p2="+$pp2,
+			data: {
+				
+			},
+
+			success: function(msg) {
+				//console.log(JSON.stringify(msg));					
+				mui.toast(msg.log);
+				setTimeout(function(){
+					window.location.href = "{php echo $this->createMobileUrl('index',array())}";					
+				},1500);
+										
+			}
+		});
+		
+		
+	}
+	
+</script>
+
+
+
+

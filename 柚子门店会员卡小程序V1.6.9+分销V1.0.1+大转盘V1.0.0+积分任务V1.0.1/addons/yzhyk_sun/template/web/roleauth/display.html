@@ -1,0 +1,113 @@
+{template 'public/header_edit'}
+
+<!--标题-->
+<div class=  lay-skin="primary""title">
+    <blockquote class="layui-elem-quote">角色【{$_GPC['role_name']}】权限编辑</blockquote>
+</div>
+<form class="layui-form" method="post" action="{php echo $this->createWebUrl('roleauth',array('op'=>save));}">
+    <input type="hidden" name="role_id" value="{$_GPC['role_id']}">
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <table class="layui-table">
+                <!--<colgroup>-->
+                    <!--<col width="150">-->
+                    <!--<col width="150">-->
+                    <!--<col width="200">-->
+                <!--</colgroup>-->
+                <thead>
+                <tr>
+                    <th><input type="checkbox" lay-skin="primary" title="一级菜单" data-btnrole="allmenu"></th>
+                    <th>二级菜单</th>
+                    <th>按钮</th>
+                </tr>
+                </thead>
+                <tbody>
+                {loop $list $item}
+                <tr>
+                    <td><input type="checkbox" lay-skin="primary" title="{$item['name']}" data-btnrole="class" data-menuclass="{$item['id']}"></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                {loop $item['menus'] $menu}
+                <tr>
+                    <td></td>
+                    <td><input type="checkbox" value="1" {if $menu["checked"]}checked{/if} name="menu[{$menu['id']}]"  lay-skin="primary" title="{$menu['name']}"  data-btnrole="menu" data-menu="{$menu['id']}" data-menuclass="{$item['id']}"></td>
+                    <td>
+                        {if $menu['btns'][0]['id'] != null}
+                        <input type="checkbox" title="全选" data-btnrole="allbtn" data-menu="{$menu['id']}" data-menuclass="{$item['id']}">
+                        {/if}
+                        {loop $menu['btns'] $btn}
+                        {if $btn['id'] != null}
+                            <input type="checkbox" {if $btn["checked"]}checked{/if} value="1" name="menu[{$menu['id']}][btn][{$btn['id']}]" title="{$btn['name']}" data-btnrole="btn" data-menu="{$menu['id']}" data-menuclass="{$item['id']}">
+                        {/if}
+
+                        {/loop}
+                    </td>
+                </tr>
+                {/loop}
+                {/loop}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit="">立即提交</button>
+            <button class="layui-btn layui-btn-primary" id="btnCancel">取消</button>
+        </div>
+    </div>
+</form>
+<script type="text/javascript">
+    layui.use(['form','table'], function () {
+        var form = layui.form;
+
+        form.on('checkbox', function(data){
+            var $this = $(data.elem);
+            var menu = $this.data('menu');
+            var menuclass = $this.data('menuclass');
+            var btnrole = $this.data('btnrole');
+            switch (btnrole){
+//                菜单全选
+                case 'allmenu':
+                        $('[type=checkbox]').prop('checked',data.elem.checked);
+                        console.log( $('checkbox'));
+                    break;
+//                一级菜单
+                case 'class':
+                    $('[data-menuclass='+menuclass+']').prop('checked',data.elem.checked);
+                    break;
+//                二级菜单
+                case 'menu':
+                    $('[data-menu='+menu+']').prop('checked',data.elem.checked);
+                    if (data.elem.checked){
+                        $('[data-menuclass='+menuclass+'][data-btnrole=class]').prop('checked',true);
+                    }
+                    break;
+//                按钮全选
+                case 'allbtn':
+                    $('[data-menu='+menu+'][data-btnrole=btn]').prop('checked',data.elem.checked);
+                    if (data.elem.checked){
+                        $('[data-menuclass='+menuclass+'][data-btnrole=class]').prop('checked',true);
+                        $('[data-menu='+menu+'][data-btnrole=menu]').prop('checked',data.elem.checked);
+                    }
+                    break;
+//                按钮
+                case 'btn':
+                    $('[data-menu='+menu+'][data-btnrole=allbtn]').prop('checked',!$('[data-menu='+menu+'][data-btnrole=btn]:not(:checked)').length);
+                    if (data.elem.checked){
+                        $('[data-menuclass='+menuclass+'][data-btnrole=class]').prop('checked',true);
+                        $('[data-menu='+menu+'][data-btnrole=menu]').prop('checked',data.elem.checked);
+                    }
+                    break;
+            }
+            form.render('checkbox'); //刷新select选择框渲染
+//            console.log(data.elem); //得到checkbox原始DOM对象
+//            console.log(data.elem.checked); //是否被选中，true或者false
+//            console.log(data.value); //复选框value值，也可以通过data.elem.value得到
+//            console.log(data.othis); //得到美化后的DOM对象
+        });
+        var table = layui.table;
+    })
+</script>
+
+{template 'public/footer'}

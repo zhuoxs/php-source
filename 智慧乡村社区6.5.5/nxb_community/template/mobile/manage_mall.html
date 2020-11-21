@@ -1,0 +1,359 @@
+{template 'manage_header'}
+<link rel="stylesheet" href="{MODULE_URL}myui/css/peng.css">
+<link rel="stylesheet" href="{MODULE_URL}myui/css/icons-extra.css">
+<link rel="stylesheet" href="{MODULE_URL}myui/css/iconmore.css">
+<link rel="stylesheet" href="{MODULE_URL}myui/css/new.css">
+<style>
+	.cover{width:60px;height:60px;border-radius:30px;}
+	.mt1{margin-top:1em;}
+	.mr05{margin-right:0.5em;}
+	.mb05{margin-bottom:0.5em;}
+	.hide{display:none;}
+	
+</style>
+
+<body>
+	
+	<div class="mui-content c-hei3">
+
+		{template 'manage_top'}
+		<div class="mui-row">
+			{template 'manage_left'}
+
+			<div class="mui-col-xs-10 c-hei5 p20">
+				<a href="{php echo $this->createMobileUrl('manage_mall',array('ord'=>0))}">
+					<button type="button" class="mui-btn  mui-btn-success">商品管理</button>
+				</a>
+				<a href="{php echo $this->createMobileUrl('manage_mall_seller',array('ord'=>1))}">
+					<button type="button" class="mui-btn mui-btn-default">商家认证</button>	
+				</a>
+				<a href="{php echo $this->createMobileUrl('manage_mall_order',array('ord'=>2))}">
+					<button type="button" class="mui-btn mui-btn-default">订单管理</button>	
+				</a>
+				<a href="{php echo $this->createMobileUrl('manage_mall_tongji',array('ord'=>3))}">
+					<button type="button" class="mui-btn mui-btn-default">交易统计</button>	
+				</a>
+				<a href="{php echo $this->createMobileUrl('manage_mall_yuyue',array('ord'=>4))}">
+					<button type="button" class="mui-btn mui-btn-default">大客户预约管理</button>	
+				</a>
+				<a href="{php echo $this->createMobileUrl('manage_mall_article',array('ord'=>5))}">
+					<button type="button" class="mui-btn mui-btn-default">商城资讯</button>	
+				</a>				<div class="mui-row c-wh mb1 mt1">
+					
+					<div class="mui-col-xs-12 pt1 pb1 pl15 t-gre fb">
+						商品管理
+					</div>
+					<div class="mui-col-xs-12 pt1 pb1 pl15 t-gre fb" style="border-bottom:dashed 1px #ddd;">
+						<p><span class="fb">按镇查询：</span>
+							{loop $townlist $key $item}
+							<span class="mr05 mb05 t-gra" id="town{$item['id']}" onclick="chooesetown({$item['id']});">{$item['name']}</span>
+							{/loop}
+						</p>
+						<p id="village" class="hide"></p>
+						<p><span class="fb">大类查询：</span>
+							{loop $catlist $key $item}
+							<span class="mr05 mb05 t-gra" id="btypeid{$item['id']}"  onclick="chooesetype({$item['id']});">{$item['ctitle']}</span>
+
+							{/loop}
+						</p>
+						<p><span class="fb">状态查询：</span>
+							
+							<span class="mr05 mb05 t-gra {if $status==0}t-red{/if}" id="status0"  onclick="chooesestatus(0);">未审核</span>
+							<span class="mr05 mb05 t-gra {if $status==1}t-red{/if}" id="status1"  onclick="chooesestatus(1);">上架中</span>
+							<span class="mr05 mb05 t-gra {if $status==2}t-red{/if}" id="status2"  onclick="chooesestatus(2);">已下架</span>
+
+							
+						</p>
+						<p id="smalltype" class="hide"></p>
+						<p class="pt1 pb1 t-red">
+							查找条件：{php echo gettownname($town)} > {php echo gettownname($village)} > {php echo getgoodstypename($bigtype)} > {php echo getgoodstypename($smalltype)}
+						</p>
+						<p class="tx-c">
+							<input type="hidden" id="v1" value="0">
+							<input type="hidden" id="v2" value="0">
+							<input type="hidden" id="v3" value="0">
+							<input type="hidden" id="v4" value="0">
+							<input type="hidden" id="v5" value="0">
+							
+							<button type="button" class="mui-btn mui-btn-primary" onclick="search();">查找</button>
+
+						</p>
+					</div>
+					<div class="mui-col-xs-12 pb1 pt1" id="infolist">
+	
+							
+							
+					
+						
+						
+						
+					</div>
+				{if $total>10}
+					<div class="mui-col-xs-12 tx-c pt1 pb1">
+						
+						<button type="button" class="mui-btn mui-btn-primary" id="jiazai" onclick="jz(0)">加载更多</button>
+
+
+					</div>
+					
+					{/if}
+				</div>
+				
+				
+			</div>
+		</div>
+		{template 'manage_footer'}
+	</div>
+
+
+
+
+</body>
+
+</html>
+<script>
+	
+			$(document).ready(function(){
+				
+  				var count = 0;
+  				jz(count);
+  				
+			});
+			
+		
+			
+			
+
+			function jz(count) {
+				
+				
+				count+=1;
+				
+				if(count>{php echo $count}){
+					$("#jiazai").removeAttr("onclick");
+					$("#jiazai").text("没有更多数据了");
+				}else{
+					
+					$("#jiazai").attr("onclick",'jz('+count+')');
+					
+				}
+				
+				
+					//mui('#pullrefresh').pullRefresh().endPullupToRefresh((++count > {php echo $count})); //参数为true代表没有更多数据了。
+				var table = document.body.querySelector('#infolist');
+				var cells = document.body.querySelectorAll('.oneinfo');
+				var infonum=cells.length;
+					//alert(infonum);
+
+				var cx="{php echo $cx}";	
+				mui.ajax({
+                    type: "get",
+                    dataType: "json",
+                    url: "{php echo $this->createMobileUrl('manage_mall_m',array())}"+"&cx="+cx,
+                    data: {
+                    	num:infonum,
+                    	psize:{php echo $psize}      	
+                    },
+                 
+                    success: function(msg){
+                    	console.log(JSON.stringify(msg));
+						var data=msg.log
+						
+						if(data!=''){
+							
+							var div = document.createElement('div');
+							div.className="mui-row";
+							div.innerHTML=data;
+                        	table.insertBefore(div, table.lastChild); 
+                        	
+						}else{
+							mui.toast("该条件下暂无商品");
+						}
+                        	
+                    }
+                });  
+
+                    
+                    
+                    
+                    
+				
+			}
+			
+			
+			mui('#infolist').on('tap', 'a', function() {
+				var id = this.getAttribute('href');
+				var href = this.href;
+				mui.openWindow({
+					id: id,
+					url: this.href,										
+				});
+			});
+			
+			
+			
+			function opengoodsinfo(id){
+
+				window.location.href = "{php echo $this->createMobileUrl('manage_goodsinfo_edit',array())}" + '&id='+id;
+					
+			}
+	
+			//选择镇
+			function chooesetown(id){
+				
+				
+						
+					mui.ajax({
+                    	type: "get",
+                    	dataType: "json",
+                    	url: "{php echo $this->createMobileUrl('manage_mall_chooesevil',array());}"+"&id="+id,
+                    	data: {},                
+                    	success: function(msg){
+                    		
+                    		
+                    		console.log(JSON.stringify(msg)); 
+                    		
+                    		if(msg.status==1){
+                    			
+                    			$("#village").show();
+                    			$("#village").html(msg.log);
+                    			$("#v1").val(id);
+                    			$("#town"+id).siblings().removeClass("t-red");
+                    			$("#town"+id).addClass("t-red");
+                    			
+
+                    		}else{
+                    			
+                    			$("#village").hide();
+                    			$("#town"+id).siblings().removeClass("t-red");
+                    			$("#town"+id).addClass("t-red");
+                    			$("#v1").val(id);
+                    			
+                    		}
+                    	
+                    	}
+                	});  
+						
+				
+			}
+			
+			//选择大类
+			function chooesetype(id){
+				
+				
+						
+					mui.ajax({
+                    	type: "get",
+                    	dataType: "json",
+                    	url: "{php echo $this->createMobileUrl('manage_mall_chooesetype',array());}"+"&id="+id,
+                    	data: {},                
+                    	success: function(msg){
+                    		
+                    		
+                    		console.log(JSON.stringify(msg)); 
+                    		
+                    		if(msg.status==1){
+                    			
+                    			$("#smalltype").show();
+                    			$("#smalltype").html(msg.log);
+                    			$("#v3").val(id);
+                    			$("#btypeid"+id).siblings().removeClass("t-red");
+                    			$("#btypeid"+id).addClass("t-red");
+                    			
+
+                    		}else{
+                    			
+                    			$("#smalltype").hide();
+                    			$("#btypeid"+id).siblings().removeClass("t-red");
+                    			$("#btypeid"+id).addClass("t-red");
+                    			$("#v3").val(id);
+                    			
+                    		}
+                    	
+                    	}
+                	});  
+						
+				
+			}
+			
+			//选择村
+			function chooesevil(id){
+
+				$("#vil"+id).siblings().removeClass("t-red");
+                $("#vil"+id).addClass("t-red");
+                $("#v2").val(id);
+			}
+			//选择小类
+			function chooesestype(id){
+	
+				$("#stype"+id).siblings().removeClass("t-red");
+                $("#stype"+id).addClass("t-red");
+                $("#v4").val(id);
+                
+			}
+			
+			//选择状态
+			function chooesestatus(n){
+				$("#status"+n).siblings().removeClass("t-red");
+                $("#status"+n).addClass("t-red");
+                $("#v5").val(n);
+			}
+	
+			//查找
+			function search(){
+				var town=$("#v1").val();
+				if(town==0){
+					town={php echo $town};
+				}
+				var village=$("#v2").val();
+				if(village==0){
+					village={php echo $village};
+				}
+				var bigtype=$("#v3").val();
+				if(bigtype==0){
+					bigtype={php echo $bigtype};
+				}
+				var smalltype=$("#v4").val();
+				if(smalltype==0){
+					smalltype={php echo $smalltype};
+				}
+				var status=$("#v5").val();
+				window.location.href = "{php echo $this->createMobileUrl('manage_mall',array())}" + '&town='+town + '&village='+village + '&bigtype='+bigtype + '&smalltype='+smalltype + '&status='+status;
+				
+			}
+			
+			function delmember(id){
+				
+				var o=document.getElementById("m"+id);
+				var btnArray = ['否', '是'];
+				mui.confirm('删除这个用户吗？', '', btnArray, function(e) {
+					if (e.index == 1) {
+						
+					mui.ajax({
+                    	type: "get",
+                    	dataType: "json",
+                    	url: "{php echo $this->createMobileUrl('manage_member_del',array());}"+"&id="+id,
+                    	data: {},                
+                    	success: function(msg){
+                    		
+                    		
+                    		console.log(JSON.stringify(msg)); 
+                    		
+                    		if(msg.status==1){
+                    			mui.toast(msg.log);
+                    			 $(o).remove();
+
+                    		}
+                    	
+                    	}
+                	});  
+						
+						
+					}
+				})
+				
+			}
+			
+</script>
+
+{template 'manage_foot'}

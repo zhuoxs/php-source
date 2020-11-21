@@ -1,0 +1,92 @@
+<script src="{STATIC_ROOT}/js/jquery-3.3.1.min.js"></script>
+<script>
+$(function () {
+    var pay_params = [];
+    $('#topFixedDiv').click(function () {
+        $('#pagePay').hide();
+        $('#addressList').show();
+        $('#pageAddAddress').hide();
+    });
+    $('#addAddress').click(function () {
+        $('#pagePay').hide();
+        $('#addressList').hide();
+        $('#pageAddAddress').show();
+    });
+    $('.change-address').click(function () {
+        $('.change-address').find('ul').removeClass('selected');
+        $(this).find('ul').addClass('selected');
+        $('#addressDefault').attr('data-id',$(this).attr('data-id'));
+        $('#addressDefault').find('strong').html($(this).find('strong').html());
+        $('#addressDefault').find('.address-detail').html($(this).find('.address-detail').html());
+
+        $('#pagePay').show();
+        $('#addressList').hide();
+        $('#pageAddAddress').hide();
+    });
+    var pay_url = "{php echo $this->createMobileUrl('order',array('op'=>'ajaxPay'))}";
+    var pay_info = "{$pay_info}";
+    $('.wx-pay').click(function () {
+        $('#wxloading').show();
+        var address_id = $('#addressDefault').attr('data-id');
+        $.post(pay_url,{
+            order_id:{$order_id},
+            pay_info:pay_info,
+            address_id:address_id,
+            remark:$('#remark').val()
+        },function (data) {
+            $('#wxloading').hide();
+            if(data.code !=0) {
+                alert('支付失败:'+data.msg);
+                return false;
+            }
+
+            <?php if($wqpay){?>
+             location = "{php echo $this->createMobileUrl('order',array('op'=>'result'))}"+'&order_id='+data.msg;
+            <?php }else{ ?>
+           pay_params = data.data;
+           callpay();
+                <?php } ?>
+        },'JSON');
+    });
+
+
+    function jsApiCall()
+    {
+        WeixinJSBridge.invoke(
+            'getBrandWCPayRequest',
+            {
+                'appId' : pay_params.appId,
+                'timeStamp': pay_params.timeStamp,
+                'nonceStr' : pay_params.nonceStr,
+                'package' : pay_params.package,
+                'signType' : pay_params.signType,
+                'paySign' : pay_params.paySign
+            },
+            function (res) {
+                WeixinJSBridge.log(res.err_msg);
+                if (res.err_msg == "get_brand_wcpay_request:ok") {
+                    //支付成功
+                    location = "{php echo $this->createMobileUrl('myorder')}";
+                } else {
+                    //返回跳转到订单详情页面
+                    alert('支付失败');
+                }
+            }
+        );
+    }
+
+    function callpay()
+    {
+        if (typeof WeixinJSBridge == "undefined") {
+            if (document.addEventListener) {
+                document.addEventListener('WeixinJSBridgeReady', jsApiCall, false);
+            } else if (document.attachEvent) {
+                document.attachEvent('WeixinJSBridgeReady', jsApiCall);
+                document.attachEvent('onWeixinJSBridgeReady', jsApiCall);
+            }
+        } else {
+            jsApiCall();
+        }
+    }
+})
+</script>

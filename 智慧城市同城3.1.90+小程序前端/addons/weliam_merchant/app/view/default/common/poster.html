@@ -1,0 +1,92 @@
+{php include wl_template('common/header');}
+<div class="page-group">
+    <div class="page page-current">
+    	<header class="bar bar-nav" id="phead">
+		    <a class="button button-link button-nav pull-left back" href="{$backurl}"><span class="icon icon-left"></span>返回</a>
+		    <h1 class="title">生成海报</h1>
+		</header>
+		<div class="content">
+			<div class="share-card">
+	            <div class="share-card-mask"></div>
+	            <div class="share-card-loading"></div>
+	            <div class="share-card-main">
+	                <div class="card-html">
+	                    <img id="img" src="" />
+	                </div>
+	                <div class="tips"><i class="icon icon-information"></i><svg class="icon" style="margin-top: -.5em;width: 1.5em; height: 1.5em;transform: scaleX(-1);-webkit-transform: scaleX(-1);-moz-transform: scaleX(-1);-ms-transform: scaleX(-1);vertical-align: middle;fill: currentColor;overflow: hidden;" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8261"><path d="M974.933333 305.066667l-234.666667-256C736 44.8 731.733333 42.666667 725.333333 42.666667c-6.4 0-10.666667 2.133333-14.933333 6.4l-234.666667 256C471.466667 309.333333 469.333333 313.6 469.333333 320c0 12.8 8.533333 21.333333 21.333333 21.333333l104.533333 0c-2.133333 44.8-14.933333 157.866667-66.133333 281.6C441.6 832 283.733333 938.666667 64 938.666667c-12.8 0-21.333333 8.533333-21.333333 21.333333 0 12.8 8.533333 21.333333 21.333333 21.333333 699.733333 0 780.8-526.933333 789.333333-640l106.666667 0c12.8 0 21.333333-8.533333 21.333333-21.333333C981.333333 313.6 979.2 309.333333 974.933333 305.066667zM832 298.666667c-12.8 0-21.333333 8.533333-21.333333 21.333333l0 21.333333c-6.4 93.866667-55.466667 430.933333-443.733333 554.666667 234.666667-157.866667 268.8-467.2 273.066667-554.666667l0-21.333333c0-12.8-8.533333-21.333333-21.333333-21.333333l-78.933333 0L725.333333 96l185.6 202.666667L832 298.666667z" p-id="8262"></path></svg> 长按上图保存图片，或发送给朋友</div>
+	            </div>
+	            
+	            {if $templist}
+	            <div class="share-card-menu">
+	                <div class="inner">
+	                    <div class="list">
+	                    		<div class="item active" data-bg="{$bgtpl['bg']}"><img src="{php echo tomedia($bgtpl['bg'])}"/></div>
+	                        {loop $templist $tempitem}
+	                            <div class="item" data-bg="{$tempitem}"><img src="{php echo tomedia($tempitem)}"/></div>
+	                        {/loop}
+	                    </div>
+	                </div>
+	            </div>
+	            {/if}
+	        </div>
+		</div>
+	</div>
+</div>
+<script>
+	$(function() {
+		var useagent = 'wechat';
+		var bgimg = '';
+		//通过JS和PHP双重判断保证判断准确性
+		var is_wxapp = "{php echo is_wxapp() ? 'miniprogram' : ''}";
+		if(window.__wxjs_environment === 'miniprogram' || is_wxapp == 'miniprogram') {
+			useagent = 'wxapp';
+		}else {
+			$('#phead').remove();
+		}
+		function getposter(useagent, bgimg) {
+			$.post("{php echo app_url('common/tools/poster', array('id' => $id, 'type' => $type, 'disflag' => $disflag))}",{useagent:useagent,bgimg:bgimg},function(d){
+			    if (d.errno == 0) {
+					$("#img").attr('src', d.data.url);
+					$(".card-html").show(), $(".share-card-loading").fadeOut();
+					setTimeout(function () {
+			            var height = $(window).height() - {if $templist}170{else}80{/if};
+			            var width = $(window).width();
+			            if ((d.data.height/d.data.width) > (height/width)) {
+			            	$('#img').css({height: height + 'px', marginTop: 20 + 'px'})
+			            } else {
+			            	var img_width = width-40;
+			            	var img_height = img_width*d.data.height/d.data.width;
+			            	var margintop = ($(window).height()-img_height)/2;
+			            	$('#img').css({marginTop: margintop + 'px', width: (width-40) + 'px', marginLeft: 20 + 'px'})
+			            }
+			        }, 100);
+				} else {
+					$.toast(d.message);
+				}
+			},"json");
+		}
+		
+		{if $templist}
+		$(".share-card-menu .item").click(function () {
+            var _this = $(this);
+            if (_this.hasClass('active')) {
+                return;
+            }
+            _this.addClass('active').siblings().removeClass('active');
+            $(".share-card-loading").fadeIn();
+            var bg = _this.data('bg');
+            getposter(useagent, bg);
+        });
+        {/if}
+        
+        getposter(useagent, bgimg);
+	});
+</script>
+<!--<script type="text/javascript">
+    require(['../addons/weliam_merchant/app/resource/js/biz/common/poster.js'],function(modal){
+        modal.init({
+            cardConfig: {$json}
+        });
+    });
+</script>-->
+{php include wl_template('common/footer');}

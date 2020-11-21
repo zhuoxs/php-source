@@ -1,0 +1,2 @@
+<?php
+ namespace app\boguan\model; class Freight extends BaseModel { public function getDetailAttr($value) { goto b6_Y8; eH4UK: return json_decode($value, true); goto SPbQt; ARDBC: Rv_Fu: goto eH4UK; OhFN2: return null; goto ARDBC; b6_Y8: if (!empty($value)) { goto Rv_Fu; } goto OhFN2; SPbQt: } }

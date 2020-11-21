@@ -1,0 +1,135 @@
+{template 'web/newheader'}
+<div class="main-panel">
+    <div class="content">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title" style="float: left" >{$qdname['name']} 空码绑定详情</div>
+
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs">
+                            <li role="presentation" {if $_GPC['type']==0}class="active"{/if}><a href="{php echo $this->createWebUrl('nullqrcodeinfo',array('type'=>0,'tid'=>$_GPC['tid']))}">全部 </a></li>
+                            <li role="presentation" {if $_GPC['type']==1}class="active"{/if}><a href="{php echo $this->createWebUrl('nullqrcodeinfo',array('type'=>1,'tid'=>$_GPC['tid']))}">待绑定 <span class="badge ">{$weibangding}</span></a></li>
+                            <li role="presentation" {if $_GPC['type']==2}class="active"{/if}><a href="{php echo $this->createWebUrl('nullqrcodeinfo',array('type'=>2,'tid'=>$_GPC['tid']))}">已绑定 <span class="badge">{$bangding}</span></a></li>
+                        </ul>
+                        <table class="table mt-3">
+                            <thead>
+                            <tr>
+                                <td>按ID分配给</td>
+                                <td>
+
+                                    <select name="qid" id="qid" class="form-control" style="width:80%">
+                                        <option value="0">请选择</option>
+                                        {loop $qudao $v}
+                                        {if $v['id']!=$qdname['q_id']}
+                                        <option value="{$v['id']}">{$v[name]}</option>
+                                        {/if}
+                                        {/loop}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input style="width: 40%;display: inline-block" type="text" id="id1" class="form-control"  placeholder="起始ID"> -
+                                    <input style="width: 40%;display: inline-block" type="text" id="id2" class="form-control"  placeholder="结束ID">
+                                    <input type="hidden" value="{$_GPC['tid']}"  id="tid">
+                                </td>
+                                <td>
+                                    <button id="changequdao" class="btn btn-primary waves-effect waves-light" >确定分配</button>
+                                </td>
+                                <td>分配完成会重新生成订单，前往空码列表下载即可</td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <th scope="col">空码id</th>
+                                <th scope="col">绑定状态</th>
+                                <th scope="col">车辆信息</th>
+                                <th scope="col">绑定时间</th>
+                                <th scope="col">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {if !$data}<td colspan="5" class="text-center">暂无数据</td>{/if}
+                            {loop $data $row}
+                            <tr>
+                                <td >{$row['id']}</td>
+                                <td>
+                                    {if $row['status']=='0'}
+                                    <span class="label label-default">未绑定</span>
+                                    {else if $row['status']=='1'}
+                                    <span class="label label-success">已绑定</span>
+                                    {/if}
+                                </td>
+                                <td>
+                                    {if $row['status']=='1'}
+                                    {if $row['car']==''}
+                                    <span class="label label-danger">用户删除此车辆</span>
+                                    {else}
+                                    车牌号：{$row['car']} 手机号：{$row['mobile']}
+                                    {/if}
+                                    {/if}
+                                </td>
+                                <td>{if $row['status']=='1'}{if $row['car']}{php echo date('Y-m-d H:i:s',$row['time'])}{/if}{/if}</td>
+                                <td>
+                                    <i onclick="qrcode('{php echo$this->createWebUrl('qrcode',array('url'=>urlencode($row['url'])))}')" class="la la-qrcode" style="font-size:20px " data-toggle="tooltip" data-placement="bottom" title=""  data-title="预览挪车空码" ></i>
+                                </td>
+                            </tr>
+                            {/loop}
+                            </tbody>
+                        </table>
+                        {$pager}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function qrcode(url) {
+        layer.open({
+            type: 2,
+            title:"空码预览",
+            area: ['275px', '310px'],
+            skin: 'layui-layzer-rim', //加上边框
+            content: [url, 'no']
+        });
+    }
+
+    $('#changequdao').click(function () {
+        //询问框
+
+        layer.confirm('确定批量修改吗？', {
+            btn: ['确定修改','取消'] //按钮
+        }, function(){
+            var data = {
+                id1 : $('#id1').val(),
+                id2 : $('#id2').val(),
+                tid : $('#tid').val(),
+                qid : $('#qid option:selected').val()
+            }
+
+            $.ajax({
+                url:"{php echo $this->createWebUrl('nullqrcodeinfo')}",
+                dataType:'json',
+                data:data,
+                type:'get',
+                success:function (res) {
+                    if(res.code == 1){
+                        layer.msg(res.msg, {icon: 1});
+                        window.location.href="{php echo $this->createWebUrl('nullqrcode')}";
+                    }else {
+                        layer.msg(res.msg, {icon: 5});
+                    }
+
+                }
+            })
+
+
+
+        }, function(){
+
+        });
+    })
+</script>
+{template 'web/footer'}

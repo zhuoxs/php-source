@@ -1,0 +1,171 @@
+{php include wl_template('common/header');}
+<div class="panel">
+	    <div class="panel-body">
+            <form action="" method="get" class="form-horizontal" role="form" id="form1">
+                <input type="hidden" name="c" value="site" />
+	            <input type="hidden" name="a" value="entry" />
+	            <input type="hidden" name="m" value="feng_fightgroups" />
+	            <input type="hidden" name="do" value="goods" />
+				<input type="hidden" name="ac" value="comment" />
+				<input type="hidden" name="op" value="display" />
+				<input type="hidden" name="lotteryStatus" value="{$_GPC['lotteryStatus']}" />
+				<input type="hidden" name="g_type" value="{$_GPC['g_type']}" />
+				<input type="hidden" name="is_hexiao" value="{$_GPC['is_hexiao']}" />
+				<input type="hidden" name="status" value="{$_GPC['status']}">
+                <div class="form-group">
+                    <div class="col-md-12">
+						<div class="input-group">
+							<input type="text" name="keyword" class="form-control" value="{$_GPC['keyword']}"  placeholder="可搜索商品ID/评论内容"/>
+							<span class="input-group-addon" id="search">搜索</span>
+						</div>
+					</div>
+				</div>
+            </form>
+	    </div>
+	</div>
+	<script type="text/javascript">
+		$("#search").click(function(){
+			$('#form1')[0].submit();
+		});
+	</script>
+<form  class="form-horizontal" action="" method="post">
+<div class="panel panel-default">
+	<div class="table-responsive">
+		<table class="table table-hover">
+			<thead>
+			<tr>
+				<!--<th style="width:40px;">
+					<input type="checkbox" name="checkall" value="" id="checkall" onclick="var ck = this.checked; $(':checkbox').each(function(){this.checked = ck});"/>-->
+				</th>
+				<th style="width:30px;">
+					ID
+				</th>
+				<th style="width:50px;">商品图</th>
+				<th style="width:120px;">商品名</th>
+				<th class="text-center" style="width:80px;">所属商家</th>
+				<th class="text-center" style="width:120px;">评论内容</th>
+				<th class="text-center" style="width:60px;">评论星级</th>
+				<th class="text-center" style="width:100px;">店家回复</th>
+				<th class="text-center" style="width:120px;">操作</th>
+			</tr>
+			</thead>
+			<tbody>
+			{loop $comments $comment}
+			<tr data-toggle="popover" data-trigger="hover" data-placement="left" class="js-goods-img">
+				<!--<td><input type="checkbox" name="items[]" value="{$comment['id']}" class="items" /></td>-->
+				<td>{$comment['id']}</td>
+				<td><img class="scrollLoading" src="{IMAGE_PIXEL}" data-url="{php echo tomedia($comment['goods']['gimg'])}" onerror="this.src='{IMAGE_NOPIC_SMALL}'" height="50" width="50"/></td>
+				<td class="line-feed">
+					{php echo cutstr($comment['goods']['gname'], 30, true);}
+				</td>
+				<td class="text-center">
+					<span class="">{$comment['goods']['merchantname']}</span>
+				</td>
+				<td class="text-center con" data-value = "{$comment['content']}" style="line-height:25px;">
+					{$comment['content']}
+				</td>
+				<td class="text-center" style="line-height:25px;">
+					{$comment['star']}星
+				</td>
+				<td class="text-center con" id="listre{$comment['id']}" data-value = "{$comment['storereply']}" style="line-height:25px;">
+					{$comment['storereply']}
+				</td>
+				<td  style="position:relative;text-align: center;">
+					<a class="js-pass"  goods-id="{$comment['id']}" title="通过" >通过</a> -
+                   	<a class="js-nopass" goods-id="{$comment['id']}"   title="不通过" >不通过</a> -
+                   	<a class="js-reply" goods-id="{$comment['id']}"   title="回复" >回复</a>
+                   	<input type="hidden" value="{$comment['storereply']}" id="reply{$comment['id']}" />
+				</td>
+			</tr>
+			{/loop}
+			</tbody>
+		</table>
+	</div>
+	
+	<input type="hidden" name="token" value="{$_W['token']}" />
+</div>
+{$pager}
+</form>
+<div id="modal-module-gift" class="modal fade" tabindex="-1">
+    <div class="modal-dialog" style='width: 920px;'>
+        <div class="modal-content">
+            <div class="modal-header">
+                <button aria-hidden="true" data-dismiss="modal" class="close" type="button">×</button>
+                <h3>店家回复</h3></div>
+            <div class="modal-body">
+               <div class="modal-body">				
+					<textarea id="remark" name="admin_remark" class="form-control" rows="5"></textarea>			
+				</div>	
+            </div>
+            <div class="modal-footer" style="padding: 5px 15px;">				
+				<a class="btn btn-default js-cancel" aria-hidden="true" data-dismiss="modal">取消</a>				
+				<a class="btn btn-primary js-order-remark-post" order-id="" data-dismiss="modal" aria-hidden="true">确定</a>			
+			</div>	
+        </div>
+    </div>
+</div>
+<script>
+
+	$(function(){
+		$('.js-pass,.js-nopass').click(function(e) {
+			e.stopPropagation();
+			var id = $(this).attr('goods-id');
+			var _this = $(this).parent().parent();
+			if ($(this).hasClass('js-pass')) {
+				var op = 'pass';
+				html = '确认通过?';
+			} else if ($(this).hasClass('js-nopass')) {
+				var op = 'nopass';
+				html = '确认不通过?';
+			}
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				$.post("{php echo web_url('goods/goods/pass')}", {funcop : op, id : id}, function(data){
+					if(!data.errno){
+						_this.remove();
+					}
+					util.tips(data.message, 2000);
+				}, 'json');
+			}, {html: html});
+		});
+		$('.con').hover(function(){
+			var c = $(this).attr('data-value');
+			var obj = this;
+			
+			var $pop = util.popover(obj, function($popover, obj){
+				obj.$popover = $popover;
+			}, '<div>'+c+'</div>');
+		}, function(){
+			this.$popover.remove();
+		});
+		
+		// 修改回复
+		$('.js-reply').click(function() {
+			var order_id = $(this).attr('goods-id');
+			var reply = $('#reply'+order_id).val();
+			$('.js-order-remark-post').attr("order-id",order_id);
+			$('#remark').val(reply);
+			popwin = $('#modal-module-gift').modal();
+		});
+		$('.js-cancel,.close').click(function() {
+			$('#order-remark-container').hide();
+			$('.main').css("opacity","1");$('.nav').css("opacity","1");$('.big-menu').css("opacity","1");
+		});
+		$('.js-order-remark-post').click(function() {
+			var order_id = $(this).attr('order-id');
+			var remark = $('#remark').val();
+			$.post("{php echo web_url('goods/goods/reply')}",{id:order_id,reply:remark},function(d){
+				if(!d.errno){
+					$('#reply'+order_id).val(remark);
+					$('#listre'+order_id).text(remark);
+					util.tips('编辑回复成功');
+				}else{
+					util.tips('编辑回复失败');
+				}
+			},"json");
+			$('#order-remark-container').hide();
+			$('.main').css("opacity","1");$('.nav').css("opacity","1");$('.big-menu').css("opacity","1");
+		});
+	});
+</script>
+{php include wl_template('common/footer');}

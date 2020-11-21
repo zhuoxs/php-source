@@ -1,0 +1,216 @@
+{template 'public/header_add_table'}
+
+<!--标题-->
+<div class="title">
+    <blockquote class="layui-elem-quote">扫码购订单查看</blockquote>
+</div>
+<form class="layui-form" method="post" action="{php echo $this->createWebUrl('orderscan',array('op'=>save));}">
+    <input type="hidden" name="id" value="{$info['id']}">
+    <div class="layui-form-item">
+        <label class="layui-form-label">门店名称</label>
+        <div class="layui-input-block">
+            <input autocomplete="off" type="text" name="name" lay-verify="required" placeholder="请输入名称" class="layui-input" value="{$info['store_name']}">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">用户名称</label>
+        <div class="layui-input-block">
+            <input autocomplete="off" type="text" name="name" lay-verify="required" placeholder="请输入名称" class="layui-input" value="{$info['user_name']}">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">总价</label>
+        <div class="layui-input-block">
+            <input autocomplete="off" type="text" name="name" lay-verify="required" placeholder="请输入名称" class="layui-input" value="{$info['amount']}">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">支付金额</label>
+        <div class="layui-input-block">
+            <input autocomplete="off" type="text" name="name" lay-verify="required" placeholder="请输入名称" class="layui-input" value="{$info['pay_amount']}">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">订单商品</label>
+        <div class="layui-input-block">
+            <!--数据表-->
+            <div class="table-box">
+                <table class="layui-hide" id="laytable"></table>
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn layui-btn-primary" id="btnCancel">返回</button>
+        </div>
+    </div>
+</form>
+<script type="text/javascript">
+    layui.use(['form','laydate','table'], function () {
+        var form = layui.form, laydate = layui.laydate, table = layui.table;
+        //监听提交
+        form.on('submit', function (data) {
+            var myform = $(data.form);
+            var mydata = $('[name=data]', myform);
+            if (mydata.length == 0) {
+                mydata = $("<input type='hidden' name='data'>");
+                mydata.appendTo(myform);
+            }
+            mydata.val(JSON.stringify(table.data.laytable));
+        });
+//        日期
+        laydate.render({
+            elem: '#begin_time'
+            , type: 'datetime'
+            , format: 'yyyy-MM-dd H:m'
+            , done: function (value, date) {
+                laydate.render({
+                    elem: '#end_time'
+                    , type: 'datetime'
+                    , min: value
+                    , format: 'yyyy-MM-dd H:m'
+                });
+            }
+        });
+
+        table.render({
+            elem: '#laytable'
+            , data: {php echo json_encode($list)}
+            , cols: [[
+                {type: 'numbers', fixed: 'left'},
+                {field: 'goods_name', fixed: 'left', width: 180, title: '商品名称', sort: true},
+                {field: 'goods_price', width: 180, title: '价格', sort: true, edit: true},
+                {field: 'num', width: 180, title: '数量', sort: true},
+            ]]
+            , page: true
+            , limit: 20
+            , height: 'full-520',
+        });
+        //监听工具条
+        table.on('tool', function (obj) {
+            var goods_id = obj.data.goods_id;
+            var data = table.data.laytable;
+            for(var i in data){
+                if (data[i].goods_id == goods_id){
+                    data.splice(i,1);
+                    table.reload('laytable',{data:data});
+                    break;
+                }
+            }
+        });
+//        选择商品
+        $('#btnChooseGoods').click(function () {
+            layer.open({
+                type: 2,
+                title: '选择商品',
+                shadeClose: true,
+                shade: false,
+                maxmin: true, //开启最大化最小化按钮
+                area: ['893px', '100%'],
+                content: "{php echo $this->createWebUrl('goods',array('op'=>choose));}",
+                btn: ['确认', '取消'],
+                yes: function (index, layerObj) {
+                    var win = $(layerObj).find("iframe")[0].contentWindow;
+                    var checkData = win.layui.table.checkStatus('laytable');
+
+                    var data = [];
+                    data = layui.table.data.laytable;
+                    var json = JSON.stringify(data);
+
+                    for (var i in checkData.data) {
+                        if (json.indexOf('"goods_id":"' + checkData.data[i]['id'] + '"') == -1) {
+                            data.push({
+                                'goods_id': checkData.data[i]['id'],
+                                'name': checkData.data[i]['name'],
+                                'price': checkData.data[i]['shopprice'],
+                                'old_price': checkData.data[i]['shopprice'],
+                                'limit': 0,
+                            });
+                        }
+                    }
+                    table.reload('laytable', {
+                        data: data,
+                    });
+                    layer.close(index);
+                }
+            });
+        })
+//        批量删除
+        $('#btnBatchDelete').click(function () {
+            var data = [];
+            data = layui.table.data.laytable;
+            if (data.length > 0) {
+                var new_data = [];
+                for (var i in data) {
+                    if (!data[i]['LAY_CHECKED']) {
+                        new_data.push(data[i]);
+                    }
+                }
+                table.reload('laytable', {
+                    data: new_data,
+                });
+            } else {
+                layer.msg('请选择记录');
+            }
+        })
+//        批量修改活动数量
+        $('#btnBatchLimit').click(function () {
+            var data = [];
+            data = layui.table.data.laytable;
+            if (data.length > 0) {
+                layer.prompt({title: '活动数量'}, function (value, index, elem) {
+                    for (var i in data) {
+                        if (data[i]['LAY_CHECKED']) {
+                            data[i]['limit'] = value;
+                        }
+                    }
+                    table.reload('laytable', {
+                        data: data,
+                    });
+                    layer.close(index);
+                });
+            } else {
+                layer.msg('请选择记录');
+            }
+        })
+//        批量修改活动价
+        $('#btnBatchPrice').click(function () {
+            var data = [];
+            data = layui.table.data.laytable;
+            if (data.length > 0) {
+                layer.prompt({title: '活动价'}, function (value, index, elem) {
+                    var fun = function (value, value2) {
+                        return value2
+                    }
+
+                    var patt = /^\d*\.{0,1}\d*$/;
+                    if (patt.test(value)) {
+                        fun = function (value, value2) {
+                            return parseFloat(value2).toFixed(2);
+                        }
+                    }
+                    var patt2 = /^[\+\-\*\/]{1}\d*\.{0,1}\d*$/;
+                    if (patt2.test(value)) {
+                        fun = function (value, value2) {
+                            var v = eval(value + '' + value2);
+                            return parseFloat(v).toFixed(2);
+                        }
+                    }
+
+                    for (var i in data) {
+                        if (data[i]['LAY_CHECKED']) {
+                            data[i]['price'] = fun(data[i]['price'], value);
+                        }
+                    }
+                    table.reload('laytable', {
+                        data: data,
+                    });
+                    layer.close(index);
+                });
+            } else {
+                layer.msg('请选择记录');
+            }
+        })
+    });
+</script>
+

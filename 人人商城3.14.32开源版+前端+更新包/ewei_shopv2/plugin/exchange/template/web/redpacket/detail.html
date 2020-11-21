@@ -1,0 +1,170 @@
+{template '_header'}
+<div class="page-content" style="display: block;">
+
+    <div class="page-heading">
+    <span class="pull-right">
+        {ifp 'exchange.redpacket.creat'}
+        {if $res['code_type'] == 3}<a class="btn btn-danger btn-sm" data-href="{php echo webUrl('exchange/goods/import',array('id'=>$id));}" data-toggle="ajaxModal"><i class="fa fa-download"></i> 导入兑换码</a>{/if}
+            <a class="btn btn-primary btn-sm" data-href="{php echo webUrl('exchange/redpacket/creat',array('id'=>$id));}" data-toggle="ajaxModal"><i class="fa fa-plus"></i> 生成兑换券</a>
+        {/if}
+        <a class="btn btn-default btn-sm" href="{php echo webUrl('exchange/redpacket');}">返回列表</a>
+        </span>
+        <h2>{$res['title']}
+            <small>兑换率: <span class="text-danger">{$res['use']}/{$res['total']}</span></small>
+        </h2>
+    </div>
+    <ul class="nav nav-arrow-next nav-tabs" id="myTab">
+        <li {if $_W['action'] == 'redpacket.dno'}class="active"{/if}>
+        <a href="{php echo webUrl('exchange/redpacket/dno',array('id'=>$id));}">未兑换 (<span class="goods-sold">{$dno}</span>)</a>
+        </li>
+        <li {if $_W['action'] == 'redpacket.dyet'}class="active"{/if}>
+        <a href="{php echo webUrl('exchange/redpacket/dyet',array('id'=>$id));}">已兑换 (<span class="goods-recycle">{$dyet}</span>)</a>
+        </li>
+        <li {if $_W['action'] == 'redpacket.dend'}class="active"{/if}>
+        <a href="{php echo webUrl('exchange/redpacket/dend',array('id'=>$id));}">已过期 (<span class="goods-recycle">{$dend}</span>)</a>
+        </li>
+    </ul>
+
+    <div class="page-toolbar row m-b-sm m-t-sm">
+        <div class="col-sm-4">
+            <div class="input-group-btn">
+                <button class="btn btn-default btn-sm" type="button" data-toggle="refresh">
+                    <i class="fa fa-refresh"></i>
+                </button>
+                {ifp 'exchange.redpacket.destroy'}
+                <button class="btn btn-default btn-sm" type="button" data-toggle="batch-remove"
+                        data-confirm="确认要删除选中的商品吗?" data-href="{php echo webUrl('exchange/coupon/destroy');}"
+                        disabled="disabled">
+                    <i class="fa fa-trash"></i> 删除
+                </button>
+                {/if}
+            </div>
+        </div>
+        <div style="float: left;width: 0%;">
+            {php echo tpl_form_field_eweishop_daterange('date',array('start'=>20161001,'end'=>20161001));}
+        </div>
+        <div class="col-sm-4 pull-right">
+
+            <div class="input-group">
+                <input type="text" class="input-sm form-control" name="keyword" id="keyword" value="" placeholder="请输入关键词">
+                <span class="input-group-btn">
+                    <button class="btn btn-sm btn-primary" type="submit" id="so">搜索</button>
+                </span>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        $(document).ready($('#so').click(function () {
+                    var range = '';
+                    var v = $('#keyword').val();
+                    var so_url = '{php echo webUrl("exchange/redpacket/codesearch",array("id"=>$id))}';
+                    var canshu = '&keyword='+v;
+                    var start = $("input[name='date[start]']").val();
+                    var end = $("input[name='date[end]']").val();
+                    if (start === '2016-10-01' && end === '2016-10-01'){
+                        range = '';
+                    }else{
+                        range = '&start='+start+'&end='+end;
+                    }
+                    var so_url = so_url + canshu+range;
+                    window.location.href = so_url;
+                })
+        );
+        var psize = {$psize};
+        function re() {
+            var psize_temp = $('#select').val();
+            if (psize != psize_temp){
+                psize = psize_temp;
+                redirect_url = "{php echo webUrl('exchange');}"+".{php echo $_W['action']}"+"&id={$id}&psize="+psize;
+                window.location.href = redirect_url;
+            }
+        }
+    </script>
+    每页显示
+    <select name="psize" id="select" style="width: 60px;" onclick="re()">
+        {if $psize != 0 &&$psize != 20 && $psize != 50 && $psize != 100 && $psize != 200 && $psize != 500 && $psize != 800 && $psize != 1000}<option value="{$_SESSION['psize']}" selected>{$_SESSION['psize']}</option>{/if}
+        <option value="20" {if $psize == 20}selected{/if}>20</option>
+        <option value="50" {if $psize == 50}selected{/if}>50</option>
+        <option value="100" {if $psize == 100}selected{/if}>100</option>
+        <option value="200" {if $psize == 200}selected{/if}>200</option>
+        <option value="500" {if $psize == 500}selected{/if}>500</option>
+        <option value="800" {if $psize == 800}selected{/if}>800</option>
+        <option value="1000" {if $psize == 1000}selected{/if}>1000</option>
+    </select> 个兑换码
+
+        <table class="table table-hover table-responsive table_kf active" id="tab_sold"><thead>
+        <tr>
+            <th style="width:25px;"><input type="checkbox"></th>
+            <th style="width:50px;">排序</th>
+            <th style="width:90px;">兑换编号</th>
+            <th style="width:80px;">&nbsp;</th>
+            <th style="width:70px;">过期时间</th>
+            <th style="width:80px;">&nbsp;</th>
+            <th style="width:50px;">类型</th>
+            <th style="width:60px;">状态</th>
+            <th style="width:60px;">绑定</th>
+            <th>操作</th>
+        </tr>
+        </thead>
+            <tbody>
+{loop $list $key $value}
+            <tr>
+                <!--<td colspan="10" style="text-align: center;">暂时没有任何商品!</td>-->
+                <td><input type="checkbox" name="checkbox[]" value="{$value['id']}"></td>
+                <td>{php echo $key+($page-1)*$psize+1;}</td>
+                <td colspan="2"><a data-toggle="ajaxModal" data-href="{php echo webUrl('exchange/history/detail',array('key'=>$value['key'],'status'=>$value['status'],'id'=>$value['id']),1);}">{$value['serial']}</a></td>
+                <td colspan="2">
+                    {if $value['type']!=1}{$value['endtime']}{/if}
+                    {if $value['type']==1}<span class="label label-warning" data-toggle="ajaxSwitch" data-confirm="确认暂停此兑换活动？" data-switch-refresh="true" data-switch-value="1" data-switch-value0="">永不过期</span>{/if}
+                </td>
+                <td>
+                    {if $value['type']==0}<span class="label label-primary" data-toggle="ajaxSwitch" data-confirm="确认暂停此兑换活动？" data-switch-refresh="true" data-switch-value="1" data-switch-value0="">临时</span>{/if}
+                    {if $value['type']==1}<span class="label label-warning" data-toggle="ajaxSwitch" data-confirm="确认暂停此兑换活动？" data-switch-refresh="true" data-switch-value="1" data-switch-value0="">永久</span>{/if}
+                    {if $value['type']==2}<span class="label label-success" data-toggle="ajaxSwitch" data-confirm="确认暂停此兑换活动？" data-switch-refresh="true" data-switch-value="1" data-switch-value0="">普通</span>{/if}
+                    {if $value['type']==3}<span class="label label-danger" data-toggle="ajaxSwitch" data-confirm="确认暂停此兑换活动？" data-switch-refresh="true" data-switch-value="1" data-switch-value0="">号码</span>{/if}
+                </td>
+                {if $value['status']==0}
+                <td><span class="label label-danger" data-toggle="ajaxSwitch" data-confirm="确认暂停此兑换活动？" data-switch-refresh="true" data-switch-value="1" data-switch-value0="">
+                      {if strtotime($value['endtime'])<time()}已过期{else}未发放{/if}</span></td>
+                {/if}
+                {if $value['status']==1}
+                <td><span class="label label-primary" data-toggle="ajaxSwitch" data-confirm="确认暂停此兑换活动？" data-switch-refresh="true" data-switch-value="1" data-switch-value0="">
+                      {if strtotime($value['endtime'])<time()}已过期{else}未兑换{/if}</span></td>
+                {/if}
+                {if $value['status']==2}
+                <td><span class="label label-warning" data-toggle="ajaxSwitch" data-confirm="确认暂停此兑换活动？" data-switch-refresh="true" data-switch-value="1" data-switch-value0="">
+                      已兑换</span></td>
+                {/if}
+                <td>
+
+                    {if !empty($value['openid']) && !empty($res['binding'])}<span class="label label-danger" data-toggle="ajaxSwitch" data-confirm="确认暂停此兑换活动？" data-switch-refresh="true" data-switch-value="1" data-switch-value0="">已绑定</span>{else}<span class="label label-primary" data-toggle="ajaxSwitch" data-confirm="确认暂停此兑换活动？" data-switch-refresh="true" data-switch-value="1" data-switch-value0="">未绑定</span>{/if}
+
+                </td>
+                <td>
+                    {if $value['type']!=3}
+                    <a class="btn btn-default btn-sm" data-toggle="ajaxModal" data-href="{php echo webUrl('exchange/redpacket/qrcode',array('key'=>$value['key'],'type'=>$value['type'],'id'=>$id));}" title="编辑"><i class="fa fa-search"></i> 二维码</a>
+                    {else}
+                    <a href="javascript:;" class="btn btn-default btn-sm js-clip" data-url="&nbsp;{$value['key']}"><i class="fa fa-link"></i> 复制</a>
+                    {/if}
+                    {ifp 'exchange.redpacket.status'}
+                    <a class="btn btn-default btn-sm" data-toggle="ajaxModal"
+                       data-href="{php echo webUrl('exchange/redpacket/status',array('key'=>$value['key']));}"><i class="fa fa-check-circle"></i> 状态</a>
+                    {/if}
+                    {if $value['type']<2}
+                    <a class="btn btn-default btn-sm" href="{php echo webUrl('exchange/goods/down',array('key'=>$value['key']));}"><i class="fa fa fa-download"></i> 下载</a>
+                    {/if}
+                    {if $value['type'] == 2}<a class="btn btn-default btn-sm" href="{$value['qrcode_url']}&id={$id}" download="{$value['serial']}.jpg"><i class="fa fa fa-download"></i> 下载</a>
+                    {/if}
+                    {ifp 'exchange.redpacket.destroy'}
+                    <a class="btn btn-default btn-sm" data-toggle="ajaxRemove"
+                       href="{php echo webUrl('exchange/redpacket/destroy',array('id'=>$value['id']));}" data-confirm="确认删除兑换码 {$value['key']} 吗？"><i class="fa fa-trash"></i> 删除</a>
+                    {/if}
+                </td>
+            </tr>
+{/loop}
+            </tbody>
+        </table>
+
+</div>
+{$pager}
+{template '_footer'}

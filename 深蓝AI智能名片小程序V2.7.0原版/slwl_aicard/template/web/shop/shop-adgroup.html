@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{$_W['slwl']['lang']['sys_name']}</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="">
+    {template 'public/header'}
+
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+    {template 'public/top'}
+    {template 'public/left'}
+
+    <div class="layui-body">
+        <div class="layui-main">
+
+            <style type="text/css">
+                .photo-list { overflow: hidden; }
+                .photo-list .photo-item { position: relative; min-height: 90px; background-color: rgba(66, 139, 202,.1); }
+                .photo-list .layui-input-inline.box-btn { width: 390px; }
+                .photo-list .box-item { padding-left: 150px; }
+                .photo-list .box-item .box-group { width: 480px; overflow: hidden; }
+                .photo-list .box-item .box-group.mb { margin-bottom: 10px; }
+                .photo-list .box-img { position: absolute; top: 15px; left: 15px; width: 150px; height: 90px; text-align: center; background: #fff; }
+                .photo-list .box-img img { max-width: 100%; height: 100%; }
+                .photo-list .box-label { width: 40px; text-align: left; }
+                .photo-list .box-btn { position: absolute; top: 15px; right: 0; }
+                .photo-list .box-cover-checked { border-color: #428bca; color: #fff; background: #428bca; }
+            </style>
+            <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+                <legend>组合广告配置</legend>
+            </fieldset>
+            <form class="layui-form" action="" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="id" value="{$one['id']}" />
+                <input type="hidden" name="token" value="{$_W['token']}" />
+                <div>
+                    <button type="button" class="layui-btn" id="btn-img-upload">上传图片</button>
+                    <button type="button" class="layui-btn layui-btn-danger" id="btn-img-empty">全部删除</button>
+                    <button class="layui-btn layui-btn-primary" lay-submit="" lay-filter="adgroup">保存</button>
+                    <span style="margin-left: 10px;">只支持三图片</span>
+                </div>
+
+                <div style="height: 16px;"></div>
+
+                <div class="photo-list">
+                    {loop $smeta $index $item}
+                    <blockquote class="layui-elem-quote photo-item">
+                        <input type="hidden" class="input-attr" name="options[attachment][{$index}]" value="{$item['attachment']}">
+                        <div class="layui-form-item box-item">
+                            <div class="box-img"><img src="{php echo tomedia($item['attachment'])}"></div>
+                            <div class="box-group mb">
+                                <label class="layui-form-label">标题</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="options[title][{$index}]" placeholder="请输入" class="layui-input input-filename" value="{$item['title']}">
+                                </div>
+                            </div>
+                            <div class="box-group input-link">
+                                <label class="layui-form-label">链接</label>
+                                <div class="layui-input-block">
+                                    {php echo slwl_tpl_form_show_link('options[page_url]['.$index.']', $item['page_url']);}
+                                </div>
+                            </div>
+                            <div class="layui-input-inline box-btn">
+                                <input type="hidden" class="input-cover-val" name="options[cover][{$index}]" value="{$item['cover']}">
+                                <button type="button" class="layui-btn layui-btn-primary btn-move-top">置顶</button>
+                                <button type="button" class="layui-btn layui-btn-primary btn-move-up">上移</button>
+                                <button type="button" class="layui-btn layui-btn-primary btn-move-down">下移</button>
+                                <button type="button" class="layui-btn layui-btn-primary btn-move-bottom">置底</button>
+                                <button type="button" class="layui-btn layui-btn-danger btn-delete">删除</button>
+                            </div>
+                        </div>
+                    </blockquote>
+                    {/loop}
+                </div>
+            </form>
+
+            <div class="photo-clone" style="display: none;">
+                <blockquote class="layui-elem-quote photo-item">
+                    <input type="hidden" class="input-attr" name="options[attachment][]">
+                    <div class="layui-form-item box-item">
+                        <div class="box-img"><img src="{MODULE_URL}template/public/images/building.jpg"></div>
+                        <div class="box-group mb">
+                            <label class="layui-form-label">标题</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="options[title][]" placeholder="请输入" class="layui-input input-filename">
+                            </div>
+                        </div>
+                        <div class="box-group input-link">
+                            <label class="layui-form-label">链接</label>
+                            <div class="layui-input-block">
+                                {php echo slwl_tpl_form_show_link('page_url');}
+                            </div>
+                        </div>
+                        <div class="layui-input-inline box-btn">
+                            <input type="hidden" class="input-cover-val" name="options[cover][]">
+                            <button type="button" class="layui-btn layui-btn-primary btn-move-top">置顶</button>
+                            <button type="button" class="layui-btn layui-btn-primary btn-move-up">上移</button>
+                            <button type="button" class="layui-btn layui-btn-primary btn-move-down">下移</button>
+                            <button type="button" class="layui-btn layui-btn-primary btn-move-bottom">置底</button>
+                            <button type="button" class="layui-btn layui-btn-danger btn-delete">删除</button>
+                        </div>
+                    </div>
+                </blockquote>
+            </div>
+
+            <script type="text/javascript">
+                var sub_num = 9000;
+
+                $(function () {
+                    // 上传
+                    $(document).on('click', '#btn-img-upload', function () {
+                        var $item_num = $('.photo-list').children('.photo-item').length;
+
+                        if ($item_num >= 3) {
+                            layer.msg('只支持三图片' , {
+                                shift: 6,
+                            });
+                            return false;
+                        }
+
+                        require(["util"], function(util){
+                            options = '.str_replace("\"", "\'", json_encode($options)).';
+                            util.image('', function(url){
+                                console.log(url);
+                                if(url.url){
+                                    $obj = $('.photo-clone .photo-item').clone(true);
+
+                                    $obj.find('.input-attr').attr('name', 'options[attachment][' + sub_num + ']').val(url.attachment);
+                                    $obj.find('.box-img img').attr('src', url.url);
+                                    $obj.find('.input-filename').attr('name', 'options[title][' + sub_num + ']').val(url.filename);
+                                    $obj.find('.input-cover-val').attr('name', 'options[cover][' + sub_num + ']').val('0');
+                                    $obj.find('.input-link input[name="page_url"]').attr('name', 'options[page_url][' + sub_num + ']');
+
+                                    $('.photo-list').append($obj);
+
+                                    sub_num += 1;
+                                }
+                                if(url.media_id){
+                                    $obj.find('.input-attr').val(url.media_id);
+                                }
+                            }, options);
+                        });
+                    });
+
+                    // 清空
+                    $(document).on('click', '#btn-img-empty', function () {
+                        layer.confirm('确定要全部删除吗？', {
+                            offset: '20%',
+                            btn: ['再想想', '删除']
+                        }, function(i){
+                            layer.close(i);
+                        }, function(i) {
+                            $('.photo-list').empty();
+                        });
+                    });
+
+                    // 设为封面
+                    $(document).on('click', '.btn-cover', function () {
+                        var $obj = $(this).closest('.photo-item');
+                        var $box = $(this).closest('.photo-list');
+
+                        $box.find('.btn-cover').removeClass('box-cover-checked');
+                        $box.find('.input-cover-val').val('0');
+                        $obj.find('.btn-cover').addClass('box-cover-checked');
+                        $obj.find('.input-cover-val').val('1');
+                    });
+
+                    // 置顶
+                    $(document).on('click', '.btn-move-top', function () {
+                        var $obj = $(this).closest('.photo-item');
+                        var $box = $(this).closest('.photo-list');
+
+                        if ($obj.prev().html != '') {
+                            $obj.prependTo($box);
+                        }
+                    });
+
+                    // 上移
+                    $(document).on('click', '.btn-move-up', function () {
+                        var $obj = $(this).closest('.photo-item');
+
+                        if ($obj.prev().html != '') {
+                            $obj.insertBefore($obj.prev());
+                        }
+                    });
+
+                    // 下移
+                    $(document).on('click', '.btn-move-down', function () {
+                        var $obj = $(this).closest('.photo-item');
+
+                        if ($obj.next().html != '') {
+                            $obj.insertAfter($obj.next());
+                        }
+                    });
+
+                    // 置底
+                    $(document).on('click', '.btn-move-bottom', function () {
+                        var $obj = $(this).closest('.photo-item');
+                        var $box = $(this).closest('.photo-list');
+
+                        if ($obj.prev().html != '') {
+                            $obj.appendTo($box);
+                        }
+                    });
+
+                    // 删除
+                    $(document).on('click', '.btn-delete', function () {
+                        var $obj = $(this);
+                        layer.confirm('确定要删除吗？', {
+                            offset: '20%',
+                            btn: ['再想想', '删除']
+                        }, function(i){
+                            layer.close(i);
+                        }, function(i) {
+                            $obj.closest('.photo-item').remove();
+                        });
+                    });
+                });
+            </script>
+            <script>
+                layui.use('form', function(){
+                    var form = layui.form;
+
+                    form.on('submit(adgroup)', function(data){
+                        let url = "{php echo webUrl('shop_adgroup')}";
+                        var $obj = $(this);
+
+                        if (!$obj.hasClass('lock')) {
+                            $obj.addClass('lock'); // 不能再点击
+
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                dataType: 'json',
+                                data: data.field,
+                                success: function (rs) {
+                                    console.log(rs.message.errno);
+                                    if (rs.message.errno == '0') {
+                                        layer.msg('保存成功！' , {
+                                            time: 500
+                                        }, function () {
+                                            window.location.href = "{php echo webUrl('shop_adgroup')}";
+                                        });
+                                    } else {
+                                        layer.msg(rs.message.message, {
+                                            offset: '20%',
+                                        });
+                                    }
+                                    $obj.removeClass('lock');
+                                },
+                                error: function () {
+                                    layer.msg('提交过程发生错误，请与管理员联系', {
+                                        offset: '20%',
+                                    });
+                                    $obj.removeClass('lock');
+                                }
+                            });
+                        }
+
+                        return false;
+                    });
+                });
+            </script>
+
+        </div>
+    </div>
+
+    {template 'public/copyright'}
+</div>
+
+{template 'public/footer'}
+</body>
+</html>

@@ -1,0 +1,319 @@
+{template 'common/header'}
+<style>
+    .act-continer{
+        width: 100%;
+        border: 1px solid #e8e9eb;
+        border-bottom: none;
+        border-top: none;
+    }
+    .actlist{
+        width: 100%;
+        height: 40px;
+        line-height: 40px;
+        vertical-align: middle;
+        border-bottom: 1px solid #e8e9eb;
+        padding: 0px 10px;
+    }
+    .actlist:hover{
+        cursor: pointer;
+    }
+</style>
+<ul class="nav nav-tabs">
+    <li><a href="{php echo $this->createWebUrl('lists', array('version_id' => $_GPC['version_id']));}">报名列表</a></li>
+    <li class="active"><a href="{php echo $this->createWebUrl('edit', array('version_id' => $_GPC['version_id']));}">添加报名</a></li>
+    <li><a href="{php echo $this->createWebUrl('batchregister', array('version_id' => $_GPC['version_id']));}">批量报名</a></li>
+	<li><a href="{php echo $this->createWebUrl('safe', array('version_id' => $_GPC['version_id']));}">数据监控</a></li>
+	<li><a href="{php echo $this->createWebUrl('votelog', array('version_id' => $_GPC['version_id']));}">投票日志</a></li>
+    <li><a href="{php echo $this->createWebUrl('sharelog', array('version_id' => $_GPC['version_id']));}">分享日志</a></li>
+
+</ul>
+<div class="main">
+    <div class="alert alert-info">
+        <h4>运行环境检测</h4>
+        <ul>
+            <li>允许最大单个上传文件大小为: {$upload_max_filesize}</li>
+            <li>允许最大POST表单大小为: {$post_max_size}</li>
+        </ul>
+        <span style="color: red;">注意：上面环境监测为PHP参数，如果环境受限请联系专业人员修改PHP配置文件。</span>
+    </div>
+    <form action="" class="form-horizontal form ng-pristine ng-valid" method="post" enctype="multipart/form-data">
+        <input name="id" type="hidden" value="{$item['id']}"/>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                编辑报名
+            </div>
+
+            <div class="panel-body">
+
+			    <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">活动期数</label>
+                    <div class="col-sm-9">
+                        <select name="sid" id="sid" class="form-control" {if !empty($item['sid'])}disabled="disabled"{/if}>
+                            {loop $settinglists $items}
+								<option {if $item['sid'] === $items['id']} selected{elseif $_GPC['editsid'] === $items['id'] && empty($item['sid'])} selected{/if} value="{$items['id']}">{$items['tit']}</option>
+							{/loop}
+                        </select>
+						
+					</div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">活动名称</label>
+                    <div class="col-xs-12 col-sm-9 col-lg-9">
+                        <input class="form-control" name="actname" type="text" value="{$_GPC['actname']}" placeholder="支持模糊查询" onkeyup="searchAct()">
+                        <div class="act-continer">
+
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">编号</label>
+                    <div class="col-sm-9">
+                        <input id="uid" type="text" class="form-control" name="uid" value="{$item['uid']}" placeholder="编号，留空自动递增生成编号" />
+                        <div id="uidtips" style="color: red;"></div>
+                    </div>
+                </div>
+                <script type="text/javascript">
+                    $("#uid").keyup(function(){
+                        var uid = $(this).val();
+                        $.get("{php echo $this->createWebUrl('fetchuid');}", {'uid': $(this).val(), 'sid': $("#sid").val(), 'pid': '{$item['id']}'}, function(message){
+                            if(message != 1){
+                                $("#uidtips").html('编号：'+uid+'，活动中已经存在');
+                            }else{
+                                $("#uidtips").html('');
+                            }
+                        });
+                    });
+                </script>
+
+			    <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">组别</label>
+                    <div class="col-sm-9">
+                        <select name="groups" id="groups" class="form-control">
+                            {loop $setting['groups'] $groupsid $items}
+								<option {if $item['groups'] == $groupsid} selected{/if} value="{$groupsid}">{$items['name']}</option>
+							{/loop}
+                        </select>
+					</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">姓名</label>
+                    <div class="col-sm-9"><input type="text" class="form-control" name="name" value="{$item['name']}" placeholder="姓名" /></div>
+                </div>	
+				
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">手机号</label>
+                    <div class="col-sm-9"><input type="text" class="form-control" name="phone" value="{$item['phone']}" placeholder="手机号" /></div>
+                </div>		
+				
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">照片</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_multi_image('pics', $item['pics'], array('width' => 400, 'extras' => array('text' => 'ng-model="entry.pics"')));}
+                    </div>
+
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">封面图</label>
+                    <div class="col-sm-9">
+                        <div class="btn-group" data-toggle="buttons">
+                            {loop $item['pics'] $k $it}
+                            {php $k++;}
+                            <label class="btn btn-primary {if ($item['cover'] === '0' && $k == 1) || $item['cover'] == $k} active{/if}">
+                                <input type="radio" name="cover" value="{$k}" autocomplete="off" {if ($item['cover'] === '0' && $k == 1) || $item['cover'] == $k} checked{/if}>No.{$k}
+                            </label>
+                            {/loop}
+                        </div>
+                        <span class="help-block">
+                            <strong>需要先把图片上传完成提交后再修改封面图，否则无法获取图片数量。序号与图片顺序相对应，选中的图片将作为封面图展示到列表页面和手机端，默认为第一张。</strong>
+                        </span>
+                    </div>
+                </div>
+
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 control-label">声音</label>
+					<div class="col-sm-9">
+						{php echo tpl_form_field_audio('sound', $item['sound']);}
+                        <span class="help-block">由于媒体文件占用空间和带宽较大，为了更好的用户体验，请配置七牛云存储，可进入系统<a class="color-default" href="{php echo wurl('system/attachment/remote')}" target="_blank">远程附件</a>配置，或进入模块<a class="color-default" href="{php echo wurl('module/manage-account/setting', array('m' => 'xiaof_toupiao', 'version_id' => 0))}#setting-qiniu" target="_blank">参数设置</a>，配置任何一个都可以，优先调用系统远程附件参数</span>
+					</div>
+				</div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">视频</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_video('video', $item['video']);}
+                        <span class="help-block">由于媒体文件占用空间和带宽较大，为了更好的用户体验，请配置七牛云存储，可进入系统<a class="color-default" href="{php echo wurl('system/attachment/remote')}" target="_blank">远程附件</a>配置，或进入模块<a class="color-default" href="{php echo wurl('module/manage-account/setting', array('m' => 'xiaof_toupiao', 'version_id' => 0))}#setting-qiniu" target="_blank">参数设置</a>，配置任何一个都可以，优先调用系统远程附件参数</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">视频封面图</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_image('video_poster', $item['video_poster']);}
+                        <div class="help-block">视频加载时，默认显示的视频封面图片，推荐尺寸：360x200像素</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">描述</label>
+                    <div class="col-sm-9"><input type="text" class="form-control" name="describe" value="{$item['describe']}" placeholder="描述" /></div>
+                </div>
+				
+				<div class="joinfield">
+				{loop $setting['joinfield'] $joinfielditem}
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">{$joinfielditem['name']}</label>
+                    <div class="col-sm-9"><input type="text" class="form-control" name="{$joinfielditem['sign']}" value="{$item['data'][$joinfielditem['sign']]}" placeholder="{$joinfielditem['name']}" /></div>
+                </div>				
+				{/loop}
+				</div>
+				
+				<script>
+					$(function(){
+						$("#sid").change(function(){
+							$.get("{php echo $this->createWebUrl('loadgroup');}",{'sid': $(this).val()},function(data){
+								var result = new Function('return' + data)();
+								$("#groups").html(result.groups);
+								$(".joinfield").html(result.joinfield);
+							})
+						});
+						{if !isset($item['id'])}
+						$("#sid").change();
+						{/if}
+					});
+				</script>
+				
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">详细介绍</label>
+                    <div class="col-sm-9">
+						{php echo tpl_ueditor('detail', $item['detail']);}
+					</div>
+                </div>
+				
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">审核</label>
+                    <div class="col-sm-9">
+                        <div class="btn-group" data-toggle="buttons">
+                              <label class="btn btn-primary {if $item['verify'] === '0'} active{/if}">
+                                <input type="radio" name="verify" id="option1" value="0" autocomplete="off" {if $item['verify'] === '0'} checked{/if}>待审核
+                            </label>
+                            <label class="btn btn-primary {if $item['verify'] === '1' or !isset($_GPC['pid'])} active{/if}">
+                                <input type="radio" name="verify" id="option2" value="1"  autocomplete="off" {if $item['verify'] === '1' or !isset($_GPC['pid'])} checked{/if}>通过
+                            </label>
+                            <label class="btn btn-primary {if $item['verify'] === '2'} active{/if}">
+                                <input type="radio" name="verify" id="option3" value="2"  autocomplete="off" {if $item['verify'] === '2'} checked{/if}>未通过
+                            </label>
+                        </div> 
+                        <span class="help-block">
+                            <strong>审核状态未通过时将不能访问。待审核状态首页不展示，只能自己访问查看</strong>
+                        </span>							
+                    </div>
+                </div>
+				<!--
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">绑定openid</label>
+                    <div class="col-sm-9">
+						<input type="text" class="form-control" name="openid" value="{$item['openid']}" placeholder="用户的openid" />
+                        <span class="help-block">
+                            <strong>一般不需要修改，只为某些情况手动添加用户openid</strong>
+                        </span>					
+					</div>
+                </div>
+				-->				
+              
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">票数</label>
+					<div class="col-sm-1" style="line-height: 32px;">
+						当前：{$item['good']}
+					</div>
+					<div class="col-sm-2">
+						<select name="goodalgorithm" class="form-control">
+							<option value="+">加</option>
+							<option value="-">减</option>
+                        </select>					
+					</div>
+                    <div class="col-sm-6">
+                        <input type="text" class="form-control" name="goodvalue" placeholder="必须为整数，留空为不做改变"/>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">转发量</label>
+					<div class="col-sm-1" style="line-height: 32px;">
+						当前：{$item['share']}
+					</div>
+					<div class="col-sm-2">
+						<select name="sharealgorithm" class="form-control">
+							<option value="+">加</option>
+							<option value="-">减</option>
+                        </select>					
+					</div>
+                    <div class="col-sm-6">
+                        <input type="text" class="form-control" name="sharevalue" placeholder="必须为整数，留空为不做改变"/>
+                    </div>
+                </div>  
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">点击量</label>
+					<div class="col-sm-1" style="line-height: 32px;">
+						当前：{$item['click']}
+					</div>
+					<div class="col-sm-2">
+						<select name="clickalgorithm" class="form-control">
+							<option value="+">加</option>
+							<option value="-">减</option>
+                        </select>					
+					</div>
+                    <div class="col-sm-6">
+                        <input type="text" class="form-control" name="clickvalue" placeholder="必须为整数，留空为不做改变"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">实际票数</label>
+                    <div class="col-sm-2" style="line-height: 32px;">
+                        {$item['realgood']}
+                    </div>
+                    <div class="col-sm-7" style="line-height: 32px; color: gray;">
+                        备注：此处实际票数为正常渠道得票数量，不包括后台增减操作；
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-12">
+                <input name="token" type="hidden" value="{$_W['token']}" />
+                <input type="submit" class="btn btn-primary" name="submit" value="提交">
+            </div>
+        </div>
+    </form>
+</div>
+
+{template 'common/footer'}
+<script>
+    function searchAct() {
+        console.log($("input[name='actname']").val());
+        var keyword = $("input[name='actname']").val();
+        $.ajax({
+            url:'{php echo $this->createWebUrl("lists", array("act" => "getact"))}',
+            type: 'post',
+            data: 'keyword='+keyword,
+            dataType: 'json',
+            success: function(resp){
+                console.log(resp);
+                if (resp.length > 0) {
+                    var html = '';
+                    for(var i = 0; i< resp.length; i++){
+                        html += '<div class="actlist" onclick="changesid(this)" sid="'+resp[i]['id']+'">'+resp[i]['tit']+'</div>';
+                    }
+                }
+                $('.act-continer').css('display','block');
+                $('.act-continer').html(html);
+            }
+        });
+    }
+    function changesid(obj) {
+        var sid = $(obj).attr('sid');
+        $('#sid').val(sid);
+        $('.act-continer').css('display','none');
+    }
+</script>

@@ -1,0 +1,240 @@
+{php include wl_template('common/header');}
+
+<ul class="nav nav-tabs">
+	<li {if $op == 'display'} class="active" {/if}><a href="{php echo web_url('goods/category/display');}">商品分类管理</a></li>
+	<li {if $op == 'post' && empty($cateId)}class="active"{/if}><a href="{php echo web_url('goods/category/post');}">添加商品分类</a></li>
+	{if $op == 'post' && !empty($cateId)}
+	<li class="active"><a href="{php echo web_url('goods/category/post');}">编辑商品分类</a></li>
+	{/if}
+</ul>
+
+{if $op == 'display'}
+<style>
+	td>i{cursor:pointer; display:inline-block; width:100%; height:100%; color:#428bca;}
+	.category-caret{display:inline-block; width:20px; margin: 0 10px; text-align:center; cursor:pointer; color:#d9534f;}
+	.add.add_level0{cursor:pointer;}
+</style>
+<form action="" method="post">
+	<div class="panel panel-default">
+		<div class="panel-heading clearfix">顺序号越大排列越靠前<span class="pull-right"><a href="javascript:;" class="js-category-all js-collapse"><!--全部折叠--> </a></span></div>
+		<div class="panel-body table-responsive">
+			<table class="table table-hover">
+				<thead>
+					<tr>
+						<th style="width:50px;">分类图片</th>
+						<th style="width:250px;">分类名称</th>
+						<th style="width:120px; text-align:center;">开启状态</th>
+						<th style="width:100px; text-align:center;">显示顺序</th>
+						<th style="width:100px; text-align:right">操作</th>
+					</tr>
+				</thead>
+				<tbody>
+					{loop $category $pcate}
+					<tr>
+						<td>
+							<img width='45' height="45" src="{IMAGE_PIXEL}" data-url="{php echo tomedia($pcate['thumb']);}" class="scrollLoading" style='float:left;' onerror="this.src='{IMAGE_NOPIC_SMALL}'" />
+						</td>
+						<td class="text-left">
+							<input type="text" class="form-control" maxlength="50" style='display:inline;width:150px;'name="name[{$pcate['id']}]" value="{$pcate['name']}" />
+							<!--<a href="{php echo web_url('goods/category/post', array('fatherid' => $pcate['id']))}" class="add add_level1" title="添加子分类" data-pid="{$pcate['id']}" data-name="{$pcate['name']}">
+								<i class="fa fa-plus-circle"></i>添加子类
+							</a>-->
+							<!--<span class="category-caret">
+								<i class="fa fa-caret-down js-category-down" style="display:none;" pid="{$pcate['id']}"></i>
+								<i class="fa fa-caret-up js-category-up" pid="{$pcate['id']}"></i>
+							</span>-->
+						</td>
+						<td class="text-center">
+							<input class="flag" type="checkbox" category-id="{$pcate['id']}" name="status[{$pcate['id']}]" value="{$pcate['enabled']}" {if $pcate['enabled'] == 1}checked="checked"{/if} />
+						</td>
+						<td class="text-center">
+							<input type="text" class="form-control" maxlength="2" name="displayorder[{$pcate['id']}]" value="{$pcate['displayorder']}" />
+						</td>
+						<td class="text-right">
+							<a href="{php echo web_url('goods/category/post', array('id' => $pcate['id']));}" title="编辑">编辑</a> -
+							<a href="javascript:;" cate-id="{$pcate['id']}" parentid="{$pcate['parentid']}" title="删除" class="js-delete">删除</a>
+						</td>
+					</tr>
+					<!--{loop $children[$pcate['id']] $ccate}
+						<tr class="js-collpase js-child-category" pid="{$pcate['id']}">
+							<td>
+								<img src="{php echo tomedia($ccate['thumb']);}" width='45' height="45" onerror="$(this).remove()" class="scrollLoading" style='float:left;' />
+							</td>
+							<td class="text-left">
+								<div style="padding-left:50px;height:30px;line-height:30px;background:url('./resource/images/bg_repno.gif') no-repeat -245px -545px;">
+									<input type="text" class="form-control" maxlength="50" style='display:inline;width:150px;'name="name[{$ccate['id']}]" value="{$ccate['name']}" />
+								</div>
+							</a>
+							</td>
+							<td class="text-center">
+								<input class="flag" type="checkbox" category-id="{$ccate['id']}" name="status[{$ccate['id']}]" value="{$ccate['status']}" {if $ccate['status'] == 2}checked="checked"{/if} />
+							</td>
+							<td class="text-center">
+								<input type="text" class="form-control" maxlength="2" name="displayorder[{$ccate['id']}]" value="{$ccate['displayorder']}">
+							</td>
+							<td class="text-right">
+								<a href="{php echo web_url('goods/category/post', array('id' => $ccate['id']));}" title="编辑">编辑</a> -
+								<a href="javascript:;" cate-id="{$ccate['id']}" parentid="{$ccate['parentid']}" title="删除" class="js-delete">删除</a>
+							</td>
+						</tr>
+					{/loop}-->
+					{/loop}
+					<tr>
+						<td colspan="4"><div class="add add_level0"><i class="fa fa-plus-circle"></i> 添加分类</div></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+	<div class="form-group col-md-12">
+		<input name="submit" type="submit" class="btn btn-primary min-width" value="保存">
+		<input type="hidden" name="token" value="{$_W['token']}" />
+	</div>
+</form>
+<script>
+	$(function(){
+		$(".scrollLoading").scrollLoading();
+		var $pop = null;
+		$('.scrollLoading').hover(function(){
+			var img = $(this).attr('src');
+			var obj = this;
+			var $pop = util.popover(obj, function($popover, obj){
+				obj.$popover = $popover;
+			}, '<div><img src="'+img+'" style="max-width:200px; max-height:200px;"></div>');
+		}, function(){
+			this.$popover.remove();
+		});
+		$('.js-delete').click(function(e) {
+			e.stopPropagation();
+			var cateid = $(this).attr('cate-id');
+			var parentid = $(this).attr('parentid');
+			var $this = $(this);
+			util.nailConfirm(this, function(state) {
+				if (!state) {
+					return;
+				}
+				$.post("{php echo web_url('goods/category/delete')}", {cateid : cateid, parentid : parentid}, function(data) {
+					if(!data.errno){
+						$this.parent().parent().remove();
+					};
+					util.tips(data.message);
+				}, 'json');
+			});
+		});
+		//添加父分类
+		$('.add_level0').click(function(){
+			var pid = $(this).attr('data-pid');
+			var name = $(this).attr('data-name');
+			var html = '<tr>' +
+					'<td></td><td class="text-left"> <input type="text" class="form-control" maxlength="50" style="display:inline;width:90%;" name="add_parent_name[]" value="" placeholder="分类名称" /></td><td></td>'+
+					'<td class="text-center"> <input type="text" class="form-control" maxlength="2" name="add_parent_displayorder[]" value="0" placeholder="分类排序"/></td>' +
+					'<td colspan="1"><i class="fa fa-times-circle" onclick="$(this).parents(\'tr\').remove()"></i></td>' +
+					'</tr>';
+			$(this).parents('tr').before(html)
+		});
+		//控制显示
+		$('.js-category-all').click(function() {
+			if($(this).hasClass('js-collapse')) {
+				$('.js-child-category').fadeOut("slow");
+				$('.fa-caret-up').hide();
+				$('.fa-caret-down').show();
+				$(this).text('全部展开').removeClass('js-collapse');
+				
+			} else {
+				
+				$('.js-child-category').fadeIn("slow");
+				$('.fa-caret-up').show();
+				$('.fa-caret-down').hide();
+				$(this).text('全部折叠').addClass('js-collapse');
+			}
+		});
+
+		$('.js-category-up').click(function() {
+			var parentId = $(this).attr('pid');
+			console.log(parentId);
+			$('tr[pid="'+parentId+'"]').fadeOut("slow");
+			$(this).prev().show();
+			$(this).hide();
+		});
+		$('.js-category-down').click(function() {
+			var parentId = $(this).attr('pid');
+			console.log(parentId);
+			$('tr[pid="'+parentId+'"]').fadeIn("slow");
+			$(this).next().show();
+			$(this).hide();
+		});
+	});
+	require(['bootstrap.switch'],function($){
+		// 启用状态
+		$('.flag:checkbox').bootstrapSwitch({onText: '启用', offText: '禁用'});
+		$('.flag:checkbox').on('switchChange.bootstrapSwitch', function(event, state) {
+			var category_id = $(this).attr('category-id');
+			var status = state ? 1 : 0;
+			$.post("{php echo web_url('goods/category/status')}", {id : category_id, status : status}, function (data){
+				if (!data.errno) {
+					util.tips(data.message);
+				};
+			}, 'json');
+		});
+		
+	});
+</script>
+
+{elseif $op == 'post'}
+
+<div class="clearfix">
+	<form action="" method="post" class="form-horizontal form" enctype="multipart/form-data" id="form1">
+		<div class="panel panel-default" id="step1">
+			<div class="panel-heading">
+				分类管理
+			</div>
+			<div class="panel-body">
+				{if !empty($parentid)}
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 control-label">上级分类</label>
+					<div class="col-sm-9 col-xs-12 control-label" style="text-align:left;">{$parent['name']}</div>
+				</div>
+				{/if}
+				<div class="form-group">
+					<label class="col-md-2 control-label"><span style="color:red;">*</span> 分类名称：</label>
+					<div class="col-md-9">
+						<input class="form-control" type="text" maxlength="11" name="name" value="{$category['name']}" />
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-md-2 control-label">分类图片</label>
+					<div class="col-sm-9">
+						{php echo tpl_form_field_image('thumb', $category['thumb'])}
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-md-2 control-label">分类排序：</label>
+					<div class="col-md-9">
+						<input class="form-control" type="text" maxlength="2" name="displayorder" value="{if empty($category['displayorder'])}0{else}{$category['displayorder']}{/if}" />
+						<span class="help-block">排序号越大排列越靠前。</span>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-md-2 control-label">是否开启：</label>
+					<div class="col-md-9">
+						<label class="radio-inline">
+							<input type="radio" name="enabled" value="1" {if $category['enabled'] == '1' || empty($category['enabled'])} checked="checked" {/if} />开启
+						</label>
+						<label class="radio-inline">
+							<input type="radio" name="enabled" value="0" {if $category['enabled'] == '0'} checked="checked" {/if} />关闭
+						</label>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-md-2 control-label"></label>
+					<div class="col-md-9">
+						<input name="submit" id="submit" type="submit" value="保存" class="btn btn-primary min-width">
+						<input type="hidden" name="token" value="{$_W['token']}" />
+					</div>
+				</div>
+			</div>
+		</div>
+	</form>
+</div>
+{/if}
+{php include wl_template('common/footer');}

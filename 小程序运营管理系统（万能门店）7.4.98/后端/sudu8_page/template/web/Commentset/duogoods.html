@@ -1,0 +1,1717 @@
+{template 'web/common/header'}
+<link href="https://cdn.bootcss.com/bootstrap-select/2.0.0-beta1/css/bootstrap-select.min.css" rel="stylesheet">
+<script src="https://cdn.bootcss.com/bootstrap-select/2.0.0-beta1/js/bootstrap-select.min.js"></script>
+<div class="page">
+
+    <div class="page_content">
+{if $opt == 'display'}
+<div style="height:55px">
+    <h3 style="float: left;margin-top: 0;">产品列表</h3>
+    <div class="pull-right">
+        <a href="{php echo $this->createWebUrl('Commentset', array('op' => 'duogoods', 'opt' => 'post', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']))}"  class="btn btn-primary we7-padding-horizontal" style="margin-bottom: 20px">添加产品</a>
+    </div>
+</div>
+<form class="form-horizontal" action="" method="post">
+<div style="margin-bottom:10px">
+    <div style="display: inline-block;">
+        搜索栏目:
+    </div>
+    <div style="display: inline-block;">
+        <select name="sid" id="sid" style="width: 200px">
+            <option value="0">栏目选择</option>
+            {loop $cates $item}
+                <option value="{$item['id']}" {if $item['id'] == $sid}selected="selected"{/if}>{$item['name']}</option>
+                {if $item['ziji']}
+                    {loop $item['ziji'] $iis}
+                        <option value="{$iis['id']}" {if $iis['id'] == $sid}selected="selected"{/if}>|--{$iis['name']}</option>
+                    {/loop}
+                {/if}
+            {/loop}
+        </select>
+    </div>   
+    <div style="display: inline-block;">
+        <input type="text" name="skey" id="skey" value="{$skey}" class="form-control ng-pristine ng-untouched ng-valid ng-empty" style="border-radius: 0px"  placeholder="搜索关键字" autocomplete="off">
+    </div> 
+    <div style="display: inline-block;">
+        <input name="token" type="hidden" value="{$_W['token']}" />
+        <div class="btn btn-primary" id="filter" style="display: inline-block;font-size: 12px;" />提交</div>
+    </div> 
+</div>
+</form>
+<form class="form-horizontal" action="" method="post">
+    <table class="table we7-table table-hover article-list vertical-middle">
+        <tr>
+            <td style="width:100px">排序</td>
+            <td>ID</td>
+            <td>所属栏目</td>
+            <td>缩略图</td>
+            <td>标题</td>
+            <td>参数</td>
+            <td class="text-right">操作</td>
+            <td >
+                <input type="checkbox" id="all" />全选&nbsp;&nbsp;
+                <a class="btn btn-default btn-sm" onclick="delall()">批量删除</a>
+            </td>
+        </tr>
+        {loop $products $item}
+        <tr>
+            <td>
+                {$item['num']}
+            </td>
+            <td style="width: 100px">
+                <a href="javascript:;" href="javascript:;" data-id="{$item['id']}" class="label label-success ng-scope js-clip" >{$item['id']}</a>
+            </td>
+            <td style="width: 100px">
+                {$item['cname']}
+            </td>
+            <td style="width: 150px">
+                <img src="{media $item['thumb']}" width="100px" alt="">
+            </td>
+            <td>
+                {$item['title']}
+            </td>
+            <td>
+                {loop $item['type_values'] $t}
+                    <div>规格：{$t['type1']} {$t['type2']} {$t['type3']} — 价格：{$t['price']} </div>
+                {/loop}
+            </td>
+            <td class="text-right">
+                <a class="btn btn-default btn-sm" href="{php echo $this->createWeburl('commentset', array('opt'=>'post','op'=>'duogoods','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']));}" >编辑</a>
+                <a class="btn btn-default btn-sm" onclick="return confirm('此操作不可恢复，确认吗？'); return false;" href="{php echo $this->createWeburl('commentset', array('opt'=>'delete','op'=>'duogoods','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']));}">删除</a>
+                <a class="btn btn-default btn-sm" href="{php echo $this->createWeburl('commentset', array('id' => $item['id'], 'op'=>'evaluate','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']))}" >评价管理</a>
+            </td>
+            <td>
+                <input type="checkbox" name="csb"  value="{$item['id']}"/>
+            </td>
+        </tr>
+        {/loop}
+    </table>
+</form>
+{$pager}
+<script>
+$('#all').on('click',function(){
+    if (this.checked) {
+        $("input[name='csb']").prop("checked", true);
+    } else {
+        $("input[name='csb']").removeAttr("checked");
+    }
+});
+function delall(){
+    var id_arr = new Array();
+    $.each($("input[name='csb']"),function(){
+        if(this.checked){
+            id_arr.push($(this).val());
+        }
+    });
+   if(id_arr.length>0){
+    $.ajax({
+
+            url : "{php echo $this->createWebUrl('Commentset',['op' => 'batchdel'])}",
+
+            type:'post',
+
+            dataType:'json',
+
+            data:{
+                id_arr:id_arr,
+                type:'showProMore'
+            },
+            success:function (res) {
+
+                alert(res.message);
+       
+                if(res.code == 1){
+
+                    window.location.href="{php echo $this->createWebUrl('Commentset',['op' => 'duogoods','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']])}";
+
+                }
+
+            }
+
+        });
+
+
+
+   }else{
+       alert("您未选择删除对象");
+       return false;
+   }
+}
+$('.js-clip').each(function(){
+    util.clip(this, $(this).data('id'));
+});
+$("#filter").click(function(){
+    window.location.href = "{php echo $this->createWeburl('commentset', array('id' => $item['id'], 'opt' =>'display','op'=>'duogoods','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'page'=>$_GPC['page']))}" + "&sid=" + $('#sid').val() + '&skey=' + $('#skey').val();
+})
+</script>
+{/if}
+
+{if $opt == 'post'}
+<script type="text/javascript">
+
+    $(document).ready(function(){
+        var fx_uni = {$products['fx_uni']};
+        var commission_type = {$products['commission_type']};
+        if(fx_uni == '2'){
+            $('.nr').hide();
+        }else{
+            $('.nr').show();
+        }
+
+        if(commission_type == '1'){
+            $('.bfb').show()
+            $('.je').hide()
+        }else{
+            $('.je').show()
+            $('.bfb').hide()
+        }
+    })
+</script>
+<ul class="nav nav-tabs" style="margin-bottom: 20px">
+
+    {if $id}
+    <li {if $opt == 'post'}class="active"{/if}><a href="{php echo $this->createWeburl('commentset', array('opt'=>'post','op'=>'duogoods','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $id));}">基本信息</a></li>
+    {else}
+    <li {if $opt == 'post'}class="active"{/if}><a href="{php echo $this->createWeburl('commentset', array('opt'=>'post','op'=>'duogoods','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']));}">基本信息</a></li>
+    {/if}
+    {if $id}
+    <li {if $opt == 'types'}class="active"{/if}><a href="{php echo $this->createWeburl('commentset', array('opt'=>'types','op'=>'duogoods','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $id));}">规格/库存</a></li>
+    {/if}
+
+</ul>
+<form class="form-horizontal" action="" method="post">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">产品管理</h3>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">序号</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="num" id="num" value="{$products['num']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">序号越大越靠前</div>
+            </div>
+
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">所属栏目</label>
+                <div class="form-controls col-sm-5">
+                    <select name="cid" class="form-control">
+                        {loop $listAll $cateP}
+                        <option value="{$cateP['id']}" {if $cateP['id']==$products['cid']}selected{/if}>{if $cateP['cid'] == 0}{/if}{$cateP['name']}</option>
+                        {loop $cateP['data'] $cate}
+                        <option value="{$cate['id']}" {if $cate['id']==$products['cid']}selected{/if}>{if $cate['cid'] !== 0}&nbsp;&nbsp;|----{/if}{$cate['name']}</option>
+                        {/loop}
+                        {/loop}
+                    </select>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">选择所属栏目，不选为顶级</div>
+            </div>
+            <div class="form-group" id="catelists_sons" style="display: block;">
+                <label class="control-label col-sm-2" style="margin-right:45px">选择所属门店</label>
+                <div class="form-controls col-sm-5" id="sonscatas">
+                    <select name="stores[]" class="selectpicker form-control" multiple data-tick-icon="wb-star" data-icon-base="wb">
+                    {loop $stores $vi}
+                        <?php if(in_array($vi['id'], $stores_now)){?>
+                        <option value="{$vi['id']}" selected="selected">{$vi['title']}</option>
+                        <?php }else{?>
+                        <option value="{$vi['id']}" >{$vi['title']}</option>
+                        <?php }?>
+                    {/loop}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">推荐到横排</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="type_x" value="0" {if $products['type_x'] == '0'} checked{/if} />
+                        不推荐
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="type_x" value="1" {if $products['type_x'] == '1'} checked{/if} />
+                        推荐
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">推荐后会在首页横排区块显示</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">推荐到竖排</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="type_y" value="0" {if $products['type_y'] == '0'} checked{/if} />
+                        不推荐
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="type_y" value="1" {if $products['type_y'] == '1'} checked{/if} />
+                        推荐
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">推荐后会在首页竖排区块显示</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">推荐到首页栏目</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="type_i" value="0" {if $products['type_i'] == '0'} checked{/if} />
+                        不推荐
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="type_i" value="1" {if $products['type_i'] == '1'} checked{/if} />
+                        推荐
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">推荐后会在首页该栏目块显示</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">是否上架</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="is_sale" value="0" {if $products['is_sale'] == '0'} checked{/if} />
+                        上架
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="is_sale" value="1" {if $products['is_sale'] == '1'} checked{/if} />
+                       下架
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">商品上架后客户可以看见和购买</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">商品取货方式</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="kuaidi" value="0" {if $products}{if $products['kuaidi']=='0'} checked{/if}{/if} />
+                        快递
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="kuaidi" value="1" {if $products}{if $products['kuaidi']=='1'} checked{/if}{/if} />
+                        到店取货
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="kuaidi" value="2" {if $products}{if $products['kuaidi']=='2'} checked{/if}{else}checked{/if} />
+                        全部
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">客户取货方式(不选默认快递)</div>
+            </div>
+
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">标题</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="title" id="title" value="{$products['title']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">请填写标题</div>
+            </div>
+
+
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">抵用积分</label>
+                <div class="form-controls col-sm-5">
+                    <input type="number" min="0" name="score" id="score" value="{$products['score']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">设置最高抵用积分 <text style="color:#6671E4"><b>
+                {if $rechargeConf}当前{$rechargeConf['scroe']}积分={$rechargeConf['money']}元{else}当前100积分=1元{/if}</b></text></div>
+            </div>
+
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">买送积分</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="scoreback" id="scoreback" value="{$products['scoreback']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off" onkeyup="return checkeds()">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">填数字或百分制，如10、10%。填10时，买一件返10积分；填10%时，返与购买总价的10%等值的积分，比如买10元东西，1元=10积分，则返10积分</div>
+            </div>
+
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">市场价</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" onkeyup='clearNoNum(this)' name="market_price" id="market_price" value="{$products['market_price']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty" placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">浏览量</label>
+                <div class="form-controls col-sm-5">
+                    <input type="number" min='0' name="hits" id="hits" value="{$products['hits']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">缩略图</label>
+
+                <div class="form-controls col-sm-5">
+
+                    {php echo tpl_form_field_image('thumb', $products['thumb'])}
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">最宽750px，高度随意</div>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">分享图</label>
+
+                <div class="form-controls col-sm-5">
+
+                    {php echo tpl_form_field_image('shareimg', $products['shareimg'])}
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+            </div>
+
+
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">简介</label>
+                <div class="form-controls col-sm-5">
+                    <textarea class="form-control" rows="3" name="descs" placeholder="">{$products['desc']}</textarea>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">请输入简介</div>
+            </div>
+
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">组图</label>
+                <div class="form-controls col-sm-5">
+                    {php echo tpl_form_field_multi_image('imgtext',$products['imgtext']);}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">标签</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="explains" id="explains" value="{$products['labels']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">多个标签请用英文","隔开</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">产品详情</label>
+                <div class="form-controls col-sm-8">
+                    {php echo tpl_ueditor('product_txt', $products['product_txt']);}
+                    <div class="help-block">请输入详细介绍</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">规格参数</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px;margin-top: 7px;">
+                        <input type="radio" name="is_spec" value="1" {if $products['is_spec'] == '1'}checked{/if}/>
+                        开启
+                    </label>
+                    <label style="margin-right: 20px;margin-top: 7px;">
+                        <input type="radio" name="is_spec" value="0" {if $products['is_spec']}{if $products['is_spec'] == '0'}checked{/if}{else}checked{/if}/>
+                        关闭
+                    </label>
+                </div>
+            </div>
+            <div class="form-group spec" style="display: {if $products['is_spec']==1}block{else}none{/if};">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">规格参数</label>
+                <div class="form-controls col-sm-8">
+                    {php echo tpl_ueditor('spec_con', $products['spec_con']);}
+                    <div class="help-block">请输入规格参数</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">服务保障</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px;margin-top: 7px;">
+                        <input type="radio" name="is_server" value="1" {if $products['is_server'] == '1'}checked{/if}/>
+                        开启
+                    </label>
+                    <label style="margin-right: 20px;margin-top: 7px;">
+                        <input type="radio" name="is_server" value="0" {if $products['is_server']}{if $products['is_server'] == '0'}checked{/if}{else}checked{/if}/>
+                        关闭
+                    </label>
+                </div>
+            </div>
+            <div class="form-group server" style="display: {if $products['is_server']==1}block{else}none{/if};">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">服务保障</label>
+                <div class="form-controls col-sm-8">
+                    {php echo tpl_ueditor('server_con', $products['server_con']);}
+                    <div class="help-block">请输入服务保障内容</div>
+                </div>
+            </div>
+            <!-- 会员卡设置 -->
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">会员购买设置</h3>
+                </div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label for="" class="control-label col-sm-2" style="margin-right: 45px">开启单独会员购买设置</label>
+                        <div class="form-controls col-sm-5" style="padding-top: 7px">
+                            <label style="margin-right: 20px">
+                                <input type="radio" name="set1" value="1" {if $products}{if $products['vipconfig']}{if $products['vipconfig']['set1']==1}checked=checked{/if}{/if}{/if}/>
+                            开启
+                            </label>
+                            <label style="margin-right: 20px">
+                                <input type="radio" name="set1" value="0" {if $products}{if $products['vipconfig']}{if $products['vipconfig']['set1']==0}checked=checked{/if}{else}checked=checked{/if}{else}checked=checked{/if}/>
+                            关闭
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="" class="control-label col-sm-2" style="margin-right: 45px">会员购买设置</label>
+                        <div class="form-controls col-sm-5" style="padding-top: 7px">
+                            <label style="margin-right: 20px">
+                                <input type="radio" name="set2" value="1" {if $products}{if $products['vipconfig']}{if $products['vipconfig']['set2']==1}checked=checked{/if}{/if}{/if}/>
+                            开启
+                            </label>
+                            <label style="margin-right: 20px">
+                                <input type="radio" name="set2" value="0" {if $products}{if $products['vipconfig']}{if $products['vipconfig']['set2']==0}checked=checked{/if}{else}checked=checked{/if}{else}checked=checked{/if}/>
+                            关闭
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group set3" style="display: {if $products['vipconfig']['set2']==1}block{else}none{/if};">
+                        <label for="" class="control-label col-sm-2" style="margin-right: 45px">购买等级</label>
+                        <div class="form-controls col-sm-2" style="padding-top: 7px">
+                        <select name="set3" id="set3" class="form-control" style="width: 200px;display: inline-block;font-size: 12px">
+                            {loop $grade_arr $i}
+                                <option value="{$i['grade']}" {if $products['vipconfig']['set3'] == $i['grade']}selected='selected'{/if}>{$i['name']}({$i['grade']}级)</option>
+                            {/loop}
+                        </select>
+                        </div>
+                        <div class="col-sm-1"></div>
+                        <div class="form-controls col-sm-3 help-block">购买开始等级,如大众会员(1级)，即1,2,3,4..级都可购买</div>
+                    </div>
+                    <div class="form-group">
+
+                        <label for="" class="control-label col-sm-2" style="margin-right:45px">会员折扣</label>
+                        <div class="form-controls col-sm-5" style="margin-top: 5px">
+
+                            <label style="margin-right: 20px">
+
+                                <input type="radio" name="discount_status" {if $products['discount_status'] == 0} checked{/if} value="0"/>
+
+                                关闭
+
+                            </label>
+
+                            <label style="margin-right: 20px">
+
+                                <input type="radio" name="discount_status" {if $products['discount_status'] == 1} checked{/if} value="1" />
+
+                                默认设置
+
+                            </label>
+                            <label style="margin-right: 20px">
+
+                                <input type="radio" name="discount_status" {if $products['discount_status'] == 2} checked{/if} value="2" />
+
+                                单独设置
+
+                            </label>
+
+                        </div>
+
+                    </div>
+                          <style>
+                        .biaotao{   text-align: center;
+                                    padding: 8px 0;
+                                    font-weight: bold;
+                                }
+
+                        .tds{
+                            text-align: center;
+                            padding: 8px 0;
+                        }
+                        .shukdd{
+                            width: 100px;
+                            padding: 4px 5px;
+                            border: 1px solid #dedede;
+                            text-align: center;
+                        }
+                    </style>
+                    <div class="form-group" id="discount" style="display: {if $products['discount_status'] == 2}{else}none{/if};">
+
+                        <label for="" class="control-label col-sm-2" style="margin-right:45px">折扣</label>
+
+                        <div class="input-group col-sm-9">
+
+                            <table cellpadding="0" cellspacing="0" style="border:1px solid #dedede" border="1px" width="100%" id="tabb">
+                                <?php if(count($grade_arr) > 5){?>
+                                    <?php $n = ceil(count($grade_arr) / 5);for($s=1;$s<=$n;$s++){?>
+                                    <tr>
+                                        <td class='biaotao'>会员等级</td>
+                                        {loop $grade_arr $k $v}
+                                            {if ($s-1)*5 <= $k && $k < 5 * $s}
+                                            <td class='tds'>{$v['name']}</td>
+                                            {/if}
+                                        {/loop}
+                                    </tr>
+                                    <tr>
+                                        <td class="biaotao">折扣</td>
+                                        {loop $grade_arr $k $v}
+                                            {if ($s-1)*5 <= $k && $k < 5 * $s}
+                                                <td class="tds"><input type='text' class='shukdd' name='valarr[]' onkeyup="clearNoNum(this)" value="{$v['discount']}"></td>
+                                            {/if}
+                                        {/loop}
+                                    </tr>
+                                <?php }}else{?>
+                                <tr>
+                                    <td class='biaotao'>会员等级</td>
+                                    {loop $grade_arr $v}
+                                        <td class='tds'>{$v['name']}</td>
+                                    {/loop}
+                                </tr>
+                                <tr>
+                                    <td class="biaotao">折扣</td>
+                                    {loop $grade_arr $v}
+                                        <td class="tds"><input type='text' class='shukdd' name='valarr[]' onkeyup="clearNoNum(this)" value="{$v['discount']}"></td>
+                                    {/loop}
+                                </tr>
+                                <?php }?>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 分销设置 -->
+            <div class="panel panel-default">
+            	<div class="panel-heading">
+            		<h3 class="panel-title">分销设置</h3>
+            	</div>
+            	<div class="panel-body">
+            		<div class="form-group">
+            			<label for="" class="control-label col-sm-2" style="margin-right: 45px">开启单独分销设置</label>
+            			<div class="form-controls col-sm-5" style="padding-top: 7px">
+    	                    <label style="margin-right: 20px">
+    	                        <input type="radio" name="fx_uni" value="1" {if $products['fx_uni'] == '1'}checked{/if}/>
+    	                        开启
+    	                    </label>
+    	                    <label style="margin-right: 20px">
+    	                        <input type="radio" name="fx_uni" value="2" {if $products['fx_uni']}{if $products['fx_uni'] == '2'}checked{/if}{else}checked{/if}/>
+    	                        关闭
+    	                    </label>
+    	                </div>
+            		</div>
+            		<div class="form-group nr">
+            			<label for="" class="control-label col-sm-2" style="margin-right: 45px">分销佣金类型</label>
+            			<div class="form-controls col-sm-5" style="padding-top: 7px">
+    	                    <label style="margin-right: 20px">
+    	                        <input type="radio" name="commission_type" value="1" {if $products['commission_type']}{if $products['commission_type'] == '1'}checked{/if}{else}checked{/if}/>
+    	                        百分比
+    	                    </label>
+    	                    <label style="margin-right: 20px">
+    	                        <input type="radio" name="commission_type" value="2" {if $products['commission_type'] == '2'}checked{/if}/>
+    	                        固定金额
+    	                    </label>
+    	                </div>
+            		</div>
+            		<div class="form-group nr">
+    	                <label for="" class="control-label col-sm-2" style="margin-right:45px">单独分销设置</label>
+    	                <div class="form-controls col-sm-3">
+    	                    <div class="input-group">
+    	                      <span class="input-group-addon">一级佣金</span>
+    	                      <input type="number" class="form-control" name="commission_one" value="{$products['commission_one']}">
+    	                      <span class="input-group-addon bfb">%</span>
+    	                      <span class="input-group-addon je" style="display: none;">元</span>
+    	                    </div>
+    	                </div>
+    	            </div>
+    	            <div class="form-group nr">
+    	                <label for="" class="control-label col-sm-2" style="margin-right:45px"></label>
+    	                <div class="form-controls col-sm-3">
+    	                    <div class="input-group">
+    	                    	<span class="input-group-addon">二级佣金</span>
+    	                      <input type="number" class="form-control" name="commission_two" value="{$products['commission_two']}">
+    	                      <span class="input-group-addon bfb">%</span>
+    	                      <span class="input-group-addon je" style="display: none;">元</span>
+    	                    </div>
+    	                </div>
+    	            </div>
+    	            <div class="form-group nr">
+    	                <label for="" class="control-label col-sm-2" style="margin-right:45px"></label>
+    	                <div class="form-controls col-sm-3">
+    	                    <div class="input-group">
+    	                    	<span class="input-group-addon">三级佣金</span>
+    	                      <input type="number" class="form-control" name="commission_three" value="{$products['commission_three']}">
+    	                      <span class="input-group-addon bfb">%</span>
+    	                      <span class="input-group-addon je" style="display: none;">元</span>
+    	                    </div>
+    	                </div>
+    	            </div>
+    	            <div class="form-group">
+    	            	<label for="" class="control-label col-sm-2" style="margin-right:45px"></label>
+    	            	<div class="form-controls col-sm-3">分销层级的优先级高于商品单独的分销比例，例：层级只开二级分销，那商品的单独分销比例只有二级有效</div>
+    	            </div>
+            	</div>
+            </div>
+        <script type="text/javascript">
+            $("input[name='discount_status']").each(function(){
+                $(this).click(function(){
+                    if($(this).val()==2){
+                        $("#discount").show();
+                    }else{
+                        $("#discount").hide();
+                    }
+                })
+            })
+
+        	$('input[name="fx_uni"]').each(function(){
+        		$(this).click(function(){
+        			if($(this).val()==1){
+        				$('.nr').show()
+        			}else{
+        				$('.nr').hide()
+        			}
+        		})
+        	})
+        	$('input[name="commission_type"]').each(function(){
+        		$(this).click(function(){
+        			if($(this).val()==1){
+        				$('.bfb').show()
+        				$('.je').hide()
+        			}else{
+        				$('.bfb').hide()
+        				$('.je').show()
+        			}
+        		})
+        	})
+            $('input[name="is_spec"]').each(function(){
+        		$(this).click(function(){
+        			if($(this).val()==1){
+        				$('.spec').show()
+        			}else{
+        				$('.spec').hide()
+        			}
+        		})
+        	})
+            $('input[name="is_server"]').each(function(){
+        		$(this).click(function(){
+        			if($(this).val()==1){
+        				$('.server').show()
+        			}else{
+        				$('.server').hide()
+        			}
+        		})
+        	})
+        </script>
+        <!-- 分销设置 -->
+            <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">好友点击送积分</h3>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">是否启用规则</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="get_share_gz" value="1" {if $products['get_share_gz'] == '1'} checked{/if} />
+                        开启
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="get_share_gz" value="2" {if $products['get_share_gz'] == '2'} checked{/if} />
+                        关闭
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">获取积分</label>
+                <div class="form-controls col-sm-2">
+                    <div class="input-group">
+                      <input type="text" class="form-control" name="get_share_score" value="{$products['get_share_score']}">
+                      <span class="input-group-addon">积分/次</span>
+                    </div>
+                </div>
+                <div class="col-sm-4"></div>
+                <div class="form-controls col-sm-3 help-block">他人点击分享一次获得的积分</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">获取积分限制</label>
+                <div class="form-controls col-sm-2">
+                    <div class="input-group">
+                      <input type="text" class="form-control" name="get_share_num" value="{$products['get_share_num']}">
+                      <span class="input-group-addon">次/每天</span>
+                    </div>
+                </div>
+                <div class="col-sm-4"></div>
+                <div class="form-controls col-sm-3 help-block">他人每日点击分享获取积分次数限制</div>
+            </div>
+        </div>
+    </div>
+    
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-sm-12">
+            <input name="token" type="hidden" value="{$_W['token']}" />
+            <input type="submit" class="btn btn-primary col-lg-3" name="submit" value="保存商品基础信息" />
+            <span style="margin-left:20px;color: #f00;line-height: 34px;">下一步需要设置规格、库存信息</span>
+        </div>
+    </div>
+</form>
+{/if}
+<script>
+    $('input[name="set2"]').each(function(){
+        $(this).click(function(){
+            if($(this).val()==1){
+                $('.set3').show()
+            }else{
+                $('.set3').hide()
+            }
+        })
+    })
+	function checkeds(){
+		var reg = /^[0-9]+$/
+		var str = $("#scoreback").val();
+		if(str.length >= 2){
+			if(!reg.test(str)){
+				if(str.indexOf("%") != -1){
+				 	if(str.charAt(str.length-1,1) != "%"){
+						alert("输入不合法");
+						$("#scoreback").val('')
+					}
+				}else{
+					alert("输入不合法");
+					$("#scoreback").val('')
+				}
+			}
+		}else{
+			if(!reg.test(str)){
+				alert("输入不合法");
+				$("#scoreback").val('')
+			}
+		}
+	}
+</script>
+
+{if $opt == 'types'}
+<ul class="nav nav-tabs" style="margin-bottom: 20px">
+
+    {if $id}
+    <li {if $opt == 'post'}class="active"{/if}><a href="{php echo $this->createWeburl('commentset', array('opt'=>'post','op'=>'duogoods','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $id));}">基本信息</a></li>
+    {else}
+    <li {if $opt == 'post'}class="active"{/if}><a href="{php echo $this->createWeburl('commentset', array('opt'=>'post','op'=>'duogoods','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']));}">基本信息</a></li>
+    {/if}
+    {if $id}
+    <li {if $opt == 'types'}class="active"{/if}><a href="{php echo $this->createWeburl('commentset', array('opt'=>'types','op'=>'duogoods','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $id));}">规格/库存</a></li>
+    {/if}
+
+</ul>
+<style type="text/css">
+    .ggz{
+        border-left: 1px solid #dedede;
+        border-top: 1px solid #dedede;
+        border-bottom: 1px solid #dedede;
+        text-align: center !important;
+        height: 34px;
+        line-height: 34px;
+        padding-top: 0 !important;
+        background-color: #eeeeee;
+        width: 60px;
+    }
+    .ggzbtn{
+        border-right: 1px solid #dedede;
+        border-top: 1px solid #dedede;
+        border-bottom: 1px solid #dedede;
+        text-align: center !important;
+        height: 34px;
+        line-height: 34px;
+        padding-top: 0 !important;
+        background-color: #eeeeee;
+        position: absolute;
+        width: 60px;
+        cursor:pointer;
+        right: 0;
+        top: 0;
+    }
+    .dels{
+        position: absolute;
+        right: 10px;
+        top: 7px;
+        cursor:pointer;
+    }
+
+    .waic1{
+        border:1px solid #dedede; margin-top:20px; padding:10px;
+    }
+    .waic2{
+        background-color:#eeeeee;; line-height:30px; padding:0 10px; position:relative;
+        height: 30px;
+    }
+    .waic3{
+        position: relative; margin-top:10px;
+    }
+    .ggzbtn3{
+        border-right: 1px solid #dedede;
+        border-top: 1px solid #dedede;
+        border-bottom: 1px solid #dedede;
+        text-align: center !important;
+        height: 34px;
+        line-height: 34px;
+        padding-top: 0 !important;
+        background-color: #eeeeee;
+        position: absolute;
+        width: 60px;
+        cursor:pointer;
+        right:0px;
+        top: 0;
+    }
+    .yandd{
+        display: inline-block;
+        border: 1px solid #dedede;
+        padding: 3px 5px;
+        margin-top: 10px;
+        margin-right: 5px;
+    }
+    .ssnd{
+        cursor: pointer;
+        padding: 0 4px;
+        color: #fff;
+        background: #F03150;
+        height: 14px;
+        line-height: 12px;
+        font-size: 12px;
+        float: right;
+        margin: 4px 0 0 4px;
+    }
+    .biaotou{
+        text-align: center;
+        padding: 8px 0;
+        font-weight: bold;
+    }
+    .tds{
+        text-align: center;
+        padding: 8px 0;
+    }
+    .shukdd{
+        width: 100px;
+        padding: 4px 5px;
+        border: 1px solid #dedede;
+    }
+    .sddds{
+        position: relative;
+    }
+    .ggsx{
+        border: 1px solid #dedede;
+        width: 60px;
+        text-align: center;
+        padding: 2px;
+        position: absolute;
+        right: 5px;
+        top: 6px;
+        cursor:pointer;
+    }
+    .ggzbcaa{
+        position: relative;
+        height: 30px;
+        margin-top: 10px;
+    }
+    .ggzbc{
+        border: 1px solid #dedede;
+        background-color: #eeeeee;
+        width: 120px;
+        padding: 5px;
+        position: absolute;
+        left: 50%;
+        margin-left: -60px;
+        text-align: center;
+        cursor:pointer;
+    }
+    .sdhd{
+        line-height: 35px;
+    }
+    .xuzndt{
+        border: 1px solid #dedede;
+        width: 40%;
+        display: inline-block;
+        text-align: center;
+        padding: 3px 0px;
+        cursor:pointer;
+    }
+    .xuzndd{
+        width: 50px;
+        max-height: 50px;
+        margin-top: 5px;
+        margin-left: 10%;
+    }
+    .xuzndd img{
+        width: 100%;
+        max-height: 50px;
+    }
+
+</style>
+<form class="form-horizontal" action="" method="post" onsubmit="return check();">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">产品管理</h3>
+        </div>
+        <div class="panel-body">
+
+
+
+            <!-- <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">产品库存</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="nokc" id="nokc" value="{$proarr['kc']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off" {if $products['types']==2}readonly{/if}>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">产品价格</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="noprice" id="noprice" value="{$proarr['price']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off" {if $products['types']==2}readonly{/if}>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">产品图片</label>
+                <div class="form-controls col-sm-5">
+                    <div class='xuzndt' style="width:50px; display: inline-block;" name='imgurl999' id="cpccz" onclick="showImageDialog(this)">选择</div>
+                    <div class='xuzndt' style="width:50px; display: inline-block;" name='imgurl999' id="cpcss" onclick="delimage(this)">删除</div>
+                    <input type="hidden" name="nothumb" id="imgyc999" value="{$proarr['thumb']}">
+                    <div class='xuzndd' id='imgxs999'>
+                        {if $proarr['thumb']}
+                        <img src="{$proarr['thumb']}">
+                        {/if}
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">是否使用规格</label>
+                <div class="form-controls col-sm-5">
+                    <input type="hidden" id="ischeck" name="ischeck" value="{$products['types']}">
+                    <input type="checkbox" onchange="setgg(this)" name="guig" id="guig" value="{$products['types']}" style="width: 15px; margin-top:0" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off" {if $products['types']==2}checked{/if}>
+                </div>
+            </div>
+ -->
+
+            <input type="hidden" id="ischeck" name="ischeck" value="2">
+            <div id="jtgg" >
+            <div class="class="form-group"">
+            <label for="" class="control-label col-sm-2" style="margin-right:33px">规格组和规格值</label>
+            <div class="form-controls col-sm-6" id="izggz">
+            <label for="" class="control-label col-sm-2 ggz">规格组</label>
+            <input type="text" id="ggzval" placeholder="如颜色、尺码、套餐"  style="width:298px" class="form-control ng-pristine ng-untouched ng-valid ng-empty">
+            <label for="" class="control-label col-sm-2 ggzbtn" onclick="ggzset()">添加</label>
+        </div>
+        <div class="form-controls col-sm-6 sdhd" id="izggzw" {if $counttypes < 3}style="display:none;"{/if}>
+        最多只可添加3个规格组
+    </div>
+    <div class="form-controls col-sm-6" id="izggzwval" style="margin-left:172px">
+
+
+
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+
+    <div class="panel panel-default" id="ggzs" >
+    <div class="panel-heading sddds">
+        <h3 class="panel-title">商品列表<span style="color: #f00;padding-left: 20px">[请先添加规则值，再填写库存，价格等]</span></h3>
+
+    </div>
+
+    <div style="padding:10px">
+        <table cellpadding="0" cellspacing="0" style="border:1px solid #dedede" border="1px" width="100%" id="tabb">
+
+        </table>
+
+    </div>
+    </div>
+
+    <!-- 规格组长度 -->
+    <input type="hidden" id="typelen" name="typelen">
+    <!-- 规格组 -->
+    <input type="hidden" id="typesarr" name="typesarr">
+    <!-- 所有字商品的数据 -->
+    <input type="hidden" id="biaogedata" name="biaogedata">
+
+
+    <div class="form-group">
+        <div class="col-sm-12">
+            <input name="token" type="hidden" value="{$_W['token']}" />
+            <input type="submit" class="btn btn-primary col-lg-1" name="submit" value="保存" />
+        </div>
+    </div>
+
+</form>
+
+<script type="text/javascript">
+    var datajson = [];
+    datajson = $.parseJSON('{php echo json_encode($datajson);}');
+    var datacounts = 0;
+    var typessy = 2;
+
+    {if $id}
+    $(function(){
+        if(JSON.stringify(datajson) != '[]' || datajson.length != 0){
+            ggzhtml();
+        }
+        datasets();
+    })
+    {/if}
+
+        //是否使用规格
+        function setgg(me){
+            var flag = $(me).is(":checked");
+            if(flag){
+                typessy = 1; //使用规格
+                $("#nokc").val(0);
+                $("#nokc").attr("readonly","true");
+                $("#noprice").attr("readonly","true");
+                $("#cpccz").removeAttr("onclick");
+                $("#cpcss").removeAttr("onclick");
+
+
+                $("#jtgg").show();
+                $("#ggzs").show();
+                $("#ischeck").val(2);
+            }else{
+                typessy=2;
+                $("#nokc").val(0);
+                $("#nokc").removeAttr("readonly");
+                $("#noprice").val(0);
+                $("#noprice").removeAttr("readonly");
+                $("#cpccz").attr("onclick","showImageDialog(this)");
+                $("#cpcss").attr("onclick","delimage(this)");
+
+
+                $("#jtgg").hide();
+                $("#ggzs").hide();
+                $("#ischeck").val(1);
+            }
+        }
+
+        var ggznum = 0;  //控制显示可输入规格组input
+
+        // 规格组数组
+        {if $counttypes > 0} //规格组数量 
+            var ggzarr = [];
+            {loop $typesarr $item}  //规格组 ggzarr  例：颜色''
+                ggznum++;
+                ggzarr.push("{$item}");
+            {/loop}
+            datacounts = 1;
+        {else}
+            var ggzarr = [];
+            datacounts = 0;
+        {/if}
+        if(ggzarr[0] == ''){
+            ggzarr = [];
+        }
+
+        //规格组json
+        {if $counttypes > 0}
+            var ggzjson = {};
+            {loop $typesjson $aa $res}
+                var carr = [];
+                {loop $res $rec}
+                carr.push("{$rec}");
+                {/loop}
+            ggzjson["{$aa}"] = carr;
+            {/loop}
+        {else}
+            var ggzjson = {};
+        {/if}
+
+
+        //增加规格组
+        function ggzset(){
+            datacounts = 0;
+            var ggzval = $("#ggzval").val();
+            if(ggzval){
+                ggznum++;
+                if(ggznum>3){
+                    $("#izggz").hide();
+                    $("#izggzw").show();
+                    ggznum--;
+                    return false;
+                }
+                ggzarr.push(ggzval);  //追加规格数组
+
+                ggzjson[ggzval] = [];
+
+                $("#ggzval").val("");
+                ggzhtml();
+            }else{
+                alert("请先设置规格组名！")
+            }
+
+
+        }
+
+        // 增加规格组操作
+        function ggzhtml(){
+            var ggzhtml = "";
+
+            for(var i=0; i<ggzarr.length; i++){
+                var jsonarr = "";
+                var key = ggzarr[i];
+                var arr = ggzjson[key];
+                for(var j=0; j<arr.length; j++){
+                    jsonarr +=  "<div class='yandd'>"+
+                        "<span>"+arr[j]+"</span>"+
+                        "<span class='ssnd' onclick='delbq("+j+","+i+")'>x</span>"+
+                        "</div>";
+                }
+
+                ggzhtml += "<div class='waic1'>"+
+                    "<div class='waic2'>"+
+                    ggzarr[i]+
+                    "<div class='leix5 wi wi-delete dels' onclick='del("+i+")'>"+"</div>"+
+                    "</div>"+
+                    "<div class='waic4' id='ggzid"+i+"'>"+
+                    jsonarr+
+                    "</div>"+
+                    "<div class='waic3'>"+
+                    "<label for='' class='control-label col-sm-2 ggz'>规格值</label>"+
+                    "<input type='text' id='ggzval"+i+"' placeholder='如红色、白色'  style='width:276px' class='form-control ng-pristine ng-untouched ng-valid ng-empty'>"+
+                    "<label for='' class='control-label col-sm-2 ggzbtn3' onclick='ggzqd("+i+")'>确定</label>"+
+                    "</div>"+
+                    "</div>";
+            }
+            $("#izggzwval").html(ggzhtml);
+        }
+
+        // 删除规格组
+        function del(i){
+            datacounts = 0;
+            ggznum--;
+            $("#izggz").show();
+            $("#izggzw").hide();
+
+            var keys = ggzarr[i];
+            delete ggzjson[keys];
+            ggzarr.splice(i,1);
+            ggzhtml();
+            datasets();
+        }
+
+        // 增加规格值
+        function ggzqd(val){
+            datacounts = 1;
+
+            var arr = [];
+
+            var keys = ggzarr[val];
+            var ggz = $("#ggzval"+val).val();
+            console.log(ggzarr[val]);
+            if(!ggz){
+                alert("请输入对应的规格值");
+            }else{
+                arr = ggzjson[keys];
+
+                if(arr.indexOf(ggz) >= 0){
+                    alert("不能重复添加规格值！");
+                    $("#ggzval"+val).val("");
+                    return false;
+                }
+
+
+
+                arr.push(ggz);
+                
+                var strhtml = "";
+                for(var i=0; i<arr.length; i++){
+                    strhtml += "<div class='yandd'>"+
+                        "<span>"+arr[i]+"</span>"+
+                        "<span class='ssnd' onclick='delbq("+i+","+val+")'>x</span>"+
+                        "</div>";
+                }
+                $("#ggzid"+val).html(strhtml);
+                $("#ggzval"+val).val("");
+                ggzjson[keys] = arr;
+                console.log(arr);
+                //设置datajson的新添加的值
+
+                datasets();
+            }
+            
+        }
+
+        // 删除标签功能
+        function delbq(i,val){
+            var keys = ggzarr[val];
+            var arr = ggzjson[keys];
+            arr.splice(i,1);
+
+            var strhtml = "";
+            for(var i=0; i<arr.length; i++){
+                strhtml += "<div class='yandd'>"+
+                    "<span>"+arr[i]+"</span>"+
+                    "<span class='ssnd' onclick='delbq("+i+","+val+")'>x</span>"+
+                    "</div>";
+            }
+            $("#ggzid"+val).html(strhtml);
+            $("#ggzval"+val).val("");
+
+            ggzjson[keys] = arr;
+            datasets();
+        }
+
+        var jg = ["库存","价格","货号","虚拟销量","真实销量","规格图片"];
+        var allarrone = []; //构建多重json
+        var tablearr = [];  //构建表格头部
+        // 构建规格
+        function datasets(){
+
+            allarrone = []; //构建多重json
+            tablearr = [];  //构建表格头部
+            $("#tabb").html("");
+            //判断规格组的值有没有都设置
+            var flag = 1;
+            for(var i=0; i<ggzarr.length; i++){
+                if(ggzjson[ggzarr[i]].length == 0){
+                    alert(ggzarr[i]+"规格组没有设置规格值！");
+                    flag = 0;
+                    break;
+                }
+            }
+            console.log(11111111111);
+            console.log(ggzarr);
+
+            if(flag == 0){
+                return false;
+            }else{
+                //构建多重json一条数据
+                if(ggzarr.length == 1){
+                    var sz1 = ggzjson[ggzarr[0]];
+
+                    //构建表格
+                    tablearr.push(ggzarr[0]);
+                    tablearr = tablearr.concat(jg);
+                    var wzdata = [];
+                    for(var i=0; i<sz1.length; i++){
+                        var datakey = sz1[i];
+                        if(datacounts == 1){
+
+                            if(!datajson){
+                                var jsondata = {};
+                                jsondata[ggzarr[0]] = sz1[i];
+                                jsondata["库存"] = 0;
+                                jsondata["价格"] = 0;
+                                jsondata["货号"] = 0;
+                                jsondata["虚拟销量"] = 0;
+                                jsondata['真实销量'] = 0;
+                                jsondata["规格图片"] = "";
+                                allarrone.push(jsondata);
+
+                            }else{
+                                $.each(datajson,function (ks,vs) {
+                                    wzdata.push(ks);
+                                });
+                                if(wzdata.indexOf(datakey) == -1){
+                                    wzdata.push(datakey);
+                                    var jsondata = {};
+                                    jsondata[ggzarr[0]] = sz1[i];
+
+                                    jsondata["库存"] = 0;
+                                    jsondata["价格"] = 0;
+                                    jsondata["货号"] = 0;
+                                    jsondata["虚拟销量"] = 0;
+                                    jsondata['真实销量'] = 0;
+                                    jsondata["规格图片"] = "";
+                                    allarrone.push(jsondata);
+                                }
+
+                                $.each(datajson,function (kk,vv) {
+                                    wzdata.push(kk);
+                                    if(kk == datakey){
+                                        var aa = vv;
+                                        var newarr = aa.split(",");
+                                        var jsondata = {};
+                                        jsondata[ggzarr[0]] = sz1[i];
+
+                                        jsondata["库存"] = newarr[0];
+                                        jsondata["价格"] = newarr[1];
+                                        jsondata["货号"] = newarr[2];
+                                        jsondata["虚拟销量"] = newarr[3];
+                                        jsondata['真实销量'] = newarr[4];
+                                        jsondata["规格图片"] = newarr[5];
+
+                                        allarrone.push(jsondata);
+                                    }else{
+                                        if(wzdata.indexOf(datakey) == -1){
+                                            wzdata.push(datakey);
+                                            var jsondata = {};
+                                            jsondata[ggzarr[0]] = sz1[i];
+
+                                            jsondata["库存"] = 0;
+                                            jsondata["价格"] = 0;
+                                            jsondata["货号"] = 0;
+                                            jsondata["虚拟销量"] = 0;
+                                            jsondata['真实销量'] = 0;
+                                            jsondata["规格图片"] = "";
+                                            allarrone.push(jsondata);
+                                        }
+                                    }
+                                });
+                            }
+                        }else{
+                            var jsondata = {};
+                            jsondata[ggzarr[0]] = sz1[i];
+                            jsondata["库存"] = 0;
+                            jsondata["价格"] = 0;
+                            jsondata["货号"] = 0;
+                            jsondata["虚拟销量"] = 0;
+                            jsondata['真实销量'] = 0;
+                            jsondata["规格图片"] = "";
+                            allarrone.push(jsondata);
+                        }
+
+                    }
+                }
+                //构建多重json二条数据
+                if(ggzarr.length == 2){
+                    var sz1 = ggzjson[ggzarr[0]];
+                    var sz2 = ggzjson[ggzarr[1]];
+
+
+                    //构建表格
+                    tablearr.push(ggzarr[0]);
+                    tablearr.push(ggzarr[1]);
+                    tablearr = tablearr.concat(jg);
+
+                    var wzdata = [];
+
+
+
+                    for(var i=0; i<sz1.length; i++){
+                        for(var j=0; j<sz2.length; j++){
+
+                            var datakey = sz1[i]+sz2[j];
+                            if(datacounts == 1){
+                                if(!datajson){
+                                    var jsondata = {};
+                                    jsondata[ggzarr[0]] = sz1[i];
+                                    jsondata[ggzarr[1]] = sz2[j];
+                                    jsondata["库存"] = 0;
+                                    jsondata["价格"] = 0;
+                                    jsondata["货号"] = 0;
+                                    jsondata["虚拟销量"] = 0;
+                                    jsondata['真实销量'] = 0;
+                                    jsondata["规格图片"] = "";
+                                    allarrone.push(jsondata);
+                                }else{
+                                    $.each(datajson,function (ks,vs) {
+                                        wzdata.push(ks);
+                                    });
+
+                                    if(wzdata.indexOf(datakey) == -1){
+                                        wzdata.push(datakey);
+                                        var jsondata = {};
+                                        jsondata[ggzarr[0]] = sz1[i];
+                                        jsondata[ggzarr[1]] = sz2[j];
+
+                                        jsondata["库存"] = 0;
+                                        jsondata["价格"] = 0;
+                                        jsondata["货号"] = 0;
+                                        jsondata["虚拟销量"] = 0;
+                                        jsondata['真实销量'] = 0;
+                                        jsondata["规格图片"] = "";
+                                        allarrone.push(jsondata);
+                                    }
+
+                                    $.each(datajson,function (kk,vv) {
+                                        if(kk == datakey){
+                                            var aa = vv;
+                                            var newarr = aa.split(",");
+                                            var jsondata = {};
+                                            jsondata[ggzarr[0]] = sz1[i];
+                                            jsondata[ggzarr[1]] = sz2[j];
+
+                                            jsondata["库存"] = newarr[0];
+                                            jsondata["价格"] = newarr[1];
+                                            jsondata["货号"] = newarr[2];
+                                            jsondata["虚拟销量"] = newarr[3];
+                                            jsondata['真实销量'] = newarr[4];
+                                            jsondata["规格图片"] = newarr[5];
+                                            allarrone.push(jsondata);
+                                        }else{
+                                            if(wzdata.indexOf(datakey) == -1){
+                                                wzdata.push(datakey);
+                                                var jsondata = {};
+                                                jsondata[ggzarr[0]] = sz1[i];
+                                                jsondata[ggzarr[1]] = sz2[j];
+
+                                                jsondata["库存"] = 0;
+                                                jsondata["价格"] = 0;
+                                                jsondata["货号"] = 0;
+                                                jsondata["虚拟销量"] = 0;
+                                                jsondata['真实销量'] = 0;
+                                                jsondata["规格图片"] = "";
+                                                allarrone.push(jsondata);
+                                            }
+                                        }
+                                    });
+                                }
+
+                            }else{
+                                var jsondata = {};
+                                jsondata[ggzarr[0]] = sz1[i];
+                                jsondata[ggzarr[1]] = sz2[j];
+                                jsondata["库存"] = 0;
+                                jsondata["价格"] = 0;
+                                jsondata["货号"] = 0;
+                                jsondata["虚拟销量"] = 0;
+                                jsondata['真实销量'] = 0;
+                                jsondata["规格图片"] = "";
+                                allarrone.push(jsondata);
+                            }
+
+                        }
+                    }
+
+
+                }
+                //构建多重json三条数据
+                if(ggzarr.length == 3){
+                    var sz1 = ggzjson[ggzarr[0]];
+                    var sz2 = ggzjson[ggzarr[1]];
+                    var sz3 = ggzjson[ggzarr[2]];
+
+                    //构建表格
+                    tablearr.push(ggzarr[0]);
+                    tablearr.push(ggzarr[1]);
+                    tablearr.push(ggzarr[2]);
+                    tablearr = tablearr.concat(jg);
+
+                    var wzdata = [];
+                    for(var i=0; i<sz1.length; i++){
+                        for(var j=0; j<sz2.length; j++){
+                            for(var z=0; z<sz3.length; z++){
+                                var datakey = sz1[i]+sz2[j]+sz3[z];
+                                if(datacounts == 1){
+                                    if(!datajson){
+                                        var jsondata = {};
+                                        jsondata[ggzarr[0]] = sz1[i];
+                                        jsondata[ggzarr[1]] = sz2[j];
+                                        jsondata[ggzarr[2]] = sz3[z];
+                                        jsondata["库存"] = 0;
+                                        jsondata["价格"] = 0;
+                                        jsondata["货号"] = 0;
+                                        jsondata["虚拟销量"] = 0;
+                                        jsondata['真实销量'] = 0;
+                                        jsondata["规格图片"] = "";
+                                        allarrone.push(jsondata);
+                                    }else{
+                                        $.each(datajson,function (ks,vs) {
+                                            wzdata.push(ks);
+                                        });
+                                        $.each(datajson,function (kk,vv) {
+                                            wzdata.push(kk);
+                                            if(kk == datakey){
+                                                var aa = vv;
+                                                var newarr = aa.split(",");
+                                                var jsondata = {};
+                                                jsondata[ggzarr[0]] = sz1[i];
+                                                jsondata[ggzarr[1]] = sz2[j];
+                                                jsondata[ggzarr[2]] = sz3[z];
+                                                jsondata["库存"] = newarr[0];
+                                                jsondata["价格"] = newarr[1];
+                                                jsondata["货号"] = newarr[2];
+                                                jsondata["虚拟销量"] = newarr[3];
+                                                jsondata['真实销量'] = newarr[4];
+                                                jsondata["规格图片"] = newarr[5];
+                                                allarrone.push(jsondata);
+                                            }else{
+                                                if(wzdata.indexOf(datakey) == -1){
+                                                    wzdata.push(datakey);
+                                                    var jsondata = {};
+                                                    jsondata[ggzarr[0]] = sz1[i];
+                                                    jsondata[ggzarr[1]] = sz2[j];
+                                                    jsondata[ggzarr[2]] = sz3[z];
+                                                    jsondata["库存"] = 0;
+                                                    jsondata["价格"] = 0;
+                                                    jsondata["货号"] = 0;
+                                                    jsondata["虚拟销量"] = 0;
+                                                    jsondata['真实销量'] = 0;
+                                                    jsondata["规格图片"] = "";
+                                                    allarrone.push(jsondata);
+                                                }
+                                            }
+                                        });
+                                    }
+                                }else{
+                                    var jsondata = {};
+                                    jsondata[ggzarr[0]] = sz1[i];
+                                    jsondata[ggzarr[1]] = sz2[j];
+                                    jsondata[ggzarr[2]] = sz3[z];
+                                    jsondata["库存"] = 0;
+                                    jsondata["价格"] = 0;
+                                    jsondata["货号"] = 0;
+                                    jsondata["虚拟销量"] = 0;
+                                    jsondata['真实销量'] = 0;
+                                    jsondata["规格图片"] = "";
+                                    allarrone.push(jsondata);
+                                }
+
+                            }
+                        }
+                    }
+
+                }
+                // 构建表头
+                var strtab = "<tr>";
+                for(var k = 0; k<tablearr.length; k++){
+                    strtab += "<td class='biaotou'>"+tablearr[k]+"</td>";
+                }
+                strtab += "</tr>";
+                $("#tabb").html(strtab);
+                //构建表身
+                var lensz = ggzarr.length;
+                var tabdata = "";
+                for(var d = 0; d<allarrone.length; d++){
+                    tabdata +=  "<tr>";
+                    for(var k = 0; k<tablearr.length; k++){
+                        if(k<lensz){
+                            tabdata += "<td class='tds '>"+allarrone[d][tablearr[k]]+"</td>";
+                        }else if(tablearr[k]=="规格图片"){
+                            var imgkk = "";
+                            if(allarrone[d][tablearr[k]]){
+                                var imgkk = "<img src="+allarrone[d][tablearr[k]]+">";
+                            }else{
+                                var imgkk = "";
+                            }
+                            tabdata +=  "<td class='tds' style='position: relative;'>"+
+                                "<input type='hidden' id='imgurl"+d+"' class='shukdd' name='valarr"+d+"' value="+allarrone[d][tablearr[k]]+">"+
+                                "<div class='xuzndt' name='imgurl"+d+"' onclick='showImageDialog(this);'>选择</div>"+
+                                "<div class='xuzndt' name='imgurl"+d+"' onclick='delimage(this)'>删除</div>"+
+                                "<div class='xuzndd' id='imgxs"+d+"'>"+
+                                imgkk+
+                                "</div>"
+                            "</td>";
+                        }else if(tablearr[k] == "真实销量"){
+                            tabdata += "<td class='tds'><input type='text' disabled class='shukdd' name='valarr"+d+"' value='"+allarrone[d][tablearr[k]]+"'></td>";
+                        }else if(tablearr[k] == "货号"){
+                            tabdata += "<td class='tds'><input type='text' class='shukdd' name='valarr"+d+"' value='"+allarrone[d][tablearr[k]]+"'></td>";
+                        }else if(tablearr[k] == "价格"){
+                            tabdata += "<td class='tds'><input type='text' onkeyup='clearNoNum(this)' class='shukdd' name='valarr"+d+"' value='"+allarrone[d][tablearr[k]]+"'></td>";
+                        }else{
+                            tabdata += "<td class='tds'><input type='number' min='0' class='shukdd' name='valarr"+d+"' value='"+allarrone[d][tablearr[k]]+"'></td>";
+                        }
+                    }
+                    tabdata +=  "</tr>";
+                }
+                $("#tabb").append(tabdata);
+
+            }
+
+        }
+ 
+
+        function ggzbc(){
+
+            for(var i=0; i<allarrone.length; i++){
+                var kucun = $("input[name='valarr"+i+"']")[0].value;
+                var money = $("input[name='valarr"+i+"']")[1].value;
+                var huohao = $("input[name='valarr"+i+"']")[2].value;
+                var vsalenum = $("input[name='valarr"+i+"']")[3].value;
+                var salenum = $("input[name='valarr"+i+"']")[4].value;
+                var imgs = $("input[name='valarr"+i+"']")[5].value;
+                allarrone[i]['库存'] = kucun;
+                allarrone[i]['价格'] = money;
+                allarrone[i]['货号'] = huohao;
+                allarrone[i]['虚拟销量'] = vsalenum;
+                allarrone[i]['真实销量'] = salenum;
+                allarrone[i]['规格图片'] = imgs;
+            }
+
+            var val = JSON.stringify(allarrone);
+
+            $("#biaogedata").val(val);
+            $("#typelen").val(ggzarr.length);
+            $("#typesarr").val(ggzarr.toString());
+
+
+            // alert("规格值设置成功！");
+
+        }
+
+        function showImageDialog(elm, opts, options) {
+
+            require(["util"], function(util){
+
+                var btn = $(elm);
+                var key = $(btn).attr("name");
+                var dval = key.substr(6,key.length);
+                var imgkey = "imgxs"+dval;
+
+                var ipt = btn.parent().prev();
+                var val = ipt.val();
+                var img = ipt.parent().next().children();
+                options = {'global':false,'class_extra':'','direct':true,'multiple':false,'fileSizeLimit':5120000};
+                util.image(val, function(url){
+
+                    var urlnew = url.url;
+                    var strurl = "<img src='"+urlnew+"'>";
+                    $("#"+key).val(urlnew);
+                    $("#"+imgkey).html(strurl);
+                    if(typessy==2){
+                        $("#imgyc999").val(url.url);
+                    }
+
+                }, options);
+            });
+        }
+        function delimage(me){
+            var key = $(me).attr("name");
+            var dval = key.substr(6,key.length);
+            var imgkey = "imgxs"+dval;
+            $("#"+key).val("");
+            $("#"+imgkey).html("");
+            if(typessy==2){
+                $("#imgyc999").val("");
+            }
+        }
+
+
+        function check(){
+            //判断规格组的值有没有都设置
+            for(var i=0; i<ggzarr.length; i++){
+                if(ggzjson[ggzarr[i]].length == 0){
+                    alert(ggzarr[i]+"规格组没有设置规格值！");
+                    return false;
+                }
+            }
+            ggzbc();
+            if(confirm('你确定就这样保存本产品?')){
+                $(".shukdd").attr("name",'');
+                return true;
+
+            }else{
+                return false;
+            }
+        }
+</script>
+
+{/if}
+<script>
+function clearNoNum(obj){  
+  obj.value = obj.value.replace(/[^\d.]/g,"");  //清除“数字”和“.”以外的字符
+  if(obj.value.charAt(0,1) == "."){
+    obj.value = "";
+  }
+  obj.value = obj.value.replace(/\.{2,}/g,"."); //只保留第一个. 清除多余的   
+  obj.value = obj.value.replace(".","$#$").replace(/\./g,"").replace("$#$",".");  
+  obj.value = obj.value.replace(/^(\-)*(\d+)\.(\d\d).*$/,'$1$2.$3');//只能输入两个小数   
+  if(obj.value.indexOf(".")< 0 && obj.value !=""){//以上已经过滤，此处控制的是如果没有小数点，首位不能为类似于 01、02的金额  
+   obj.value= parseFloat(obj.value);  
+  }  
+}
+</script>
+</div>
+</div>

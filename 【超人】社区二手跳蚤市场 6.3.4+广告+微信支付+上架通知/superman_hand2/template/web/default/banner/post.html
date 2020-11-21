@@ -1,0 +1,147 @@
+<style>
+    #map {
+        width: 660px;
+        height: 500px;
+        -webkit-transition: all 0.5s ease-in-out;
+        transition: all 0.5s ease-in-out;
+    }
+</style>
+<div class="main">
+	<form action="" method="post" class="form-horizontal form">
+		<div class="panel panel-default">
+			<div class="panel-heading">{if !empty($_GPC['id'])}编辑{else}添加{/if}</div>
+			<div class="panel-body">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">排序</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" name="displayorder" value="{$banner['displayorder']}" placeholder="0">
+                        <span class="help-block">由大到小</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label"><span class="color-red">*</span>图片</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_image('thumb', $banner['thumb']);}
+                        <span class="help-block">推荐尺寸：414*230</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">appid</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" name="appid" value="{$banner['appid']}" placeholder="">
+                        <span class="help-block">填写appid可跳转到对应的小程序</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">url</label>
+                    <div class="col-sm-9">
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="url" value="{$banner['url']}">
+                            <div class="input-group-btn">
+                                <button type="button" class="btn btn-default dropdown-toggle slide_btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">本站链接
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-right select_list"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">
+                        是否为默认
+                    </label>
+                    <div class="col-sm-9">
+                        <div class="input-group">
+                            <label class="radio-inline">
+                                <input type="radio" name="is_default" value="1" {if $banner['is_default']==1}checked{/if}> 是
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="is_default" value="0" {if $banner['is_default']==0}checked{/if}> 否
+                            </label>
+                        </div>
+                        <span class="help-block">设置为默认图片后可在没有幻灯图的情况下显示该图片</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">时间设置</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_daterange('exprietime', $exprietime, true);}
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input type="hidden" name="area_points" value="">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">展示地区</label>
+                    <div class="col-sm-9">
+                        <div id="map"></div>
+                        <div class="help-block">
+                            <button type="button" class="btn btn-success btn_start_draw">开始画线</button>
+                            <button type="button" class="btn btn-danger btn_clear_draw">清除画线</button>
+                        </div>
+                        <div class="help-block">
+                            单击鼠标左键移动开始画线，双击鼠标左键结束画线（结束后可移动边线微调），画线形状为一个完整的空间，如：正方形、矩形、多边形等，用户地理位置在坐标点范围内时显示，否则不显示，注：获取不到用户地理位置时默认显示
+                        </div>
+                    </div>
+                </div>
+			</div>
+		</div>
+		<div class="form-group col-sm-12">
+			<button type="submit" class="btn btn-primary" name="submit" value="提交">提交</button>
+			<input type="hidden" name="token" value="{$_W['token']}" />
+		</div>
+	</form>
+</div>
+<script>
+    require(['jquery', 'util'], function($, util){
+        //初始化页面链接数据
+        $('.slide_btn').click(function () {
+            var url = window.location.href;
+            $('.select_list').html('<li><a href="javascript:;">加载中...</a></li>');
+            $.ajax({
+                type: 'post',
+                url: url+'&load_url=wxapp',
+                dataType: 'json',
+                success: function (resp) {
+                    if (resp.length > 0) {
+                        var html = '';
+                        for (var i=0; i<resp.length; i++) {
+                            item = resp[i];
+                            html += '<li><a class="select-url" href="#" data-url="'+item['url']+'">'+item['title']+'</a></li>';
+                        }
+                        $('.select_list').html(html);
+                    }
+                    initSelectUrl();
+                }
+            });
+        });
+        //初始化选择链接
+        var initSelectUrl = function(){
+            $('.select-url').unbind('click').click(function () {
+                var url = $(this).data('url');
+                $(this).parent().parent().parent().prev().val(url);
+                return false
+            });
+        };
+
+        $('form').submit(function(){
+            //兑换限制坐标点
+            if (overlays.length > 0) {
+                var points = new Array();
+                for (var i = 0; i < overlays.length; i++) {
+                    var overlay = overlays[i].getPath();
+                    for (var j = 0; j < overlay.length; j++) {
+                        var grid = overlay[j];
+                        var poi = {
+                            lng: grid.lng.toString(),
+                            lat: grid.lat.toString()
+                        };
+                        points.push(poi);
+                    }
+                }
+                points = base64_encode(JSON.stringify(points));
+                $('input[name=area_points]').val(points);
+            }
+            return true;
+        });
+    });
+</script>

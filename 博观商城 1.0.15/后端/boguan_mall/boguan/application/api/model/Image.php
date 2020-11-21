@@ -1,0 +1,2 @@
+<?php
+ namespace app\api\model; use think\Exception; use think\Model; class Image extends BaseModel { protected $hidden = array("\x69\x64", "\x66\x72\157\x6d", "\165\156\151\x61\143\x69\x64", "\143\x72\x65\141\164\145\x5f\x74\151\155\x65", "\x64\x65\154\145\164\145\x5f\164\x69\x6d\145"); }

@@ -1,0 +1,425 @@
+{template '_header'}
+{php $this->followBar()}
+<style>
+    .fui-cell-group .fui-cell.fui-cell-credit:before{border:none;}
+    .fui-cell-group .fui-cell.fui-cell-credit{padding:0.2rem 0.5rem;}
+    .fui-cell-group .fui-cell.fui-cell-credit .fui-cell-text{color:#666;font-size:0.6rem;}
+    .fui-navbar ~ .fui-content, .fui-content.navbar{padding:0;}
+    .fui-footer.btn-disabled{background: #ddd;color: #bbb;line-height: 2.4rem;text-align: center;}
+    {if $pay['credit'] == 0}
+    .fui-actionsheet a.balance{display: none;}
+    {/if}
+    {if $pay['weixin'] == 0 && $pay['weixin_jie'] == 0}
+    .fui-actionsheet a.wechat{display: none;}
+    {/if}
+    {if $pay['alipay'] == 0}
+    .fui-actionsheet a.alipay{display: none;}
+    {/if}
+    #basic img{max-width: 100%;display: block;}
+</style>
+<script>document.title = "商品详情"</script>
+<link rel="stylesheet" href="../addons/ewei_shopv2/plugin/creditshop/template/mobile/default/images/common.css" />
+<link rel="stylesheet" href="../addons/ewei_shopv2/plugin/creditshop/static/css/common.css" />
+<div class='fui-page  fui-page-current creditshop-detail-page'>
+    {if !is_h5app()}
+        <a class="back back-dot" style="z-index: 999;"><i class="icon icon-back1"></i></a>
+    {else}
+        <div class="fui-header">
+            <div class="fui-header-left">
+                <a class="back"></a>
+            </div>
+            <div class="title">商品详情</div>
+            <div class="fui-header-right"></div>
+        </div>
+    {/if}
+    <div class='fui-content navbar'>
+        <!-- 商品图片 -->
+        <div class='fui-swipe'>
+            <div class='fui-swipe-wrapper'>
+                <a class='fui-swipe-item' href="javascript:void(0);">
+                    <img src="{php echo tomedia($goods['thumb'])}" width="100%" />
+                </a>
+            </div>
+            <div class='fui-swipe-page'></div>
+
+            {if $goods['timestate'] && $goods['istime']}
+            <div class="fui-swipe-layer">
+                <i class="icon icon-history"></i>
+                <span id="divdown1"></span>
+            </div>
+            {/if}
+        </div>
+
+        <script language="javascript" type="text/javascript">
+            var interval = 1000;
+            function ShowCountDown(endtime,divname)
+            {
+                var now = new Date();
+                var endDate = new Date(endtime*1000);
+                var leftTime=endDate.getTime()-now.getTime();
+                var leftsecond = parseInt(leftTime/1000);
+                //var day1=parseInt(leftsecond/(24*60*60*6));
+                var day1=Math.floor(leftsecond/(60*60*24));
+                var hour=Math.floor((leftsecond-day1*24*60*60)/3600);
+                var minute=Math.floor((leftsecond-day1*24*60*60-hour*3600)/60);
+                var second=Math.floor(leftsecond-day1*24*60*60-hour*3600-minute*60);
+                var cc = document.getElementById(divname);
+                cc.innerHTML = "剩余:"+day1+"天"+hour+"小时"+minute+"分"+second+"秒";
+            }
+            var $demodiv = document.getElementById('divdown1');
+            if($demodiv){
+                window.setInterval(function(){ShowCountDown({$goods['timeend']},'divdown1');}, interval);
+            }
+        </script>
+        <div class="fui-cell-group fui-detail-group">
+            <div class="fui-cell">
+                <div class="fui-cell-text name">
+                    {if $goods['goodstype'] == 0}<label>商品</label>{/if}
+                    {if $goods['goodstype'] == 1}<label>优惠券</label>{/if}
+                    {if $goods['goodstype'] == 2}<label>{$_W['shopset']['trade']['moneytext']}</label>{/if}
+                    {if $goods['goodstype'] == 3}<label>红包</label>{/if}
+                    <span>{$goods['title']}</span>
+                </div>
+            </div>
+
+            {if $goods['isverify']==1}
+                {if ($goods['usetime'] > 0 && $goods['isendtime']==0) || $goods['isendtime']==1}
+                <div class="fui-cell fui-cell-credit">
+                    <div class="fui-cell-text"><p>使用有效期: {if $goods['isendtime']==1}截止至{$goods['endtime_str']}{else}兑换之日起 {$goods['usetime']} 天内{/if}</p></div>
+                </div>
+                {/if}
+            {/if}
+            {if $goods['total']>0}
+            <div class="fui-cell fui-cell-credit">
+                <div class="fui-cell-text"><p>仅限: {$goods['total']} 份 已参与: {$goods['joins']} 次</p></div>
+            </div>
+            {/if}
+            {if !empty($goods['dispatch']) && $goods['isverify'] == 0}
+            <div class="fui-cell fui-cell-credit">
+                <div class="fui-cell-text">
+                    <p>
+                    邮费:
+                        {if is_array($goods['areas'])}
+                            {php echo number_format($goods['areas']['min'],2)} ~ {php echo number_format($goods['areas']['max'],2)} 元
+                        {else}
+                            {php echo $goods['dispatch'] == 0 ? '包邮' : '&yen;'.number_format($goods['dispatch'],2)}
+                        {/if}
+                    </p>
+                </div>
+            </div>
+            {/if}
+            <div class="fui-cell">
+                <div class="fui-cell-text flex">
+                    <span class="price" style="text-align: left;">
+                        {if $goods['hasoption']>0}
+                            <span class="big" style="font-weight: bold;font-size: 0.8rem">{if $goods['mincredit'] == $goods['maxcredit']}{$goods['mincredit']}{else}{$goods['mincredit']}~{$goods['maxcredit']}{/if}</span>
+                            <span style="font-weight: bold;font-size: 0.6rem">{$_W['shopset']['trade']['credittext']}</span>
+                            {if $goods['money'] > 0}
+                                + <span style="font-size: 0.8rem;font-weight: bold;padding-right: 0.1rem;"><span style="font-size: 0.7rem">&yen;</span>{if $goods['minmoney'] == $goods['maxmoney']}{$goods['minmoney']}{else}{$goods['minmoney']}`{$goods['maxmoney']}{/if}</span>
+                            {/if}
+                        {else}
+                            <span class="big" style="font-weight: bold;font-size: 0.8rem">{$goods['credit']}</span>
+                            <span style="font-weight: bold;font-size: 0.6rem">{$_W['shopset']['trade']['credittext']}</span>
+                            {if $goods['money'] > 0}
+                                + <span style="font-size: 0.8rem;font-weight: bold;padding-right: 0.1rem;"><span style="font-size: 0.7rem">&yen;</span>{$goods['money']}</span>
+                            {/if}
+                        {/if}
+                         <span class="old">原价:{$goods['price']}元</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        {if $goods['hasoption']}
+        <div class="fui-cell-group fui-cell-click">
+            <div class="fui-cell">
+                <div class="fui-cell-text store">请选择规格及数量</div>
+                <div class="fui-cell-remark fui-cell-info" id="optionid">
+                    <input type="hidden" placeholder="请选择规格" id="carrier_optionid" value="{$member['realname']}" class="fui-input">
+                </div>
+            </div>
+        </div>
+        {/if}
+        {if $goods['detailshow'] == 1 || $set['isdetail']}
+        <div class="fui-list-group">
+            <div class="fui-list">
+                <div class="fui-list-inner">
+                    <div class="title">兑换流程</div>
+                    <div class="text">
+                        {if $goods['detailshow'] == 1}
+                            {php echo htmlspecialchars_decode($goods['detail'])}
+                        {else if $set['isdetail']}
+                            {php echo htmlspecialchars_decode($set['detail'])}
+                        {/if}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {/if}
+        {if $goods['noticedetailshow'] == 1 || $set['isnoticedetail']}
+        <div class="fui-list-group">
+            <div class="fui-list">
+                <div class="fui-list-inner">
+                    <div class="title">注意事项</div>
+                    <div class="text">
+                        {if $goods['noticedetailshow'] == 1}
+                            {php echo htmlspecialchars_decode($goods['noticedetail'])}
+                        {else if $set['isnoticedetail']}
+                            {php echo htmlspecialchars_decode($set['noticedetail'])}
+                        {/if}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {/if}
+
+        <div class="fui-tab fui-tab-danger detail-tab" id="detailTab">
+            <a data-tab="basic" class="active">商品详情</a>
+            {if $set['isreply']==1}<a data-tab="comment">评价</a>{/if}
+            <a data-tab="records">参与记录</a>
+        </div>
+
+        <div class="detail-block">
+            <div class="block block-basic tab-basic" id="basic">
+                {if $goods['goodsdetail']}{php echo htmlspecialchars_decode($goods['goodsdetail'])}{else}暂无商品详情{/if}
+            </div>
+            {if $set['isreply']==1}
+            <div class="block block-comment tab-basic" id="comment">
+                {if !empty($replytotal)}
+                <div class="comments" id="comments_reply">
+                    {loop $replys $item}
+                    <div class="item">
+                        <div class="userinfo">
+                            <div class="user">
+                                <img src="{php echo tomedia($item['headimg'])}">
+                                <span>{$item['nickname']}</span>
+                                <span class="date">{$item['time_str']}</span>
+                            </div>
+                            <div class="feel">
+                                {if $item['level'] > 0}<span class="shine">★</span>{/if}
+                                {if $item['level'] > 1}<span class="shine">★</span>{/if}
+                                {if $item['level'] > 2}<span class="shine">★</span>{/if}
+                                {if $item['level'] > 3}<span class="shine">★</span>{/if}
+                                {if $item['level'] > 4}<span class="shine">★</span>{/if}
+                            </div>
+                        </div>
+                        <div class="comment">{$item['content']}</div>
+                        <div class="comment-images">
+                            {loop $item['images'] $images}
+                            <img src="{$images}">
+                            {/loop}
+                        </div>
+                        {if $item['reply_content'] || $item['reply_images'] }
+                        <div class="comment-reply">
+                            卖家回复: {$item['reply_content']}
+                            <div class="comment-images">
+                                {loop $item['reply_images'] $images}
+                                <img src="{$images}">
+                                {/loop}
+                            </div>
+                        </div>
+                        {/if}
+                        {if $item['append_time']>0}
+                        <div class="comment">追加评论：{$item['append_content']}</div>
+                        <div class="comment-images">
+                            {loop $item['append_images'] $images}
+                            <img src="{$images}">
+                            {/loop}
+                        </div>
+                        {/if}
+                        {if $item['append_reply_content'] || $item['append_reply_images']}
+                        <div class="comment-reply">
+                            卖家回复: {$item['append_reply_content']}
+                            <div class="comment-images">
+                                {loop $item['append_reply_images'] $images}
+                                <img src="{$images}">
+                                {/loop}
+                            </div>
+                        </div>
+                        {/if}
+                    </div>
+                    {/loop}
+                </div>
+                {if $replytotal > 2}
+                <div class="more replymore"><a href="javascript:void(0);">查看更多({if $replytotal > 999}999+{else}{$replytotal}{/if}+)</a></div>
+                {/if}
+                {else}
+                <div class="detail-block block-basic">
+                    暂无评价！
+                </div>
+                {/if}
+            </div>
+            <script id='tpl_replylist' type='text/html'>
+                <%each list as item%>
+                <div class="item">
+                    <div class="userinfo">
+                        <div class="user">
+                            <img src="<%item.headimg%>">
+                            <span><%item.nickname%></span>
+                            <span class="date"><%item.time_str%></span>
+                        </div>
+                        <div class="feel">
+                            <%if item.level > 0%><span class="shine">★</span><%/if%>
+                            <%if item.level > 1%><span class="shine">★</span><%/if%>
+                            <%if item.level > 2%><span class="shine">★</span><%/if%>
+                            <%if item.level > 3%><span class="shine">★</span><%/if%>
+                            <%if item.level > 4%><span class="shine">★</span><%/if%>
+                        </div>
+                    </div>
+                    <div class="comment"><%item.content%></div>
+                    <div class="comment-images">
+                        <%each item.images img%>
+                        <img src="<%img%>">
+                        <%/each%>
+                    </div>
+                    <%if item.reply_time > 0 %>
+                    <div class="comment-reply">
+                        卖家回复: <%item.reply_content%>
+                        <div class="comment-images">
+                            <%each item.reply_images img%>
+                            <img src="<%img%>">
+                            <%/each%>
+                        </div>
+                    </div>
+                    <%/if%>
+                    <%if item.append_time > 0 %>
+                    <div class="comment">追加评论：<%item.append_content%></div>
+                    <div class="comment-images">
+                        <%each item.append_images img%>
+                        <img src="<%img%>">
+                        <%/each%>
+                    </div>
+                    <%/if%>
+                    <%if item.append_reply_time > 0 %>
+                    <div class="comment-reply">
+                        卖家追加回复: <%item.append_reply_content%>
+                        <div class="comment-images">
+                            <%each item.append_reply_images img%>
+                            <img src="<%img%>">
+                            <%/each%>
+                        </div>
+                    </div>
+                    <%/if%>
+                </div>
+                <%/each%>
+            </script>
+
+            {/if}
+            <div class="block block-records tab-basic" id="records">
+                {if !empty($logtotal)}
+                <div id="loglist">
+                    {loop $log $item}
+                    <div class="fui-list">
+                        <div class="fui-list-media">
+                            <img src="{php echo tomedia($item['avatar'])}">
+                        </div>
+                        <div class="fui-list-inner">
+                            <div class="title" style="font-size:0.7rem;">{$item['nickname']}</div>
+                            <!--<div class="text">x 10</div>-->
+                        </div>
+                        <div class="fui-list-media" style="font-size:0.6rem;color:#666">{$item['createtime_str']}</div>
+                    </div>
+                    {/loop}
+                </div>
+                {if $logtotal > 2}
+                <div class="more logmore"><a href="javascript:void(0);">查看更多({if $logtotal > 999}999+{else}{$logtotal}{/if})</a></div>
+                {/if}
+                {else}
+                <div class="detail-block block-basic">
+                    暂无参与记录！
+                </div>
+                {/if}
+            </div>
+        </div>
+        <script id='tpl_loglist' type='text/html'>
+            <%each list as item%>
+            <div class="fui-list">
+                <div class="fui-list-media">
+                    <img src="<%item.avatar%>">
+                </div>
+                <div class="fui-list-inner">
+                    <div class="title" style="font-size:0.7rem;"><%item.nickname%></div>
+                    <!--<div class="text">x 10</div>-->
+                </div>
+                <div class="fui-list-media" style="font-size:0.6rem;color:#666"><%item.createtime_str%></div>
+            </div>
+            <%/each%>
+        </script>
+
+        <div class="fui-list-group">
+            <div class="fui-list noclick">
+                <div class="fui-list-inner">
+                    <div class="title">为您推荐</div>
+                    <div class="text recommend">
+                        {loop $goodsrec $item}
+                        <div class="item">
+                            <a href="{php echo mobileUrl('creditshop/detail',array('id'=>$item['id']))}">
+                            <img src="{php echo tomedia($item['thumb'])}" />
+                            <div class="title">{$item['title']}</div>
+                            <div class="price">
+                                {if $item['mincredit']>0}{$item['mincredit']}{else}{$item['credit']}{/if}{$_W['shopset']['trade']['credittext']}
+                                {if $item['money'] > 0}
+                                + <span style="font-weight: bold;padding-right: 0.1rem;">&yen;{$item['money']}</span>
+                                {/if}
+                            </div>
+                            </a>
+                        </div>
+                        {/loop}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {if $goods['subdetail']}
+        <div class="fui-list-group">
+            <div class="fui-list">
+                <div class="fui-list-inner">
+                    <div class="title">提供商家介绍</div>
+                    <div class="text">{php echo htmlspecialchars_decode($goods['subdetail'])}</div>
+                </div>
+            </div>
+        </div>
+        {/if}
+
+    </div>
+
+    <div class="fui-footer {if $goods['canbuy']}btn-danger{else}btn-disabled{/if}">
+        <div id="openActionSheet">
+            {if $goods['canbuy']}
+                {if $goods['type']==1}立即抽奖{else}立即兑换{/if}
+            {else}
+                {$goods['buymsg']}
+            {/if}
+        </div>
+    </div>
+</div>
+{template 'creditshop/picker'}
+{if is_weixin()}
+<script language='javascript'>
+    var width = window.screen.width *  window.devicePixelRatio;
+    var height = window.screen.height *  window.devicePixelRatio;
+    var h = document.body.offsetHeight *  window.devicePixelRatio;
+
+    if(height==2436 && width==1125){
+        $(".fui-navbar,.cart-list,.fui-footer,.fui-content.navbar").addClass('iphonex')
+    }
+
+    //  微信版本6.6.7
+    if(h == 1923){
+        $(".fui-navbar,.cart-list,.fui-footer,.fui-content.navbar").removeClass('iphonex');
+    }
+</script>
+{/if}
+<script>
+
+    $("#detailTab a").unbind('click').click(function () {
+        var tab = $(this).data('tab');
+        $(this).addClass('active').siblings().removeClass('active');
+        $("#"+tab).show().siblings().hide();
+    });
+    require(['../addons/ewei_shopv2/plugin/creditshop/static/js/detail.js'],function(modal){
+        modal.init({goods: {php echo json_encode($goods)} });
+    });
+</script>
+
+
+{template '_footer'}

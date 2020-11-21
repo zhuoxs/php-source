@@ -1,0 +1,292 @@
+{template 'public/header'}
+<link rel="stylesheet" type="text/css" href="../addons/yzfc_sun/template/public/ygcss.css">
+<style type="text/css">
+    .ismap .maps {
+        height: 380px;
+        width: 550px;
+        overflow: hidden;
+        border: 1px solid #E4E4E4;
+    }
+</style>
+<ul class="nav nav-tabs">
+    <span class="ygxian"></span>
+    <div class="ygdangq">当前位置:</div>
+    <li class="active"><a href="javascript:void(0);">公司设置</a></li>
+</ul>
+
+<div class="main">
+    <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+        <!--<input type="hidden" name="parentid" value="{$parent['id']}" />-->
+        <div class="panel panel-default ygdefault">
+            <div class="panel-heading wyheader">
+                公司设置
+            </div>
+            <div class="panel-body">
+
+                <div class="form-group video">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">公司logo</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_image('pic', $item['pic']);}
+                        <span class="help-block">建议1:1</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">公司名称</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="name" value="{$item['name']}"  class="form-control"  />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">简介详情</label>
+                    <div class="col-sm-9">
+                        <textarea name="content" class="form-control" placeholder="简介详情">{$item['content']}</textarea>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">联系电话</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="tel" class="form-control" value="{$item['tel']}" >
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">QQ</label>
+                    <div class="col-sm-9">
+                        <input type="number" name="qq" class="form-control" value="{$item['qq']}" >
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">邮箱</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="email" class="form-control" value="{$item['email']}" >
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">公司地址</label>
+                    <div class="col-sm-4">
+                        <input type="text" name="address" value="{$item['address']}" placeholder="输入详细地址，如：杏林湾营运中心9号楼"
+                               autocomplete="off" id="address" class="form-control">
+                        <a href="javascript:;" class="layui-btn layui-btn-normal floatleft" id="selectshop"
+                           onClick="codeAddress();">定位</a>
+                        <div class="ismap">
+                            <div class="maps" id="dituContent"></div>
+                            <br/>
+                            <p class="red">输入完整地址后，点击定位获得商户的经纬度（如定位不准，可手动拖动定位）</p>
+                            <br/>
+                            <p>当前经纬度：
+                                <input class="hrefto jing layui-input" readonly="readonly" style="display: inline-block;"
+                                       type="text" name="lng" value="{$item['lng']}"/>
+                                <input class="hrefto wei layui-input" readonly="readonly" type="text"
+                                       style="display: inline-block;" name="lat" value="{$item['lat']}"/></p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="form-group">
+            <input type="submit" name="submit" value="提交" class="btn col-lg-3" style="color: white;background-color: #444444;margin-left: 550px;"/>
+            <input type="hidden" name="token" value="{$_W['token']}" />
+            <input type="hidden" name="id" value="{$item['id']}" />
+        </div>
+    </form>
+</div>
+<script charset="utf-8" src="https://map.qq.com/api/js?v=2.exp&libraries=place&key={$map_key}"></script>
+<script type="text/javascript">
+    $(function(){
+        $("#frame-5").show();
+        $("#yframe-5").addClass("wyactive");
+    })
+</script>
+<script>
+    var namestr = "{$item['address']}"
+    var lng = "{$item['lng']}";
+    var lat = "{$item['lat']}";
+    $(function(){
+        if (namestr != null && namestr != '') {
+            var center = new qq.maps.LatLng(lat, lng);
+            var map = new qq.maps.Map(document.getElementById('dituContent'), {
+                center: center,
+                zoom: 13
+            });
+            var marker = new qq.maps.Marker({
+                position: center,
+                draggable: true,
+                map: map
+            });
+
+            geocoder = new qq.maps.Geocoder({
+                complete: function (result) {
+                    // $('input[name=address]').val(result.detail.address);
+                    map.setCenter(result.detail.location);
+                    marker.setPosition(result.detail.location);
+                    var weizhi1 = marker.getPosition();
+                    $('input[name=lat]').val(weizhi1.lat);
+                    $('input[name=lng]').val(weizhi1.lng);
+                }
+
+            });
+            var ap = new qq.maps.place.Autocomplete(document.getElementById('address'));
+            //调用Poi检索类。用于进行本地检索、周边检索等服务。
+            var searchService = new qq.maps.SearchService({
+                map: map
+            });
+            //添加监听事件
+            qq.maps.event.addListener(ap, "confirm", function (res) {
+
+                geocoder.getLocation(res.value);
+                //若服务请求失败，则运行以下函数
+                geocoder.setError(function () {
+                    alert("出错了，请输入正确的地址！！！");
+                });
+            });
+
+            qq.maps.event.addListener(marker, 'dragend', function (event) {
+                var latLng = event.latLng,
+                    lat = latLng.getLat(),
+                    lng = latLng.getLng();
+
+                // var coord = new qq.maps.LatLng(lat,lng);
+                // geocoder.getAddress(coord);
+                $('input[name=lat]').val(lat);
+                $('input[name=lng]').val(lng);
+            });
+        } else {
+            //				console.log(5);
+            //				$(".ismap").show();
+            //				    var center = new qq.maps.LatLng(39.916527,116.397128);
+            //				    map = new qq.maps.Map(document.getElementById('dituContent'),{
+            //				        center: center,
+            //				        zoom: 13
+            //				    });
+            //				    //获取城市列表接口设置中心点
+            //				    citylocation = new qq.maps.CityService({
+            //				        complete : function(result){
+            //				            map.setCenter(result.detail.latLng);
+            //				             if (marker != null) {
+            //				                marker.setMap(null);
+            //				            }
+            //				            //设置marker标记
+            //				            marker = new qq.maps.Marker({
+            //				                map: map,
+            //				                position: results.detail.latLng
+            //				            });
+            //				        }
+            //				    });
+            ////				    var marker = new qq.maps.Marker({
+            ////				        position: center,
+            ////				        map: map
+            ////				    });
+            //				    //调用searchLocalCity();方法    根据用户IP查询城市信息。
+            //				    citylocation.searchLocalCity();
+        }
+
+    })
+    //清除地图上的marker
+    //		function clearOverlays(overlays) {
+    //			var overlay;
+    //			while(overlay = overlays.pop()) {
+    //				overlay.setMap(null);
+    //			}
+    //		}
+    function codeAddress() {
+        var address = document.getElementById("address").value;
+        //通过getLocation();方法获取位置信息值
+        if (namestr != null && namestr != '') {
+            geocoder.getLocation(address);
+        } else {
+            var center = new qq.maps.LatLng(39.916527, 116.397128);
+            var map = new qq.maps.Map(document.getElementById('dituContent'), {
+                center: center,
+                zoom: 13
+            });
+
+            function replaceLikeVal(comp) {
+                if (comp.value.indexOf("'") != -1 || comp.value.indexOf("\"") != -1) {
+                    //comp.value = comp.value.substring(0, comp.value.length-1);
+                    comp.value = comp.value.replace(/\'/g, "").replace(/\"/g, "");
+                }
+            };
+            var searchService, markers = [];
+            //设置Poi检索服务，用于本地检索、周边检索
+            searchService = new qq.maps.SearchService({
+                //检索成功的回调函数
+                complete: function (results) {
+
+                    //设置回调函数参数
+                    var pois = results.detail.pois;
+
+                    if (!pois) {
+                        //						alert('请输入详细的地址(xxx市xxx县xxx镇xxx)');
+                        alert("请输入详细的地址");
+                    }
+                    var infoWin = new qq.maps.InfoWindow({
+                        map: map
+                    });
+                    var latlngBounds = new qq.maps.LatLngBounds();
+                    for (var i = 0, l = pois.length; i < l; i++) {
+                        var poi = pois[i];
+                        //扩展边界范围，用来包含搜索到的Poi点
+                        latlngBounds.extend(poi.latLng);
+
+                        (function (n) {
+                            var marker = new qq.maps.Marker({
+                                position: center,
+                                draggable: true,
+                                map: map
+                            });
+
+                            marker.setPosition(pois[n].latLng);
+
+                            marker.setTitle(i + 1);
+                            markers.push(marker);
+                            $('.wei').val(pois[n].latLng.lat);
+                            $('.jing').val(pois[n].latLng.lng);
+                            qq.maps.event.addListener(marker, 'dragend', function (event) {
+                                var latLng = event.latLng,
+                                    lat = latLng.getLat(),
+                                    lng = latLng.getLng();
+
+                                // var coord = new qq.maps.LatLng(lat,lng);
+                                // geocoder.getAddress(coord);
+                                $('.jing').val(lng);
+                                $('.wei').val(lat);
+                            });
+                        })(i);
+                    }
+                    //调整地图视野
+                    map.fitBounds(latlngBounds);
+                },
+                //若服务请求失败，则运行以下函数
+                error: function () {
+                    alert('请输入有效地址')
+                }
+            });
+            $(".map").show();
+            var keyword = document.getElementById("address").value;
+            console.log(keyword);
+            var region = '';
+            var pageIndex = 0;
+            var pageCapacity = 1;
+            //			clearOverlays(markers);
+            //根据输入的城市设置搜索范围
+            searchService.setLocation(region);
+            //设置搜索页码
+            searchService.setPageIndex(pageIndex);
+            //设置每页的结果数
+            searchService.setPageCapacity(pageCapacity);
+            //根据输入的关键字在搜索范围内检索
+            searchService.search(keyword);
+            //根据输入的关键字在圆形范围内检索
+            //var region = new qq.maps.LatLng(39.916527,116.397128);
+            //searchService.searchNearBy(keyword, region , 2000);
+            //根据输入的关键字在矩形范围内检索
+            //region = new qq.maps.LatLngBounds(new qq.maps.LatLng(39.936273,116.440043),new qq.maps.LatLng(39.896775,116.354212));
+            //searchService.searchInBounds(keyword, region);
+
+        }
+    }
+</script>

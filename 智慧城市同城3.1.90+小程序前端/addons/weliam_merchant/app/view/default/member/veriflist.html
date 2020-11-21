@@ -1,0 +1,225 @@
+{php include wl_template('common/header');}
+<div class="page-group" >
+    <div class="page page-current" id="page-index">
+		<header class="bar bar-nav create-actions">
+			<a class="button button-link button-nav pull-left back" href="{php echo app_url('member/user/index')}"><span class="icon icon-left"></span>返回</a>
+			<h1 class='title'>核销记录</h1>
+		</header>
+		<div class="content infinite-scroll">
+			<div class="screening">
+				<div class="screen-head">
+					<div class="row no-gutter">
+				        <div class="col-50 open-popover" data-popover=".popover-ver-type">{if empty($type)}所有类型{else}{$alltype[$type]}{/if} <i class="iconfont icon-unfold"></i></div>
+				        <div class="col-50 open-popover" data-popover=".popover-ver-admin">{if empty($admin)}所有店铺{else}{$adname}{/if} <i class="iconfont icon-unfold"></i></div>
+				    </div>
+				</div>
+				<div class="screen-body">
+				    <div class="buttons-row">
+			            <a href="{php echo app_url('member/user/veriflist',array('type'=>$type,'admin'=>$admin))}" class="{if empty($time)}active{/if} button">所有</a>
+			            <a href="{php echo app_url('member/user/veriflist',array('type'=>$type,'admin'=>$admin,'time'=>'today'))}" class="{if $time == 'today'}active{/if} button">今日</a>
+			            <a href="{php echo app_url('member/user/veriflist',array('type'=>$type,'admin'=>$admin,'time'=>'week'))}" class="{if $time == 'week'}active{/if} button">本周</a>
+			            <a href="{php echo app_url('member/user/veriflist',array('type'=>$type,'admin'=>$admin,'time'=>'month'))}" class="{if $time == 'month'}active{/if} button">本月</a>
+			            <a href="javascript:;" class="button diytime {if !empty($time) && !in_array($time, array('today','week','month'))}active{/if}">自定义</a>
+			        </div>
+			        <div class="tabs">
+			            <div class="tab" id="diytimeinput" {if !empty($time) && !in_array($time, array('today','week','month'))}style="display: block;"{/if}>
+			            	<div class="row">
+						        <div class="col-40">
+						        	<div class="weui-cells before_none after_none">
+						        		<div class="weui-cell">
+							                <div class="weui-cell__bd">
+							                    <input type="text" class="weui-input" id="datetime-picker1" readonly="" value="{php echo date('Y-m-d',$starttime)}">
+							                </div>
+							            </div>
+						        	</div>
+						        </div>
+						        <div class="col-40">
+						        	<div class="weui-cells before_none after_none">
+							        	<div class="weui-cell">
+							                <div class="weui-cell__bd">
+							                    <input type="text" class="weui-input" id="datetime-picker2" readonly="" value="{php echo date('Y-m-d',$endtime)}">
+							                </div>
+						            	</div>
+						            </div>
+						        </div>
+						        <div class="col-20"><a href="javascript:;" class="button button-fill">确定</a></div>
+						    </div>
+			            </div>
+			        </div>
+		        </div>
+		        <div class="screen-foot">
+		       		<div class="weui-cells__title">核销总计<span style="color: red;" id="recordnum">-</span>次 ,共<span style="color: red;" id="recordfen">-</span>件商品</div>
+		        </div>
+			</div>
+			<div class="allorder">
+			</div>
+			<div class="weui-loadmore loading_more" style="display: none;">
+	            <i class="weui-loading"></i>
+	            <span class="weui-loadmore__tips">正在加载</span>
+	        </div>
+	        <div class="weui-loadmore weui-loadmore_line" style="display: none;">
+	            <span class="weui-loadmore__tips" style="background-color: #EFEFF4;">暂无更多数据</span>
+	        </div>
+	    </div>
+	</div>
+	<div class="popover popover-manage popover-ver-type">
+		<div class="popover-angle"></div>
+		<div class="popover-inner">
+			<div class="list-block">
+				<ul>
+					<li><a href="{php echo app_url('member/user/veriflist',array('admin'=>$admin,'time'=>$time))}" class="list-button item-link">所有</a></li>
+					{loop $alltype $tk $ty}
+					<li><a href="{php echo app_url('member/user/veriflist',array('type'=>$tk,'admin'=>$admin,'time'=>$time))}" class="list-button item-link">{$ty}</a></li>
+					{/loop}
+				</ul>
+			</div>
+		</div>
+	</div>
+	<div class="popover popover-manage popover-ver-admin">
+		<div class="popover-angle"></div>
+		<div class="popover-inner">
+			<div class="list-block">
+				<ul>
+					<li><a href="{php echo app_url('member/user/veriflist',array('type'=>$type,'time'=>$time))}" class="list-button item-link">所有</a></li>
+					{loop $alladmin $adm}
+					<li><a href="{php echo app_url('member/user/veriflist',array('type'=>$type,'admin'=>$adm['storeid'],'time'=>$time))}" class="list-button item-link">{$adm['storename']}</a></li>
+					{/loop}
+				</ul>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="orderlist">
+{{# for(var i = 0, len = d.data.length; i < len; i++){ }}
+<div class="weui-form-preview verlist">
+    <div class="weui-form-preview__hd">
+        <label class="weui-form-preview__label storename">{{ d.data[i].remark }}</label>
+        <em class="weui-form-preview__value">
+        	<span class="weui-badge">
+        	{{# if(d.data[i].plugin == 'rush'){ }}抢购
+        	{{# } else if(d.data[i].plugin == 'halfcard1'){ }}特权
+        	{{# } else if(d.data[i].plugin == 'halfcard2'){ }}大礼包
+        	{{# } else if(d.data[i].plugin == 'wlcoupon'){ }}卡券
+        	{{# } else if(d.data[i].plugin == 'groupon'){ }}团购
+        	{{# } else if(d.data[i].plugin == 'bargain'){ }}砍价
+        	{{# } else if(d.data[i].plugin == 'wlfightgroup'){ }}拼团{{# } }}
+       		</span>
+        </em>
+    </div>
+    <div class="weui-form-preview__bd">
+        <div class="weui-form-preview__item">
+            <label class="weui-form-preview__label">购买人</label>
+            <span class="weui-form-preview__value">{{ d.data[i].nickname }}</span> <!--d.data[i].mobile-->
+        </div>
+        {{# if(d.data[i].optionname){ }}
+        <div class="weui-form-preview__item">
+            <label class="weui-form-preview__label">商品规格</label>
+            <span class="weui-form-preview__value">
+            	{{ d.data[i].optionname }}
+            </span>
+        </div>
+		{{# } }}
+		<div class="weui-form-preview__item">
+			<label class="weui-form-preview__label">所属商户</label>
+			<span class="weui-form-preview__value">
+            	{{ d.data[i].storename }} <!--d.data[i].verifmobile-->
+            </span>
+		</div>
+        <div class="weui-form-preview__item">
+            <label class="weui-form-preview__label">核销员</label>
+            <span class="weui-form-preview__value">
+            	{{ d.data[i].verifnickname }} <!--d.data[i].verifmobile-->
+            </span>
+        </div>
+        {{# if(d.data[i].plugin != 'halfcard1' && d.data[i].plugin != 'halfcard2'){ }}
+        <div class="weui-form-preview__item">
+            <label class="weui-form-preview__label">核销码</label>
+            <span class="weui-form-preview__value">
+            	{{ d.data[i].verifrcode }}
+            </span>
+        </div>
+		{{# } }}
+        <div class="weui-form-preview__item">
+            <label class="weui-form-preview__label">核销方式</label>
+            <span class="weui-form-preview__value">
+            	{{# if(d.data[i].type == 1){ }}输码核销{{# } else if(d.data[i].type == 2){ }}扫码核销{{# } else if(d.data[i].type == 3){ }}后台核销{{# } else if(d.data[i].type == 4){ }}密码核销{{# } else if(d.data[i].type <1){ }}未记录方式{{# } }}
+            </span>
+        </div>
+        <div class="weui-form-preview__item">
+            <label class="weui-form-preview__label">验证时间</label>
+            <span class="weui-form-preview__value">
+            	{{ d.data[i].createtime }}
+            </span>
+        </div>
+        {{# if(d.data[i].num > 0){ }}
+        <div class="weui-form-preview__item">
+            <label class="weui-form-preview__label">核销数量</label>
+            <span class="weui-form-preview__value">
+            	{{ d.data[i].num }}
+            </span>
+        </div>
+        {{# } }}
+    </div>
+</div>
+{{# } }}
+</script>
+<script>
+	$(function() {
+		$(document).on("pageInit", "#page-index", function(e, id, page) {
+			var loading = false;
+			var pindex = 1;
+			var starttime = $('#datetime-picker1').val();
+			var endtime = $('#datetime-picker2').val();
+			function addItems(pindex) {
+				$.post("{php echo app_url('member/user/veriflist',array('type'=>$type,'admin'=>$admin,'time'=>$time))}",{pindex:pindex,starttime:starttime,endtime:endtime},function(d){
+					if (d.data.length > 0) {
+						var gettpl1 = document.getElementById('orderlist').innerHTML;
+						laytpl(gettpl1).render(d, function(html){
+						   $(".allorder").append(html);
+						});
+					}else if(pindex == 1){
+						$(".allorder").html('<div class="common-no-con"><img src="{URL_APP_IMAGE}order_no_con.png" alt=""><p>暂时没有验证历史</p></div>');
+					}else{
+						$(".weui-loadmore_line").show();
+						$(".loading_more").remove();
+					}
+					$('#recordnum').html(d.allnum);
+					$('#recordfen').html(d.allfen);
+				}, 'json');
+			}
+			addItems(pindex);
+			$(page).on('infinite', function() {
+				if (loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+					loading = false;
+					pindex++;
+					addItems(pindex);
+					$(".loading_more").hide();
+					$.refreshScroller();
+				}, 1000);
+			});
+		});
+		$("#datetime-picker1").calendar({
+		    value: ['{php echo date('Y-m-d',$starttime)}'],
+		    maxDate: ['{php echo date('Y-m-d',time())}']
+		});
+		$("#datetime-picker2").calendar({
+		    value: ['{php echo date('Y-m-d',$endtime)}'],
+		    maxDate: ['{php echo date('Y-m-d',time())}']
+		});
+		$('.diytime').click(function(){
+			$('.buttons-row a').removeClass('active');
+			$(this).addClass('active');
+			$('#diytimeinput').show();
+		});
+		$('.button-fill').click(function(){
+			var starttime = $('#datetime-picker1').val();
+			var endtime = $('#datetime-picker2').val();
+			location.href = "{php echo app_url('member/user/veriflist',array('type'=>$type,'admin'=>$admin))}&time="+starttime+'.'+endtime;
+		});
+		$.init();
+	});
+</script>
+{php include wl_template('common/footer');}

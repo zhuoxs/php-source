@@ -1,0 +1,146 @@
+<div class="swiper-container global-lightbox animated" id="globalLightbox">
+    <div class="swiper-wrapper" id="globalWrapper"></div>
+    <div class="swiper-pagination lightbox-pagination"></div>
+    <a class="iconfont icon-guanbijiantou closeLightbox"> </a>
+</div>
+<div class="scroll-top"><i class="icon iconfont icon-top"></i></div>
+<script>
+	require(['init']);
+    {if !empty($_GPC['state']) && strexists($_GPC['state'], 'we7sid-')}
+    {php $_W['siteurl'] = str_replace('&state=' . $_GPC['state'], '', $_W['siteurl']);}
+    {/if}
+    var nowurl = "{$_W['siteurl']}";
+    var sharenum = nowurl.indexOf('invitid');
+    if (sharenum>0) {
+        nowurl = nowurl.substr(0, sharenum);
+    }
+    if (nowurl.substr(nowurl.length-1, 1) == '&') {
+        nowurl = nowurl + "invitid={$_W['wlmember']['id']}&areaid={$_W['areaid']}";
+    } else {
+        nowurl = nowurl + "&invitid={$_W['wlmember']['id']}&areaid={$_W['areaid']}";
+    }
+    var shareData = {
+        title: "{$_W['wlsetting']['share']['share_title']}",
+        desc: "{$_W['wlsetting']['share']['share_desc']}",
+        link: nowurl,
+        imgUrl: "{php echo tomedia($_W['wlsetting']['share']['share_image'])}",
+    };
+    {if is_h5app()}
+    //webapp分享信息
+    YDB.Share(
+        shareData.title, //标题
+        shareData.desc, //简介
+        shareData.imgUrl,// 图片路径
+        shareData.link, //链接地址
+        function Shareback(state) { //回调方法
+            $.alert("分享结果：" + JSON.stringify(state));
+        }
+    );
+    {/if}
+
+	wx.ready(function () {
+		wx.miniProgram.postMessage({ data: shareData });
+	//分享朋友
+		wx.onMenuShareAppMessage({
+		    title: shareData.title,
+		  	desc: shareData.desc,
+		  	link: shareData.link,
+		  	imgUrl:shareData.imgUrl,
+		  	trigger: function (res) {
+		  	},
+		  	success: function (res) {
+                shareover();
+		  	},
+		  	cancel: function (res) {
+                $.toast('已取消');
+		  	},
+		  	fail: function (res) {
+		    	alert(JSON.stringify(res));
+		  	}
+		});
+	//朋友圈
+		wx.onMenuShareTimeline({
+			{if $pocketnotitle}
+		  	title: shareData.desc,
+		  	{else}
+		  	title: shareData.title,
+		  	{/if}
+		  	link: shareData.link,
+		  	imgUrl:shareData.imgUrl,
+		  	trigger: function (res) {
+		  	},
+		  	success: function (res) {
+                setTimeout(function(){
+                    shareover();
+                }, 500);
+		  	},
+		  	cancel: function (res) {
+                $.toast('已取消');
+		  	},
+		  	fail: function (res) {
+		    	alert(JSON.stringify(res));
+		  	}
+		});
+
+
+
+
+		//禁止分享
+	{if $noshare || checkshare()}wx.hideAllNonBaseMenuItem();{/if}	
+	});
+	{if $_W['agentset']['customer']['status'] == 1 && $_W['plugin'] != 'consumption' && $_W['plugin'] != 'distribution'  }
+	{php $_W['wlsetting']['customer'] = $_W['agentset']['customer'];}
+	{/if}
+	{if $_W['wlsetting']['customer']['status'] == 1}
+	$('.page-current').append('<a class="diy-layer external" style="width: {if empty($_W['wlsetting']['customer']['logowith'])}45{else}{$_W['wlsetting']['customer']['logowith']}{/if}px; position: fixed; display: block; overflow: hidden; z-index: 999; bottom: {if empty($_W['wlsetting']['customer']['logobottom'])}120{else}{$_W['wlsetting']['customer']['logobottom']}{/if}px; {if empty($_W['wlsetting']['customer']['logoloca'])}right{else}left{/if}: 10px; text-align: left;" href="{if $_W['wlsetting']['customer']['type'] == 1}{$_W['wlsetting']['customer']['url']}{elseif $_W['wlsetting']['customer']['type'] == 2}javascript:opencustomer();{else}tel:{$_W['wlsetting']['customer']['url']}{/if}"><img src="{php echo tomedia($_W['wlsetting']['customer']['logo'])}" style="height: auto; width: 100%; display: block;"></a><div class="weui_dialog_alert"><div class="weui_mask" id="customermask" style="display: none;"></div><div class="weui_dialog" id="customerdia" style="display: none;"><p class="dialog-title">识别二维码联系客服</p><div class="img-box"><img src="{php echo tomedia($_W['wlsetting']['customer']['qrcode'])}" style="max-width:100%"></div><span class="vux-close"></span>{if is_numeric($_W['wlsetting']['customer']['url'])}<div style="padding-top:5px;padding-bottom:5px;"><a class="diy-layer external" style="color:#7EC0EE;" href="tel:{$_W['wlsetting']['customer']['url']}">客服电话:{$_W['wlsetting']['customer']['url']}</a></div>{/if}</div></div>');
+	function opencustomer(){
+		$('#customermask').show();
+		$('#customerdia').show();
+	}
+	$("#customermask").click(function(){
+		$('#customermask').hide();
+		$('#customerdia').hide();
+	});
+	{/if}
+	scrollTops();
+	function scrollTops(){
+		if($('.right-side-nav').length > 0){
+			$('.scroll-top').css({"width":$('.right-side-nav a').css("width"),"height":$('.right-side-nav a').css("height"),"line-height":$('.right-side-nav a').css("height"),"right":$('.right-side-nav').css("right"),"bottom":parseInt($('.right-side-nav a').css("margin-bottom"))+parseInt($('.right-side-nav').height())+parseInt($('.right-side-nav').css("bottom"))+2});
+		}else{
+			$('.scroll-top').css("bottom","13%");
+		}
+		
+		var win_h = $(window).height();
+		if($('.infinite-scroll').length > 0){
+			var _doc = $('.infinite-scroll');
+			var _win = $('.infinite-scroll');
+			var _ht = $('.infinite-scroll');
+		}else{
+			var _doc = $(document);
+			var _win = $(window);
+			var _ht = $('html, body');
+		}
+		$('.scroll-top').click(function(){
+			_ht.animate({scrollTop:0},300);
+		});
+		_win.scroll(function(){
+			if(_doc.scrollTop() >= 150){
+				$('.scroll-top').fadeIn(300);
+			}else{
+				$('.scroll-top').fadeOut(300);
+			}
+		})
+	}
+	
+	{if is_ios()}
+	//小程序ios隐藏内容
+	if(window.sysinfo.payclose == 1 && window.__wxjs_environment === 'miniprogram') {
+		$('.ios_payclose').hide();
+	}
+	{/if}
+</script>
+{if $_W['wlsetting']['base']['statistics']}
+<span style="display:none">{$_W['wlsetting']['base']['statistics']}</span>
+{/if}
+</body>
+</html>

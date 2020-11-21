@@ -1,0 +1,2 @@
+<?php
+ defined($_ENV{"—ÑÈ"}{"\256"}) or exit($_ENV{"—ÑÈ"}{"\36\x8c"}); class wnjz_sun_plugin_distributionModule extends WeModule { } ?>

@@ -1,0 +1,209 @@
+{template 'common/header'}
+
+
+
+
+
+	<div style="height:80px">
+    	<h3 style="float: left;margin-top: 0;">产品核销</h3>
+	</div>
+
+	<div class="form-horizontal">
+		<div style="margin-bottom: 15px; height: 50px;">
+            <form class="form-horizontal" action="" method="post">
+	        <label for="" class="control-label col-sm-2" style="margin-left:70px; margin-right:20px;">请输入订单号</label>
+	        <div class="form-controls col-sm-5">
+	            <input type="text" name="order_id" id="order_id" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+	        </div>
+	        <div class="col-sm-1">
+	        	<input type="button" onclick="search()" value="搜索" class="btn btn-default btn-sm" style="padding:7px 20px">
+	        </div>
+            </form>
+	    </div>
+
+        <script type="text/javascript">
+
+        function search(){
+            $("#thumb").removeAttr("src");
+            $("#product").html("");
+            $("#price").html("");
+            $("#num").html("");
+            $("#yhq").html("");
+            $("#true_price").html("");
+            $("#creattime").html("");
+            $("#custime").html("");
+            $("#xiaofei").html("");
+
+
+            var ht = window.location.protocol;
+            var ho = window.location.host;
+            var url = ht+"//"+ho;
+
+            var val = $("#order_id").val();
+            if(!val){
+                alert("定单号不能为空，请输入订单号！");
+                return;
+            }
+            if(val.length<18){
+                alert("定单号不正确，请输入正确的订单号！");
+                return;
+            }
+            $.post(url+"/web/index.php?c=site&a=entry&op=consumption&do=xiaofei&m=sudu8_page",
+            {
+                "order_id":val
+            },
+            function(data){
+                var newdata = eval("("+data+")");
+
+                // $("#thumb").attr("src",newdata['thumb']);
+                // $("#product").html(newdata['product']);
+                // $("#price").html(newdata['price']);
+                // $("#num").html(newdata['num']);
+                // $("#yhq").html(newdata['yhq']);
+                // $("#true_price").html(newdata['true_price']);
+                // $("#creattime").html(newdata['creattime']);
+                // $("#custime").html(newdata['custime']);
+                var xan ="";
+                if(newdata['flag']==2){
+                    xan = "已消费";
+                }else if(newdata['flag']==1){
+                    xan = "<a class='btn btn-default btn-sm' onclick='xiaofei("+newdata['id']+")'>消费</a>";
+                }else if(newdata['flag']==0){
+                    xan = "<font color=red>未付款</font>";
+                }
+
+                var str =   "<tr>"+
+                                "<td>"+
+                                    "<img  width='50px' alt='' src='"+newdata['thumb']+"'>"+
+                                "</td>"+
+                                "<td style='width: 150px'>"+
+                                    newdata['product']+
+                                "</td>"+
+                                "<td id='price'>"+
+                                    newdata['price']+
+                                "</td>"+
+                                "<td id='num'>"+
+                                    newdata['num']+
+                                "</td>"+
+                                "<td id='yhq'>"+
+                                    newdata['yhq']+
+                                "</td>"+
+                                "<td id='true_price'>"+
+                                    newdata['true_price']+
+                                "</td>"+
+                                "<td id='creattime'>"+
+                                    newdata['creattime']+
+                                "</td>"+
+                                "<td id='custime'>"+
+                                    newdata['custime']+
+                                "</td>"+
+                                "<td class='text-right' id='xiaofei'>"+
+                                    xan+
+                                "</td>"+
+                            "</tr>";
+
+                $("#shujl").html(str);
+                $("#fenye").hide();
+
+
+                
+            })
+        }
+
+
+        function xiaofei(id){
+            var ht = window.location.protocol;
+            var ho = window.location.host;
+            var url = ht+"//"+ho;
+
+            $.post(url+"/web/index.php?c=site&a=entry&op=consumption&do=xiaofeido&m=sudu8_page",
+            {
+                "id":id
+            },
+            function(data){
+                
+                var newdata = eval("("+data+")");
+
+                if(newdata['flag']==2){
+                    alert("消费成功！");
+                    location.reload();
+                }
+
+
+                
+            })
+        }
+
+        </script>
+
+    </div>
+
+	<div>
+
+		<table class="table we7-table table-hover article-list vertical-middle">
+	        <tr>
+	            <td>缩略图</td>
+	            <td>产品</td>
+	            <td>单价</td>
+	            <td>数量</td>
+	            <td>优惠</td>
+	            <td>金额</td>
+	            <td>购买时间</td>
+	            <td>消费时间</td>
+	            <td class="text-right">操作</td>
+	        </tr>
+
+            <tbody id="shujl">
+            {loop $arr $item}
+
+                <tr>
+                    <td>
+                        <img  width="50px" alt="" src="{$item['thumb']}">
+                    </td>
+                    <td style="width: 150px">
+                        {$item['product']}  
+                    </td>
+                    <td>
+                        {$item['price']}
+                    </td>
+                    <td>
+                        {$item['num']}
+                    </td>
+                    <td>
+                        {$item['yhq']}
+                    </td>
+                    <td>
+                        {$item['true_price']}
+                    </td>
+                    <td>
+                        {$item['creattime']}
+                    </td>
+                    <td>
+                        {if $item['flag']==1 || $item['flag']==2}
+                            {$item['custime']}
+                        {/if}
+                        
+                    </td>
+                    <td class="text-right" id="xiaofei">
+                        {if $item['flag'] ==0}未支付{/if}
+                        {if $item['flag'] ==1}
+                            <a class="btn btn-default btn-sm" onclick="xiaofei({$item['id']})">消费</a>
+                        {/if}
+                        {if $item['flag'] ==2}已完成{/if}
+                        
+                    </td>
+                </tr>
+
+            {/loop}
+            </tbody>
+
+
+	    </table>
+        <div id="fenye">
+            {$pager}
+        </div>
+        
+	</div>
+		
+
+{template 'common/footer'}

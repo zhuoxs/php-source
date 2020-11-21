@@ -1,0 +1,378 @@
+{php include wl_template('common/header');}
+<link rel="stylesheet" href="{URL_MODULE}plugin/wlfightgroup/app/resource/css/orderdetail.css"></link>
+<style>
+	#downnum,#upnum{
+		display: inline-block;
+		padding-left:7px;
+		padding-right:7px;
+		padding-bottom: 2px;
+		font-weight: bolder;
+		color: green;
+		border: 1px solid gray;
+	}
+	#couponnum{
+		background-color: white;
+		width: 2rem;
+		display: inline-block;
+		height: 25px;
+		text-align: center;
+		padding-left: 3px;
+		padding-right: 3px;
+		border-top: 1px solid gray;
+		border-bottom: 1px solid gray;
+	}
+	.confirm-buttons{padding: 10px;background-color: white;}
+	.confirm-buttons .button{border: 1px solid #666;color: #666;}
+	.confirm-buttons .button.active{background-color: #666;}
+</style>
+<div class="page-group">
+    <div class="page page-current" id="page-order-confirm">
+		<div class="content" data-distance="10">
+			<div style="background-color: #F5F5F5;" id="ct">
+			    <div  class="dt_order">
+			    	{if $good['usestatus']==2}
+				    <div class="content-block" style="background-color: white;margin: 0;">
+			          <div class="buttons-row confirm-buttons" style="padding-top: .9rem;padding-bottom: 0.5rem;">
+			            <a href="#tab1-1" onclick="usestat(1)" class="tab-link button active" id="express" >快递配送</a>
+			            <a href="#tab1-2" style="border-radius: 0 0.25rem 0.25rem 0;" onclick="usestat(0)" class="tab-link button" id="bdelete" >到店消费</a>
+			          </div>
+			        </div>
+			        {/if}
+			        {if $good['usestatus']}
+			        <div class="tabs">
+			            <div class="tab active" id="tab1-1" style="position: relative;">
+			            <input id="usestatus" type="hidden" value="1" />
+			            	{if !empty($address)}
+						        <!--地址信息-->
+						        <div class="u_address">
+						            <div onclick="address()" class="u_address_d">
+						                <i style="position: absolute;top: 35%;left: 2%;font-size: 1.2rem;" class="icon iconfont icon-location"></i>
+						                <div class="address" id="dt_address" style="height: 56px;position: relative;left: 7%;"><span class="name" style="margin-bottom: 5px;">{$address['name']}</span><span class="tel">{$address['tel']}</span><span class="address_txt" style="margin-bottom: 5px;">{$address['province']}{$address['city']}{$address['county']}</span><span class="address_txt">{$address['detailed_address']}</span></div>
+						                <i class="address_flag">{if $address['status']==1}默认{else}临时{/if}</i>
+						                <i style="position: absolute;top: 35%;right: 2%;font-size: 1.2rem;" class="icon iconfont icon-right"></i>
+						            </div>
+                        			<input type="hidden" id="addressid" value="{$addressid}" />
+						        </div>
+			                {else}
+			                	<div class="u_address">
+						            <div class="u_address_d">
+						                <i style="position: absolute;top: 35%;left: 2%;font-size: 1.2rem;" class="icon iconfont icon-location"></i>
+						                <div class="address" onclick="address()" style="height: 56px;position: relative;left: 7%;" id="dt_address"><span class="toaddress">您还没有收货地址哦，点击新增地址</span></div>
+						                <i style="position: absolute;top: 35%;right: 2%;font-size: 1.2rem;" class="icon iconfont icon-right"></i>
+						            </div>
+						        </div>
+			                {/if}
+			            </div>
+			        </div>
+			        {/if}
+			        <div class="list-block" style="margin-top: .5rem;background-color: #F5F5F5;">
+	                	<ul>
+				        <li class="item-content paytype">
+	                        <div class="item-inner">
+	                            <div class="item-title">数量</div>
+	                            <div class="item-after"><div id="downnum">—</div><input onchange="subtotal()" type="tel" value="1" id="couponnum"/><div style="padding-left: 10px;padding-right: 10px;" id="upnum">+</div></div>
+	                        </div>    
+	                    </li>
+	                    <li class="item-content paytype">
+                        	<div class="item-inner">
+                            	<div class="item-title">{$mobile}</div>
+                            	<div class="item-after" onclick="bind()">绑定新号码<i class="icon iconfont icon-right"></i></div>
+                        	</div>    
+                    	</li>
+	                   </ul>
+                    </div>
+			        <div class="dt_commodity_info">
+			            <dl class="commodity_info">
+			            	<dt><img src="{php echo tomedia($good['logo'])}" width="85" height="85" alt=""></dt>
+			            	<dd>
+			            		<h3>{$good['name']}</h3>
+			            		<div class="attr" id="ord_imes">
+			            			{if $spec}<span>规格：{$spec}</span>{/if}
+			            		</div>
+			            		<div class="price">
+			            			<span class="wid">
+				            			{if $buystatus == 1}
+			                            	团购价: ¥{$goodprice}
+			                            {else}
+			                            	单购价: ¥{$goodprice}
+			                            {/if}
+			            			</span>
+			            		</div>
+			            		{if $member['vipstatus']}
+			            		<div>
+			            			<span>
+				            			会员减免:¥{$vipdiscount}
+			            			</span>
+			            		</div>
+			            		{/if}
+			            	</dd>
+			            </dl>
+                    	{if $good['usestatus'] && $good['expressid']}
+			            <div id="yunfei" class="item">
+			            	<span class="attname">应付运费：</span>
+			            	<span class="attval" id="freight">
+			            		￥<span id="expressprice">{$expressprice}</span>
+			            	</span>
+			            </div>
+			            {/if}
+			            {if $deduct>0}
+			            <div class="item" id="m4" style="padding: 5px 0;">
+				        	<span class="attname" style="line-height: 1.6rem;">积分抵扣(当前{$membercredit}积分)，可消耗<span id="maxcredit">{$maxcredit}</span>积分抵扣 ￥<span id="deduct">{$deduct}</span>)</span>
+				        	<span class="attval">
+				        		<span style="color: #F26C4F;">
+				        			<div class="item-input">
+						                <label class="label-switch">
+						                  <input type="checkbox" id="s">
+						                  <div class="checkbox"></div>
+						                </label>
+						            </div>
+				        		</span>
+				        	</span>
+				        </div>
+			            {/if}
+			            <div>
+			                <input type="text" placeholder="给商家留言" value="" class="dt_ord_input" maxlength="200" id="buyremark">
+			            </div>
+			        </div>
+			        {if $mark['getcredit']}
+			        <div class="stepGuild">
+				        <div class="step_tit"><i></i>拼团有礼</div>
+				        <div class="step_flow">
+				        	 购买此商品可以获得{$mark['getcredit']}积分
+				        </div>
+				    </div>
+			        {/if}
+			        <div class="stepGuild">
+			            <div class="step_tit"><i></i>拼团玩法</div>
+			            <div class="step_flow">
+			                <div class="step_item"><span class="step_num">1</span><span>选择<br>心仪商品</span></div>
+			                <div class="step_item step_item_on"><span class="step_num">2</span><span>支付开团<br>或参团</span></div>
+			                <div class="step_item"><span class="step_num">3</span><span>邀请好友<br>参团支付</span></div>
+			                <div class="step_item"><span class="step_num">4</span><span>达到人数<br>团购成功</span></div>
+			            </div>
+			        </div>
+			    </div>
+			</div>
+   		</div>
+   		<div class="footerr">
+   			{if $buystatus == 1}
+	        <div class="address_down">{$good['grouptime']}小时内参团好友达到成团人数才能买到哦！付款后请分享到微信邀请好友一起拼团~</div>
+	        {/if}
+	        <div class="order_mes">
+	        <span>实付款：</span>
+	        	<span class="order_price" id="dt_ord_t2">
+                                        ￥<span id="subtotal">{php echo round($price+$expressprice,2)}</span>
+	        	</span>
+	        	<button class="btn_gopay" id="wechat">提交订单</button>
+	        </div>
+	    </div>
+    </div>
+</div>
+<script type="text/javascript">
+    $(function() {
+		'use strict';
+		var xx = $('.wid').width()+10;
+		$('.cjticon').css('left',xx);
+		
+		$('#wechat').click(function(){
+			var num = $('#couponnum').val();
+			var buyremark = $('#buyremark').val();
+			var address = 0;
+			{if $good['usestatus'] == 1}
+			address = $('#addressid').val();
+			{/if}
+			{if $good['usestatus'] != 0}
+	    	var flag = $("#usestatus").val();
+			if(flag == 1){
+				address = $('#addressid').val();
+				if(!address){$.toast('请填选地址信息');return;}
+			}
+			{/if}
+	            $.post("{php echo app_url('wlfightgroup/fightapp/createFightorder',array('id'=>$id,'spec'=>$spec,'specid'=>$specid,'buystatus'=>$buystatus,'groupid'=>$groupid))}",{dk:c,num:num,address:address,buyremark:buyremark},
+	            function(d) {
+	                if (d.errno){
+	                    $.confirm(d.message,
+		                    function() { //确定后操作。
+		                    	if(d.errno ==2){location.href = "{php echo app_url('member/user/binding',array('backurl'=>urlencode($url)));}";}
+		                    	if(d.errno ==3){location.href = "{php echo app_url('wlfightgroup/fightapp/goodsdetail',array('id'=>$id));}";}
+		                    },
+		                    function() { //取消后操作。
+	                    });
+	                } else {
+	                	location.href = "{php echo app_url('wlfightgroup/fightapp/createFightorder');}&orderId="+d.message;
+	                }
+	            },
+	            "json");
+	        });
+		$.init();
+	});
+</script>
+<script type="text/javascript">
+	var limitnum = {$buylimit};
+    var c = false; //默认积分抵扣按钮状态为关闭
+    var dc = 'no';//默认不开启积分抵扣
+    
+    $('#s').click(function(){ //判断是否积分抵扣
+    	c  = document.getElementById("s").checked;
+    	dc = c?'yes':'no';
+		subtotal();
+	});
+	
+	if(limitnum == 0){limitnum = 100;}
+    $('#downnum').click(function(){
+    	var num = parseInt($('#couponnum').val());
+    	var newnum = num - 1;
+    	if (newnum<1) {
+    		$.toast('数量最小为1');
+    	}else{
+    		$('#couponnum').val(newnum);
+    		subtotal();
+    	}
+    });
+    $('#upnum').click(function(){
+    	var num = parseInt($('#couponnum').val());
+    	var newnum = num + 1;
+    	if (newnum>limitnum) {
+    		$.toast('最多购买'+limitnum+"{$good['unit']}");
+    	}else{
+    		$('#couponnum').val(newnum);
+    		subtotal();
+    	}
+    });
+    function usestat(asd){
+    	if(asd){
+    		$('.tabs').show();
+    		$('#yunfei').show();
+    		$('#usestatus').val(1);
+    		$('#bdelete').removeClass('active');
+    		$('#express').addClass('active');
+    		subtotal();
+    	}else{
+    		$('.tabs').hide();
+    		$('#yunfei').hide();
+    		$('#usestatus').val(0);
+    		$('#express').removeClass('active');
+    		$('#bdelete').addClass('active');
+    		subtotal();
+    	}
+    }
+    function subtotal(){
+	    	var pricr = {$price};
+	    	var num = $('#couponnum').val();
+	    	{if $good['usestatus'] && $good['expressid']}
+	    	var flag = $("#usestatus").val();
+	    	if(flag){
+	    		if(flag == 1){
+	    			Calculatefreight(num);
+	    		}else{
+	    			if (num>limitnum){
+			    		$.toast('最多购买'+limitnum+"{$good['unit']}");
+			    		$('#couponnum').val(limitnum);
+			    		//积分抵扣
+				    	deduct = dccredit(limitnum);
+			    		$('#subtotal').text((pricr*limitnum - deduct).toFixed(2));
+			    	}else if(num<1){
+			    		//积分抵扣
+				    	deduct = dccredit(1);
+			    		$('#subtotal').text((pricr - deduct).toFixed(2));
+			    	}else{
+			    		//积分抵扣
+				    	deduct = dccredit(num);
+			    		$('#subtotal').text((pricr*num - deduct).toFixed(2));
+			    	}
+	    		}
+	    	}else{
+	    		Calculatefreight(num);
+	    	}
+	   		
+	    	
+	    	{else}
+	    	if (num>limitnum){
+	    		$.toast('最多购买'+limitnum+"{$good['unit']}");
+	    		$('#couponnum').val(limitnum);
+	    		//积分抵扣
+		    	deduct = dccredit(limitnum);
+	    		$('#subtotal').text((pricr*limitnum - deduct).toFixed(2));
+	    	}else if(num<1){
+	    		$.toast('数量最小为1');
+	    		$('#couponnum').val(1);
+	    		//积分抵扣
+		    	deduct = dccredit(1);
+	    		$('#subtotal').text((pricr*1 - deduct).toFixed(2));
+	    	}else{
+	    		//积分抵扣
+				deduct = dccredit(num);
+			   	$('#subtotal').text((pricr*num - deduct).toFixed(2));
+	    	}
+	    	{/if}
+	    }
+	    function bind(){
+			location.href = "{php echo app_url('member/user/binding',array('backurl'=>urlencode($url)));}";
+	    }
+	    function address(){
+			location.href = "{php echo app_url('member/user/addresslist',array('backurl'=>urlencode($url),'flag'=>'good'));}";
+	    }
+	    function dccredit(creditnum){
+	    	if(!creditnum){
+	    		creditnum = $('#couponnum').val();
+	    	}
+    		{if $deduct>0}
+			var membercredit = {$membercredit}; //用户积分
+			var maxcredit = {$maxcredit}; //最多抵扣积分
+			var creditmoney = {$creditmoney};  //每积分多少元
+		    {else}
+		    var membercredit = 0; //用户积分
+			var maxcredit = 0; //最多抵扣积分
+			var creditmoney = 0;  //每积分多少元
+		    {/if}
+		    var dkcredit = maxcredit*creditnum;
+	    	if(dkcredit > membercredit){
+	    		dkcredit = membercredit;
+	    	}
+	    	deductshow = (dkcredit * creditmoney).toFixed(2);
+	    	if(c){
+	    		deduct = deductshow;
+	    	}else{
+	    		deduct = 0;
+	    	}
+	    	$('#maxcredit').text(dkcredit);
+			$('#deduct').text(deductshow);
+			return deduct;
+	    }
+	    function Calculatefreight(num){
+	    	var pricr = {$price};
+	    	if (num>limitnum){
+	    		var num2 = limitnum;
+	    	}else if(num<1){
+	    		var num2 = 1;
+	    	}else{
+	    		var num2 = num;
+	    	}
+	    	$.post("{php echo app_url('wlfightgroup/fightapp/calculatefreight',array('expressid'=>$good['expressid'],'addressid'=>$addressid))}",{num:num2},function(d){
+				if(d.status == 1){
+					$('#expressprice').text(d.price);
+					var exprice = parseFloat(d.price);
+					if (num>limitnum){
+			    		$.toast('最多购买'+limitnum+"{$good['unit']}");
+			    		$('#couponnum').val(limitnum);
+			    		//积分抵扣
+				    	deduct = dccredit(limitnum);
+			    		$('#subtotal').text((pricr*limitnum + exprice - deduct).toFixed(2));
+			    	}else if(num<1){
+			    		$.toast('数量最小为1');
+			    		$('#couponnum').val(1);
+			    		//积分抵扣
+				    	deduct = dccredit(1);
+			    		$('#subtotal').text((pricr + exprice - deduct).toFixed(2));
+			    	}else{
+			    		//积分抵扣
+				    	deduct = dccredit(num);
+			    		$('#subtotal').text((pricr*num + exprice - deduct).toFixed(2));
+			    	}
+				}else{
+					$.toast('计算运费失败，请刷新页面重试。');
+				}
+			},"json");
+	    }
+</script>
+{php include wl_template('common/footer');}

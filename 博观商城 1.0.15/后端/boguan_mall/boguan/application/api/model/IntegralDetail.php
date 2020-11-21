@@ -1,0 +1,2 @@
+<?php
+ namespace app\api\model; class IntegralDetail extends BaseModel { public static function setIntegralDetail($data) { goto yDtJ9; ByUFM: vpRcg: goto r2Ue2; r2Ue2: return true; goto uY1ap; dI9tt: $result = self::create($data); goto ocuRP; uY1ap: DV3rP: goto nTyxr; RyS9R: goto DV3rP; goto ByUFM; ocuRP: if ($result !== false) { goto vpRcg; } goto G8X1b; G8X1b: return false; goto RyS9R; yDtJ9: $data["\x75\x6e\x69\x61\143\x69\x64"] = session("\165\x6e\151\x61\143\151\144"); goto dI9tt; nTyxr: } }

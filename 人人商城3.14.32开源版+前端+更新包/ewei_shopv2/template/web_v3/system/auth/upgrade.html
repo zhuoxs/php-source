@@ -1,0 +1,163 @@
+{template '_header'}
+<div class="page-header">
+    当前位置：<span class="text-primary">系统更新</span>
+</div>
+
+    <div class="page-content">
+<form action="" method="post" class="form-horizontal form" enctype="multipart/form-data" >
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label">当前版本</label>
+        <div class="col-sm-9 col-xs-12">
+            <div class="input-group">
+                <div class="input-group-addon" style="background:#f2f2f2">人人商城&nbsp;{$version}&nbsp;商业版</div>
+                <input type='text' class='form-control'  value="RELEASE {$release}" readonly style="background:#fff;"/>
+                <div class="input-group-btn">
+                    <a class='btn btn-default' href="#" >黑锐源码社区</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="form-group" id="upgrade" style="display:none">
+        <label class="col-sm-2 control-label"></label>
+        <div class="col-sm-9 col-xs-12">
+            <div class='form-control-static'>
+                <input type="button" id="upgradebtn" value="立即更新" class="btn btn-primary" />
+            </div>
+        </div>
+    </div>
+</form></div>
+<script language='javascript'>
+    function process(action) {
+        $.ajax({
+            url: "{php echo webUrl('system/auth/upgrade/process')}",
+            data: {action: action},
+            type: 'post',
+            dataType: 'json',
+            success: function (ret) {
+                var status = ret.status;
+                var result = ret.result;
+                var act = result.action;
+
+                if (act == 'database') {
+
+                    if (status == 1) {
+                        $('#upgradebtn').val("已更新 " + result.success + " 条数据库结构变动 / 共 " + result.total + " 条");
+                        process('database');
+                    } else {
+                        $('#upgradebtn').val("已成功更新 " + result.total + " 条数据库结构变动");
+
+                        process('file');
+                    }
+
+
+                } else if (act == 'file') {
+
+                    if (status == 1) {
+                        $('#upgradebtn').val("已更新 " + result.success + " 个文件 / 共 " + result.total + " 个文件");
+                        process('file');
+                    } else {
+                        $('#upgradebtn').val("已成功更新 " + result.total + " 个文件");
+
+                        process('upgrade');
+                    }
+
+                } else if (act== 'upgrade') {
+
+
+                    if (status == 1) {
+
+                        $('#upgradebtn').val("已更新 " + result.success + " 个补丁 / 共 " + result.total + " 个补丁");
+                        process('upgrade');
+                    } else {
+
+                        $('#upgradebtn').val('更新成功').removeAttr('updating');
+                        tip.alert('更新成功!', function () {
+                            location.reload();
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+
+    $(function () {
+
+
+        $.ajax({
+            url: "{php echo webUrl('system/auth/upgrade/check')}",
+            type: 'post',
+            dataType: 'json',
+            success: function (ret) {
+
+                var result = ret.result;
+
+                if (ret.status == 1) {
+
+                    var html = "";
+
+                    if (result.filecount <= 0 && !result.database && !result.upgrades) {
+
+                        html += "<span style='color: #ed5565;'>已经是最新版本，无需更新。</span>"
+
+                    } else {
+
+                        html += "最新版本: <span style='color:#00bf99'>" + result.version + "</span> RELEASE " + result.release +"<br/>";
+
+                        if (result.filecount > 0) {
+                            html += "共检测到有 <span style='color:#ed5565'>" + result.filecount + "</span> 个文件需要更新.<br/>";
+                        }
+                        if (result.database || result.upgrades) {
+                            html += "此次有数据库更新.<br/>";
+                        }
+                        if(result.templatefiles!=''){
+                            html += "<span style='color:#ed5565'><br/><b>文件更新:</b><br/>";
+                            html += "<div style='height:150px;width:700px;overflow:auto;border:1px solid #f2f2f2;padding:5px;margin-top:10px;'>" + result.templatefiles + "</span></div><br/>";
+                        }
+
+                        if (result.log != '') {
+                            html += "<br/><b>更新日志:</b><br/>";
+                            html += '<div class="ibox-content no-padding" style="width:700px;overflow:auto;"> <div class="panel-body" style="padding: 15px 0px;"> <div class="panel-group" id="version">'+result.log+'</div></div></div>';
+                        }
+
+
+
+                        html += "<br/><b style='color:#1ab394'>我已经做好了相关文件及数据库的备份工作，并自愿承担更新所存在的风险！</b><br/><br/>";
+                    }
+
+                    html += "<div id='process'></div>";
+                    $("#check").html(html);
+                    if (result.filecount > 0 || result.database || result.upgrades) {
+                        $('#upgrade').show();
+                        $("#upgradebtn").unbind('click').click(function () {
+                            if ($(this).attr('updating') == '1') {
+                                return;
+                            }
+                            tip.confirm('确认已备份，并进行更新吗?', function () {
+                                $(this).attr('updating', 1).val('正在更新中...');
+                                if( result.database){
+                                    process('database');
+                                } else if(result.filecount>0){
+                                    process('file');
+                                }else if(result.upgrades){
+                                    process('upgrade');
+                                }
+
+                            });
+                        });
+                    }
+
+                } else {
+
+                    $("#check").html(result.message);
+                }
+            }
+        })
+
+
+    })
+</script>
+{template '_footer'}

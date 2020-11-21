@@ -1,0 +1,138 @@
+{include file="common/header"}
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/mobile/static/css/i-list.css">
+<style>
+    .panel{margin-top: 0;}
+</style>
+<!--对联-左-->
+<div class="ads_dl ads-box" id="ads_dl" style="width:30%;float:left;position:fixed;left:0;z-index:1000;top:40%;padding-bottom: 0;border-radius: 0;">
+  <span class="ads-close"><a style="width:12px;height:12px;display:block;" onclick="document.getElementById('ads_dl').style.display='none'" href="javascript:void(0);"></a></span>
+  <script language="javascript" src="{:url('/poster/index',array('pid'=>2))}"></script>
+</div>
+<!--对联-右-->
+<div class="ads_dr ads-box" id="ads_dr" style="width:30%;float:right;position:fixed;right:0;z-index:1000;top:40%;padding-bottom: 0;border-radius: 0;">
+  <span class="ads-close"><a style="width:12px;height:12px;display:block;" onclick="document.getElementById('ads_dr').style.display='none'" href="javascript:void(0);"></a></span>
+  <script language="javascript" src="{:url('/poster/index',array('pid'=>3))}"></script>
+</div>
+<!--底部-->
+<div class="ads_b ads-box" id="ads_b" style="position:fixed;z-index:1000;bottom:51px;background:#000000ba;width:100%;text-align:center;padding-bottom: 0;border-radius: 0;">
+  <span class="ads-close"><a style="width:12px;height:12px;display:block;" onclick="document.getElementById('ads_b').style.display='none'" href="javascript:void(0);"></a></span>
+  <script language="javascript" src="{:url('/poster/index',array('pid'=>4))}"></script>
+</div>
+<div class="item" style="border-bottom: 1px solid #eee;">
+    <label>排序：</label>
+    <ul id="orderCode">
+        <li id="lastTime"  {if condition="$orderCode eq 'lastTime'"}class="current"{/if} ><a href="#">最新</a></li>
+        <li id="hot" {if condition="$orderCode eq 'hot'"}class="current"{/if}  ><a href="#">最热</a></li>
+    </ul>
+</div>
+<div class="panel">
+    <ul class="pic-list clearfix">
+        {notempty name="list"}
+        {volist name="list" id="v"}
+        <li>
+            <div class="ub-list">
+                <a href="{:url('images/show',array('id'=>$v['id']))}" class="ub-link">
+                    <div class="ub-pic" style="background-image:url('{$v['cover']}');"></div>
+                    <span class="ub-tit">
+                        <?php
+                            $regex  = '/('.$key_word.')/i';
+                            preg_match_all($regex,$v['title'],$rs);
+                            foreach($rs[1] as $val){
+                                $keywords =$val;
+                                  $v['title'] = str_replace( $keywords,"<font>$keywords</font>",$v['title']);
+                            }
+                        ?>
+                        {$v['title']}
+                    </span>
+                    <span class="ub-tit">
+                        <i class="btn fn-bofang"></i>
+                        <span class="v-num" title="访问量"> {$v['click']}</span>
+                        <var style="float: right;"><i class="btn fn-time"></i> 20{:date('y-m-d',$v['update_time'])}</var>
+                    </span>
+                </a>
+            </div>
+        </li>
+        {/volist}
+        {else/}
+        <div class="not-comment not">暂时没有数据 ~</div>
+        {/notempty}
+    </ul>
+</div>
+<form action="" method="get" id="forms">
+    <input type="hidden" id="current_orderCodes"  name="orderCode" value="{$orderCode|default='0'}" >
+    <input type="hidden" id="key_word"  name="key_word" value="{$key_word|default=''}" >
+    <input type="hidden"  name="type" value="{$type|default='video'}" >
+</form>
+
+{include file="common/footer"}
+<script type="text/javascript">
+    $(function () {
+        $('#orderCode').find('li').click(function(){
+            $('#current_orderCodes').val($(this).attr('id'));
+            $('#forms').submit();
+        })
+    })
+    var status = 1;
+    var page  = 0;
+    $(window).scroll(function(){
+        var srollPos = $(window).scrollTop();
+        var orderCode = $('#current_orderCodes').val();
+        var key_word = $('#key_word').val();
+        var where =" and title like '%"+$('#key_word').val()+"%'";
+        var data = {
+            "page" : page ,
+            "orderCode" : orderCode,
+            "offset" : 20,
+            "type" : 'atlas',
+            "where" :where,
+        };
+        if(srollPos+$(window).height() > $(document).height() - 80){
+            if(status == 1) {
+                status = 0;
+                $.ajax({
+                    type: "POST",
+                    data: data,
+                    dataType: "JSON",
+                    url: "{:url('Api/moreData')}",
+                    success: function (data) {
+                        if(data.resultCode == 0){
+                            var datas = data.data.list;
+                            if(datas){
+                                var html = '';
+                                datas.forEach(function(item) {
+                                    var update_time = item['update_time'];
+                                    var newDate = new Date(update_time * 1000);
+                                    var url = '/images/show/id/'+item['id'];
+                                    var reg = '/'+key_word+'/g';
+                                    reg=eval(reg);
+                                    item['title'] = item['title'].replace(reg, "<font>"+key_word+"</font>");
+                                     html += '<li>';
+                                     html += '<div class="ub-list">';
+                                     html += '    <a href="'+url+'" class="ub-link">';
+                                     html += '    <div class="ub-pic" style="background-image:url('+item['cover']+');"></div>';
+                                     html += '    <span class="ub-tit">'+item['title']+'</span>';
+                                     html += '<span class="ub-tit">';
+                                     html += '    <i class="btn fn-bofang"></i>';
+                                     html += '    <span class="v-num" title="访问量">'+item['click']+'</span>';
+                                     html += '    <var style="float: right;"><i class="btn fn-time"></i>'+(newDate.getMonth() + 1)+'-'+newDate.getDate()+'</var>';
+                                     html += '</span>';
+                                     html += '</a>';
+                                     html += '</div>';
+                                     html += '</li>';
+                                });
+                                $('.not-comment').remove();
+                                $('.pic-list').append(html);
+                                page++;
+                                status = 1;
+                            }else{
+                                console.log('没有更多数据了！');
+                            }
+                        }else{
+                            console.log('没有更多数据了！');
+                        }
+                    }
+                });
+            }
+        }
+    })
+</script>

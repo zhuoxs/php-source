@@ -1,0 +1,471 @@
+{template 'common/header'}
+<style>
+    .modal.in .modal-dialog{
+        z-index: 99999;
+    }
+    .act-continer{
+        width: 100%;
+        border: 1px solid #e8e9eb;
+        border-bottom: none;
+        border-top: none;
+    }
+    .actlist{
+        width: 100%;
+        height: 40px;
+        line-height: 40px;
+        vertical-align: middle;
+        border-bottom: 1px solid #e8e9eb;
+        padding: 0px 10px;
+    }
+    .actlist:hover{
+        cursor: pointer;
+    }
+</style>
+<ul class="nav nav-tabs">
+    <li {if !isset($_GPC['verify']) && !isset($_GPC['order'])}class="active"{/if}><a href="{php echo $this->createWebUrl('lists', array('version_id' => $_GPC['version_id']));}">报名列表</a></li>
+    <li {if $_GPC['verify'] === '0' && isset($_GPC['verify'])}class="active"{/if}><a href="{php echo $this->createWebUrl('lists', array('version_id' => $_GPC['version_id'],'verify' => 0));}">待审核</a></li>
+    <li {if $_GPC['verify'] == 1 && isset($_GPC['verify'])}class="active"{/if}><a href="{php echo $this->createWebUrl('lists', array('version_id' => $_GPC['version_id'],'verify' => 1));}">已审核</a></li>
+    <li {if empty($_GPC['order']) && isset($_GPC['order'])}class="active"{/if}><a href="{php echo $this->createWebUrl('lists', array('version_id' => $_GPC['version_id'],'order' => 0));}">票数排行</a></li>
+    <li {if $_GPC['order'] == 1 && isset($_GPC['order'])}class="active"{/if}><a href="{php echo $this->createWebUrl('lists', array('version_id' => $_GPC['version_id'],'order' => 1));}">时间排行</a></li>
+    <li {if $_GPC['order'] == 2 && isset($_GPC['order'])}class="active"{/if}><a href="{php echo $this->createWebUrl('lists', array('version_id' => $_GPC['version_id'],'order' => 2));}">礼物排行</a></li>
+    <li><a href="{php echo $this->createWebUrl('edit', array('version_id' => $_GPC['version_id']));}">添加报名</a></li>
+	<li><a href="{php echo $this->createWebUrl('batchregister', array('version_id' => $_GPC['version_id'],'isid' => $_GPC['sid']));}">批量报名</a></li>
+</ul>
+<style>
+    .search-continer{
+        height: 60px;
+        line-height: 60px;
+        vertical-align: middle;
+    }
+    .myselect{
+        margin-left: 15px;
+        line-height: 34px;
+        margin-top: 5px;
+    }
+    .myinput{
+        height: 34px;
+        line-height: 34px;
+        vertical-align: middle;
+        width: 200px;
+        margin-top:-4px;
+        margin-left: 20px;
+        padding-left: 5px;
+    }
+    .mysearchbtn{
+        height: 34px;
+        line-height: 34px;
+        vertical-align: middle;
+        width: 80px;
+        margin-top:-4px;
+        margin-left: 20px;
+        background-color: #169BD5;
+        border: none;
+        border-radius: 5px;
+        color: white;
+    }
+    .setting-info-continer{
+        width: 100%;
+        height: 60px;
+        line-height: 60px;
+        vertical-align: middle;
+        background-color: #D7D7D7;
+    }
+    .countdown{
+        float: right;
+        margin-right: 15px;
+    }
+    .setting-tit{
+        margin-left: 10px;
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .playernum{
+        padding-leftt: 15px;
+    }
+</style>
+<div class="main">
+    <form action="./index.php" method="get" class="form-horizontal" role="form">
+        <input type="hidden" name="c" value="site">
+        <input type="hidden" name="a" value="entry">
+        <input type="hidden" name="m" value="xiaof_toupiao">
+        <input type="hidden" name="do" value="lists">
+        <input type="hidden" name="sid" value="{$_GPC['sid']}">
+        <input type="hidden" name="version_id" value="{$_GPC['version_id']}">
+        <div class="col-xs-12 col-sm-12 col-lg-12 search-continer">
+            选择时间：{php echo tpl_form_field_daterange('times', array('start' => $starttime,'end'=> $endtime),true);}
+            <select name="groups" id="groups" class="myselect">
+                <option value="" name="groups">全部分组</option>
+                {loop $setting['groups'] $groupsid $items}
+                <option {if $_GPC['groups'] == $groupsid} selected{/if} value="{$groupsid}">{$items['name']}</option>
+                {/loop}
+            </select>
+            <select name="verify" class="myselect" name="verify">
+                <option {if $_GPC['verify'] === ''} selected{/if} value="">全部状态</option>
+                <option {if $_GPC['verify'] === '0'} selected{/if} value="0">待审核</option>
+                <option {if $_GPC['verify'] === '1'} selected{/if} value="1">审核通过</option>
+                <option {if $_GPC['verify'] === '2'} selected{/if} value="2">审核未通过</option>
+                <option {if $_GPC['verify'] === '3'} selected{/if} value="3">票数锁定</option>
+            </select>
+            <input type="text" class="myinput" name="key" placeholder="输入选手名或编号">
+            <button class="mysearchbtn">搜索</button>
+        </div>
+    </form>
+    <div style="clear: both"></div>
+    <div class="setting-info-continer">
+        <span class="setting-tit">
+            {loop $settinglists $items}
+            {if $_GPC['sid'] == $items['id']}
+            {$items['tit']}
+            {/if}
+            {/loop}
+        </span>
+        <span class="playernum">&nbsp;&nbsp;报名人数：{$total}人</span>
+        <!--<span class="playernum">&nbsp;&nbsp虚拟参赛：{$total}人</span>-->
+        <span class="countdown">
+            活动倒计时：<span id="shower" class="label label-success"></span>
+        </span>
+    </div>
+    <script type="text/javascript">
+        {if strtotime($setting['end'])-time()>=1}
+        var ti = {php echo strtotime($setting['end'])-time();};
+        function showtime(){
+            if(ti <= 0 ){
+                document.getElementById('shower').innerHTML = '已结束';
+                clearTimeout(param);
+            }else{
+                var d = parseInt(ti/3600/24);
+                var h = parseInt((ti%(3600*24))/3600);
+                var m = parseInt((ti%(3600*24))%3600/60);
+                var s = parseInt((ti%(3600*24))%60);
+                document.getElementById('shower').innerHTML = d+' 天 '+ h+' 时 '+m+' 分 '+s+' 秒';
+                ti = ti - 1;
+            }
+
+        }
+        showtime();
+        var param = setInterval("showtime()",1000);
+        {else}
+        document.getElementById('shower').innerHTML = '已结束';
+        {/if}
+    </script>
+    <form action="?{$_SERVER['QUERY_STRING']}" method="post" id="form1">
+        <table class="table table-hover"  style="width:100%;z-index:-10;" cellspacing="0" cellpadding="0">
+            <thead class="navbar-inner">
+            <tr>
+                <!--<th style="width:3%;">删？</th>-->
+                <th style="width:5%;">选手编号</th>
+                <th style="width:8%;">照片</th>
+                <th style="width:20%;">报名信息</th>
+                <th style="width:18%;">投票数据</th>
+				<th style="width:19%;">选手状态</th>
+                <th style="width:17%;" class="text-right">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $list $item}
+			{php $item['data'] = iunserializer($item['data']);}
+            <tr>
+                <!--<td class="iid"><input type="checkbox" name="delete[]" value="{$item['id']}" /></td>-->
+                <td class="iuid">
+                    <input type="checkbox" name="delete[]" value="{$item['id']}" />
+                    &nbsp;{$item['uid']} </td>
+                <td><img src="{if !empty($item['pic'])}{php echo tomedia($item['pic'])}{else}resource/images/noavatar_middle.gif{/if}" width="80" onclick="entrance({$item['id']})" style="cursor: pointer;"></td>
+
+                <div class="modal fade" id="myModal{$item['id']}" tabindex="-1" role="dialog">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content" style="max-height: 1000px;">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                <h4 class="modal-title" id="myModalLabel">{$item['name']}</h4>
+                            </div>
+                            <div class="modal-body" style="text-align: center; height: 800px; overflow: hidden;">
+                                <img src="{if !empty($item['bigimg'])}{php echo tomedia($item['bigimg'])}{else}resource/images/noavatar_middle.gif{/if}" width="680">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <td>
+                    <p>报名时间：<br><span class="label label-info">{php echo date('Y-m-d H:i:s',$item['created_at'])}</span></p>
+                    <p>名称：<span class="label label-info">{$item['name']}</span></p>
+                    <p>手机：<span class="label label-info">{$item['phone']}</span></p>
+                    <p>描述：<span class="label label-info" {if !empty($item['describe'])}style="display: inline-block;max-width: 135px;text-align: left;white-space: normal;"{/if}>{$item['describe']}</span></p>
+                    {if $_GPC['sid'] >= 1}
+                    {loop $setting['joinfield'] $joinfielditem1}
+                    <p>{$joinfielditem1['name']}：<span class="label label-info" style="display: inline-block;max-width: 135px;text-align: left;white-space: normal;">{$item['data'][$joinfielditem1['sign']]}</span></p>
+                    {/loop}
+                    {/if}
+                </td>
+                <td class="votetotal">
+                    <p><div class="label label-info">点击：<span class="clickvalue">{$item['click']}</span></div></p>
+                    <p><div class="label label-info">投票：<span class="goodvalue">{$item['good']}</span></div></p>
+                    <p><div class="label label-info">分享：<span class="sharevalue">{$item['share']}</span></div></p>
+                    <p><div class="label label-info">支付：{if empty($item['fee'])}0{else}{$item['fee']}{/if}元</div></p>
+                </td>
+                <td>
+                    {if !empty($setting['joinfee'])}
+                    <p>缴费：{if $item['entryfee'] === '1'}<span class="label label-success">已缴费</span>{else}<span class="label label-warning">未缴费</span>{/if}</p>
+                    {/if}
+                    <p>审核：{if $item['verify'] === '1'}<span class="label label-success">通过</span>{elseif $item['verify'] === '2'}<span class="label label-danger">未通过</span>{else}<span class="label label-info">待审核</span>{/if}</p>
+                    <p>锁定：{if $item['locking'] === '1'}<span class="label label-danger">锁定</span>{else}<span class="label label-success">正常</span>{/if}&nbsp;{if !empty($item['locking_count'])}<span class="label label-danger">已锁{$item['locking_count']}次</span>{/if}</p>
+                    <p>限速：{if empty($item['votelimittime']) || !isset($item['votelimittime'])}<span class="label label-success">不限速</span>{elseif $item['votelimittime'] == '60'}<span class="label label-danger">一分钟</span>{elseif $item['votelimittime'] == '180'}<span class="label label-danger">三分钟</span>{elseif $item['votelimittime'] == '300'}<span class="label label-danger">五分钟</span>{else if $item['votelimittime'] == '600'}<span class="label label-danger">十分钟</span>{elseif $item['votelimittime'] == '1800'}<span class="label label-danger">三十分钟</span>{elseif $item['votelimittime'] == '3600'}<span class="label label-danger">六十分钟</span>{elseif $item['votelimittime'] == '86400'}<span class="label label-danger">每天</span>{/if}</p>
+                    {if $xiaof_config['shortcutvote'] == 1}
+                    <p>
+                        选项：<select id="adjustment{$item['id']}" style="width: 95px;">
+                        <option value="">请选择 </option>
+                        <option value="good">票数</option>
+                        <option value="click">点击量</option>
+                        <option value="share">分享量</option>
+                    </select>
+                    </p>
+                    <p>
+                        <input class="votevalue" type="text" style="width: 56px; height: 23px;vertical-align: middle;" placeholder="调整值">
+                        <button class="btn btn-primary" onclick="shortcutvote('added', $(this));" type="button" style="padding: 1px 12px;">加</button>
+                        <button class="btn btn-warning" onclick="shortcutvote('minus', $(this));" type="button" style="padding: 1px 12px;">减</button>
+                    </p>
+                    {/if}
+                </td>
+				<td class="text-right" style="overflow:visible;">
+                    <p>
+                    <div class="btn-group">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                审核 <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a href="{php echo $this->createWebUrl('lists', array('verifys'=>'1','pid'=>$item['id'], 'version_id' => $_GPC['version_id']));}" >通过</a></li>
+                                <li><a href="{php echo $this->createWebUrl('lists', array('verifys'=>'2','pid'=>$item['id'], 'version_id' => $_GPC['version_id']));}" >未通过</a></li>
+                                <li><a href="{php echo $this->createWebUrl('lists', array('lockings'=>'1','pid'=>$item['id'], 'version_id' => $_GPC['version_id']));}" >解除锁定</a></li>
+                                <li><a href="{php echo $this->createWebUrl('lists', array('lockings'=>'2','pid'=>$item['id'], 'version_id' => $_GPC['version_id']));}" >锁定</a></li>
+                            </ul>
+                        </div>
+                        <a href="{php echo $this->createWebUrl('edit', array('pid'=>$item['id'], 'version_id' => $_GPC['version_id']));}" title="编辑" class="btn btn-default">编辑</a>
+                    </div>
+                    </p>
+                    <p>
+                    <div class="btn-group">
+                            <a href="{php echo $this->createWebUrl('charts', array('sid'=>$item['sid'], 'uid'=>$item['uid'], 'version_id' => $_GPC['version_id']));}" title="统计图表" target="_blank" class="btn btn-default">统计</a>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    日志 <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="{php echo $this->createWebUrl('votelog', array('sid'=>$item['sid'], 'pid'=>$item['id'], 'version_id' => $_GPC['version_id']));}" >所有投票</a></li>
+                                    <li><a href="{php echo $this->createWebUrl('votelog', array('sid'=>$item['sid'], 'pid'=>$item['id'], 'vtype'=>1, 'version_id' => $_GPC['version_id']));}" >礼物投票</a></li>
+                                    <li><a href="{php echo $this->createWebUrl('votelog', array('sid'=>$item['sid'], 'pid'=>$item['id'], 'vtype'=>0, 'version_id' => $_GPC['version_id']));}" >普通投票</a></li>
+                                    <li><a href="{php echo $this->createWebUrl('votelog', array('sid'=>$item['sid'], 'pid'=>$item['id'], 'vtype'=>2, 'version_id' => $_GPC['version_id']));}" >多倍投票</a></li>
+                                </ul>
+                            </div>
+						</div>
+                    </p>
+                    <a href="javascript:(0);" class="btn btn-default" onclick="openmodal('{$item['id']}')" >送礼物</a></li>
+                </td>
+            </tr>
+            {/loop}
+            </tbody>
+        </table>
+
+        <table class="table table-hover">
+            <tr>
+                <td width="30">
+                    <input type="checkbox" onclick="var ck = this.checked;$(':checkbox').each(function(){this.checked = ck});" />
+                </td>
+                <td class="text-left">
+                    <input name="token" type="hidden" value="{$_W['token']}" />
+					<input type="submit" class="btn btn-primary span2" name="pass" value="批量审核通过" /> &nbsp;
+					<input type="submit" class="btn btn-primary span2" name="del" value="删除" />(不要轻易删除选手，会连带投票日志一起删除。建议使用审核不通过) &nbsp;
+                </td>
+            </tr>
+        </table>
+        <div class="panel-footer">
+            总共 <strong>{$total}</strong> 条
+        </div>
+        {$pager}
+    </form>
+</div>
+<div class="modal fade" id="myModal" class="myModal" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="text-align: left;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">手动给{$item['uid']}号送礼物</h4>
+            </div>
+            <div class="modal-body">
+                <form action="" id="users-form" method="post" class="form-horizontal" role="form">
+                    <input type="hidden" name="pid" id="pid" value="">
+                    <input type="hidden" name="sid" id="sid" value="{$_GPC['sid']}">
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label" for="">粉丝组别</label>
+                        <div class="col-xs-12 col-sm-8 col-lg-9">
+                            <select name="fans" id="fans" class="form-control">
+                                <option value="0" {if empty($_GPC['fans'])}selected{/if}>请选择粉丝组别</option>
+                                {loop $files $fi}
+                                <option value="{$fi}" {if $_GPC['fans'] == $fi}selected{/if}>{$fi}</option>
+                                {/loop}
+                            </select>
+                            <span class="help-block">
+							<strong>选择粉丝组别的数据，如不选择随机调用所有数据。模块根目录/template/下除mobile的文件夹即粉丝组别。</strong>
+						</span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="height: 150px; line-height: 150px; vertical-align: middle">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">昵称头像</label>
+                        <div class="col-xs-12 col-sm-8 col-lg-9" style="text-align: left">
+                            <input type="hidden" class="form-control" name="avatar" id="avatar" value="{$fans['path']}" />
+                            <input type="hidden" class="form-control" name="nickname" id="nickname" value="{$fans['name']}" />
+                            <img id="avatar_show" src="{$fans['path']}" width="120px;">
+                            <span style="margin-left: 30px;" id="nickname_show">{$fans['name']}</span>
+                            <button class="btn btn-primary" onclick="getfansinfo();" type="button" style="padding: 1px 12px; height: 30px; width: 80px; margin-left: 50px;">随机</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">送礼物金额</label>
+                        <div class="col-xs-12 col-sm-8 col-lg-9">
+                            <select name="gift" class="form-control">
+                                {loop $setting['giving'] $givingitem}
+                                <option value="{$givingitem['sort']}">{$givingitem['name']} {$givingitem['buycredit']}元(加票{$givingitem['adding']})</option>
+                                {/loop}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">数量</label>
+                        <div class="col-xs-12 col-sm-8 col-lg-9">
+                            <input type="text" class="form-control" name="num" />
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="users-save btn btn-primary">赠送</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function shortcutvote(action,ithis){
+        var value,result,adjustment;
+        var id = parseInt(ithis.parent().parent().siblings(".iid").children("input").val());
+        var uid = parseInt(ithis.parent().parent().siblings(".iuid").html());
+        var adjustment = $("#adjustment"+id).val();
+        var text = $('#adjustment'+id+' option:selected').text();
+
+        if(!adjustment){
+            alert('请选择要调整的选项');
+            return ;
+        }
+        if(ithis.siblings(".votevalue").val() == ''){
+            alert('请输入需要调整的'+text);
+            return ;
+        }
+        if(isNaN(ithis.siblings(".votevalue").val()) == true){
+            alert('请输入正确的调整数量');
+            return ;
+        }
+        var votevalue = parseInt(ithis.siblings(".votevalue").val());
+
+
+        if(votevalue <= 0){
+            alert('增减'+text+'值不能少于1');
+            return ;
+        }
+        var goodvalue = ithis.parent().parent().siblings(".votetotal").find("."+adjustment+"value");
+        var goods = parseInt(goodvalue.html());
+        if(action == 'minus'){
+            value = goods-votevalue;
+            if(value < 0){
+                alert('调整后，'+text+'不能少于0，请修改调整值');
+                return;
+            }
+            result = confirm('给选手编号'+uid+'减少'+votevalue+text+'，预计调整后选手'+text+'为'+value+'。确定执行该操作吗？');
+        }else{
+            value = goods+votevalue;
+            result = confirm('给选手编号'+uid+'增加'+votevalue+text+'，预计调整后选手'+text+'为'+value+'。确定执行该操作吗？');
+        }
+        if(result){
+            $.post("{php echo $this->createWebUrl('shortcutvote');}",{"pid":id, "value":votevalue, "operate":action, "adjustment":adjustment},function(data){
+                var dataresult = $.parseJSON(data);
+                if(dataresult.errno == 0) {
+                    goodvalue.html(dataresult.message);
+                }else{
+                    alert(dataresult.message);
+                }
+            });
+        }
+    }
+    $('#form1').submit(function(){
+        if($(":checkbox[name='delete[]']:checked").size() > 0){
+            return confirm('确定执行该操作吗？');
+        }
+        alert('没有选择选手');
+        return false;
+    });
+    function openmodal(id){
+        $('#pid').val(id);
+        $('#myModal').modal('show');
+    }
+    function getfansinfo() {
+        var fans = $("#fans").val();
+        var data = '&fans='+fans;
+        $.ajax({
+            url: "{php echo $this->createWebUrl('lists', array('sid'=>$item['sid'], 'act'=>'getfansinfo', 'version_id' => $_GPC['version_id']));}",
+            data: data,
+            type: "post",
+            dataType: "json",
+            success: function (data) {
+                //console.log(data);
+                $('#avatar').val(data.path);
+                $('#avatar_show').attr('src',data.path);
+                $('#nickname').val(data.name);
+                $('#nickname_show').html(data.name);
+            }
+        });
+    }
+    $('.users-save').click(function(){
+        $.post("{php echo $this->createWebUrl('givegift');}",$("#users-form").serialize(),function(data){
+            $('#myModal').modal('hide');
+            var fans = $("#fans").val();
+            window.location.href = window.location.href + '&fans='+ fans;
+            //location.reload()
+        });
+    });
+    function entrance(actid) {
+        $(".modal").modal('hide');
+        $('#myModal'+actid).modal('show');
+    }
+    function searchAct() {
+        console.log($("input[name='actname']").val());
+        var keyword = $("input[name='actname']").val();
+        $.ajax({
+            url:'{php echo $this->createWebUrl("lists", array("act" => "getact"))}',
+            type: 'post',
+            data: 'keyword='+keyword,
+            dataType: 'json',
+            success: function(resp){
+                console.log(resp);
+                if (resp.length > 0) {
+                    var html = '';
+                    for(var i = 0; i< resp.length; i++){
+                        html += '<div class="actlist" onclick="changesid(this)" sid="'+resp[i]['id']+'">'+resp[i]['tit']+'</div>';
+                    }
+                }
+                $('.act-continer').css('display','block');
+                $('.act-continer').html(html);
+            }
+        });
+    }
+    function changesid(obj) {
+        var sid = $(obj).attr('sid');
+        $('#sid').val(sid);
+        $('.act-continer').css('display','none');
+    }
+    function changeListNum() {
+        var listnum = $('.listnum').val();
+        var url = "{php echo $this->createWebUrl('lists', array('version_id' => $_GPC['version_id']));}"+'&listnum='+listnum;
+        window.location.href = url
+    }
+</script>
+{template 'edition'}
+{template 'common/footer'}

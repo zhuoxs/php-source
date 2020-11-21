@@ -1,0 +1,350 @@
+{php include wl_template('common/header');}
+<div class="page-group" >
+	<div class="page page-current" id="page-index">
+		<header class="bar bar-nav create-actions">
+			<a class="button button-link button-nav pull-left back" href="{php echo app_url('store/supervise/platform')}"><span class="icon icon-left"></span>返回</a>
+			<h1 class='title'>订单管理</h1>
+		</header>
+		<div class="content infinite-scroll">
+			<div class="screening">
+				<div class="screen-head">
+					<div class="row no-gutter">
+						<div class="col-33 open-popover" data-popover=".popover-ver-type">{if empty($status)}全部{else}{$statusname}{/if} <i class="iconfont icon-unfold"></i></div>
+						<div class="col-33 open-popover" data-popover=".popover-ver-admin">{if empty($type)}全部订单{else}{$name}{/if} <i class="iconfont icon-unfold"></i></div>
+						<div class="col-33 open-popover" data-popover=".popover-ver-sort">{if empty($sort)}时间降序{else}时间升序{/if} <i class="iconfont icon-unfold"></i></div>
+					</div>
+				</div>
+				<div class="screen-body">
+					<div class="buttons-row">
+						<a href="{php echo app_url('store/supervise/order',array('type'=>$type,'status'=>$status))}" class="{if empty($time)}active{/if} button">所有</a>
+						<a href="{php echo app_url('store/supervise/order',array('type'=>$type,'status'=>$status,'time'=>'today','timeflag'=>1))}" class="{if $time == 'today'}active{/if} button">今日</a>
+						<a href="{php echo app_url('store/supervise/order',array('type'=>$type,'status'=>$status,'time'=>'week','timeflag'=>1))}" class="{if $time == 'week'}active{/if} button">本周</a>
+						<a href="{php echo app_url('store/supervise/order',array('type'=>$type,'status'=>$status,'time'=>'month','timeflag'=>1))}" class="{if $time == 'month'}active{/if} button">本月</a>
+						<a href="javascript:;" class="button diytime {if !empty($time) && !in_array($time, array('today','week','month'))}active{/if}">自定义</a>
+					</div>
+					<div class="tabs">
+						<div class="tab" id="diytimeinput" {if !empty($time) && !in_array($time, array('today','week','month'))}style="display: block;"{/if}>
+						<div class="row">
+							<div class="col-40">
+								<div class="weui-cells before_none after_none">
+									<div class="weui-cell">
+										<div class="weui-cell__bd">
+											<input type="text" class="weui-input" id="datetime-picker1" readonly="" value="{php echo date('Y-m-d',$starttime)}">
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="col-40">
+								<div class="weui-cells before_none after_none">
+									<div class="weui-cell">
+										<div class="weui-cell__bd">
+											<input type="text" class="weui-input" id="datetime-picker2" readonly="" value="{php echo date('Y-m-d',$endtime)}">
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="col-20"><a href="javascript:;" class="button button-fill">确定</a></div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="screen-foot">
+				<div class="weui-cells__title">订单总计<span style="color: red;" id="recordnum">{$allorder}</span>个,商品<span style="color: red;" >{$allnum}</span>份,<span style="color: red;">{$allmoney}</span>元</div>
+			</div>
+		</div>
+		<div class="allorder">
+		</div>
+		<div class="weui-loadmore loading_more" style="display: none;">
+			<i class="weui-loading"></i>
+			<span class="weui-loadmore__tips">正在加载</span>
+		</div>
+		<div class="weui-loadmore weui-loadmore_line" style="display: none;">
+			<span class="weui-loadmore__tips" style="background-color: #EFEFF4;">暂无更多数据</span>
+		</div>
+	</div>
+</div>
+</div>
+<style type="text/css">
+	.weui-badge{display: inline-block;padding: .15em .4em;min-width: 8px;border-radius: 18px;background-color: #F43530;color: #FFFFFF;line-height: 1.2;text-align: center;font-size: 12px;vertical-align: middle;}
+</style>
+<div class="popover popover-manage popover-ver-type">
+	<div class="popover-angle"></div>
+	<div class="popover-inner">
+		<div class="list-block">
+			<ul>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>0,'type'=>$type,'sort'=>$sort))}" class="list-button item-link {if $status == 0 || empty($status)}active{/if}">全部</a></li>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>1,'type'=>$type,'sort'=>$sort))}" class="list-button item-link {if $status == 1}active{/if}">待消费</a></li>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>8,'type'=>$type,'sort'=>$sort))}" class="list-button item-link {if $status == 8}active{/if}">待发货</a></li>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>4,'type'=>$type,'sort'=>$sort))}" class="list-button item-link {if $status == 4}active{/if}">待收货</a></li>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>2,'type'=>$type,'sort'=>$sort))}" class="list-button item-link {if $status == 2}active{/if}">已消费</a></li>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>3,'type'=>$type,'sort'=>$sort))}" class="list-button item-link {if $status == 3}active{/if}">已完成</a></li>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>5,'type'=>$type,'sort'=>$sort))}" class="list-button item-link {if $status == 5}active{/if}">已取消</a></li>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>6,'type'=>$type,'sort'=>$sort))}" class="list-button item-link">待退款</a></li>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>7,'type'=>$type,'sort'=>$sort))}" class="list-button item-link">已退款</a></li>
+			</ul>
+		</div>
+	</div>
+</div>
+<div class="popover popover-manage popover-ver-admin">
+	<div class="popover-angle"></div>
+	<div class="popover-inner">
+		<div class="list-block">
+			<ul>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>$status,'type'=>'','sort'=>$sort))}" class="list-button item-link {if empty($type)}active{/if}">全部订单</a></li>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>$status,'type'=>'rush','sort'=>$sort))}" class="list-button item-link {if $type == 'rush'}active{/if}">抢购订单</a></li>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>$status,'type'=>'coupon','sort'=>$sort))}" class="list-button item-link {if $type == 'coupon'}active{/if}">卡券订单</a></li>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>$status,'type'=>'wlfightgroup','sort'=>$sort))}" class="list-button item-link {if $type == 'wlfightgroup'}active{/if}">拼团订单</a></li>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>$status,'type'=>'groupon','sort'=>$sort))}" class="list-button item-link {if $type == 'groupon'}active{/if}">团购订单</a></li>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>$status,'type'=>'halfcard','sort'=>$sort))}" class="list-button item-link {if $type == 'halfcard'}active{/if}">在线买单</a></li>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>$status,'type'=>'bargain','sort'=>$sort))}" class="list-button item-link {if $type == 'bargain'}active{/if}">砍价订单</a></li>
+			</ul>
+		</div>
+	</div>
+</div>
+<div class="popover popover-manage popover-ver-sort">
+	<div class="popover-angle"></div>
+	<div class="popover-inner">
+		<div class="list-block">
+			<ul>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>$status,'type'=>$type,'sort'=>0))}" class="list-button item-link {if empty($sort)}active{/if}">时间降序</a></li>
+				<li><a href="{php echo app_url('store/supervise/order',array('status'=>$status,'type'=>$type,'sort'=>1))}" class="list-button item-link {if $sort == 1}active{/if}">时间升序</a></li>
+			</ul>
+		</div>
+	</div>
+</div>
+
+<script type="text/html" id="orderlist">
+	{{# for(var i = 0, len = d.data.length; i < len; i++){ }}
+	<div class="weui-form-preview verlist">
+		<div class="weui-form-preview__hd">
+			<label class="weui-form-preview__label" style="overflow:hidden;text-overflow:ellipsis;white-space: nowrap;max-width: 60%;">{{ d.data[i].gname }}</label>
+			<em class="weui-form-preview__value">¥ {{ d.data[i].price }}</em>
+		</div>
+		<div class="weui-form-preview__bd">
+			<div class="weui-form-preview__item">
+				<label class="weui-form-preview__label">金额</label>
+				{{# var danjia = d.data[i].price/d.data[i].num;}}
+				<span class="weui-form-preview__value">¥{{ danjia.toFixed(2) }} x {{ d.data[i].num }}</span>
+			</div>
+			<div class="weui-form-preview__item">
+				<label class="weui-form-preview__label">购买人</label>
+				<span class="weui-form-preview__value">{{ d.data[i].nickname }} {{ d.data[i].mobile }}</span>
+			</div>
+			{{# if(d.data[i].optiontitle){ }}
+			<div class="weui-form-preview__item">
+				<label class="weui-form-preview__label">规格</label>
+				<span class="weui-form-preview__value">
+            	{{ d.data[i].optiontitle }}
+            </span>
+			</div>
+			{{# } }}
+			<div class="weui-form-preview__item" style="position: relative;">
+				<label class="weui-form-preview__label">订单状态</label>
+				<span class="weui-form-preview__value">
+            	{{# if(d.data[i].status == 1){ }}待消费{{# } else if(d.data[i].status == 2){ }}已消费{{# } else if(d.data[i].status == 3){ }}已评价{{# } else if(d.data[i].status == 4){ }}待收货{{# } else if(d.data[i].status == 5){ }}已取消{{# } else if(d.data[i].status == 6){ }}待退款{{# } else if(d.data[i].status == 7){ }}已退款{{# } else if(d.data[i].status == 8){ }}待发货{{# } else if(d.data[i].status == 0){ }}待付款{{# } else if(d.data[i].status == 9){ }}已过期{{# } }}
+            </span>
+				{{# if(d.data[i].status == 8){ }}
+				<span class="confirmsend" orderid="{{d.data[i].id}}" plugin="{{d.data[i].a}}"  style="position: absolute;top: 0.1rem;right: 2.3rem;display: inline-block;font-size: 12px;font-weight: 600;padding:0px 3px;background-color: #5FB878;color: white;border-radius:3px;" >确认发货</span>
+				{{# } }}
+			</div>
+			<div class="weui-form-preview__item">
+				<label class="weui-form-preview__label">下单时间</label>
+				<span class="weui-form-preview__value">
+            	{{ d.data[i].createtime }}
+            </span>
+			</div>
+			{{# if(d.data[i].address){ }}
+			<div class="weui-form-preview__item">
+				<label class="weui-form-preview__label">收货人</label>
+				<span class="weui-form-preview__value" >
+		    	{{ d.data[i].username }}-{{ d.data[i].mobile }}
+		    </span>
+			</div>
+			<div class="weui-form-preview__item">
+				<label class="weui-form-preview__label">收货地址</label>
+				<span class="weui-form-preview__value" >
+            	{{ d.data[i].address }}
+            </span>
+			</div>
+			{{# } }}
+
+			{{# if(d.data[i].remark){ }}
+			<div class="weui-form-preview__item">
+				<label class="weui-form-preview__label">留言备注</label>
+				<span class="weui-form-preview__value">
+            	{{ d.data[i].remark }}
+            </span>
+			</div>
+			{{# } }}
+
+			{{# if(d.data[i].express){ }}
+			<div class="weui-form-preview__item">
+				<label class="weui-form-preview__label">收货信息</label>
+				<span class="weui-form-preview__value">
+            	{{ d.data[i].express.name }} - {{ d.data[i].express.tel }}
+            </span>
+			</div>
+			<div class="weui-form-preview__item">
+				<label class="weui-form-preview__label">收货地址</label>
+				<span class="weui-form-preview__value" >
+            	{{ d.data[i].express.address }}
+            </span>
+			</div>
+			{{# if(d.data[i].remark){ }}
+			<div class="weui-form-preview__item">
+				<label class="weui-form-preview__label">留言备注</label>
+				<span class="weui-form-preview__value">
+            	{{ d.data[i].remark }}
+            </span>
+			</div>
+			{{# } }}
+			{{# } }}
+		</div>
+	</div>
+	{{# } }}
+</script>
+<script>
+	$(function() {
+		var count=0;
+
+		$(document).on("pageInit", "#page-index", function(e, id, page) {
+			var loading = false;
+			var pindex = 1;
+			var starttime = "{$starttime2}";
+			var endtime = "{$endtime2}";
+
+			function addItems(pindex) {
+				$.post("{php echo app_url('store/supervise/get_rush_order',array('status'=>$status,'type'=>$type,'sort'=>$sort))}",{pindex:pindex,starttime:starttime,endtime:endtime},function(d){
+					count+=d.data.length;
+					console.log(d);
+					if (d.data.length > 0) {
+						var gettpl1 = document.getElementById('orderlist').innerHTML;
+						laytpl(gettpl1).render(d, function(html){
+							$(".allorder").append(html);
+						});
+					}else if(pindex == 1){
+						$(".allorder").html('<div class="common-no-con"><img src="{URL_APP_IMAGE}order_no_con.png" alt=""><p>暂时没有订单哦</p></div>');
+					}else{
+						$('.weui-loadmore__tips').text('暂无更多数据,总共'+count+'条');
+
+						$(".weui-loadmore_line").show();
+						$(".loading_more").remove();
+					}
+				}, 'json');
+
+			}
+			addItems(pindex);
+			$(page).on('infinite', function() {
+				if (loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+					loading = false;
+					pindex++;
+					addItems(pindex);
+					$(".loading_more").hide();
+					$.refreshScroller();
+				}, 1000);
+			});
+
+		});
+		$(document).on('click','.confirmsend', function () {
+			var orderid = $(this).attr('orderid');
+			var plugin = $(this).attr('plugin');
+			var html = '<div>'
+					+'<div>'
+					+'<div>'
+					+'<label>快递公司:</label>'
+					+'<select name="express" id="express">'
+					+'<option value="其他快递" data-name="">其他快递</option>'
+					+'<option value="顺丰" data-name="顺丰">顺丰</option>'
+					+'<option value="申通" data-name="申通">申通</option>'
+					+'<option value="韵达快运" data-name="韵达快运">韵达快运</option>'
+					+'<option value="天天快递" data-name="天天快递">天天快递</option>'
+					+'<option value="圆通速递" data-name="圆通速递">圆通速递</option>'
+					+'<option value="中通速递" data-name="中通速递">中通速递</option>'
+					+'<option value="ems快递" data-name="ems快递">ems快递</option>'
+					+'<option value="汇通快运" data-name="汇通快运">汇通快运</option>'
+					+'<option value="邮政平邮" data-name="邮政平邮">邮政平邮</option>'
+					+'<option value="全峰快递" data-name="全峰快递">全峰快递</option>'
+					+'<option value="安能快递" data-name="安能快递">安能快递</option>'
+					+'<option value="快捷快递" data-name="快捷快递">快捷快递</option>'
+					+'<option value="宅急送" data-name="宅急送">宅急送</option>'
+					+'<option value="aae全球专递" data-name="aae全球专递">aae全球专递</option>'
+					+'<option value="安捷快递" data-name="安捷快递">安捷快递</option>'
+					+'<option value="安信达快递" data-name="安信达快递">安信达快递</option>'
+					+'<option value="彪记快递" data-name="彪记快递">彪记快递</option>'
+					+'<option value="bht" data-name="bht">bht</option>'
+					+'<option value="百福东方国际物流" data-name="百福东方国际物流">百福东方国际物流</option>'
+					+'<option value="coe" data-name="中国东方（COE）">中国东方（COE）</option>'
+					+'<option value="长宇物流" data-name="长宇物流">长宇物流</option>'
+					+'<option value="大田物流" data-name="大田物流">大田物流</option>'
+					+'<option value="德邦物流" data-name="德邦物流">德邦物流</option>'
+					+'<option value="dhl" data-name="dhl">dhl</option>'
+					+'<option value="dpex" data-name="dpex">dpex</option>'
+					+'<option value="dsukuaidi" data-name="d速快递">d速快递</option>'
+					+'<option value="递四方" data-name="递四方">递四方</option>'
+					+'<option value="fedex" data-name="fedex（国外）">fedex（国外）</option>'
+					+'<option value="飞康达物流" data-name="飞康达物流">飞康达物流</option>'
+					+'<option value="凤凰快递" data-name="凤凰快递">凤凰快递</option>'
+					+'<option value="飞快达" data-name="飞快达">飞快达</option>'
+					+'<option value="国通快递" data-name="国通快递">国通快递</option>'
+					+'<option value="百世汇通" data-name="百世汇通">百世汇通</option>'
+					+'</select>'
+					+'</div>'
+					+'</div>'
+					+'<div style="margin-top: 0.5rem;">'
+					+'<div>'
+					+'<label>快递单号:</label>'
+					+'<input type="text" style="height:30px;" id="expresssn" name="expresssn" />'
+					+'</div>'
+					+'</div>'
+					+'</div>';
+			$.modal({
+				title:  "请选择快递公司并填写单号",
+				text: html,
+				buttons: [
+					{
+						text: "确认发货",
+						onClick: function () {
+							var expressname = $('#express').val();
+							var expresssn = $('#expresssn').val();
+							$.post("{php echo app_url('store/supervise/send')}",{expressname:expressname,expresssn:expresssn,orderid:orderid,plugin:plugin},function(d){
+								if(d.errno){
+									$.alert(d.message, '提示', function () {
+										location.reload();
+									});
+								}else{
+									$.alert(d.message, '发货成功', function () {
+										location.reload();
+									});
+								}
+							},"json");
+						}
+					}
+				]
+			})
+		});
+
+		$("#datetime-picker1").calendar({
+			value: ['{php echo date('Y-m-d',$starttime)}'],
+			maxDate: ['{php echo date('Y-m-d',time())}']
+		});
+		$("#datetime-picker2").calendar({
+			value: ['{php echo date('Y-m-d',$endtime)}'],
+			maxDate: ['{php echo date('Y-m-d',time())}']
+		});
+		$('.diytime').click(function(){
+			$('.buttons-row a').removeClass('active');
+			$(this).addClass('active');
+			$('#diytimeinput').show();
+		});
+		$('.button-fill').click(function(){
+			var starttime = $('#datetime-picker1').val();
+			var endtime = $('#datetime-picker2').val();
+			location.href = "{php echo app_url('store/supervise/order',array('type'=>$type,'status'=>$status,'timeflag'=>1))}&time="+starttime+'.'+endtime;
+		});
+		$.init();
+	});
+</script>
+{php include wl_template('common/footer');}

@@ -1,0 +1,2 @@
+<?php
+ namespace app\boguan\model; class WxTemplate extends BaseModel { protected $createTime = false; public function getTemplateById($id) { goto QH_I3; Hf4kj: $where["\165\156\x69\x61\143\151\144"] = session("\165\x6e\x69\141\143\x69\x64"); goto dWPED; QH_I3: $where["\x74\160\154\137\151\x64"] = $id; goto Hf4kj; dWPED: $template = self::where($where)->field("\164\x70\x6c")->find(); goto OwNVE; OwNVE: return $template["\164\x70\154"]; goto YFGQk; YFGQk: } }

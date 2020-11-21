@@ -1,0 +1,2 @@
+<?php
+ goto aZ__r; fxewR: $root = str_replace("\141\x64\x64\x6f\156\x73\57\x62\x65\x74\x61\137\143\x61\x72\x2f\160\154\165\x67\x69\x6e", '', $root); goto umMxR; umMxR: require $root . "\x66\x72\x61\x6d\145\167\157\162\x6b\57\142\x6f\x6f\x74\163\x74\x72\141\x70\56\x69\x6e\x63\x2e\x70\150\x70"; goto lvhGk; lvhGk: cache_delete("\142\145\164\x61\137\x61\x75\x74\x68"); goto Q8IY_; aZ__r: $root = str_replace("\134", "\x2f", dirname(dirname(__FILE__))); goto fxewR; Q8IY_: echo json_encode(array("\145\162\x72\157\156" => 0));

@@ -1,0 +1,121 @@
+{template 'web/common/common'}
+{template 'web/soil/navbar'}
+<blockquote class="layui-elem-quote layui-text">
+  种子列表
+</blockquote>
+<div class="layui-card">
+    <form method="get" class="form-horizontal form-search layui-form" role="form">
+        <div class="page-toolbar" style="height: 34px;">
+            {if in_array('soil.seedEdit',$perm)}
+            <span class="pull-left" style="margin-right:30px;">
+                <a class="layui-btn layui-btn-sm" href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'seedEdit','action'=>'soil')}"><i class="iconfont icon-add"></i>新增种子</a>
+            </span>
+            {/if}
+            <div class="input-group col-sm-6 pull-right">
+                <input type="text" class="input-sm form-control" name="send_name" value="{$_GPC['send_name']}" placeholder="请输入种子名称">
+                <span class="input-group-btn">
+                    		<button class="layui-btn layui-btn-sm" type="button" lay-filter="formSubmit" lay-submit="" >搜索</button>
+                		</span>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="layui-card">
+    <div class="page-content">
+
+        <table class="layui-table" lay-skin="line">
+            <thead>
+            <tr>
+                <th >ID</th>
+                <th >种子</th>
+                <th >价格(1/㎡)</th>
+                <th >产量(1/㎡)</th>
+                <th >生长周期</th>
+                <th >状态</th>
+                <th >排序</th>
+                <th >操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $data['list'] $index $item}
+            <tr>
+                <td>{$item['id']}</td>
+                <td style="overflow: visible;">
+                    <img  src="{$item['cover']}" style="border-radius:50%;border:1px solid #efefef;width: 30px;height: 30px;" onerror="">
+                    <span style="padding-left: 5px">
+                                <span class="nickname">{$item['send_name']}</span>
+                            </span>
+                </td>
+                <td>¥{$item['price']}</td>
+                <td>{$item['output']}</td>
+                <td>{$item['cycle']}</td>
+                <td style="overflow:visible;">
+                    {if $item['is_putaway']==1}
+                    <span class="label label-primary changePutAway" data-id="{$item['id']}" data-status="0" title="点击下架">上架</span>
+                    {else}
+                    <span class="label label-default changePutAway" data-id="{$item['id']}" data-status="1" title="点击上架">下架</span>
+                    {/if}
+                </td>
+                <td>{$item['rank']}</td>
+
+                <td style="overflow:visible;position:relative">
+                    {if in_array('soil.seedEdit',$perm)}
+                    <a class="layui-btn layui-btn-xs btn-operation" href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'seedEdit','id'=>$item['id'],'action'=>'soil')}">
+                        <i class="iconfont icon-modify"></i>编辑
+                    </a>
+                    {/if}
+                    {if in_array('soil.soilDel',$perm)}
+                    <a class="layui-btn layui-btn-xs layui-btn-danger btn-operation delete" data-toggle="ajaxRemove" href="#" data-id="{$item['id']}">
+                        <i class="iconfont icon-el-icon-dev-delete"></i>删除
+                    </a>
+                    {/if}
+                </td>
+            </tr>
+            {/loop}
+            </tbody>
+        </table>
+
+        <div style="text-align: right;">
+            {$data['pager']}
+        </div>
+
+    </div>
+</div>
+{template 'common/footer'}
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form,layer = layui.layer;
+        $(".delete").click(function(){
+            var that=$(this);
+            var id=$(this).attr('data-id');
+            var url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'soilDel','type'=>'seed','action'=>'soil')}";
+            updateData(url,{id:id},'确认删除吗');
+        })
+
+        $(".changePutAway").click(function () {
+            var id=$(this).attr('data-id');
+            var status=$(this).attr('data-status');
+            var status_txt='上架';
+            if(status==0){
+                status_txt='下架';
+            }
+            var url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'changeStatus','type'=>'seed','action'=>'soil')}";
+            updateData(url,{id:id,status:status},'确认要将该种子'+status_txt+'吗？')
+        })
+
+        /** 搜索查询*/
+        form.on('submit(formSubmit)',function (data) {
+            $("input[name='flag']").val('');
+
+            var formData = data.field;
+            let url = "{url 'site/entry/'.$_GPC['do'],array('m'=>'kundian_farm','op'=>'seedList','action'=>'soil')}";
+
+            if(formData['send_name']){
+                url+="&send_name="+formData['send_name'];
+            }
+            window.location.href=url;
+        })
+    });
+
+</script>

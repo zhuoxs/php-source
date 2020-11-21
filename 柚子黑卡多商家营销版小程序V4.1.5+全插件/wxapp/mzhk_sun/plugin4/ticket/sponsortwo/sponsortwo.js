@@ -1,0 +1,2 @@
+// mzhk_sun/plugin4/ticket/sponsortwo/sponsortwo.js
+Page({data: {}})

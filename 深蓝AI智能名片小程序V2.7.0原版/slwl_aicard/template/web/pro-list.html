@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{$_W['slwl']['lang']['sys_name']}</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="">
+    {template 'public/header'}
+
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+    {template 'public/top'}
+    {template 'public/left'}
+
+    <div class="layui-body">
+        <div class="layui-main">
+            <div class="layui-tab">
+                <ul class="layui-tab-title">
+                    <li {if $operation == 'display'} class="layui-this" {/if}>
+                        <a href="{php echo webUrl('pro_list',array('op' =>'display'))}">产品管理</a>
+                    </li>
+                    {if empty($one['id']) && $operation == 'post'}
+                    <li class="layui-this">
+                        <a href="{php echo webUrl('pro_list',array('op' =>'post'))}">添加</a>
+                    </li>
+                    {/if}
+                    {if ($one['id']) && $operation == 'post'}
+                    <li class="layui-this">
+                        <a href="{php echo webUrl('pro_list',array('op' =>'post','id'=>$one['id']))}">编辑</a>
+                    </li>
+                    {/if}
+                    <li {if $operation == 'set' } class="layui-this" {/if}>
+                        <a href="{php echo webUrl('pro_list',array('op' =>'set'))}">配置</a>
+                    </li>
+                </ul>
+            </div>
+
+        {if $operation == 'display'}
+            <div class="layui-form">
+                <div class="box-tools">
+                    <div class="box-search">
+                        <div class="layui-input-inline">
+                            <input type="text" name="keyword" value="{$keyword}" class="layui-input" placeholder="标题">
+                        </div>
+                        <div class="layui-input-inline">
+                            <button class="layui-btn" lay-submit="" lay-filter="table-search" id="table-search">搜索</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="box-list-img">
+                    <table id="sl-table" lay-filter="sl-table"></table>
+                </div>
+            </div>
+
+            <div class="script">
+                <script type="text/html" id="toolbar">
+                    <div class="layui-btn-container">
+                        <button class="layui-btn layui-btn-sm" lay-event="add">添加</button>
+                        <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delete">批量删除</button>
+                    </div>
+                </script>
+                <script type="text/html" id="thumb">
+                    <div class="box-table-img">
+                        <img src="{{d.thumb_url}}" data-url="{{d.thumb_url}}"
+                            onerror="this.src='{MODULE_URL}template/public/images/nopic.png'">
+                    </div>
+                </script>
+                <script type="text/html" id="operation">
+                    <a href="javascript:;" class="layui-btn layui-btn-sm" lay-event="edit">编辑</a>
+                    <a href="javascript:;" class="layui-btn layui-btn-sm layui-btn-danger" lay-event="del">删除</a>
+                </script>
+                <script>
+                    layui.use(['laypage', 'layer', 'table', 'form'], function() {
+                        my_laypage = layui.laypage;
+                        my_layer = layui.layer;
+                        my_table = layui.table;
+                        my_form = layui.form;
+
+                        url_post = "{php echo webUrl('pro_list', array('op' =>'post'))}";
+                        url_list = "{php echo webUrl('pro_list', array('op' => 'display_table'))}";
+                        url_delete = "{php echo webUrl('pro_list', array('op' => 'delete'))}";
+
+                        table_list = my_table.render({
+                            elem: '#sl-table'
+                            , toolbar: '#toolbar'
+                            , skin: 'nob'
+                            , even: true
+                            , url: url_list
+                            , cols: [[
+                                // type: 'numbers',
+                                {type: 'checkbox'}
+                                , {field: 'id', width: 60, title: 'ID', sort: true}
+                                , {field: 'displayorder', title: '排序', width: '6%', sort: true}
+                                , {field: 'title', title: '标题', width: '46%', sort: true}
+                                , {field: 'thumb', title: '封面图片', templet: '#thumb'}
+                                , {field: 'enabled_format', title: '状态', sort: true}
+                                , {title: '操作', templet: '#operation'}
+                            ]]
+                            , height: 'full-190'
+                            , page: {
+                                theme: '#1E9FFF'
+                                , layout: ['prev', 'page', 'next']
+                            }
+                        });
+                    });
+                </script>
+            </div>
+
+
+        {elseif $operation == 'post'}
+            <form class="layui-form fixed" action="" method="post" enctype="multipart/form-data" id="data-form">
+                <input type="hidden" name="id" value="{$one['id']}" />
+                <div class="layui-tab-content">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">状态</label>
+                        <div class="layui-input-block">
+                            <input type="radio" name="enabled" value="1" title="启用" {if $one['enabled']==1 || empty($one['id']) }checked{/if}>
+                            <input type="radio" name="enabled" value="0" title="禁用" {if $one['enabled']==0 && $one['id'] }checked{/if}>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">排序</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="displayorder" value="{$one['displayorder']}" class="layui-input" placeholder="数字越大，排名越靠前">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">标题</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="title" lay-verify="required" value="{$one['title']}" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">副标题</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="subtitle" value="{$one['subtitle']}" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">发布时间</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="createtime" class="layui-input" id="test5" placeholder="yyyy-MM-dd HH:mm">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">图片</label>
+                        <div class="layui-input-block">
+                            {php echo slwl_tpl_form_field_image('thumb', $one['thumb']);}
+                            <div class="layui-form-mid layui-word-aux">图片大小为 750 * 415 像素</div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">提示</label>
+                        <div class="layui-input-block">
+                            <div class="layui-form-mid layui-word-aux">
+                                <span>小程序暂时不支持复杂的格式文本，如果发现前台显示空白，请把内容复制到文本文档里中转一下。</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">文章内容</label>
+                        <div class="layui-input-block box-act-body">
+                            {php echo tpl_ueditor('detail',$one['detail'])}
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">外链图片<br>(可选)</label>
+                        <div class="layui-input-block">
+                            {php echo slwl_tpl_form_field_image('out_thumb', $one['out_thumb'])}
+                            <div class="layui-form-mid layui-word-aux">图片大小为宽度100%高度自适应，推荐 750 X 310 像素</div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">动作(可选)</label>
+                        <div class="layui-input-block">
+                            {php echo slwl_tpl_form_show_link('out_link', $one['out_link']);}
+                            <div class="layui-form-mid layui-word-aux">可手动输入带 https 链接，但小程序必需配置相关域名信息</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-tab-content fixed" id="data-submit">
+                    <div class="layui-form-item">
+                        <div class="layui-input-block">
+                            <button class="layui-btn" lay-submit="" lay-filter="pro">提交</button>
+                            <input type="hidden" name="token" value="{$_W['token']}" />
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <script>
+                layui.use(['laydate', 'form'], function(){
+                    var laydate = layui.laydate;
+                    var form = layui.form;
+
+                    // 日期
+                    laydate.render({
+                        elem: '#test5'
+                        ,type: 'datetime'
+                        ,format: 'yyyy-MM-dd HH:mm:ss'
+                        ,value: "{php echo $one['createtime']?$one['createtime']:date('Y-m-d H:i:s',time()); }"
+                    });
+
+                    // 提交
+                    form.on('submit(pro)', function(data){
+                        let url = "{php echo webUrl('pro_list', array('op'=>'post'))}";
+                        var $obj = $(this);
+
+                        if (!$obj.hasClass('lock')) {
+                            $obj.addClass('lock'); // 不能再点击
+
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                dataType: 'json',
+                                data: data.field,
+                                success: function (rs) {
+                                    console.log(rs.message.errno);
+                                    if (rs.message.errno == '0') {
+                                        layer.msg('保存成功！' , {
+                                            time: 500
+                                        }, function () {
+                                            window.location.href = "{php echo webUrl('pro_list')}";
+                                        });
+                                    } else {
+                                        layer.msg(rs.message.message, {
+                                            offset: '20%',
+                                        });
+                                    }
+                                    $obj.removeClass('lock');
+                                },
+                                error: function () {
+                                    layer.msg('提交过程发生错误，请与管理员联系', {
+                                        offset: '20%',
+                                    });
+                                    $obj.removeClass('lock');
+                                }
+                            });
+                        }
+
+                        return false;
+                    });
+                });
+            </script>
+
+
+        {elseif $operation == 'set'}
+            <form class="layui-form" action="" method="post" enctype="multipart/form-data">
+                <div class="layui-form-item style">
+                    <label class="layui-form-label">列表样式</label>
+                    <div class="layui-input-block flex">
+                        <input type="hidden" value="{$tmp_pro_list['list_style']}" name="options[list_style]" id="style-value">
+                        <div class="one-style {if $tmp_pro_list['list_style']=='non-image'}active{/if}" data-val="non-image">
+                            <div class="img"><img src="{MODULE_URL}template/public/images/list_style/non_image.png" alt="样式一"></div>
+                        </div>
+                        <!-- <div class="one-style {if $tmp_pro_list['list_style']=='scroll-order'}active{/if}" data-val="scroll-order">
+                            <div class="img"><img src="{MODULE_URL}template/public/images/list_style/scroll_order.png" alt="样式二(不合适)"></div>
+                        </div> -->
+                        <div class="one-style {if $tmp_pro_list['list_style']=='column-one'}active{/if}" data-val="column-one">
+                            <div class="img"><img src="{MODULE_URL}template/public/images/list_style/column_one.png" alt="样式三"></div>
+                        </div>
+                        <div class="one-style {if $tmp_pro_list['list_style']=='column-one-extra'}active{/if}" data-val="column-one-extra">
+                            <div class="img"><img src="{MODULE_URL}template/public/images/list_style/column_one_extra.png" alt="样式四"></div>
+                        </div>
+                        <div class="one-style {if $tmp_pro_list['list_style']=='column-two'}active{/if}" data-val="column-two">
+                            <div class="img"><img src="{MODULE_URL}template/public/images/list_style/column_two.png" alt="样式五"></div>
+                        </div>
+                        <div class="one-style {if $tmp_pro_list['list_style']=='column-two-inner'}active{/if}" data-val="column-two-inner">
+                            <div class="img"><img src="{MODULE_URL}template/public/images/list_style/column_two_inner.png" alt="样式六"></div>
+                        </div>
+                        <div class="one-style {if empty($tmp_pro_list['list_style']) || $tmp_pro_list['list_style']=='immersive-dark'}active{/if}" data-val="immersive-dark">
+                            <div class="img"><img src="{MODULE_URL}template/public/images/list_style/immersive_dark.png" alt="样式七"></div>
+                        </div>
+                        <div class="one-style {if $tmp_pro_list['list_style']=='immersive-light'}active{/if}" data-val="immersive-light">
+                            <div class="img"><img src="{MODULE_URL}template/public/images/list_style/immersive_light.png" alt="样式八"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit="" lay-filter="set">提交</button>
+                        <input type="hidden" name="token" value="{$_W['token']}" />
+                    </div>
+                </div>
+            </form>
+
+            <script>
+                layui.use('form', function(){
+                    var form = layui.form;
+
+                    $(document).on('click', '.layui-form-item.style .one-style', function () {
+                        $('#style-value').val($(this).attr('data-val'));
+                        $(this).siblings('.active').removeClass('active');
+                        $(this).addClass('active');
+                    })
+
+                    form.on('submit(set)', function(data){
+                        let url = "{php echo webUrl('pro_list', array('op'=>'set'))}";
+                        var $obj = $(this);
+
+                        if (!$obj.hasClass('lock')) {
+                            $obj.addClass('lock'); // 不能再点击
+
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                dataType: 'json',
+                                data: data.field,
+                                success: function (rs) {
+                                    console.log(rs.message.errno);
+                                    if (rs.message.errno == '0') {
+                                        layer.msg('保存成功！' , {
+                                            time: 500
+                                        }, function () {
+                                            window.location.href = "{php echo webUrl('pro_list', array('op'=>'set'))}";
+                                        });
+                                    } else {
+                                        layer.msg(rs.message.message, {
+                                            offset: '20%',
+                                        });
+                                    }
+                                    $obj.removeClass('lock');
+                                },
+                                error: function () {
+                                    layer.msg('提交过程发生错误，请与管理员联系', {
+                                        offset: '20%',
+                                    });
+                                    $obj.removeClass('lock');
+                                }
+                            });
+                        }
+
+                        return false;
+                    });
+                });
+            </script>
+
+
+        {/if}
+        </div>
+    </div>
+
+    {template 'public/copyright'}
+</div>
+
+{template 'public/footer'}
+</body>
+</html>

@@ -1,0 +1,263 @@
+{template 'web/common/header'}
+
+<!--主体头end-->
+
+<!--主体内容start-->
+
+<div class="page">
+
+    <div class="page_content">
+
+        <div style="height:55px">
+
+            <h3 style="float: left;margin-top: 0;">用户列表</h3>
+
+        </div>
+
+        <form class="form-horizontal" action="" method="post">
+
+            <div style="margin-bottom:10px">
+
+                <div style="display: inline-block;">
+
+                    搜索用户:
+
+                </div>
+
+                <div style="display: inline-block;">
+
+                    <select name="search_group" id="search_group" style="width: 200px">
+
+                        <option value="0">全部</option>
+                        {loop $group $item}
+                        <option value="{$item['id']}" {if $item['id'] == $search_group}selected="selected"{/if}>{$item['name']}</option>
+                        {/loop}
+                    </select>
+
+                </div>
+
+                <div style="display: inline-block;">
+
+                    <input type="text" name="search_keys" id="search_keys" value="{$search_keys}" class="form-control ng-pristine ng-untouched ng-valid ng-empty" style="border-radius: 0px" placeholder="搜索关键字" autocomplete="off">
+
+                </div>
+
+                <div style="display: inline-block;">
+
+                    <input name="token" type="hidden" value="ddda75f2">
+
+                    <div class="btn btn-primary" id="filter" style="display: inline-block;font-size: 12px;" />提交</div>
+
+                </div>
+
+            </div>
+            <script>
+                $("#filter").click(function(){
+                    var url = window.location.href;
+                    if(url.indexOf("&opt") != -1){
+                        url = url.slice(0, url.indexOf("&opt"));
+                    }
+                    window.location.href = url + "&opt=display&search_keys=" + $('#search_keys').val() + '&search_group=' + $('#search_group').val();
+                })
+            </script>
+        </form>
+
+
+
+        <table class="table we7-table table-hover article-list vertical-middle">
+
+
+
+            <tbody id="shujl">
+
+
+
+            </tbody>
+
+
+
+        </table>
+
+
+
+        <table class="table we7-table table-hover article-list vertical-middle font-size-12 fxsgl_table " style="table-layout: fixed;">
+
+            <thead>
+
+            <tr style="background:#fff;color: #000000;font-family: '宋体';">
+
+                <th style="width:150px">用户名</th>
+
+                <th style="width:150px;">用户权限组</th>
+
+                <th style="width:9%;min-width:70px;">注册时间</th>
+
+                <th style="width:9%;min-width:70px;">
+
+                    操作
+
+                </th>
+
+            </tr>
+
+            </thead>
+
+            <tbody class="tbody" style="width: 100%;">
+
+            {loop $user $k $v}
+
+            <tr class="fxsgl_table_hang" style="background-color: #fff;">
+
+                <td>{$v['username']}</td>
+
+                <td>{$v['groupname']}</td>
+
+                <td>{php echo date('Y-m-d',$v['joindate']);}</td>
+
+                <td>
+                
+                    <a href="javascript:void(0)" onclick="showPass({$v['uid']},{$v['gid']})" class="btn btn-primary" style="margin-bottom: 20px">编辑</a>
+
+                </td>
+
+            </tr>
+
+            {/loop}
+            </tbody>
+
+        </table>
+{$pager}
+
+    </div>
+
+</div>
+
+<!--主体内容end-->
+
+</div>
+
+<div class="modal fade" id="pass" role="dialog">
+
+    <div class="we7-modal-dialog modal-dialog">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+                <div class="modal-title">修改权限组</div>
+
+            </div>
+
+            <div class="modal-body text-center">
+
+                <div class="we7-form" style="width: 450px; margin: 0 auto;">
+
+                    <div class="form-group">
+
+                        <label for="" class="control-label col-sm-2 font-size-12">操作名称</label>
+
+                        <div class="form-controls col-sm-10">
+                            <select name="gid" id="gid" class="form-control">
+
+                 
+
+                            </select>
+                            <div class="fz12" style="text-align: left;">请选择权限组，选择后用户可以管理权限组拥有的模块</div>
+
+                        </div>
+
+                    </div>
+
+
+                    <input type="hidden" name="uid" value="0">
+
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button" class="btn btn-primary" onclick="change()">确定</button>
+
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    function showPass(uid,gid) {
+        $("#now_gid").val(gid);
+        $("input[name='uid']").val(uid);
+        $.ajax({
+
+            url : "{php echo $this->createWebUrl('Auth',['op' => 'lsitauth','act' => 'getgroup'])}",
+
+            type:"post",
+
+            dataType:"json",
+
+            data:{
+
+                gid:gid
+
+            },success:function (res) {
+                if(res){
+                    var group1 = '<option value="0">请选择权限组</option>';
+                    var group2 = "";
+                    for(var i=0;i<res.length;i++){
+                        if(res[i]['checked'] == 1){
+                            group2 += '<option value="'+res[i]['id']+'" selected="selected">'+res[i]['name']+'</option>';
+                        }else{
+                            group2 += '<option value="'+res[i]['id']+'">'+res[i]['name']+'</option>';
+                        }
+                    }
+                    var groups = group1 + group2;
+                    $("#gid").html(groups);
+                    $("#pass").modal('toggle');
+                }
+            }
+        })
+    }
+
+    
+
+    function change() {
+
+        var uid = $("input[name='uid']").val();
+        var gid = $("#gid").val();
+
+        $.ajax({
+
+            url : "{php echo $this->createWebUrl('Auth',['op' => 'lsitauth','act' => 'changeuser'])}",
+
+            type:"post",
+
+            dataType:"json",
+
+            data:{
+
+                uid : uid,gid:gid
+
+            },success:function (res) {
+
+                if(res.code>0){
+                    alert(res.message);
+                    $("#pass").modal('hide');
+                    window.location.reload();
+                }else{
+                    alert(res.message);
+                }
+            }
+
+        });
+
+    }
+
+</script>

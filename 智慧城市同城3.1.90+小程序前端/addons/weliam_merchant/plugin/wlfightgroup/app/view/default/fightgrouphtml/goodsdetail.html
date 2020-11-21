@@ -1,0 +1,590 @@
+{php include wl_template('common/header');}
+<link rel="stylesheet" href="{URL_MODULE}plugin/wlfightgroup/app/resource/css/orderdetail.css"></link>
+<style>
+	.alink{margin-left: 5px;}
+	.smallspec,.diffspec{min-width: 50px;text-align: center;
+    max-width: 198px;
+    line-height: 16px;font-size: 14px;margin-right: 10px;margin-bottom: 10px;
+    padding: 5px 9px;border:1px solid #999;color: #333;border-radius: 5px;display: inline-block;}
+	.step_flow{border-top: 1px solid #e3e3e3;}
+	.details_box .goods-title-s2{justify-content: space-between;}
+	.goods-title{height: 1rem;line-height: 1rem;padding-bottom: calc(0.5rem + 1px);display: -webkit-flex;display: flex;justify-content: center;box-sizing: initial;position: relative;}
+	.goods-title:after{content: "";width: 100vw;height: 1px;background-color: #f3f3f3;position: absolute;left: -10px;bottom: 0;}
+	.goods-title p{height: 1rem;line-height: 1rem;font-size: .75rem;font-weight: 600;}
+	.goods-title p i{width: 1rem;height: 1rem;vertical-align: -0.2rem;margin-right: .25rem;display: inline-block;}
+	.goods-title p i img{width: 100%;display: block;}
+	.goods-title a{color: #999999;font-size: .65rem;display: block;}
+	.goods-title a i{font-size: 1rem;vertical-align: -0.15rem;margin-left: -0.25rem;display: inline;}
+	.logistics-location, .logistics-explain{margin-top: .5rem;}
+	.store-info{padding-bottom: 0;}
+	.store-info h1{height: 1.05rem;line-height: 1.05rem;padding: .15rem 0;font-size: .75rem;font-weight: bold;margin: 0;margin-top: .5rem;margin-bottom: .3rem;box-sizing: initial;}
+	.store-info p{font-size: .7rem;margin-bottom: .3rem;display: -webkit-flex;display: flex;-webkit-justify-content: space-between;justify-content: space-between;}
+	.store-info p span{line-height: 1.2rem;padding-right: .5rem;display: block;}
+	.store-info p a{height: .9rem;line-height: .9rem;color: #fff;font-size: .6rem;padding: .15rem .6rem;background-color: #FE433F;-webkit-border-radius: 3px;border-radius: 3px;display: block;box-sizing: initial;-webkit-flex-shrink: 0;flex-shrink: 0;}
+	.goods-cmt-title{text-align: center;display: -webkit-flex;display: flex;justify-content: space-between;}
+	.goods-cmt-title-p{padding: .4rem 0;-webkit-flex: 1;flex: 1;box-sizing: initial;}
+	.goods-cmt-title-p a{height: 1.6rem;line-height: 1.6rem;color: #333;font-size: .75rem;display: inline-block;position: relative;}
+	.goods-cmt-title-p .active{color: #fb2d37;background-color: transparent;}
+	.goods-cmt-title-p .active:after{content: "";width: 100%;height: 2px;background-color: #fb2d37;position: absolute;left: 0;bottom: 0;}
+	.shop-cmt{display: none;}
+	.g-d-info5-t2 img{max-width: 100%;}
+</style>
+<div class="page-group">
+    <div class="page page-current" id="page-goods-list" >
+		{php include wl_template('common/earn');}
+		<div class="content infinite-scroll" style="padding-bottom: 50px;overflow-x: hidden;">
+    		<div class="group-dtl">
+    			<!--图片轮播-->
+    			<div class="banner" id="ban_adv">
+				    <div class="swiper-wrapper">
+					{loop $advs $adv}
+						<div class="swiper-slide"><img src="{php echo tomedia($adv)}"></div>
+					{/loop}			    
+				    </div>
+				    <div class="swiper-pagination"></div>
+				</div>
+				<style>
+					.banner{visibility: visible;width: 100%;position: relative;overflow: hidden;}
+					.banner img{width: 100%;}
+					.dotList{position: absolute;bottom: 5px;right: 10px;z-index: 100;}
+					.dotList li{margin-right:8px;padding-top:1px;display:inline-block;background:url({URL_APP_IMAGE}halfcard/icon_dot.png) no-repeat;width:6px;height:6px;background-size:6px}
+					.dotList li.cur{padding-top:0;width:8px;height:8px;background:url({URL_APP_IMAGE}halfcard/icon_selectDot.png) no-repeat;background-size:8px}
+				</style>
+				<script>
+				    $(function() {
+				        var mySwiper = new Swiper ('#ban_adv', {
+							speed:500,
+							autoplay: 3000,
+							autoplayDisableOnInteraction : false,
+							setWrapperSize:true,
+							pagination: '.swiper-pagination',
+							paginationClickable: true
+				        });
+				    });
+				</script>
+				<!--倒计时与拼团标识-->
+			    {if $good['islimittime']}
+    			<div class="g-d-info1 flex-s-b">
+			        <div class="g-d-info1-l"><span>限时</span>限时火拼·超值低价</div>
+			        <div class="g-d-info1-r">
+			          {if $good['timelimitstatus'] == 3}
+			          <p>商品发售已结束</p>
+			          <p>请期待下次发售或关注其他商品</p>
+			          {else}
+			          <p>距离{if $good['timelimitstatus'] == 2}发售{else if $good['timelimitstatus'] == 1}结束{/if}仅剩</p>
+			          <h1 class="only-time" id="timer0" sytime="{$good['sytime']}"><i>00</i>天<i>00</i>时<i>00</i>分<i>00</i>秒</h1>
+			          {/if}
+			        </div>
+			    </div>
+			    {/if}
+			    <!--商品信息 标签-->
+			    <div class="g-d-info2">
+			        <div class="g-d-info2-t1 flex-s-b">
+			          	<div class="g-d-info2-t1-l-d">
+			            	<div class="g-d-info2-l">￥<span>{$good['price']}</span></div>
+			            	<div class="g-d-info2-c">
+			              		<div class="g-d-info2-c-t1"><em>￥{$good['aloneprice']}</em></div>
+			              		<div class="g-d-info2-c-t2"><i>拼团省{php echo sprintf("%.2f",$good['aloneprice'] - $good['price']);}</i><i>已团{php echo $good['realsalenum']+$good['falsesalenum']}件</i></div>
+			            	</div>
+			          	</div>
+			          	<a href="{php echo app_url('common/tools/poster', array('id' => $good['id'], 'type' => 'fightgroup'));}" class="g-d-info2-r"><i class="icon iconfont icon-share_light"></i></i><h3>分享</h3></a>
+			        </div>
+			        <div class="g-d-info2-t2">
+			          	{$good['name']}
+			        </div>
+			        {if $tags}
+			        <div class="g-d-info2-t3 flex-s-b">
+			          	<div>
+				    	{loop $tags $tas}
+			            	<span style="display: inline-block;"><i class="icon iconfont icon-zhengque"></i>{$tas}</span>
+			            {/loop}
+			          	</div>
+			        </div>
+			        {/if}
+			    </div>
+			    <!--商户信息-->
+			    <section class="logistics-location main gap">
+	    			<div class="goods-title">
+						<p><i><img src="{URL_MODULE}plugin/rush/app/resource/images/act_info-tit02.png"></i>商家信息</p>
+					</div>
+					<div class="store-info">
+	                    <p style="margin-top: 10px;"><i class="icon iconfont icon-shopfill" style="position: absolute;color: red;"></i><span style="padding-left: 20px;">{$merchant['storename']}&nbsp;</span><a href="{php echo app_url('store/merchant/detail',array('id'=>$merchant['id']))}">进店</a></p>
+	                    <p><i class="icon iconfont icon-dianhua1" style="position: absolute;color: red;"></i><span style="padding-left: 20px;">{$merchant['mobile']}&nbsp;</span><a href="tel:{$merchant['mobile']}">拨打</a></p>
+						<p><i class="icon iconfont icon-dingweixiao" style="position: absolute;color: red;"></i><span style="padding-left: 20px;">{$merchant['address']}</span><a href="javascript:;" class="navigation" data-lat="{$location['lat']}" data-lng="{$location['lng']}" data-name="{$merchant['storename']}" data-addr="{$merchant['address']}" data-tel="{$merchant['mobile']}">导航</a></p>
+					</div>
+				</section>
+			    <!--规则与附近团-->
+    			<div class="g-d-info3">
+			        <div class="g-d-info3-t1">
+			          	<p>支付商品开团，邀请好友参与，成功发货失败退款</p>
+			        </div>
+					{if $neargroup}
+			        <div class="g-d-info3-t2">
+			          	<p>以下小伙伴正在发起拼团，您可以直接参与：</p>
+			          	<div class="g-d-info3-t2-b">
+							{loop $neargroup $tuan}
+			            	<div class="g-d-info3-t2-b-item flex-s-b">
+			              		<div class="i3-item-l1"><img src="{$tuan['avatar']}"></div>
+			              		<div class="i3-item-l2">{$tuan['nickname']}</div>
+				              	<div class="i3-item-l3">
+				                	<h1>还差{$tuan['lacknum']}人成团</h1>
+				                	<p class="only-time" sytype = '1' id="timer{$tuan['id']}" sytime="{$tuan['surplustime']}" ><i>剩余00:00:00</i></p>
+				              	</div>
+			              		<a href="{php echo app_url('wlfightgroup/fightapp/groupdetail',array('id'=>$tuan['id']));}" class="i3-item-l4">
+									去参团
+			              		</a>
+			           	 	</div>
+			           	 	{/loop}
+			          	</div>
+			        </div>
+			        {/if}
+			    </div>
+			    
+			    <!--商品详情-->
+			    <div class="g-d-info5">
+			        <div class="goods-cmt-title">
+						<div class="goods-cmt-title-p"><a href="javascript:;" class="goods-txt-btn active">商品详情</a></div>
+						<div class="goods-cmt-title-p"><a href="javascript:;" class="shop-cmt-btn">商品评价</a></div>
+				    </div>
+					<div  class="goods-txt">
+						<div class="g-d-info5-t2">
+							{$good['detail']}
+						</div>
+					</div>
+					<div  class="shop-cmt">
+						<div class="g-d-info4-t2">
+							{loop $comments $comm}
+							<div class="act-com-i">
+							  <div class="act-com">
+								<div class="act-com-l">
+								  <img src="{$comm['headimg']}">
+								</div>
+								<div class="act-com-r">
+								  <h1>{$comm['nickname']}<span>{$comm['createtime']}</span></h1>
+								  <h2>
+									<div class="star star-dark">
+									  <i class="icon iconfont icon-shoucangxiao"></i>
+									  <i class="icon iconfont icon-shoucangxiao"></i>
+									  <i class="icon iconfont icon-shoucangxiao"></i>
+									  <i class="icon iconfont icon-shoucangxiao"></i>
+									  <i class="icon iconfont icon-shoucangxiao"></i>
+									</div>
+									<div class="star star-light">
+									  <div class="star-width" style="width:100%;">
+										{if $comm['star']>0}
+										<i class="icon iconfont icon-shoucangxiao"></i>
+										{/if}
+										{if $comm['star']>1}
+										<i class="icon iconfont icon-shoucangxiao"></i>
+										{/if}
+										{if $comm['star']>2}
+										<i class="icon iconfont icon-shoucangxiao"></i>
+										{/if}
+										{if $comm['star']>3}
+										<i class="icon iconfont icon-shoucangxiao"></i>
+										{/if}
+										{if $comm['star']>4}
+										<i class="icon iconfont icon-shoucangxiao"></i>
+										{/if}
+									  </div>
+									</div>
+								  </h2>
+								  <p>{$comm['text']}</p>
+								  {if $comm['pic']}
+								  <h3>
+									<ul>
+										{loop $comm['pic'] $pic}
+										<li class="imgloading">
+											<img src="{php echo tomedia($pic)}">
+										</li>
+										{/loop}
+									</ul>
+								  </h3>
+								  {/if}
+								  {if $comm['replytextone']}
+								  <h4><span>商家回复：</span>{$comm['replytextone']}</h4>
+								  {/if}
+								</div>
+							  </div>
+							</div>
+							{/loop}
+						</div>
+					</div>
+			    </div>
+				<div class="list-container5 act-tip2-t2" style="padding: .75rem .6rem;margin-top: .5rem;background-color: white;">
+					<div class="goods-title">
+						<p><i><img src="{URL_MODULE}plugin/rush/app/resource/images/act_info-tit06.png"></i>其他商品</p>
+					</div>
+				</div>
+			    <!--选规格-->
+			    <div class="group-dtl-mask" onclick="closedtl()"></div>
+			    <div class="group-dtl-sel">
+			        <div class="g-d-s-t1">
+			          	<div class="g-d-s-t1-d">
+			            	<div class="g-d-s-t1-l" id="chooser_img" style="background-image:url({php echo tomedia($good['logo']);});"></div>
+			            	<div class="g-d-s-t1-r">
+			              		<em onclick="closedtl()" ><i class="icon iconfont icon-guanbijiantou"></i></em>
+			              		<h1>￥<span id="option_oprice">请选规格</span></h1>
+			              		{if $good['specstatus']}
+			              		<p>库存:<span id="option_stock">--</span>&nbsp;&nbsp;已选：<span id="option_name">--</span></p>
+			              		{/if}
+			            	</div>
+			          	</div>
+			        </div>
+			        <div class="g-d-s-t2-sc">
+						{loop $specs $sp}
+						<div class="g-d-s-t2">
+			            	<div class="g-d-s-t2-t">{$sp['title']}</div>
+			            	<div class="g-d-s-t2-c">
+								{loop $sp['item'] $k $it}
+			              		<a href="javascript:;"  class="smallspec" specid = "{$it['id']}" specthumb = "{$it['thumb']}" >{$it['title']}</a>
+			          			{/loop}
+			            	</div>
+			          	</div>
+			          	{/loop}
+			          	 <!--数量-->
+				        <div class="weui-cell">
+			                <div class="weui-cell__bd">
+			                    <p>购买数量</p>
+			                </div>
+			                <div class="weui-cell__ft">
+			                	<div class="vux-inline-x-number">
+			                		<div>
+			                			<a class="vux-number-selector vux-number-selector-sub"><svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="18" height="18"><defs></defs><path d="M863.74455 544.00086 163.424056 544.00086c-17.664722 0-32.00086-14.336138-32.00086-32.00086s14.336138-32.00086 32.00086-32.00086l700.320495 0c17.695686 0 31.99914 14.336138 31.99914 32.00086S881.440237 544.00086 863.74455 544.00086z"></path></svg></a>
+			                			<input pattern="[0-9]*" type="number" onchange="subtotal()" class="vux-number-input" value="1">
+			                			<a class="vux-number-selector vux-number-selector-plus"><svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20" height="20"><defs></defs><path d="M863.328262 481.340895l-317.344013 0.099772L545.984249 162.816826c0-17.664722-14.336138-32.00086-32.00086-32.00086s-31.99914 14.336138-31.99914 32.00086l0 318.400215-322.368714-0.17718c-0.032684 0-0.063647 0-0.096331 0-17.632039 0-31.935493 14.239806-32.00086 31.904529-0.096331 17.664722 14.208843 32.031824 31.871845 32.095471l322.59234 0.17718 0 319.167424c0 17.695686 14.336138 32.00086 31.99914 32.00086s32.00086-14.303454 32.00086-32.00086L545.982529 545.440667l317.087703-0.099772c0.063647 0 0.096331 0 0.127295 0 17.632039 0 31.935493-14.239806 32.00086-31.904529S880.960301 481.404542 863.328262 481.340895z"></path></svg></a>
+			                		</div>
+			                	</div>
+			                </div>
+			            </div>
+			        </div>
+			        <div class="sub" onclick="buy(1);" id="gnowbuy">确认</div>
+	   				<div class="sub" onclick="buy(2);" id="onowbuy">确认</div>
+			    </div>
+    		</div>
+	</div>
+	<div class="group-dtl-footer flex-s-b">
+        <div class="g-d-f-l"><a href="{php echo app_url('wlfightgroup/fightapp/fightindex')}" class="nav-controller external"><i class="icon iconfont icon-home"></i><p>首页</p></a></div>
+        <div class="g-d-f-c"  onclick="choose(2)">￥<span class="aprice">{$good['aloneprice']}</span><p>单独购买</p></div>
+        <div class="g-d-f-r"  onclick="choose(1)">￥<span class="gprice">{$good['price']}</span><p>{$good['peoplenum']}人拼团</p></div>
+        <input type="hidden" id="buystatus" value="" />
+   		<input type="hidden" id="optionid" value="0" />
+	</div>
+	</div>	
+</div>
+{php include wl_template('htmltpl/fightlist');}
+<script>
+	$('.smallspec').click(function(){
+		$(this).siblings().removeClass('selected');
+		$(this).addClass('selected');
+		var val = $(this).text();
+		var no = $(this).attr('specid');
+		$('#val_'+no).val(val);
+		var spec = "";
+		$('.selected').each(function(){
+			if($(this).text()){
+				spec += $(this).text();
+				spec += "+";
+			}
+		});
+		spec=spec.substring(0,spec.length-1);
+		$('#option_name').text(spec);
+		var thumb = $(this).attr('specthumb');
+		if(thumb){
+			$('#chooser_img').css('background-image',"url("+thumb+")");
+		}
+		getprice();
+	});
+	
+	function getprice(){
+		var specids = '';
+		var buystatus = $('#buystatus').val();
+		$('.selected').each(function(){
+			specids += $(this).attr('specid');
+			specids += '_';
+		});
+		$.post("{php echo app_url('wlfightgroup/fightapp/getoption')}",{specids:specids,buystatus:buystatus},function(d){
+			if(!d.errno){
+				$('#option_oprice').text(d.data.price);
+				$('#optionid').val(d.data.optionid);
+				$('#option_stock').text(d.data.sort);
+				$('.sub').css('background-color','#ff4c4c');
+				price = d.data.price;
+			}else if(d.errno == 1){
+				$.toast('抱歉,所选规格库存不足,请选择其他规格');
+				$('#option_oprice').text({$goods['price']});
+				$('#optionid').val(0);
+				$('#option_stock').text(d.data.sort);
+				$('.sub').css('background-color','grey');
+				price = "{$goods['price']}";
+			}
+			levelnum = parseInt(d.data.sort);
+			var opnum = parseInt($('.vux-number-input').val());
+			if(!opnum){
+				opnum = 1;
+				$('.vux-number-input').val(1);
+			}
+			if(opnum > levelnum){
+				opnum = levelnum;
+				$('.vux-number-input').val(levelnum);
+			}
+			if(opnum > limitnum){
+				opnum = limitnum;
+				$('.vux-number-input').val(limitnum);
+			}
+			retainage(opnum);
+		},"json");
+	}
+	
+				
+	function buy(asd){
+		var stop = 0,stop2 = 0,spec = $('#option_name').text(),degroupid = "{$degroupid}";
+		var optionid = $('#optionid').val();
+		var checknum = parseInt($('.vux-number-input').val());
+		{if $good['specstatus']}
+			var stock = $('#option_stock').text();
+			if(stock < 1){
+				stop2 = 1;
+			}
+			if(optionid<1){
+				stop = 1;
+			}
+		{/if}
+		//判断时间
+		{if $good['islimittime']}
+		var starttime = parseInt("{$good['limitstarttime']}");
+		var endtime = parseInt("{$good['limitendtime']}");
+		var nowtime = Date.parse(new Date())/1000;
+		if(starttime > nowtime){
+			var nosale = 1;
+		}else if(endtime < nowtime){
+			var nosale = 2;
+		}else{
+			var nosale = 0;
+		}
+		{else}
+		var nosale = 0;
+		{/if}
+		
+		if(nosale == 1){
+			$.toast('抱歉,商品还未开始发售');
+		}else if(nosale == 2){
+			$.toast('抱歉,商品已结束发售');
+		}else if(stop2 == 1){
+			$.toast('抱歉,所选规格库存不足,请选择其他规格');
+		}else if(stop == 1){
+			$.toast('请选择各项规格');
+		}else{
+			if(asd ==1){
+				if(degroupid){
+					$.confirm('是否加入已有拼团',
+						function () {
+							location.href = "{php echo app_url('order/userorder/ordersubmit',array('type'=>'wlfightgroup','id'=>$id));}&spec="+spec+'&buystatus=1&groupid='+degroupid+'&specid='+optionid+'&num='+checknum;
+						},
+						function () {
+							location.href = "{php echo app_url('order/userorder/ordersubmit',array('type'=>'wlfightgroup','id'=>$id));}&spec="+spec+'&buystatus=1&specid='+optionid+'&num='+checknum;
+						}
+					);
+				}else{
+					location.href = "{php echo app_url('order/userorder/ordersubmit',array('type'=>'wlfightgroup','id'=>$id));}&spec="+spec+'&buystatus=1&specid='+optionid+'&num='+checknum;
+				}
+			}else if(asd ==2){
+				location.href = "{php echo app_url('order/userorder/ordersubmit',array('type'=>'wlfightgroup','id'=>$id));}&spec="+spec+'&buystatus=2&specid='+optionid+'&num='+checknum;
+			}
+		}
+	}
+	
+	$(".only-time").each(function(){
+	    var sytime = $(this).attr('sytime');
+	    var timeid = $(this).attr('id');
+	    var type = $(this).attr('sytype')
+	    if(sytime > 0){
+	    	 addTimer(timeid, sytime,type);
+	    }
+	});
+	function addTimer(id, time,type){     
+        var list = [],interval;     
+    
+       if (!interval)     
+        interval = setInterval(go, 1000);    
+    	list.push({ ele: document.getElementById(id), time: time });      
+    
+        function go() {
+            for (var i = 0; i < list.length; i++) {     
+                list[i].ele.innerHTML = getTimerString(list[i].time ? list[i].time -= 1 : 0);     
+                if (!list[i].time)     
+                    list.splice(i--, 1);     
+            }     
+        }     
+    
+        function getTimerString(time) {     
+                d = Math.floor(time / 86400),     
+                h = Math.floor((time % 86400) / 3600),     
+                m = Math.floor(((time % 86400) % 3600) / 60),     
+                s = Math.floor(((time % 86400) % 3600) % 60);
+                if(d<10){d = '0'+d;}
+		        if(h<10){h = '0'+h;}
+		        if(m<10){m = '0'+m;}
+		        if(s<10){s = '0'+s;}
+            if (time>0){
+            	if(type){
+                	h = Math.floor(time / 3600);    
+            		return "<i>剩余" + h + ":" + m + ":" + s + "</i>";  
+            	}else{
+            		return "<i>" + d + "</i>天<i>" + h + "</i>时<i>" + m + "</i>分<i>" + s + "</i>秒";  
+            	}
+            }
+        }     
+    }
+	
+	
+	function choose(act){
+		var goonflag = 0;
+		if(window.__wxjs_environment === 'miniprogram'){
+			goonflag = 1;
+		} else {
+			{if in_array('wlfightgroup',$_W['wlsetting']['share']['forcefollow']) && $_W['fans']['follow'] != 1 && is_weixin()}
+			common.ForceFollow('wlfightgroup', {$id});
+			{else}
+			goonflag = 1;
+			{/if}
+		}
+		if(goonflag){
+			$('#buystatus').val(act);
+			{if $good['specstatus'] == 0}
+			if(act == 2){
+				var spprice = $('.aprice').html();
+			}else{
+				var spprice = $('.gprice').html();
+			}
+			$('#option_oprice').html(spprice);
+			{/if}
+			$('.group-dtl-mask').fadeIn(200);
+			$('.group-dtl-sel').fadeIn(200);
+			$('.group-dtl-footer').hide();
+			if (act == 2) {
+	            $("#gnowbuy").hide();
+	            $("#onowbuy").show();
+	            price = $('.aprice').html();
+			}
+			if (act == 1) {
+	            $("#gnowbuy").show();
+	            $("#onowbuy").hide();
+	            price = $('.gprice').html();
+			}
+			getprice();
+		}
+	}
+	
+	function closedtl(){
+		$('.group-dtl-footer').css('display','flex');
+        $('.group-dtl-mask').fadeOut(100);
+		$('.group-dtl-sel').fadeOut(100); 
+    }
+	
+	var limitnum = {php echo intval($good['buylimit'])};
+	var levelnum = {php echo intval($good['stock'])};
+	var price = 0;
+	
+	$('.vux-number-selector-sub').click(function(){
+		{if $good['specstatus']}
+		var optionid = $('#optionid').val();
+		if(optionid<1){
+			$.toast('请先选择规格');
+			return;
+		}
+		{/if}
+    	var num = parseInt($('.vux-number-input').val());
+    	var newnum = num - 1;
+    	if (newnum<1) {
+    		$.toptip('购买数量最小为1');
+    	}else{
+    		$('.vux-number-input').val(newnum);
+    		retainage(newnum);
+    	}
+    });
+
+    $('.vux-number-selector-plus').click(function(){
+    	{if $good['specstatus']}
+		var optionid = $('#optionid').val();
+		if(optionid<1){
+			$.toast('请先选择规格');
+			return;
+		}
+		{/if}
+    	var num = parseInt($('.vux-number-input').val());
+    	var newnum = num + 1;
+    	if(newnum>levelnum) {
+    		$.toptip('库存只剩余'+levelnum+"{$good['unit']}");
+    	}else if(newnum > limitnum){
+    		$.toptip('限购商品,您还能购买'+limitnum+"{$good['unit']}");
+    	}else{
+    		$('.vux-number-input').val(newnum);
+    		retainage(newnum);
+    	}
+    });
+    
+    function subtotal(){
+    	{if $good['specstatus']}
+		var optionid = $('#optionid').val();
+		if(optionid<1){
+			$.toast('请先选择规格');
+    		$('.vux-number-input').val(1);
+			return;
+		}
+		{/if}
+    	var num = parseInt($('.vux-number-input').val());
+    	if(num<1){
+    		$('.vux-number-input').val(1);
+    		retainage(1);
+    		$.toptip('购买数量最小为1');
+    	}else if(num>limitnum){
+    		$('.vux-number-input').val(limitnum);
+    		retainage(limitnum);
+    		$.toptip('限购商品,您还能购买'+limitnum+"{$good['unit']}");
+    	}else if(num>levelnum){
+    		$('.vux-number-input').val(levelnum);
+    		retainage(levelnum);
+    		$.toptip('库存只剩余'+levelnum+"{$good['unit']}");
+    	}else{
+    		retainage(num);
+    	}
+    }
+    
+	function retainage(num){
+		var prices = (price*num).toFixed(2);
+   		$('#option_oprice').html(prices);
+	}
+	
+	{if $set['rele']}
+	addfight();
+	function addfight(){
+		$.post("{php echo app_url('wlfightgroup/fightapp/getindexgoods',array('id'=>$id))}",function(data){
+			var gettpl = document.getElementById('fightlist_tpl').innerHTML;
+			laytpl(gettpl).render(data, function(html){
+				$('.list-container5').append(html);
+			});
+		}, 'json');
+	}
+	{/if}
+
+		$('.goods-txt-btn').click(function(){
+			if($('.goods-txt').is(':hidden')){
+				$('.shop-cmt-btn').removeClass('active');
+				$(this).addClass('active');
+				$('.shop-cmt').hide();
+				$('.goods-txt').show();
+			}
+		});
+		$('.shop-cmt-btn').click(function(){
+			if($('.shop-cmt').is(':hidden')){
+				$('.goods-txt-btn').removeClass('active');
+				$(this).addClass('active');
+				$('.goods-txt').hide();
+				$('.shop-cmt').show();
+			}
+		});
+
+
+</script>
+{php include wl_template('common/footer');}

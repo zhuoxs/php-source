@@ -1,0 +1,131 @@
+{php include $this->template('WQBackStage/head')}
+<div ng-app="welcome" ng-controller="setting">
+	<form action="" method="post" class="form-horizontal" role="form" id="form1">
+		<div class="panel-heading">跳转配置</div>
+		<div class="panel-body we7-padding">
+			<div class="pull-right">
+				<button type="button" class="btn btn-primary" ng-click="add('nav')">添加</button>
+			</div>
+			<table class="table">
+				<thead>
+					<th>访问地址</th>
+					<th>跳转地址</th>
+              	    <th>备注</th>
+					<th>操作</th>
+				</thead>
+				<tbody>
+					<tr ng-repeat="(index, nav) in nav_list track by index">
+						<td>{{ nav.a }}</td>
+						<td>{{ nav.b }}</td>
+                      	<td>{{ nav.c }}</td>
+						<td>
+							<a href="javascript:;" ng-click="edit('nav', nav.id)">修改</a>
+							<a href="{php echo $this->createWebUrl('setting', array('operate' => 'delete'))}&id={{ nav.id }}">删除</a>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		
+		
+	</form>
+	<div class="modal fade" id="nav" tabindex="-1" role="dialog" aria-labelledby="navLabel" style="z-index:1038">
+		<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title" id="navLabel">添加跳转配置</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal">
+
+					<div class="form-group">
+						<label class="col-sm-2 control-label">访问的域名</label>
+						<div class="col-sm-10">
+							<input class="form-control" name="title" ng-model="buffer.nav.a">
+                          <font color="red">无需填写</font>http://
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label">跳转的域名</label>
+						<div class="col-sm-10">
+							<input class="form-control" name="title" ng-model="buffer.nav.b">
+                         <font color="red">请填写</font>http:// 如不填写则跳转相对目录
+						</div>
+					</div>
+                  <div class="form-group">
+						<label class="col-sm-2 control-label">备注</label>
+						<div class="col-sm-10">
+							<input class="form-control" name="title" ng-model="buffer.nav.c">
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+				<button type="button" class="btn btn-primary" ng-click="save('nav')">保存</button>
+			</div>
+		</div>
+	</div>
+	</div>
+	
+</div>
+<script>
+	angular.module('welcome', []).controller('setting', ['$scope', '$http', function($scope, $http) {
+		$scope.nav_list = {php echo json_encode($nav_list)};
+		
+		if ($scope.contact == null) {
+			$scope.contact = {};
+		}
+		$scope.buffer = {
+			'nav' : {'a' : '', 'b' : ''},
+		};
+		$scope.show = '';
+
+		$scope.add = function(type) {
+			$('#' + type).modal('show');
+			if (type == 'nav') {
+				$scope.buffer.nav = {'a' : '', 'b' : ''};
+			}
+			
+		};
+
+		$scope.edit = function(type, id) {
+			if (type == 'nav') {
+				$scope.buffer.nav = $scope.nav_list[id];
+			}
+			
+			$('#' + type).modal('show');
+		};
+
+		$scope.addModule = function(module) {
+			$scope.buffer.module = module;
+			$scope.save('module');
+		}
+
+		$scope.save = function(type) {
+			if (type == 'nav') {
+				if ($scope.buffer.nav.title == '') {
+					util.message('请填写来访地址');
+					return false;
+				}
+				if ($scope.buffer.nav.url == '') {
+					util.message('请填写跳转链接');
+					return false;
+				}
+			}
+			
+			$http.post("{php echo $this->createWebUrl('setting', array('operate' => 'save', 'module_type' => 'system_welcome'))}", {'type' : type, 'buffer' : $scope.buffer}).success(function(data) {
+				if (data.message.errno == 0) {
+					util.message('保存成功', '', 'success');
+					$('#myModal').modal('hide');
+					location.reload();
+				} else {
+					util.message('保存失败', '', 'error');
+				}
+				return false;
+			});
+		}
+	}]);
+</script>
+{php include $this->template('WQBackStage/footer')}

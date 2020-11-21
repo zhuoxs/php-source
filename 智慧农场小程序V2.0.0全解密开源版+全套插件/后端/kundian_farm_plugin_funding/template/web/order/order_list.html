@@ -1,0 +1,298 @@
+{template 'web/common/common'}
+{template 'web/common/navbar'}
+<link rel="stylesheet" type="text/css" href="../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm_plugin_funding/resource/css/layui.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm_plugin_funding/resource/css/new-common.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm_plugin_funding/resource/css/order_common.css" />
+<blockquote class="layui-elem-quote layui-text">
+    订单列表
+</blockquote>
+<div class="new-style">
+    <div style="padding: 20px; background-color: #F2F2F2;">
+        <div class="layui-row layui-col-space15">
+            <div class="layui-col-md12">
+                <div class="layui-card">
+                    <div class="layui-card-header">众筹订单</div>
+                    <div class="layui-card-body">
+                        <form id="myform" action="{url 'site/entry/order',array('m'=>'kundian_farm_plugin_funding','op'=>'order_list','version_id'=>$_GPC['version_id'])}" method="post">
+                            <div class="layui-form-item">
+                                <input type="text" style="width: 200px;float: left;margin-right: 20px;height: 34px;" name="order_number" lay-verify="title" autocomplete="off" placeholder="订单编号" class="layui-input">
+                                {php echo tpl_form_field_daterange('time', $old_time, $time = false);}
+                                <input type="hidden" name="flag" value="">
+                                <input type="hidden" name="order_type" value="1">
+                                <button type="submit" id="submitForm" class="layui-btn" style="height: 34px;line-height: 34px;">搜索</button>
+                                <a class="layui-btn" id="outOrder" style="height: 34px;line-height: 34px;">批量导出</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
+        <ul class="layui-tab-title">
+            <a href="{url 'site/entry/order',array('m'=>'kundian_farm_plugin_funding','op'=>'order_list','version_id'=>$_GPC['version_id'],'cate_id'=>$_GPC['cate_id'],'is_status'=>1)}">
+                <li class="{if $is_status==1}layui-this{/if}">全部订单</li>
+            </a>
+            <a href="{url 'site/entry/order',array('m'=>'kundian_farm_plugin_funding','op'=>'order_list','version_id'=>$_GPC['version_id'],'cate_id'=>$_GPC['cate_id'],'is_pay'=>2)}">
+                <li class="{if $is_pay==2}layui-this{/if}">未支付</li>
+            </a>
+            <a href="{url 'site/entry/order',array('m'=>'kundian_farm_plugin_funding','op'=>'order_list','version_id'=>$_GPC['version_id'],'cate_id'=>$_GPC['cate_id'],'is_pay'=>1)}">
+                <li class="{if $is_pay==1}layui-this{/if}">已支付</li>
+            </a>
+            <a href="{url 'site/entry/order',array('m'=>'kundian_farm_plugin_funding','op'=>'order_list','version_id'=>$_GPC['version_id'],'cate_id'=>$_GPC['cate_id'],'is_send'=>1)}">
+                <li class="{if $is_send==1}layui-this{/if}">已发货</li>
+            </a>
+            <a href="{url 'site/entry/order',array('m'=>'kundian_farm_plugin_funding','op'=>'order_list','version_id'=>$_GPC['version_id'],'cate_id'=>$_GPC['cate_id'],'is_confirm'=>1)}">
+                <li class="{if $is_confirm==1}layui-this{/if}">已收货</li>
+            </a>
+            <a href="{url 'site/entry/order',array('m'=>'kundian_farm_plugin_funding','op'=>'order_list','version_id'=>$_GPC['version_id'],'cate_id'=>$_GPC['cate_id'],'apply_delete'=>2)}">
+                <li class="{if $apply_delete==2}layui-this{/if}">已取消</li>
+            </a>
+            <a href="{url 'site/entry/order',array('m'=>'kundian_farm_plugin_funding','op'=>'order_list','version_id'=>$_GPC['version_id'],'cate_id'=>$_GPC['cate_id'],'apply_delete'=>1)}">
+                <li class="{if $apply_delete==1}layui-this{/if}">申请退款</li>
+            </a>
+            <a href="{url 'site/entry/order',array('m'=>'kundian_farm_plugin_funding','op'=>'order_list','version_id'=>$_GPC['version_id'],'cate_id'=>$_GPC['cate_id'],'is_recycle'=>1)}">
+                <li class="{if $is_recycle==1}layui-this{/if}">回收站</li>
+            </a>
+        </ul>
+    </div>
+    <div class="layui-form order">
+        <!--头部-->
+        <div class="list-header">
+            <div class="list-header-item goods-cell">订单商品信息</div>
+            <div class="list-header-item price-cell">单价/数量</div>
+            <div class="list-header-item aftermarket-cell">售后</div>
+            <div class="list-header-item customer-cell">买家</div>
+            <div class="list-header-item time-cell">下单时间</div>
+            <div class="list-header-item state-cell">订单状态</div>
+            <div class="list-header-item pay-price-cell">实付金额</div>
+            <div class="list-header-item pay-price-cell">订单类型</div>
+            <div class="list-header-item operate-cell">操作</div>
+        </div>
+
+        <!--开始订单列表-->
+        <div class="order-form" style="height: initial;">
+            <div class="order-list">
+                {loop $list $key $item}
+                <div class="list-item">
+                    <div class="list-item-header">
+                        <div class="list-item-header-row">
+                            <div>
+                                <p class="order-no">订单号：{$item['order_number']}</p>
+                                <span class="commercial_tenant">商户单号：{$item['uniontid']}</span>
+                                <span class="commercial_tenant">订单总价：￥{$item['total_price']}</span>
+                            </div>
+                            <a class="details" href="{url 'site/entry/order',array('m'=>'kundian_farm_plugin_funding','op'=>'order_detail','id'=>$item['id'],'version_id'=>$_GPC['version_id'],'cate_id'=>$_GPC['cate_id'])}">
+                                <p>详情</p>
+                            </a>
+                        </div>
+                    </div>
+                    <table class="list-item-body-table">
+                        <tbody class="list-item-body">
+                        <tr class="list-item-row">
+                            <td class="goods-item-cell-td" style="width: 26%;">
+                                <div class="goods-item-cell">
+                                    <img class="goods-info__img" src="{$item['project']['cover']}" alt="">
+                                    <div class="goods-info__info">
+                                        <div class="goods-title">
+                                            <a href="#" rel="noopener noreferrer" class="new-window" title="{$v['goods_name']}">{$item['project']['project_name']}</a>
+                                        </div>
+                                        <div></div>
+                                    </div>
+                                    <div class="goods-info__price">
+                                        <div>￥{$item['spec']['price']}</div>
+                                        <div>×{$item['count']}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="aftermarket-cell" rowspan="1">
+                                <div class="aftermarket">
+                                    <!--{if $item['apply_delete']==1}-->
+                                    <a href="{url 'site/entry/refund',array('m'=>'kundian_farm','op'=>'funding_order','id'=>$item['id'],'version_id'=>$_GPC['version_id'],'cate_id'=>$_GPC['cate_id'])}">
+                                        <button type="button" class="cancel-order layui-btn layui-btn-danger layui-btn-xs">退款</button></a>
+                                    <!--<a href="{url 'site/entry/order',array('m'=>'kundian_farm_plugin_funding','id'=>$item['id'],'op'=>'deny_cancel_order','version_id'=>$_GPC['version_id'],'cate_id'=>$_GPC['cate_id'])}">-->
+                                        <!--<button type="button" class="cancel-order layui-btn layui-btn-xs">拒绝退款</button></a>-->
+                                    <!--{/if}-->
+                                </div>
+                            </td>
+                            <td class="customer-cell" rowspan="1">
+                                <div>
+                                    <a href="#" class="new-window" rel="noopener noreferrer">{$item['nickname']}</a>
+                                </div>
+                                <p class="user-name">{$item['address']['name']}</p>
+                                {$item['address']['phone']}
+                            </td>
+                            <td class="time-cell" rowspan="1">{$item['create_time']}</td>
+                            <td rowspan="1" class="state-cell">
+                                <div class="td-cont">
+                                    <div class="order-state"><div>
+                                        {$item['status_txt']}
+                                    </div></div>
+                                </div>
+                            </td>
+                            <td class="pay-price-cell" rowspan="1">
+                                <div><span>{$item['pra_price']}</span></div>
+                            </td>
+                            <td class="pay-price-cell" rowspan="1">
+                                <div><span>
+                                    {if $item['return_type']==1}
+                                    投资分红
+                                    {else}
+                                    众筹原物
+                                    {/if}
+                                </span></div>
+                            </td>
+                            <td class="recover-cell" rowspan="1">
+                                {if $item['is_recycle']==1}
+                                <button class="layui-btn layui-btn-xs move_into_recycel" data-id="{$item['id']}" data-type="2">移出回收站</button>
+                                <button style="margin-top: 10px;" class="layui-btn layui-btn-xs layui-btn-danger order_del" data-id="{$item['id']}">删除订单</button>
+                                {else}
+                                <button class="layui-btn layui-btn-xs  move_into_recycel" data-id="{$item['id']}" data-type="1">移入回收站</button>
+                                {/if}
+                                {if $item['return_type']==1 && $item['is_return']==0 && $item['project_status_code']==1}
+                                <button class="layui-btn layui-btn-xs layui-btn-danger returnOrder" style="margin-top: 10px;" data-id="{$item['id']}">立即分红</button>
+                                {/if}
+                            </td>
+                        </tr>
+                        {if $item['remark']}
+                        <tr class="buyer-msg">
+                            <td colspan="8">买家备注：{$item['remark']}</td>
+                        </tr>
+                        {/if}
+                        </tbody>
+                    </table>
+                </div>
+                {/loop}
+            </div>
+        </div>
+
+        <div style="text-align: right;">{$pager}</div>
+
+
+    </div>
+</div>
+<script>
+    require(["../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.js"],function() {
+        $(function () {
+            //删除
+            $(".move_into_recycel").click(function () {
+                var that = $(this);
+                var id = $(this).attr('data-id');
+                var type = $(this).attr('data-type');
+                if (type == 1) {
+                    var title = "确定移入回收站吗?";
+                } else {
+                    var title = "确定移出回收站吗?";
+                }
+                swal({
+                    title: '提示',
+                    text: title,
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: '确认',
+                    cancelButtonText: '取消',
+                }).then(function (isConfirm) {
+                    if (isConfirm) {
+                        $.ajax({
+                            type: "post",
+                            url: "{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'move_into_recycle','version_id'=>$_GPC['version_id'])}",
+                            data: {order_id: id, type: type},
+                            dataType: 'json',
+                            success: function (res) {
+                                if (res.status == 1) {
+                                    swal('操作成功!', '操作成功!', 'success');
+                                    that.parent().parent().remove();
+                                } else if (res.status == 3) {
+                                    swal("提示", '该订单未完成', 'error');
+                                } else {
+                                    swal('操作失败!', '操作失败!', 'error');
+                                }
+                            }
+                        })
+                    }
+                })
+            });
+            $(".order_del").click(function () {
+                var that = $(this);
+                var id = $(this).attr('data-id');
+                swal({
+                    title: '提示',
+                    text: '确认删除该订单吗？删除后不可回复！',
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: '确认',
+                    cancelButtonText: '取消',
+                }).then(function (isConfirm) {
+                    if (isConfirm) {
+                        $.ajax({
+                            type: "post",
+                            url: "{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'order_del','version_id'=>$_GPC['version_id'])}",
+                            data: {order_id: id},
+                            dataType: 'json',
+                            success: function (res) {
+                                if (res.status == 1) {
+                                    swal('操作成功!', '操作成功!', 'success');
+                                    that.parent().parent().remove();
+                                } else if (res.status == 3) {
+                                    swal("提示", '该订单未完成', 'error');
+                                } else {
+                                    swal('操作失败!', '操作失败!', 'error');
+                                }
+                            }
+                        })
+                    }
+                })
+            });
+            $("#submitForm").click(function () {
+                $("input[name='flag']").val('');
+                $("#myform").submit();    //提交ID为myform的表单
+            })
+
+            $("#outOrder").click(function () {
+                $("input[name='flag']").val('true');
+                $("#myform").submit();    //提交ID为myform的表单
+            })
+
+            $(".returnOrder").click(function () {
+                var that = $(this);
+                var id = $(this).attr('data-id');
+                swal({
+                    title: '提示',
+                    text: '确认立即分红吗？',
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: '确认',
+                    cancelButtonText: '取消',
+                }).then(function (isConfirm) {
+                    if (isConfirm) {
+                        $.ajax({
+                            type: "post",
+                            url: "{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'return_order','version_id'=>$_GPC['version_id'])}",
+                            data: {order_id: id},
+                            dataType: 'json',
+                            success: function (res) {
+                                if (res.status == 1) {
+                                    swal('操作成功!', '操作成功!', 'success');
+                                    that.parent().parent().remove();
+                                } else if (res.status == 3) {
+                                    swal("提示", '该订单未完成', 'error');
+                                } else {
+                                    swal('操作失败!', '操作失败!', 'error');
+                                }
+                            }
+                        })
+                    }
+                })
+            })
+
+        })
+    })
+</script>

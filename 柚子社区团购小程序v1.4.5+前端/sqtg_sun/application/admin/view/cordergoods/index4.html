@@ -1,0 +1,226 @@
+{extend name="common/index" /}
+{block name="search_box"}
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入关键字..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="check_state" id="check_state" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        <div class="layui-inline">
+            <select name="user_id" id="user_id" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        <div class="layui-inline">
+            <select name="leader_id" id="leader_id" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        {if($_SESSION['admin']['store_id'] == 0)}
+        <div class="layui-inline">
+            <select name="store_id" id="store_id" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        {/if}
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+{/block}
+{block name="tool_box"}
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchChecked" class="layui-btn layui-btn-primary layui-btn-sm">通过</a>
+        <a href="javascript:;" id="btnBatchCheckedFail" class="layui-btn layui-btn-primary layui-btn-sm">打回</a>
+    </div>
+</div>
+{/block}
+{block name="tool_template"}
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    {{# if(d.check_state == 1){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnChecked">通过</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnCheckedFail">打回</a>
+    {{# } }}
+</script>
+{/block}
+{block name="table_config"}
+<script type="text/html" id="dataOrderState">
+    {{# if(d.state == 1){ }}
+    待支付
+    {{# } }}
+    {{# if(d.state == 2){ }}
+    <span class="layui-badge">待配送</span>
+    {{# } }}
+    {{# if(d.state == 3){ }}
+    配送中
+    {{# } }}
+    {{# if(d.state == 4){ }}
+    待自提
+    {{# } }}
+    {{# if(d.state == 5){ }}
+    <span class="layui-badge layui-bg-blue">已完成</span>
+    {{# } }}
+    {{# if(d.state == 6){ }}
+    已取消
+    {{# } }}
+</script>
+<script type="text/html" id="dataRefundAmount">
+    {{d.pay_amount-0 + (d.delivery_fee-0)}}
+</script>
+
+<script type="ttext/heml" id="store_name">
+    {{# if(d.store_name){ }}
+        {{d.store_name}}
+    {{# } }}
+    {{# if(!d.store_name){ }}
+        平台
+    {{# } }}
+</script>
+
+<script>
+    layui.use(['table','form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_list4')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'order_no', width:200, title: '订单号',fixed:'left'},
+                {field:'name', width:180, title: '用户',fixed:'left'},
+                {field:'apply_time', width:200, title: '申请时间'},
+                {field:'state', width:120, title: '审核状态',templet:"#dataCheckState"},
+                {field:'pay_amount', width:120, title: '退款金额',templet:"#dataRefundAmount"},
+                {field:'pay_amount', width:120, title: '商品支付金额'},
+                {field:'delivery_fee', width:120, title: '配送费'},
+                {field:'num', width:100, title: '数量',sort:true},
+                {field:'store_name', width:180, title: '商家名称',sort:true,templet:"#store_name"},
+                {field:'goods_name', width:180, title: '商品名称',sort:true},
+                {field:'attr_names', width:180, title: '规格',sort:true},
+                {field:'state', width:100, title: '订单状态',sort:true,templet:'#dataOrderState'},
+                {field:'leader_name', width:180, title: '团长'},
+                {field:'o',fixed:'right',width:220, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true,
+            height:'full-200',
+            done(data){
+                console.log(data);
+            }
+        });
+        //        搜索
+        $('#btnSearch').unbind('click').click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    check_state: $('#check_state').val(),
+                    user_id: $('#user_id').val(),
+                    leader_id: $('#leader_id').val(),
+                    store_id: $('#store_id').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        check_state: $('#check_state').val(),
+                        user_id: $('#user_id').val(),
+                        leader_id: $('#leader_id').val(),
+                    }
+                });
+            }
+        })
+        $('#btnCSV').click(function () {
+            var url = '{:adminurl("outCSV")}';
+            url += '&key='+$('#key').val();
+            url += '&state='+$('#state').val();
+            url += '&user_id='+$('#user_id').val();
+            url += '&leader_id='+$('#leader_id').val();
+
+            var checkData = table.checkStatus('laytable');
+            var ids = [];
+            for (var i in checkData.data){
+                if(ids.indexOf(checkData.data[i]['id']) == -1){
+                    ids.push(checkData.data[i]['id']);
+                }
+            }
+            if (ids.length){
+                url += '&ids='+ids.join(',');
+            }
+
+            top.window.open(url);
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        var ret = [
+            {"id":0,"text":"全部订单"},
+            {"id":1,"text":"待审核"},
+            {"id":2,"text":"已退款"},
+            {"id":3,"text":"已拒绝"},
+        ];
+        ret.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            return obj;
+        });
+        $('#check_state').select2({
+            data: ret,
+        })
+
+        $.get("{:adminurl('select','Cuser')}", function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: '', text: '请选择用户'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#user_id').select2({
+                data: ret,
+            })
+        })
+        $.get("{:adminurl('select','Cleader')}", function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: '', text: '请选择团长'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#leader_id').select2({
+                data: ret,
+            })
+        })
+        $.get("{:adminurl('select','Cstore')}", function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: 0, text: '平台'});
+            ret.unshift({id: -1, text: '请选择商家'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#store_id').select2({
+                data: ret,
+            })
+        })
+    })
+</script>
+{/block}

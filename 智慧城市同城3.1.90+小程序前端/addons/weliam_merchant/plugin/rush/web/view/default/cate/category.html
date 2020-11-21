@@ -1,0 +1,138 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+	<li class="active"><a href="{php echo web_url('rush/category/index');}">分类管理</a></li>
+</ul>
+<div class="app-content">
+	<div class="app-filter">
+		<div class="filter-action">
+			<span class="btn btn-primary btn-sm" id="addCate"><i class="fa fa-plus"></i> 新建分类</span>
+		</div>
+		<div class="filter-list">
+			<form action="./agent.php" method="get">
+				<input type="hidden" name="p" value="rush" />
+				<input type="hidden" name="ac" value="category" />
+				<input type="hidden" name="do" value="index" />
+				<div class="form-group">
+					<label class="col-sm-2 control-label">关键字</label>
+                    <div class="col-md-4">
+                        <input type="text" name="keyword" class="form-control" value="{$_GPC['keyword']}"  placeholder="请输入关键字"/>
+                    </div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label"></label>
+					<div class="col-md-9">
+						<button class="btn btn-primary" type="submit">筛选</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+	<div class="app-table-list">
+		<div class="table-responsive">
+			<table class="table table-hover table-responsive table-bordered">
+				<thead class="navbar-inner">
+				<tr>
+					<th style="width:50px;">ID</th>
+					<th style="width: 50px;">分类排序(点击编辑)</th>
+                    <th style="width: 200px;">分类名称(点击编辑)</th>
+					<th style="width: 80px">操作</th>
+				</tr>
+				</thead>
+				<tbody>
+				{loop $list $item}
+				<tr>
+					<td>{$item['id']}</td>
+                    <td>
+                        <a href='javascript:;' data-toggle='ajaxEdit' data-href="{php echo web_url('rush/category/editSort',array('id'=>$item['id']))}">
+                            {$item['sort']}
+                        </a>
+                    </td>
+					<td>
+						<a href='javascript:;' data-toggle='ajaxEdit' data-href="{php echo web_url('rush/category/edit',array('id'=>$item['id']))}">
+							{$item['name']}
+						</a>
+					</td>
+					<td style="position: relative;">
+						<a class="btn btn-sm btn-primary js-clip" href='javascript:;' data-url="{php echo app_url('rush/home/index', array('cateid' => $item['id']))}">复制链接</a>
+						<a class="btn btn-sm btn-danger" data-toggle="ajaxRemove" href="{php echo web_url('rush/category/delete', array('id'=>$item['id']))}" data-confirm="删除后该分类下抢购将转入未分类，确定要删除该分类吗？">删除</a>
+					</td>
+				</tr>
+				{/loop}
+				</tbody>
+			</table>
+		</div>
+		<div class="app-table-foot clearfix">
+			<div class="pull-left">
+				
+			</div>
+			<div class="pull-right">
+				{$pager}
+			</div>
+		</div>
+	</div>
+	<div class="modal fade" id="addCateModal" aria-hidden="false">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button data-dismiss="modal" class="close" type="button">×</button>
+					<h4 class="modal-title">新建分类</h4>
+				</div>
+				<div class="modal-body form-horizontal">
+					<div class="form-group">
+						<div class="col-sm-2 control-label must">分类名称</div>
+						<div class="col-sm-10">
+							<input class="form-control input-sm"  placeholder="请输入分类名称" name="name" id="saveTempName" value="未命名分类" />
+						</div>
+					</div>
+                    <div class="form-group">
+                        <div class="col-sm-2 control-label must">分类排序</div>
+                        <div class="col-sm-10">
+                            <input class="form-control input-sm" placeholder="请输入分类排序" name="sort" id="saveTempSort"  value="0" />
+                        </div>
+                    </div>
+				</div>
+				<div class="modal-footer">
+					<div class="btn btn-primary" id="saveCate">保存</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+    $("#addCate").unbind('click').click(function () {
+        $("#addCateModal").modal();
+        $("#saveCate").unbind('click').click(function () {
+            var status = $(this).data('status');
+            if(status) {
+                tip.msgbox.err("正在保存，请稍候。");
+                return;
+            }
+
+            var name = $.trim($("#saveTempName").val());
+            var sort = $.trim($("#saveTempSort").val());
+            if(!name) {
+                tip.msgbox.err("请填写分类名称！");
+                $("#saveTempName").focus();
+                return;
+            }
+            $(this).data('status',1).text('保存中');
+
+
+            $.post("{php echo web_url('rush/category/add')}", {
+                name: name,
+                sort:sort
+            }, function (ret) {
+                if(ret.status==0){
+                    tip.msgbox.err(ret.result.message);
+                }else{
+                    tip.msgbox.suc("保存成功！");
+                }
+                $("#addCateModal .close").trigger('click');
+                setTimeout(function () {
+                    location.reload();
+                }, 500);
+            }, 'json');
+        });
+    });
+</script>
+{php include wl_template('common/footer');}

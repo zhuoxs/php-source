@@ -1,0 +1,2 @@
+<?php
+ namespace app\api\validate; class Count extends BaseValidate { protected $rule = array("\x63\x6f\165\156\x74" => "\x69\163\120\157\163\151\x74\x69\166\x65\x49\156\x74\x65\147\x65\162\174\142\x65\x74\x77\145\x65\x6e\72\x31\54\61\65"); }

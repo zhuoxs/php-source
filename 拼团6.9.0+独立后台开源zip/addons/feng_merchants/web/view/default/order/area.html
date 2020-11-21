@@ -1,0 +1,561 @@
+{php include wl_template('common/header');}
+<div class="ui-nav">
+		<ul class="nav nav-tabs">
+			<li><a href="{php echo web_url('order/delivery', array('op'=>'display'))}">运费模板列表</a></li>
+			<li class="active"><a href="{php echo web_url('order/delivery', array('op'=>'post'))}">添加运费模板</a></li>
+		</ul>
+	</div>
+<style type="text/css">
+	.table>tbody>tr>td{white-space:inherit;}
+	.select-left{width:240px;margin-left:55px;}
+	.select-left .panel-body, .select-right .panel-body{height:350px;overflow:hidden;overflow-y:scroll;padding:10px 0;}
+	.select-center{width:150px;text-align:center;height:400px;line-height:400px;margin-left:55px;}
+	.select-right{width:245px;height:400px;margin-left:55px;}
+	#area-list li{cursor:pointer;marign:0;}
+	.area_level1{padding:6px 15px;}
+	.area_level2{padding:6px 15px 6px 30px;}
+	.area_level3{padding:6px 15px 6px 45px;}
+	.selected{background:#d7d7d7;}
+	.fa-times-circle{padding-top:2px}
+</style>
+<div class="clearfix">
+	<form action="" method="post" class="form-horizontal" id="form1" onsubmit="return false;">
+		<div class="panel panel-default">
+			<div class="panel-heading">运费模板</div>
+			<div class="panel-body table-responsive">
+				<div class="form-group">
+					<label class="col-md-2 control-label"><span style="color:red;">*</span>模板名称：</label>
+					<div class="col-md-6">
+						<input type="text" name="name" class="form-control" value="{$item['name']}">
+					</div>
+				</div>
+				<!--<div class="form-group">
+					<label class="col-md-2 control-label"><span style="color:red;">*</span>公司代码：</label>
+					<div class="col-md-10">
+						<select name="code" id="code" class="form-control">
+							<option value="">请选择物流公司代码</option>
+							{loop $logistics $index $logistic}
+							<option value="{$index}" {if $item['code'] == $index}selected="selected"{/if}>{$logistic}</option>
+							{/loop}
+						</select>
+					</div>
+				</div>-->
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 control-label"><span style='color:red'>*</span>所属商家</label>
+					<div class="col-md-6">
+						<select name="merchantid" class="form-control">
+						{loop $merchants $row}
+				            <option value="{$row['id']}" {if $item['merchantid']==$row['id']}selected="selected"{/if}>{$row['name']}</option>
+						{/loop}
+				        </select>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-md-2 control-label">配送区域：</label>
+					<div class="col-md-10">
+						<table class="table table-bordered">
+							<thead>
+							<tr>
+								<th>可配送区域</th>
+								<th width="200">运费</th>
+							</tr>
+							</thead>
+							<tbody id="template-contain">
+								{loop $item['serialize'] $k $li}
+									{if !empty($li)}
+										<tr class="item item_{$k}">
+											<td>
+												<div class="pull-left">{$li['cities']}</div>
+												<div class="pull-right">
+													<a class="edit-template" href="javascript:;" data-index="{$k}">编辑</a> &nbsp;&nbsp;
+													<a class="del-template" href="javascript:;" data-index="{$k}" tabindex="0" role="button" data-toggle="popover">删除</a>
+												</div>
+											</td>
+											<td><input type="text" name="first_fee" class="form-control" value="{$li['first_fee']}"/></td>
+										</tr>
+									{/if}
+								{/loop}
+							</tbody>
+							<tfoot>
+							<tr>
+								<td colspan="2"><a href="javascript:;" class="edit-template" data-index="0"><i class="fa fa-plus-circle"></i> 指定可配送区域和运费</a></td>
+							</tr>
+							</tfoot>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-md-offset-2 col-md-10">
+				<input type="submit" id="submit" name="submit" value="保存" class="btn btn-primary min-width"/>
+				<input type="hidden" name="token" value="{$_W['token']}"/>
+				<a href="javascript:history.go(-1);" class="btn btn-default min-width" style="margin-left:20px">取消</a>
+			</div>
+		</div>
+	</form>
+</div>
+<!--模态框-->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title" id="myModalLabel">选择可配送区域</h4>
+			</div>
+			<div class="modal-body clearfix">
+				<div class="panel panel-default pull-left select-left">
+					<div class="panel-heading text-center">可选省、市、区</div>
+					<div class="panel-body">
+						<ul id="area-list"></ul>
+					</div>
+				</div>
+				<div class="pull-left select-center">
+					<a href="javascript:;" class="btn btn-default" id="lef2rig"><i class="fa fa-plus-circle"></i> 添加</a>
+				</div>
+				<div class="panel panel-default pull-left select-right">
+					<div class="panel-heading text-center">已选省、市、区</div>
+					<div class="panel-body">
+						<ul id="area-list-select"></ul>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+				<button type="button" class="btn btn-primary" id="save">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	require(['district', 'json2'], function(districtModule, JSON) {
+		$('#form1').submit(function(){
+			var id = "{php echo $id;}";
+			var seri = [];
+			var name = $('#form1 :text[name="name"]').val();
+			var merchantid = $('#form1 select[name="merchantid"]').val();
+			if(!name) {
+				$('#form1 :text[name="name"]').focus();
+				util.tips('请完善模板名称', 3000);
+				return false;
+			};
+
+			$('tr.item').each(function(){
+				var k = $(this).find('.edit-template').attr('data-index');
+				if($(this).find('td:first .pull-left').html() != '') {
+					seri[k] = {
+						'cities' : $(this).find('td:first .pull-left').html(),
+						'first_fee' : $(this).find(':text[name="first_fee"]').val(),
+					};
+				} else {
+					delete(haved[k]);
+				}
+			});
+
+			seri = encodeURI(JSON.stringify(seri));
+			
+			var data = encodeURI(JSON.stringify(haved));
+			$.post("{php echo web_url('order/delivery', array('op'=>'post'))}", {'id':id,'name' : name,'merchantid' : merchantid,'data' : data, 'seri' : seri}, function(d){
+				window.location.href = "{php echo web_url('order/delivery', array('op'=>'display'))}";
+			}, 'json');
+			
+			return false;
+		});
+
+		var haved = [];
+		{if !empty($item)}
+			haved = '{php echo $item["data"]}';
+			//console.log(haved);
+			if (haved != '') {
+				haved = JSON.parse(haved);
+			};
+		{/if}
+
+		var selectDistrict = {
+			'index' : 0,
+			'selected' : {},
+			'init' : function(){
+				var $this = this;
+				$.each(districtModule.districts, function(k, v){
+					$('#area-list').append($this.htmlProvince('area', k, v.title));
+					$.each(v.cities, function(k1, v1){
+						$('#area-list #wrap_city_'+k).append($this.htmlCity('area', k1, v1.title));
+						$.each(v1.districts, function(k2, v2){
+							$('#area-list #wrap_district_'+k1).append($this.htmlDistrict('area', k2, v2));
+						});
+					});
+				});
+				if(haved) {
+					$.each(haved, function(k, v){
+						if(v) {
+							$.each(v, function(k1, v1){
+								if (!v1.hasChild) {
+									$('#area-list #area_province_'+k1).hide().attr('checked', true);
+								}
+								$.each(v1.cities, function(k2, v2){
+									if (!v2.hasChild) {
+										$('#area-list #area_city_'+k2).hide().attr('checked', true);
+									}
+									$.each(v2.districts, function(k3, v3){
+										$('#area-list #area_district_'+k3).hide().attr('checked', true);
+									});
+								});
+							});
+						}
+					});
+				}
+
+				//初始化展开收缩
+				$('#area-list,#area-list-select').on('click', '.add-child, .add-grand-child', function(){
+					$(this).toggleClass('fa-minus-circle');
+					$(this).parent().nextAll('ul').toggle();
+				});
+
+				$('#area-list li').on('click', function(event){
+					if (event.target.tagName == 'DIV') {
+						if ($(this).find('div').hasClass('selected')) {
+							$(this).removeAttr('selected');
+							$(this).find('li').removeAttr('selected');
+
+							$(this).find('div').removeClass('selected');
+							$(this).parents('li').each(function(){
+								$(this).children('div').removeClass('selected');
+								if ($(this).find('.selected').size() == 1) {
+									$(this).find('div').removeClass('selected');
+									$(this).removeAttr('selected');
+								}
+							});
+						} else {
+							//给Li增加选中属性selected="true"，方便向右推送数据
+							$(this).attr('selected', true);
+							$(this).find('li').attr('selected', true);
+
+							$(this).find('div').addClass('selected');
+							//如果选中节点，则变更当前节点的选中状态，并且查找其父节点设置选中状态
+							//取消选中节点时处理同此原理
+							$(this).parents('li').each(function(){
+								//$(this).children('div').addClass('selected');
+								$(this).attr('selected', true);
+							});
+						}
+						event.stopPropagation();
+					}
+				});
+
+				$('#lef2rig').click(function(){
+					$this.lef2rig();
+				});
+				$this.removeLi();
+				$this.saveData();
+				$('table').on('click', '.edit-template', function(){
+					$('#myModal').modal('show');
+					var index = parseInt($(this).attr('data-index'));
+					if(!index) {
+						if($('#template-contain').find('tr.item').length) {
+							index = parseInt($('#template-contain').find('tr.item:last .edit-template').attr('data-index')) + 1;
+						} else {
+							index = 1;
+						}
+					}
+					selectDistrict.editTemplate(index);
+				});
+
+				$('table').on('click', '.del-template', function(){
+					var index = $(this).attr('data-index');
+					$(this).popover({
+						html:true,
+						placement:'bottom',
+						content:"确定删除?&nbsp;&nbsp;<a class='btn btn-primary'>确定</a>&nbsp;&nbsp;<a class='btn btn-default cancel' onclick=\"$(this).popover('hide');\">取消</a>"
+					});
+					$(this).popover('show');
+					var _this = this;
+					$(this).siblings().find('.cancel').on("click", function(){
+						$(_this).popover('hide');
+					});
+					$(this).siblings().find('.btn-primary').on("click", function(){
+						$this.removeInit(index);
+						delete(haved[index]);
+						$(this).parents('tr').remove();
+					});
+				});
+			},
+			'removeInit' : function(index){
+				haved[index] = (haved[index] || []);
+				$.each(haved[index], function(k, v){
+					$('#area-list #area_province_' + k).show();
+					$.each(v.cities, function(k1, v1){
+						$('#area-list #area_city_' + k1).show();
+						$.each(v1.districts, function(k2, v2){
+							$('#area-list #area_district_' + k2).show();
+						});
+					});
+				});
+			},
+			'lef2rig' : function(){
+				var $this = this;
+				$this.selected = {};
+				var provinceId, cityId;
+				//构造右侧数组
+				$("#area-list").find('li[selected=selected][checked!=checked]').each(function(){
+					if ($(this).attr('level') == '1') {
+						provinceId = $(this).attr('data-id');
+						$this.selected[provinceId] = {'title' : districtModule.districts[provinceId]['title'],'cities' : {}};
+						$this.selected[provinceId]['toggle'] = $('#area-list #area_province_'+provinceId+' .area_level1').children('i').hasClass('fa-minus-circle');
+					}
+					if ($(this).attr('level') == '2') {
+						cityId = $(this).attr('data-id');
+						$this.selected[provinceId]['cities'][cityId] = {'title' : districtModule.districts[provinceId]['cities'][cityId]['title'], 'districts' : {}};
+						$this.selected[provinceId]['childNum'] = $('#area-list #wrap_city_'+provinceId).children('li').size();
+						$this.selected[provinceId]['cities'][cityId]['toggle'] = $('#area-list #area_city_'+cityId+' .area_level2').children('i').hasClass('fa-minus-circle');
+						$this.selected[provinceId]['hasChild'] = $('#area-list #wrap_city_'+provinceId).find('li[selected!=selected]').size();
+
+					}
+					if ($(this).attr('level') == '3') {
+						$this.selected[provinceId]['cities'][cityId]['districts'][$(this).attr('data-id')] = districtModule.districts[provinceId]['cities'][cityId]['districts'][$(this).attr('data-id')];
+						$this.selected[provinceId]['cities'][cityId]['childNum'] = $('#area-list #wrap_district_'+cityId).children('li').size();
+						$this.selected[provinceId]['cities'][cityId]['hasChild'] = $('#area-list #wrap_district_'+cityId).children('li[selected!=selected]').size();
+					}
+				});
+
+				$this.buildSelectdHtml(0);
+			},
+			'buildSelectdHtml' : function(index) {
+				var $this = this;
+				//重建右侧数据时，需要修正左侧数据显示状态
+				$('#area-list-select').html('');
+				$.each($this.selected, function(k, v){
+					$('#area-list-select').append($this.htmlProvince('select', k, v.title, true));
+					if (v.toggle) {
+						$('#select_province_' + k + ' .add-child').toggleClass('fa-minus-circle');
+						$('#area-list-select #wrap_city_'+ k).show();
+					}
+					if (!v.hasChild) {
+						$('#area-list #area_province_'+k).hide();
+					}
+					$.each(v.cities, function(k1, v1){
+						$('#area-list-select #wrap_city_'+k).append($this.htmlCity('select', k1, v1.title, true));
+						if (v1.toggle) {
+							$('#select_city_' + k1 + ' .add-grand-child').toggleClass('fa-minus-circle');
+							$('#area-list-select #wrap_district_'+ k1).show();
+						}
+						if (!v1.hasChild) {
+							$('#area-list #area_city_'+k1).hide();
+						}
+						$.each(v1.districts, function(k2, v2){
+							$('#area-list-select #wrap_district_'+k1).append($this.htmlDistrict('select', k2, v2, true));
+							$('#area-list #area_district_'+k2).hide();
+						});
+					});
+				});
+			},
+			'htmlProvince' : function(prefix, dataid, title, remove) {
+				return '<li id="'+prefix+'_province_'+ dataid +'" data-id="'+dataid+'" level = "1">' +
+						'<div class="area_level1"><i class="fa fa-plus-circle add-child"> </i> '+ title + (remove ? ' &nbsp;<i class="pull-right fa fa-times-circle"> <i>' : '') + ' </div>' +
+						'<ul id="wrap_city_'+ dataid +'" style="display:none"></ul>' +
+						'</li>';
+			},
+			'htmlCity' : function(prefix, dataid, title, remove) {
+				return '<li id="'+prefix+'_city_'+ dataid +'" data-id="'+ dataid +'" level="2">' +
+						'<div class="area_level2"><i class="fa fa-plus-circle add-grand-child"> </i> '+ title + (remove ? ' &nbsp;<i class="pull-right fa fa-times-circle"> <i>' : '') + ' </div>' +
+						'<ul id="wrap_district_'+ dataid +'" style="display:none"></ul>' +
+						'</li>';
+			},
+			'htmlDistrict' : function(prefix, dataid, title, remove) {
+				return '<li id="'+prefix+'_district_'+ dataid +'" data-id="'+ dataid +'" level="3"><div class="area_level3">' + title + (remove ? ' &nbsp;<i class="pull-right fa fa-times-circle"> <i>' : '') + '</div></li>';
+			},
+
+			'removeLi' : function() {
+				var $this = this;
+				$('#area-list-select').on('click', '.fa-times-circle', function(){
+					var obj = $(this).parent().parent();
+					var data_id = obj.attr('data-id');
+					if(obj.attr('level') == 1) {
+						$('#area_province_' + data_id).show();
+						$('#area_province_' + data_id).find('li').show();
+						/*如果删除的是一级分类。需要根据左边子元素的（selected）属性给对应子元素加class(selected)
+						* 如果所有的元素都有（selected）属性,则给该一级分类加class(selected)
+						* 因为删除后该元素的（selected）属性还是true，如果不加class(selected)，就不会有选中状态，点击添加会直接显示到右边，用户会迷惑
+						* */
+						var flag = 0;
+						$.each($('#area_province_' + data_id).find('li'), function(){
+							if($(this).attr('selected') == 'selected') {
+								$(this).find('div').addClass('selected');
+							} else {
+								if(!flag) {
+									flag = 1;
+								}
+							}
+						});
+						if(!flag) {
+							$('#area_province_' + data_id).find('div').addClass('selected');
+							$('#area_province_' + data_id).addClass('temp');
+						}
+					} else if(obj.attr('level') == 2) {
+						if(!obj.siblings().size()) {
+							obj.parent().parent().remove();
+						}
+						$('#area_city_' + data_id).show();
+						$('#area_city_' + data_id).parent().parent().show();
+						$('#area_city_' + data_id).find('li').show();
+						/*如果删除的是二级分类。需要根据左边子元素的（selected）属性给对应子元素加class(selected)
+						 * 如果所有的元素都有（selected）属性,则给该二级分类加class(selected)
+						 * */
+						var flag = 0;
+						$.each($('#area_city_' + data_id).find('li'), function(){
+							if($(this).attr('selected') == 'selected') {
+								$(this).find('div').addClass('selected');
+							} else {
+								if(!flag) {
+									flag = 1;
+								}
+							}
+						});
+						if(!flag) {
+							$('#area_city_' + data_id).find('div').addClass('selected');
+						}
+					} else if(obj.attr('level') == 3) {
+						if(!obj.siblings().size()) {
+							if(!obj.parent().parent().siblings().size()) {
+								obj.parent().parent().parent().parent().remove();
+							}
+							obj.parent().parent().remove();
+						}
+
+						$('#area_district_' + data_id).show();
+						$('#area_district_' + data_id).parent().parent().show();
+						$('#area_district_' + data_id).parent().parent().parent().parent().show();
+						/*如果删除的是三级分类。给左边对应元素直接加class(selected)
+						* */
+						$('#area_district_' + data_id).find('div').addClass('selected');
+					}
+					obj.remove();
+				});
+			},
+
+			'editTemplate' : function(index) {
+				$('#area-list li:hidden').removeAttr('selected');
+				$('#area-list li div').removeClass('selected');
+				$('#area-list li').show();
+
+				if(haved) {
+					$.each(haved, function(k, v){
+						if(v) {
+							$.each(v, function(k1, v1){
+								if (!v1.hasChild) {
+									$('#area-list #area_province_'+k1).hide().attr('checked', true);
+								}
+								$.each(v1.cities, function(k2, v2){
+									if (!v2.hasChild) {
+										$('#area-list #area_city_'+k2).hide().attr('checked', true);
+									}
+									$.each(v2.districts, function(k3, v3){
+										$('#area-list #area_district_'+k3).hide().attr('checked', true);
+									});
+								});
+							});
+						}
+					});
+				}
+
+				var $this = this;
+				$this.index = index;
+				$this.selected = (haved[index] || []);
+				$.each($this.selected, function(k, v){
+					$('#area-list #area_province_' + k).attr('selected', true);
+					$.each(v.cities, function(k1, v1){
+						$('#area-list #area_city_' + k1).attr('selected', true);
+						$.each(v1.districts, function(k2, v2){
+							$('#area-list #area_district_' + k2).attr('selected', true);
+						});
+					});
+				});
+				$this.buildSelectdHtml(index);
+			},
+
+			'getTitle' : function() {
+				var $this = this;
+				var title = '';
+				$.each($this.selected, function(k, v){
+					if(!v.hasChild) {
+						title += v.title + '、';
+					} else {
+						title += '<span style="color:red">';
+						$.each(v.cities, function(k1, v1){
+							if(!v1.hasChild) {
+								title += v1.title + '、';
+							} else {
+								title += v1.title + '(';
+								title += '<span style="color:green">';
+								$.each(v1.districts, function(k2, v2){
+									title += v2 + '、';
+								});
+								title += '</span>)、';
+							}
+						});
+						title += '</span>';
+					}
+				});
+				return title;
+			},
+
+			'saveData' : function() {
+				var $this = this;
+				$('#save').click(function(){
+					$this.remove_selected = {};
+					var provinceId, cityId;
+					//构造右侧数组
+					$("#area-list-select").find('li').each(function(){
+						if ($(this).attr('level') == '1') {
+							provinceId = $(this).attr('data-id');
+							$this.remove_selected[provinceId] = {'title' : districtModule.districts[provinceId]['title'],'cities' : {}};
+							$this.remove_selected[provinceId]['toggle'] = $('#select_province_'+provinceId+' .area_level1').children('i').hasClass('fa-minus-circle');
+						}
+						if ($(this).attr('level') == '2') {
+							cityId = $(this).attr('data-id');
+							$this.remove_selected[provinceId]['cities'][cityId] = {'title' : districtModule.districts[provinceId]['cities'][cityId]['title'], 'districts' : {}};
+							if(!$this.remove_selected[provinceId]['hasChild']) {
+								$this.remove_selected[provinceId]['hasChild'] = ($('#area-list-select #wrap_city_'+provinceId).children('li').size() != $this.selected[provinceId]['childNum']);
+							}
+							$this.remove_selected[provinceId]['childNum'] = $this.selected[provinceId]['childNum'];
+							$this.remove_selected[provinceId]['cities'][cityId]['toggle'] = $('#select_city_'+cityId+' .area_level2').children('i').hasClass('fa-minus-circle');
+						}
+						if ($(this).attr('level') == '3') {
+							$this.remove_selected[provinceId]['cities'][cityId]['districts'][$(this).attr('data-id')] = districtModule.districts[provinceId]['cities'][cityId]['districts'][$(this).attr('data-id')];
+							$this.remove_selected[provinceId]['cities'][cityId]['hasChild'] = ($('#area-list-select #wrap_district_'+cityId).children('li').size() != $this.selected[provinceId]['cities'][cityId]['childNum']);
+							if($this.remove_selected[provinceId]['cities'][cityId]['hasChild'] && !$this.remove_selected[provinceId]['hasChild']) {
+								$this.remove_selected[provinceId]['hasChild'] = true;
+							}
+							$this.remove_selected[provinceId]['cities'][cityId]['childNum'] = $this.selected[provinceId]['cities'][cityId]['childNum'];
+						}
+					});
+
+					$this.selected = $this.remove_selected;
+
+					haved[$this.index] = $this.selected;
+					var isexist = $('#template-contain').find('.item_'+$this.index);
+					var title = '<div class="pull-left">' +
+									$this.getTitle() +
+								'</div>';
+
+					var edit = '<div class="pull-right">' +
+									'<a class="edit-template" href="javascript:;" data-index="'+$this.index+'">编辑</a> &nbsp;&nbsp;&nbsp;' +
+									'<a class="del-template popovered" href="javascript:;" data-index="'+$this.index+'"  tabindex="0" role="button" data-toggle="popover">删除</a>' +
+								'</div>';
+
+					if(!isexist.length) {
+						var html = '<tr class="item item_'+$this.index+'">' +
+								'<td>'+ title + edit + '</td>' +
+								'<td><input type="text" class="form-control" name="first_fee" value="0.00"></td>' +
+						'</tr>';
+						$('#template-contain').append(html);
+					} else {
+						isexist.find('td:first').html(title + edit);
+					}
+					$('#myModal').modal('hide');
+				});
+			}
+		};
+		selectDistrict.init();
+	});
+</script>
+{php include wl_template('common/footer');}

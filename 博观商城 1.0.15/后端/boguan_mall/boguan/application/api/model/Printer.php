@@ -1,0 +1,2 @@
+<?php
+ namespace app\api\model; class Printer extends BaseModel { public function getSettingAttr($value) { goto m6Kkq; m6Kkq: if (!empty($value)) { goto SQUYr; } goto Bd3j6; eRzEq: return json_decode($value, true); goto q4wyX; Bd3j6: return null; goto DJ_wK; DJ_wK: SQUYr: goto eRzEq; q4wyX: } public function getCateIdAttr($value) { goto DDHQ9; qLN98: dSsil: goto UzDrB; UzDrB: return json_decode($value, true); goto i9rII; DDHQ9: if (!empty($value)) { goto dSsil; } goto ygHOu; ygHOu: return null; goto qLN98; i9rII: } }

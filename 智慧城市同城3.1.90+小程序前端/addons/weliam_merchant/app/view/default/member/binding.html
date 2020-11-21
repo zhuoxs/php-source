@@ -1,0 +1,174 @@
+{php include wl_template('common/header');}
+<div class="page-group" >
+    <div class="page page-current" id="page-index">
+    	<header class="bar bar-nav">
+		    <a class="button button-link button-nav pull-left back" href="javascript:history.go(-1);"><span class="icon icon-left"></span>返回</a>
+		    <h1 class="title">绑定手机号</h1>
+		</header>
+		<div class="content native-scroll">
+			<div class="weui-cells">
+	            <div class="weui-cell {if $_W['wlsetting']['sms']['note_haiwai'] == 1}weui-cell_select weui-cell_select-before{/if}">
+	                <div class="weui-cell__hd">
+	                	{if $_W['wlsetting']['sms']['note_haiwai'] == 1}
+	                	<select class="weui-select" name="note_quhao" id="loginquhao">
+	                		{php $allquhao = explode(",", $_W['wlsetting']['sms']['note_quhao']);}
+	                		{loop $allquhao $quhao}
+	                		{if !empty($quhao)}
+	                        <option value="{$quhao}">+{$quhao}</option>
+	                        {/if}
+	                        {/loop}
+	                    </select>
+	                    {else}
+	                	<label class="weui-label">手机号</label>
+	                	{/if}
+	                </div>
+	                <div class="weui-cell__bd">
+	                    <input class="weui-input" type="tel" id="loginmobile" placeholder="请输入手机号码" value="{$_W['wlmember']['mobile']}">
+	                </div>
+	            </div>
+	            {if $_W['wlsetting']['base']['verifycode'] == 1 && empty($_W['wlsetting']['base']['smsver']) }
+	            <div class="weui-cell weui-cell_vcode">
+	                <div class="weui-cell__hd">
+	                    <label class="weui-label">图形验证码</label>
+	                </div>
+	                <div class="weui-cell__bd">
+	                    <input class="weui-input" type="tel" id="verifycode" placeholder="请输入图形验证码">
+	                </div>
+	                <div class="weui-cell__ft">
+	                	<img src="{php echo app_url('common/wlCommon/captcha');}" class="btn-captcha" />
+	                </div>
+	            </div>
+	            {/if}
+	            {if empty($_W['wlmember']['password']) && $_W['wlsetting']['base']['telbindpwd']}
+	            <div class="weui-cell">
+	                <div class="weui-cell__hd"><label class="weui-label">手机登录密码</label></div>
+	                <div class="weui-cell__bd">
+	                    <input class="weui-input" type="password" id="pwd1" placeholder="使用手机号登录的密码" value="{$_W['wlmember']['password']}">
+	                </div>
+	            </div>
+	            <div class="weui-cell">
+	                <div class="weui-cell__hd"><label class="weui-label">确认登录密码</label></div>
+	                <div class="weui-cell__bd">
+	                    <input class="weui-input" type="password" id="pwd2" placeholder="确认手机号登录的密码" value="{$_W['wlmember']['password']}">
+	                </div>
+	            </div>
+	            {/if}
+				{if empty($_W['wlsetting']['base']['smsver'])}
+	            <div class="weui-cell weui-cell_vcode">
+	                <div class="weui-cell__hd">
+	                    <label class="weui-label">验证码</label>
+	                </div>
+	                <div class="weui-cell__bd">
+	                    <input class="weui-input" type="tel" id="logincode" placeholder="请输入验证码">
+	                </div>
+	                <div class="weui-cell__ft">
+	                    <a href="javascript:;" class="weui-vcode-btn" id="getVerifyCode">获取验证码</a>
+	                </div>
+	            </div>
+				{/if}
+	        </div>
+		    <div class="weui-btn-area">
+	            <a class="weui-btn weui-btn_primary external" href="javascript:;" id="showTooltips">绑定</a>
+	        </div>
+		</div>
+	</div>	
+</div>	
+<script type="text/javascript">
+$(document).on('click','#showTooltips',function () {
+	var mobile = $('#loginmobile').val();
+	var inputcode = $('#logincode').val();
+	
+	{if $_W['wlsetting']['sms']['note_haiwai'] != 1}
+	var reg = /^0?1[3|4|5|6|7|8|9][0-9]\d{8}$/;
+	if(!reg.test(mobile)){
+	 	$.toast("请输入正确的手机号");
+	 	return false;
+	}
+	{/if}
+
+	{if empty($_W['wlsetting']['base']['smsver'])}
+	if(!inputcode){
+	 	$.toast("请输入验证码");
+	 	return false;
+	}
+	{/if}
+	var pwd1 = $("#pwd1").val();
+	var pwd2 = $("#pwd2").val();
+	if(pwd1 != pwd2){
+		$.toast('两次输入的密码不一致，请重试');
+		return false;
+	}
+	
+	$.post("{php echo app_url('member/user/binding')}",{mobile:mobile,inputcode:inputcode,pwd:pwd1},function(d){
+		if(d.result == 1){
+			$.alert('绑定成功', function () {
+		        location.href = "{$reurl}";
+		    });
+		}else if(d.result == 2){
+			$.toast(d.msg);
+		}else{
+			$.toast("未知错误");
+		}
+	},"json");
+});
+
+$(document).on('click','#getVerifyCode',function () {
+	var mobile = $('#loginmobile').val();
+	
+	{if $_W['wlsetting']['sms']['note_haiwai'] != 1}
+	var reg = /^0?1[3|4|5|6|7|8|9][0-9]\d{8}$/;
+	if(!reg.test(mobile)){
+	 	$.toast("请输入正确的手机号");
+	 	return false;
+	}
+	{/if}
+	
+	{if $_W['wlsetting']['base']['verifycode'] == 1}
+	var verifycode = $('#verifycode').val();
+	if(!verifycode){
+	 	$.toast("请输入图形验证码");
+	 	return false;
+	}
+	{/if}
+	
+	{if $_W['wlsetting']['sms']['note_haiwai'] == 1}
+	var areacode = $('#loginquhao').val();
+	{/if}
+	
+	$.post("{php echo app_url('member/user/vercode')}",{mobile:mobile{if $_W['wlsetting']['base']['verifycode'] == 1},verifycode:verifycode{/if}{if $_W['wlsetting']['sms']['note_haiwai'] == 1},areacode:areacode{/if}},function(d){
+		if(d.result == 1){
+			$.toast("验证码发送成功");
+			$('#getVerifyCode').removeClass('verifycode');
+			settime();
+		}else if(d.result == 2){
+			$.toast(d.msg);
+		}else{
+			$.toast("未知错误");
+		}
+	},"json");
+});
+
+{if $_W['wlsetting']['base']['verifycode'] == 1}
+$(document).on('click','.btn-captcha',function () {
+	$('.btn-captcha').prop('src', '{php echo app_url('common/wlCommon/captcha')}&r=' + Math.round(new Date().getTime()));
+	return false;
+});
+{/if}
+
+var countdown=60; 
+function settime() { 
+	if (countdown == 0) { 
+		$('#getVerifyCode').html('重新发送');
+		$('#getVerifyCode').addClass('verifycode');
+		countdown = 60; 
+		return;
+	} else { 
+		$('#getVerifyCode').html("" + countdown + "秒");
+		countdown--; 
+	} 
+	setTimeout(function() { 
+		settime() 
+	},1000) 
+}
+</script>
+{php include wl_template('common/footer');}

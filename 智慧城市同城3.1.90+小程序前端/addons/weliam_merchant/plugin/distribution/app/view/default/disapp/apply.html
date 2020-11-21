@@ -1,0 +1,209 @@
+{php include wl_template('common/header');}
+<style>
+.putforward{background: #FFFFFF;}
+.putforward .weui-cells__title{margin-bottom: 0;padding-top: .5rem;margin-top: 0;}
+.putforward .weui-cells:before{border-top: 1px solid #ffffff;}
+.putforward .weui-input{font-size: 1.8rem;}
+.putforward .weui-label{width: 30px;font-size: 1.2rem;}
+.putforward .weui-cells__tips{line-height: 1.6rem;}	
+</style>
+<div class="page-group">
+    <div class="page page-current" id="page-member">
+    	<header class="bar bar-nav">
+		    <a class="button button-link button-nav pull-left back" href="{php echo app_url('distribution/disappbase/index')}">
+		      <span class="icon icon-left"></span>返回
+		    </a>
+		    <h1 class="title">{php echo $_GPC['type']=='apply' ? $fxtext.'提现' : '提现记录';}</h1>
+		</header>
+		<div class="content">
+			{if $_GPC['type']=='apply'}
+			<div class="weui-cells__title">提现金额{$_W['wlsetting']['distribution']['lowestmoney']}元起{if $_W['wlsetting']['distribution']['withdrawcharge']}，提现手续费{$_W['wlsetting']['distribution']['withdrawcharge']}%{/if}</div>
+			<div class="putforward">
+				<div class="weui-cells__title">提现金额</div>
+			  	<div class="weui-cells weui-cells_form">
+		            <div class="weui-cell">
+		                <div class="weui-cell__hd"><label class="weui-label">￥</label></div>
+		                <div class="weui-cell__bd">
+		                    <input class="weui-input" type="number"  id="forwardmoney">
+		                </div>
+		            </div>
+		        </div>
+			  	<div class="weui-cells__tips">可提现{$yjtext}：{$distributor['nowmoney']}元</div>
+			</div>
+            <div class="putforward">
+                <div class="weui-cells__title">提现方式</div>
+                <div class="weui-cells weui-cells_checkbox">
+                    {if $payment['alipay']}
+                        <!--支付宝-->
+                        <label class="weui-cell weui-check__label" for="alipay">
+                            <div class="weui-cell__hd">
+                                <input type="radio" class="weui-check" value="1" name="payment_type" id="alipay">
+                                <i class="weui-icon-checked"></i>
+                            </div>
+                            <div class="weui-cell__bd">
+                                <p>支付宝</p>
+                            </div>
+                        </label>
+                    {/if}
+                    {if $payment['we_chat']}
+                        <!--微信-->
+                        <label class="weui-cell weui-check__label" for="we_chat">
+                        <div class="weui-cell__hd">
+                            <input type="radio" name="payment_type" value="2" class="weui-check" id="we_chat">
+                            <i class="weui-icon-checked"></i>
+                        </div>
+                        <div class="weui-cell__bd">
+                            <p>微信</p>
+                        </div>
+                    </label>
+                    {/if}
+                    {if $payment['bank_card']}
+                        <!--银行卡-->
+                        <label class="weui-cell weui-check__label" for="bank_card">
+                        <div class="weui-cell__hd">
+                            <input type="radio" name="payment_type" value="3" class="weui-check" id="bank_card">
+                            <i class="weui-icon-checked"></i>
+                        </div>
+                        <div class="weui-cell__bd">
+                            <p>银行卡</p>
+                        </div>
+                    </label>
+                    {/if}
+                    {if $payment['balance']}
+                        <!--余额-->
+                        <label class="weui-cell weui-check__label" for="balance">
+                        <div class="weui-cell__hd">
+                            <input type="radio" name="payment_type" value="4" class="weui-check" id="balance">
+                            <i class="weui-icon-checked"></i>
+                        </div>
+                        <div class="weui-cell__bd">
+                            <p>余额</p>
+                        </div>
+                    </label>
+                    {/if}
+                </div>
+            </div>
+            <div class="list-block" style="margin-top: .5rem;">
+			    <ul>
+			      <li>
+			        <a href="{php echo app_url('distribution/disappbase/apply',array('type'=>'deling'))}" class="item-link item-content">
+			          	<div class="item-inner">
+			            	<div class="item-title">查看提现记录</div>
+			          	</div>
+			        </a>
+			      </li>
+			    </ul>
+		  	</div>
+		  	<div class="weui-btn-area">
+	            <a class="weui-btn weui-btn_primary external" href="javascript:" id="prompt-ok">确认提现</a>
+	        </div>
+	        <script type="text/javascript">
+				$(document).on('click','#prompt-ok', function () {
+					var forwardmoney = $('#forwardmoney').val();
+			      	if(isNaN(forwardmoney)){
+			      		$.toast("请输入提现金额");
+			      		return false;
+			      	}
+			      	if(!forwardmoney){
+			      		$.toast("请输入提现金额");
+			      		return false;
+			      	}
+					if(forwardmoney > {php echo sprintf("%.2f",$distributor['nowmoney'])}){
+			      		$.toast("提现金额不可超过可提现金额");
+			      		return false;
+			      	}
+					if(forwardmoney < {php echo sprintf("%.2f",$_W['wlsetting']['distribution']['lowestmoney'])}){
+			      		$.toast("提现金额必须大于等于{$_W['wlsetting']['distribution']['lowestmoney']}元");
+			      		return false;
+			      	}
+			      	var withdrawcharge = {php echo empty($_W['wlsetting']['distribution']['withdrawcharge']) ? 0 : $_W['wlsetting']['distribution']['withdrawcharge'];};
+					var withdraws = (forwardmoney - forwardmoney*withdrawcharge/100).toFixed(2);
+		          	$.confirm("确认提现"+forwardmoney+"元,实得"+withdraws+"元？",
+			  			function () {
+                            var payment_type = $("[name='payment_type']:checked").val();
+							$.post("{php echo app_url('distribution/disappbase/applying')}",{money:forwardmoney,payment_type:payment_type},function(d){
+								$.alert(d.message, function () {
+						            if(d.errno == 0){
+						          		location.href = "{php echo app_url('distribution/disappbase/apply',array('type'=>'deling'))}";
+						          	}
+						        });
+						    },"json");
+			  			}
+				  	);
+				});
+			</script>
+			{/if}
+			
+			{if $_GPC['type']=='deling' || $_GPC['type']=='finish' || $_GPC['type']=='reject'}
+			<div class="buttons-tab">
+			    <a href="{php echo app_url('distribution/disappbase/apply',array('type'=>'deling'))}" class="{if $_GPC['type']=='deling'}active{/if} button">处理中</a>
+			    <a href="{php echo app_url('distribution/disappbase/apply',array('type'=>'finish'))}" class=" {if $_GPC['type']=='finish'}active{/if} button">已完成</a>
+			    <a href="{php echo app_url('distribution/disappbase/apply',array('type'=>'reject'))}" class=" {if $_GPC['type']=='reject'}active{/if} button">被驳回</a>
+			</div>
+			{loop $record $r}
+			<div class="list-block" style="margin-top: .5rem;">
+			    <ul>
+			      	<li class="item-content">
+				        <div class="item-inner">
+				          <div class="item-title">处理状态</div>
+				          <div class="item-after">
+				          	{if $r['status']==6}
+				          	<a href="#" class="button-fill button-default">申请中</a>
+							{elseif $r['status']==7}
+							<a href="#" class="button-fill button-info">待审核</a>
+							{elseif $r['status']==8 || $r['status']==3}
+							<a href="#" class="button-fill button-info">已审核</a>
+				          	{elseif $r['status']==9}
+							<a href="#" class="button-fill button-success">已完成</a>
+							{elseif $r['status']==10}
+							<a href="#" class="button-fill button-danger">已驳回</a>
+							{elseif $r['status']==11}
+                              <a href="#" class="button-fill button-danger">已驳回</a>
+                            {elseif $r['status']==-1}
+                              <a href="#" class="button-fill button-danger">已驳回</a>
+				          	{/if}
+				          </div>
+				        </div>
+			      	</li>
+			      	<li class="item-content">
+				        <div class="item-inner">
+					        <div class="item-title-row">
+				           		<div class="item-subtitle">提现金额</div>
+				            	<div class="item-after">￥ {$r['sapplymoney']}</div>
+				          	</div>
+				          	<div class="item-title-row">
+				           		<div class="item-subtitle">手续费</div>
+				            	<div class="item-after">￥ {php echo $r['sapplymoney']-$r['sgetmoney']}</div>
+				          	</div>
+				          	<div class="item-title-row">
+				           		<div class="item-subtitle">实获金额</div>
+				            	<div class="item-after">￥{$r['sgetmoney']}</div>
+				          	</div>
+				        </div>
+				    </li>
+			      	<li class="item-content">
+				        <div class="item-inner">
+				          <div class="item-title">{if $r['status']==6 || $r['status']==7}
+                              申请提现
+                              {elseif $r['status']==8}
+                              审核
+                              {elseif $r['status']==9}
+                              完成
+                              {elseif $r['status']==10}
+                              驳回
+                              {/if}时间</div>
+				          <div class="item-after">{if $r['status']==6 || $r['status']==7}{php echo date("Y-m-d H:i:s",$r['applytime'])}{else}{php echo date("Y-m-d H:i:s",$r['updatetime'])}{/if}</div>
+				        </div>
+			      	</li>
+			    </ul>
+			  </div>
+			{/loop}
+			{if empty($record)}
+			<div style="text-align: center;"><img style="position: relative;top: 2rem;width: 5rem;" src="../addons/weliam_merchant/app/resource/image/order_no_con.png" alt=""><p style="position: relative;top: 2.5rem;font-size: .8rem;color: #666;">暂时没有{if $_GPC['type']=='deling'}处理中{else}已完成{/if}申请</p></div>
+			{/if}
+			{/if}
+		</div>
+	</div>
+</div>
+
+{php include wl_template('common/footer');}

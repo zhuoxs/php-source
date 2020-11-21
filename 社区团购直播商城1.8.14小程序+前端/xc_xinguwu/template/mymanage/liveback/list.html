@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {template 'common/listhead'}
+    <script type="text/javascript" src="./resource/js/require.js?v=20170915"></script>
+</head>
+<body class="nav-md">
+<div class="contai ner body">
+    <div class="main_container" style="overflow-x: hidden;min-height: 100vh;background-color: white;">
+        <div class="">
+            <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">筛选</div>
+                    <div class="panel-body">
+                        <form action=" " method="get" class="form-horizontal" role="form" id="searchform"
+                              onsubmit="return false">
+                            <div class="col-xs-12 col-sm-3 col-md-3col-lg-3">
+                                <div class="input-group">
+                                    <span class="input-group-addon">标题</span>
+                                    <input class="form-control" name="seachkey">
+                                </div>
+                            </div>
+
+                            <div class="col-xs-12 col-sm-3 col-md-3col-lg-3">
+                                <div class="input-group">
+                                    <span class="input-group-addon">回放记录ID</span>
+                                    <input class="form-control" name="id">
+                                </div>
+                            </div>
+
+                            <div class="col-xs-12 col-sm-3 col-md-3col-lg-3">
+                                <div class="input-group">
+                                    <span class="input-group-addon">直播间ID</span>
+                                    <input class="form-control" name="live_id">
+                                </div>
+                            </div>
+
+                            <div class="col-xs-12 col-sm-3 col-md-3col-lg-3">
+                                <div class="input-group">
+                                    <span class="input-group-addon">文件ID</span>
+                                    <input class="form-control" name="file_id">
+                                </div>
+                            </div>
+                            <br>
+                            <br>
+                            <div class="col-xs-12 col-sm-3 col-md-3col-lg-3">
+                                <div class="input-group">
+                                    <span class="input-group-addon">状态</span>
+                                    <select class="form-control" name="status" data-select="" >
+                                        <option value="0">正常</option>
+                                        <option value='2'>创建中</option>
+
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-4 col-md-3 col-lg-3">
+                                <button class="btn btn-default" type="reset" ><i class="fa fa-repeat"></i>
+                                    重置
+                                </button>
+                                <button class="btn btn-default" type="submit" id="btnseach"><i class="fa fa-search"></i>
+                                    搜索
+                                </button>
+
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="x_panel">
+                    <div class="x_title">
+                        <h2> {$xtitleb} > {$xtitlea}列表</h2>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                        <div class="ibox-content" id="pfrom">
+                            <!--data-detail-view="true"   data-detail-formatter="detailFormatter"-->
+                            <table id="table" class="dotable" data-toggle="table"
+                                   data-url="{php echo $this->createWebUrl($_GPC['do'], array('op'=>'getseachjson'))}"
+                                   data-sort-name="id" data-sort-order="desc" data-query-params="queryparams"
+                                   data-page-number="1" data-page-size="15" data-mobile-responsive="true"
+                                   data-show-refresh="true">
+                                <thead>
+                                <tr>
+                                    <th data-checkbox="true"></th>
+                                    <th data-field="id" data-sortable="true">ID</th>
+                                    <th data-field="title" data-sortable="true" data-formatter="format_title">标题[直播间ID]</th>
+                                    <th data-field="img" data-sortable="true" data-formatter="format_img">图片</th>
+                                    <th data-field="" data-sortable="true" data-formatter="format_info" data-align="left" >回放信息</th>
+                                    <th data-field="nickname" data-sortable="true" >直播者信息</th>
+                                    <th data-field="status" data-sortable="true" data-formatter="formatstatus">状态
+                                    </th>
+                                    <th data-field="createtime" data-sortable="true" >创建时间</th>
+                                    <th data-events="operateEvents" data-formatter="operateFormatter" data-width="10%"
+                                        data-title="操作" data-align="center">操作
+                                    </th>
+                                </tr>
+                                </thead>
+                            </table>
+                            <button type="button" class="btn btn-danger " style="margin-right:5px;" id="delselct">删除选中
+                            </button>
+                            <br>
+                            <br>
+                            说明：
+                            <a class="btn btn btn-default btn-xs"> <i class="fa fa-square-o fa-lg"></i></a>禁用 <a
+                                class="btn btn-primary  btn-xs"> <i class="fa fa-check-square-o fa-lg"></i></a> 开启
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{template 'common/listfoot'}
+<script>
+    function format_title(value,row) {
+        return value+'['+row.live_id+']'
+    }
+    function format_img(value) {
+        return '<img src="'+value+'" width="100px">'
+    }
+    function format_info(value,row) {
+        var html='<div>播放地址:'+row.video_url+'</div>' +
+            '<div>文件大小:'+row.file_size+'</div>' +
+            '<div>文件ID:'+row.file_id+'</div>' +
+            '<div>文件类型:'+row.file_format+'</div>' +
+            '<div>时长:'+row.duration+'</div>';
+        return html;
+    }
+</script>
+<script type="text/javascript">
+    var htojb = {};
+    $saechparas = null;
+    $(function () {
+        $("#btnseach").click(function () {
+            setseach();
+            $("#table").bootstrapTable('refresh');
+        });
+        $(".js-select2").select2({theme: "bootstrap"});
+        var htpid = {};
+        $('[name="pid"]').find("option").each(function () {
+            htpid[$(this).attr("value")] = $(this).text();
+        });
+        htojb["pid"] = htpid;
+    });
+    function setseach() {
+        $saechparas = {};
+        $saechparas = $("#searchform").serializeArray();
+
+    }
+    function queryparams(params) {
+        if ($saechparas == null) {
+            setseach()
+        }
+        $.each($saechparas, function (i, field) {
+            if (field.name.indexOf("[]") > 0) {
+
+                var kname = field.name.replace("[]", "");
+                if (typeof(params[kname]) === "undefined") {
+                    params[kname] = [];
+                }
+                params[kname].push(field.value)
+            }
+            else {
+                params[field.name] = field.value;
+            }
+        });
+        return params;
+    }
+    $(function () {
+        $("#delselct").click(function () {
+            $pdadta = $("#table").bootstrapTable('getSelections');
+            if ($pdadta.length < 1) {
+                swal({
+                    title: "错误",
+                    text: "选选择删除内容",
+                    type: "error",
+                    timer: 2000
+                });
+            }
+            else {
+                swal({
+                    title: '确认删除吗',
+                    text: "确认删除吗" + $pdadta.length + "记录",
+                    showCancelButton: true,
+                    closeOnConfirm: false,
+                    showLoaderOnConfirm: true,
+                    confirmButtonText: "确认",
+                    cancelButtonText: "取消",
+                    preConfirm: function () {
+                        return new Promise(function (resolve) {
+                            var _postdata = {};
+                            var ids = [];
+                            $.each($pdadta, function (i, field) {
+                                ids.push(field["id"]);
+                            });
+                            _postdata["ids"] = ids.join(",");
+                            $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'delete'));}", {
+                                method: 'POST',
+                                data: _postdata,
+                                dataType: 'json'
+                            }).done(function (response) {
+                                if (parseInt(response["status"]) === 1) {
+                                    xc_edit_message({
+                                        title: "提示",
+                                        text: "删除成功",
+                                        type: "success",
+                                        timer: 1500
+                                    });
+
+                                    $("#table").bootstrapTable('refresh');
+                                }
+                                else {
+                                    xc_edit_message({
+                                        title: "错误",
+                                        text: "删除失败",
+                                        type: "error",
+                                        timer: 2000
+                                    });
+                                }
+                            });
+
+
+                        });
+                    },
+                    allowOutsideClick: false
+                })
+
+            }
+
+        })
+
+    });
+    $saechparas = null;
+
+    $.extend($.fn.bootstrapTable.defaults, {
+        method: 'post',
+        pagination: true,
+        sidePagination: 'server',
+        contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+
+        onClickCell: function (field, value, row, $element) {
+
+
+        },
+        onLoadSuccess: function () {
+
+        }
+    });
+    $.extend($.fn.bootstrapTable.columnDefaults, {
+        align: 'center',
+        valign: 'middle'
+    });
+
+    function operateFormatter(value, row, index) {
+        var myhtml = [];
+        myhtml.push(
+
+            '<a class="btn btn-danger btn-xs delete" href="javascript:void(0)"  >',
+            '<i class="fa fa-close" aria-hidden="true" title="删除"></i>',
+            '</a>'
+
+        );
+        return myhtml.join('');
+    }
+
+    var operateEvents = {
+        "click a.delete": function (e, value, row, index) {
+            var _postdata = {};
+            _postdata["ids"] = row["id"];
+            swal({
+                title: '确认删除吗',
+                showCancelButton: true,
+                closeOnConfirm: false,
+                showLoaderOnConfirm: true,
+                confirmButtonText: "确认",
+                cancelButtonText: "取消",
+                preConfirm: function () {
+                    return new Promise(function (resolve) {
+                        $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'delete'));}", {
+                            method: 'POST',
+                            data: _postdata,
+                            dataType: 'json'
+                        }).done(function (response) {
+                            if (parseInt(response["status"]) === 1) {
+                                xc_edit_message({
+                                    title: "提示",
+                                    text: "删除成功",
+                                    type: "success",
+                                    timer: 1500
+                                });
+
+                                $("#table").bootstrapTable('refresh');
+                            }
+                            else {
+                                xc_edit_message({
+                                    title: "错误",
+                                    text: "删除失败",
+                                    type: "error",
+                                    timer: 2000
+                                });
+
+                            }
+                        });
+
+                    });
+                },
+                allowOutsideClick: false
+            })
+        },
+        "click a.copy": function (e, value, row, index) {
+            var _postdata = {};
+            _postdata["ids"] = row["id"];
+            swal({
+                title: '确认复制吗',
+                showCancelButton: true,
+                closeOnConfirm: false,
+                showLoaderOnConfirm: true,
+                confirmButtonText: "确认",
+                cancelButtonText: "取消",
+                preConfirm: function () {
+                    return new Promise(function (resolve) {
+                        $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'copy'));}", {
+                            method: 'POST',
+                            data: _postdata,
+                            dataType: 'json'
+                        }).done(function (response) {
+                            if (parseInt(response["status"]) === 1) {
+                                message({
+                                    title: "提示",
+                                    text: "复制成功",
+                                    type: "success",
+                                    timer: 1500
+                                });
+                                $("#table").bootstrapTable('refresh');
+                            }
+                            else {
+                                message({
+                                    title: "错误",
+                                    text: "复制失败",
+                                    type: "error",
+                                    timer: 2000
+                                });
+
+                            }
+                        });
+                    });
+                },
+                allowOutsideClick: false
+            })
+        }
+    };
+
+    var operatesorts = {
+        'change input.sorts': function (e, value, row, index) {
+            var _postdata = {};
+            _postdata["id"] = row["id"];
+            _postdata["sorts"] = $(this).val();
+            $actindex = index;
+
+            $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'updatesorts'));}", {
+                method: 'POST',
+                data: _postdata,
+                dataType: 'json'
+            }).done(function (response) {
+                if (parseInt(response["status"]) === 1) {
+                    xc_list_message({
+                        title: "提示",
+                        text: "操作成功",
+                        type: "success",
+                        timer: 1500
+                    });
+
+                    $("#table").bootstrapTable('updateRow', {
+                        index: $actindex,
+                        row: {
+                            sorts: _postdata["sorts"]
+                        }
+                    });
+                }
+                else {
+                    xc_list_message({
+                        title: "错误",
+                        text: "操作失败",
+                        type: "error",
+                        timer: 2000
+                    });
+                }
+            });
+
+
+        }
+    };
+
+    var operatestatus = {
+        'click a': function (e, value, row, index) {
+            var _postdata = {};
+            _postdata["id"] = row["id"];
+            _postdata["status"] = $(this).attr("data-value");
+            $actindex = index;
+            $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'midstatus'));}", {
+                method: 'POST',
+                data: _postdata,
+                dataType: 'json'
+            }).done(function (response) {
+                if (parseInt(response["status"]) === 1) {
+                    xc_list_message({
+                        title: "提示",
+                        text: "操作成功",
+                        type: "success",
+                        timer: 1500
+                    });
+
+                    $("#table").bootstrapTable('updateRow', {
+                        index: $actindex,
+                        row: {
+                            status: -_postdata["status"]
+                        }
+                    });
+                }
+                else {
+                    xc_list_message({
+                        title: "错误",
+                        text: "操作失败",
+                        type: "error",
+                        timer: 2000
+                    });
+                }
+            });
+
+
+        }
+    };
+
+    function formatstatus(value, row, index) {
+        if (value == 1) {
+            return '<div class="btn btn-success">正常</div> ';
+        }
+        else {
+            return '<div class="btn btn-warning">创建中</div>'
+        }
+    }
+
+    function formatsorts(value, row, index) {
+        return ' <input type="number" class="sorts" value="' + value + '">';
+    }
+
+
+</script>
+
+
+</body>
+</html>
+

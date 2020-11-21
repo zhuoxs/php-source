@@ -1,0 +1,199 @@
+{template 'header'}
+    <link rel="stylesheet" href="{MODULE_URL}/template/static/toupiao_sou/css/mui.css" />
+    <link rel="stylesheet" href="{MODULE_URL}/template/static/toupiao_sou/mode1/gift.css" />
+    <link rel="stylesheet" href="{MODULE_URL}/template/static/toupiao_sou/css/font-awesome.css" />
+    <script type="text/javascript" src="{MODULE_URL}/template/static/toupiao_sou/js/jquery-3.2.1.min.js" ></script>
+    <div class="xinbeijing">
+    <div class="dings">
+        <div class="top_zuo">
+            <a href="{php echo $this->createMobileUrl('view', array('rid' => $reply['rid'],'id' => $voteuser['id'],'op'=>$_SESSION['ismirror'],'mirror_id'=>$_SESSION['mirror_id'],'saiquid'=>$_GPC['saiquid']))}"> 
+            <span class="mui-icon mui-icon-back"></span>
+            </a>
+        </div>
+        <div class="top_zhong"></div> 
+        <div class="top_you">
+            <a href="{php echo $this->createMobileUrl('giftranking', array('rid' => $reply['rid'],'id' => $voteuser['id']))}" {if !$reply['showpvgr']}style="display:none;" hidden{/if}>
+            {$reply['globallw']}榜
+            </a>
+        </div>
+    </div>
+    
+    <div class="top">
+        <div class="top_tu">
+            <div class="baiquan">
+                <img src="{media  $voteuser['avatar']}" />
+            </div>
+        </div>
+        <div class="top_mei">
+            送给:<span>"{$voteuser['name']}"</span>
+        </div>
+    </div>
+    
+    </div>
+    <div class="zhong">
+        
+        <div class="liwu">
+                    {loop $giftlist  $item}
+                        {loop $item $index $rom}
+            <div class="hu" onclick="a('{$rom['giftprice']}','{$rom['giftvote']}')" dada-key="{$index}">
+                <div class="zhuanshi">
+                    <img src="{media $rom['gifticon']}" />
+                </div>
+                <div class="xunme">
+                    {$rom['gifttitle']}
+                </div>
+                <div class="yidian">
+                    {php echo $rom['giftprice']*$reply['giftscale'];}{$reply['giftunit']}
+                </div>
+            </div>  
+                        {/loop}
+                    {/loop}
+        </div>
+        <div class="shuliang">
+            <div class="shuliang_left">
+                请选择以上{$reply['globallw']}
+            </div>
+            <div class="shuliang_right">
+                <div class="kuang">
+                    <div class="kuang_one">数量:</div>
+                    <div class="kuang_tu">
+                        <span class="icon-angle-right"></span>
+                    </div>
+                    <div class="slect">
+                        <select name="count">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                            <option value="1000">1000</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+            <!--广告位-->
+            {php echo m('tpl')->AdPiece('silence_vote_gift',$reply['gift_ad']);}
+    </div>
+    <div class="doumai">
+            <div class="dianji">
+             {if empty($reply['isindexff'])}
+                {if empty($reply['defaultpay'])}
+                <a href="javascript:;" class="js-wechat-pay">去支付</a>
+                {else}
+                <a href="javascript:;" id="weixin" class="">去支付</a>
+                {/if}		
+            {else}
+                <a href="javascript:;" class="js-wechat-pay-jumpzf">去支付</a>
+            {/if}       
+            </div>
+    </div>
+<div id="qshuli" class="donate_alert_mask" onclick="document.getElementById('qshuli').style.display='none';"><div class="donate_alert"><div class="donate_alert_msg">请选择你要赠送的{$reply['globallw']}</div><div class="donate_alert_btns"><div class="donate_alert_btn ok">确定</div></div></div></div>
+<br><br>
+
+<script type="text/javascript" src="{MODULE_URL}/template/static/toupiao_sou/js/mui.min.js" ></script>
+<script>
+$(document).ready(function(){
+    var giftid="";
+    $(".donate_money_choose .donate_money").click(function(){
+        var tip = $(this).attr("dada-tip"); 
+        $(".donate_money_edit_text").text(tip); 
+        giftid=$(this).attr("dada-key"); 
+        $(".donate_money_choose .donate_money").removeClass("active");
+        $(this).addClass("active");
+    });
+    
+        $(".hu").click(function(){
+                $(this).addClass("jquer").siblings().removeClass("jquer");
+                $(".kuang").show();
+                giftid = $(this).attr("dada-key"); 
+        });
+
+        a = function(a,b){
+                 $(".shuliang_left").text("单价"+a+"元，抵"+b+"{$reply['globalp']}");
+        }
+
+{if empty($reply['isindexff'])}
+{if empty($reply['defaultpay'])}
+    //
+    //发起微信支付，微信支付依赖于 WeixinJSBridge 组件，所以发起时应该在ready事件中进行
+    document.addEventListener('WeixinJSBridgeReady', function onBridgeReady() {
+   
+        $('.js-wechat-pay').removeClass('mui-disabled');
+        $('.js-wechat-pay').click(function(){
+            var count=$("select[name='count']").val();
+            if(giftid==""){dialog2("请选择你要赠送的{$reply['globallw']}");return false;}
+            loadingToast("奋力加载");
+            $.ajax({
+                type: "POST",
+                url: "{php echo $this->createMobileUrl('pay', array('rid' => $reply['rid'],'id' => $voteuser['id'],'ty' => 1,'type'=>1))}",
+                data: {giftid:giftid,count:count},
+                dataType: "json",
+                success: function(str) {
+                    hidemod("loadingToast");
+                    if(str!=null && str!='' && str.error!=1){
+                            payment = str.message.message;
+                            WeixinJSBridge.invoke("getBrandWCPayRequest", {
+                                    appId: payment.appId,
+                                    timeStamp: payment.timeStamp,
+                                    nonceStr: payment.nonceStr,
+                                    "package": payment["package"],
+                                    signType: payment.signType,
+                                    paySign: payment.paySign
+                            },
+                           function(res){     
+                               if(res.err_msg == "get_brand_wcpay_request:ok" ) {
+                                    toast("支付成功");
+                                    setTimeout(location.href ="{php echo $this->createMobileUrl('view', array('rid' => $reply['rid'],'id' => $voteuser['id']))}",3000); 
+                                    
+                               }else if(res.err_msg == "get_brand_wcpay_request:cancel"){
+                                    dialog2("已取消支付");return false;
+                               }else{
+                                    dialog2(res.err_msg);return false;
+                               }
+                           }
+                           ); 
+                    }else{
+                        dialog2(str.msg);
+                    }
+                },
+                error: function(err) {
+                    hidemod("loadingToast");
+                    dialog2("发生错误，请刷新后重试！(1)");
+                }
+            });
+        });
+        $('.js-wechat-pay').html('微信支付');
+    });
+
+{else}
+
+    $("#weixin").click(function(){
+        var count=$("select[name='count']").val();
+        if(giftid==""){dialog2("请选择你要赠送的{$reply['globallw']}");return false;}
+            location.href ="{php echo $this->createMobileUrl('gift', array('rid' => $reply['rid'],'id' => $voteuser['id'],'ty' => 1))}&type=1&giftid="+giftid+"&count="+count;
+    });
+
+{/if}
+{else}
+//独立防封
+$('.js-wechat-pay-jumpzf').click(function(){
+    var count=$("select[name='count']").val();
+    if(giftid==""){dialog2("请选择你要赠送的{$reply['globallw']}");return false;}
+    window.location = "{php echo $this->createMobileUrl('jumpzf', array('rid' => $reply['rid'],'id' => $voteuser['id'],'ty' => 1,'type'=>1,'saiquid'=>$_GPC['saiquid']))}"+"&giftid="+giftid+"&count="+count;
+})
+{/if}   
+});
+
+</script>
+{template 'footer'}

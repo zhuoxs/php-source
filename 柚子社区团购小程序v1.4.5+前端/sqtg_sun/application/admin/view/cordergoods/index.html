@@ -1,0 +1,594 @@
+{extend name="common/index" /}
+{block name="search_box"}
+<blockquote class="layui-elem-quote layui-quote-nm">
+    <p style="font-size: 14px;">退款申请中的订单，请处理后再发货（审核通过则退款，审核失败即不退款才能发货）！！！</p>
+</blockquote>
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入关键字..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="state" id="state" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        <div class="layui-inline">
+            <select name="check_state" id="check_state" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        <div class="layui-inline">
+            <select name="user_id" id="user_id" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        <div class="layui-inline">
+            <select name="leader_id" id="leader_id" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        {if($_SESSION['admin']['store_id'] == 0)}
+        <div class="layui-inline">
+            <select name="store_id" id="store_id" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        {/if}
+        <div class="layui-inline">
+            <input type="text" title="查询开始时间" class="layui-input" name="begin_time" id="begin_time" placeholder="查询开始时间">
+        </div>
+        <div class="layui-inline">
+            <input type="text" title="查询结束时间" class="layui-input" name="end_time" id="end_time" placeholder="查询结束时间">
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+{/block}
+{block name="tool_box"}
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnCSV" class="layui-btn layui-btn-primary layui-btn-sm">导出CSV</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchPrint" class="layui-btn layui-btn-primary layui-btn-sm">打印</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchSend" class="layui-btn layui-btn-danger layui-btn-sm">发货</a>
+        <a href="javascript:;" id="btnBatchLeaderReceive" class="layui-btn layui-btn-sm">团长收货</a>
+        {if !$_SESSION['admin']['store_id']}
+        <a href="javascript:;" id="btnBatchUserReceive" class="layui-btn layui-btn-primary layui-btn-sm">用户收货</a>
+        {/if}
+        <a href="javascript:;" id="btnBatchDelete2" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+    </div>
+</div>
+{/block}
+{block name="tool_template"}
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    {{# if(d.state != 1 && d.state != 6){ }}
+    <a href="javascript:;" data-id="{{ d.order_id }}" class="layui-btn layui-btn-primary layui-btn-xs btnPrint">打印</a>
+    {{# } }}
+    {{# if(d.state == 2 && d.check_state != 1){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnSend">发货</a>
+    {{# } }}
+    {{# if(d.state == 3 && d.delivery_type == 1){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-xs btnLeaderReceive">团长收货</a>
+    {{# } }}
+    {{# if(d.state == 4 || (d.state == 3 && d.delivery_type == 2)){ }}
+    {if !$_SESSION['admin']['store_id']}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnUserReceive">用户收货</a>
+    {/if}
+    {{# } }}
+    {{# if((d.state == 1 || d.state == 6) && d.check_state==0 ){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDelete2">删除</a>
+    {{# } }}
+</script>
+{/block}
+{block name="table_config"}
+<script type="text/html" id="dataOrderState">
+    {{# if(d.state == 1){ }}
+    待支付
+    {{# } }}
+    {{# if(d.state == 2){ }}
+    <span class="layui-badge">待配送</span>
+    {{# } }}
+    {{# if(d.state == 3){ }}
+    配送中
+    {{# } }}
+    {{# if(d.state == 4){ }}
+    待自提
+    {{# } }}
+    {{# if(d.state == 5){ }}
+    <span class="layui-badge layui-bg-blue">已完成</span>
+    {{# } }}
+    {{# if(d.state == 6){ }}
+    已取消
+    {{# } }}
+</script>
+<script type="ttext/heml" id="store_name">
+    {{# if(d.store_name){ }}
+        {{d.store_name}}
+    {{# } }}
+    {{# if(!d.store_name){ }}
+        平台
+    {{# } }}
+</script>
+<script type="ttext/heml" id="payType">
+    {{# if(d.pay_type == 1){ }}
+        微信
+    {{# } }}
+     {{# if(d.pay_type == 2){ }}
+        余额
+    {{# } }}
+</script>
+<script>
+    layui.use(['table','form','laydate'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        var laydate = layui.laydate;
+        laydate.render({
+            type:'datetime',
+            elem: '#begin_time'
+        });
+        laydate.render({
+            type:'datetime',
+            elem: '#end_time'
+        });
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_list')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'order_no', width:200, title: '订单号',fixed:'left'},
+                {field:'user_id', width:80, title: '用户id',fixed:'left'},
+                {field:'name', width:80, title: '用户',fixed:'left'},
+                {field:'tel', width:180, title: '用户电话 ',fixed:'left'},
+                {field:'goods_name', width:180, title: '商品名称',sort:true,fixed:'left'},
+                {field:'store_name', width:180, title: '商家名称',sort:true,fixed:'left',templet:"#store_name"},
+                {field:'order_id', width:80, title: '总表id'},
+                {field:'id', width:100, title: '明细表id'},
+                {field:'leader_name', width:180, title: '团长'},
+                {field:'order_pay_amount', width:120, title: '订单支付金额'},
+                {field:'pay_type', width:120, title: '支付方式',templet:"#payType"},
+                {field:'order_coupon_money', width:120, title: '订单优惠金额'},
+                {field:'pay_amount', width:120, title: '商品支付金额'},
+                {field:'coupon_money', width:120, title: '商品优惠金额'},
+                {field:'delivery_fee', width:120, title: '配送费'},
+                {field:'merge', width:120, title: '是否合并运费'},
+                {field:'attr_names', width:180, title: '规格',sort:true},
+                {field:'receive_address', width:400, title: '收货地址',sort:true},
+                {field:'state', width:100, title: '状态',sort:true,templet:'#dataOrderState'},
+                {field:'state', width:120, title: '退款状态',templet:"#dataCheckState"},
+                {field:'num', width:100, title: '数量',sort:true},
+                {field:'order_time', width:200, title: '下单时间'},
+                {field:'pay_no', width:200, title: '商户支付单号'},
+                {field:'comment', width:800, title: '备注'},
+                {field:'o',fixed:'right',width:200, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true,
+            height:'full-300',
+            done(res){
+                console.log(res);
+            }
+        });
+        //        搜索
+        $('#btnSearch').unbind('click').click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    state: $('#state').val(),
+                    check_state: $('#check_state').val(),
+                    user_id: $('#user_id').val(),
+                    leader_id: $('#leader_id').val(),
+                    begin_time: $('#begin_time').val(),
+                    end_time: $('#end_time').val(),
+                    store_id:$('#store_id').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        state: $('#state').val(),
+                        check_state: $('#check_state').val(),
+                        user_id: $('#user_id').val(),
+                        leader_id: $('#leader_id').val(),
+                        begin_time: $('#begin_time').val(),
+                        end_time: $('#end_time').val(),
+                        store_id:$('#store_id').val(),
+                    }
+                });
+            }
+        })
+        $('#btnCSV').click(function () {
+            var url = '{:adminurl("outCSV")}';
+            url += '&key='+$('#key').val();
+            url += '&state='+$('#state').val();
+            url += '&check_state='+$('#check_state').val();
+            url += '&user_id='+$('#user_id').val();
+            url += '&leader_id='+$('#leader_id').val();
+            url += '&begin_time='+$('#begin_time').val();
+            url += '&end_time='+$('#end_time').val();
+            url += '&store_id='+$('#store_id').val();
+
+            var checkData = table.checkStatus('laytable');
+            var ids = [];
+            for (var i in checkData.data){
+                if(ids.indexOf(checkData.data[i]['id']) == -1){
+                    ids.push(checkData.data[i]['id']);
+                }
+            }
+            if (ids.length){
+                url += '&ids='+ids.join(',');
+            }
+
+            top.window.open(url);
+        })
+        $('#btnBatchPrint').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            for (var i in data){
+                if (data[i].state != 1 && data[i].state != 6)
+                    ids.push(data[i].order_id);
+            }
+            if (ids.length > 0){
+                var url = "{:adminurl('batchprint')}";
+                $.post(url, {order_ids:ids.join(',')}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('打印成功',{icon: 6,anim: 6});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录，【待支付、已取消】订单不打印');
+            }
+        })
+        $('#btnBatchLeaderReceive').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            for (var i in data){
+                if (data[i].state == 3)
+                    ids.push(data[i].id);
+            }
+            if (ids.length > 0){
+                var url = "{:adminurl('batchleaderreceive')}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('收货成功',{icon: 6,anim: 6});
+                        setTimeout(function () {
+                            table.reload('laytable',{});
+                        },700);
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择【配送中】的记录');
+            }
+        })
+        $('#btnBatchUserReceive').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            for (var i in data){
+                if (data[i].state == 4)
+                    ids.push(data[i].id);
+            }
+            if (ids.length > 0){
+                var url = "{:adminurl('batchuserreceive')}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('收货成功',{icon: 6,anim: 6});
+                        setTimeout(function () {
+                            table.reload('laytable',{});
+                        },700);
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择【待自提】的记录');
+            }
+        })
+        $('#btnBatchSend').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            for (var i in data){
+                if (data[i].state == 2 && data[i].check_state != 1)
+                    ids.push(data[i].id);
+            }
+            if (ids.length > 0){
+                var url = "{:adminurl('batchsend')}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('发货成功',{icon: 6,anim: 6});
+                        setTimeout(function () {
+                            table.reload('laytable',{});
+                        },700);
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择【待配送】的记录');
+            }
+        })
+        //打印
+        $(document).on('click','.btnPrint',function(e){
+            var id = $(this).data('id')
+            var url = "{:adminurl('batchprint')}";
+            $.post(url, {order_ids:id}, function(data){
+                if (typeof data == 'string'){
+                    data = $.parseJSON(data);
+                }
+                if (data.code == 0) {
+                    layer.msg('打印成功',{icon: 6,anim: 6});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        })
+        $(document).on('click','.btnLeaderReceive',function(e){
+            var id = $(this).data('id')
+            var url = "{:adminurl('batchleaderreceive')}";
+            $.post(url, {ids:id}, function(data){
+                if (typeof data == 'string'){
+                    data = $.parseJSON(data);
+                }
+                if (data.code == 0) {
+                    layer.msg('收货成功',{icon: 6,anim: 6});
+                    setTimeout(function () {
+                        table.reload('laytable',{});
+                    },700);
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        })
+        $(document).on('click','.btnUserReceive',function(e){
+            var id = $(this).data('id')
+            var url = "{:adminurl('batchuserreceive')}";
+            $.post(url, {ids:id}, function(data){
+                if (typeof data == 'string'){
+                    data = $.parseJSON(data);
+                }
+                if (data.code == 0) {
+                    layer.msg('收货成功',{icon: 6,anim: 6});
+                    setTimeout(function () {
+                        table.reload('laytable',{});
+                    },700);
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        })
+        $(document).on('click','.btnSend',function(e){
+            var id = $(this).data('id')
+            var url = "{:adminurl('batchsend')}";
+            $.post(url, {ids:id}, function(data){
+                if (typeof data == 'string'){
+                    data = $.parseJSON(data);
+                }
+                if (data.code == 0) {
+                    layer.msg('发货成功',{icon: 6,anim: 6});
+                    setTimeout(function () {
+                        table.reload('laytable',{});
+                    },700);
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        })
+        $(document).on('click','.btnDelete2',function(e){
+            var id = $(this).data('id')
+            layer.confirm('即将删除 1 条记录', {
+                btn: ['确定','取消'] //按钮
+            }, function(){
+                var url = "{:adminurl('softdelete')}";
+                console.log(url);
+                $.post(url, {ids:id}, function(data){
+                    console.log(data);
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('删除成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else if(data.code == 2){
+                        layer.confirm(data.msg, {
+                            btn: ['确定','取消'] //按钮
+                        },function(){
+                            var url = "{:adminurl('softdelete')}";
+                            console.log(url);
+                            $.post(url, {ids:id,comfirm:true}, function(data){
+                                if (typeof data == 'string'){
+                                    data = $.parseJSON(data);
+                                }
+                                if (data.code == 0) {
+                                    layer.msg('删除成功',{icon: 6,anim: 6});
+                                    table.reload('laytable',{});
+                                }else{
+                                    layer.msg(data.msg,{icon: 5,anim: 6});
+                                }
+                            });
+                        });
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            });
+            return false;
+        })
+        // 批量删除
+        $('#btnBatchDelete2').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            //判断是不是能删除的
+            var flag = false;
+            data.forEach(function(cur){
+                console.log(cur.state);
+                if(cur.state != 1 && cur.state != 6 ){
+                    flag = true;
+                    return;
+                }
+            })
+            console.log(flag);
+            if(flag){
+                layer.msg('待支付、已取消的订单才可删除',{icon: 5,anim: 6});
+                return;
+            }else{
+                var ids = [];
+                if (data.length > 0){
+                    for (var i in data){
+                        ids.push(data[i].id);
+                    }
+                    layer.confirm('即将删除 '+data.length+' 条记录', {
+                        btn: ['确定','取消'] //按钮
+                    }, function(){
+                        var url = "{:adminurl('softdelete')}";
+                        $.post(url, {ids:ids.join(',')}, function(data){
+                            console.log(data);
+                            if (typeof data == 'string'){
+                                data = $.parseJSON(data);
+                            }
+                            if (data.code == 0) {
+                                layer.msg('删除成功',{icon: 6,anim: 6});
+                                table.reload('laytable',{});
+                            }else if(data.code == 2){
+                                layer.confirm(data.msg, {
+                                    btn: ['确定','取消'] //按钮
+                                },function(){
+                                    var url = "{:adminurl('softdelete')}";
+                                    console.log(url);
+                                    $.post(url, {ids:ids.join(','),comfirm:true}, function(data){
+                                        if (typeof data == 'string'){
+                                            data = $.parseJSON(data);
+                                        }
+                                        if (data.code == 0) {
+                                            layer.msg('删除成功',{icon: 6,anim: 6});
+                                            table.reload('laytable',{});
+                                        }else{
+                                            layer.msg(data.msg,{icon: 5,anim: 6});
+                                        }
+                                    });
+                                });
+                            }else{
+                                layer.msg(data.msg,{icon: 5,anim: 6});
+                            }
+                        });
+                    });
+                }else{
+                    layer.msg('请选择记录');
+                }
+            }
+
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        var ret = [
+            {"id":0,"text":"全部订单"},
+            {"id":1,"text":"待支付"},
+            {"id":2,"text":"待配送"},
+            {"id":3,"text":"配送中"},
+            {"id":4,"text":"待自提"},
+            {"id":5,"text":"已完成"},
+            {"id":6,"text":"已取消"},
+        ];
+        ret.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            return obj;
+        });
+        $('#state').select2({
+            data: ret,
+        })
+
+        var ret = [
+            {"id":0,"text":"全部订单"},
+            {"id":1,"text":"退款中"},
+            {"id":2,"text":"已退款"},
+            {"id":3,"text":"退款失败"},
+        ];
+        ret.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            return obj;
+        });
+        $('#check_state').select2({
+            data: ret,
+        })
+
+        $.get("{:adminurl('select','Cuser')}", function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: '', text: '请选择用户'});
+            ret.map(function (obj) {
+                if(obj.text)
+                    obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#user_id').select2({
+                data: ret,
+            })
+        })
+        $.get("{:adminurl('select','Cleader')}", function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: '', text: '请选择团长'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#leader_id').select2({
+                data: ret,
+            })
+        })
+        //商家选择
+        $.get("{:adminurl('select','Cstore')}",function(ret){
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: 0, text: '平台'});
+            ret.unshift({id: -1, text: '请选择商家'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#store_id').select2({
+                data: ret,
+            })
+        });
+    })
+</script>
+{/block}

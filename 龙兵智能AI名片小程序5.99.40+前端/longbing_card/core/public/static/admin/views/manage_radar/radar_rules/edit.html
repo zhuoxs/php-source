@@ -1,0 +1,158 @@
+
+<title>事件规则管理</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>事件规则管理</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-header">事件规则管理</div>
+        <div class="layui-card-body" style="padding: 15px;">
+
+            <form class="layui-form" action="" lay-filter="component-form-group">
+
+                <!--类型-->
+                <div class="layui-form-item">
+                    <label class="layui-form-label">类型</label>
+                    <div class="layui-input-block">
+                        <input type="radio" name="type" value=1 title="客户兴趣">
+                        <input type="radio" name="type" value=2 title="客户互动">
+                        <input type="radio" name="type" value=3 title="客户活跃度">
+                    </div>
+                </div>
+
+                <!--标题-->
+                <div class="layui-form-item">
+                    <label class="layui-form-label">标题</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="title" required  lay-verify="required" placeholder="" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+
+                <!--关联的事件  多选框  类似 事件的通知类型多选框-->
+                <div class="layui-form-item">
+                    <label class="layui-form-label">关联事件</label>
+                    <div class="layui-input-block" id="selectEvent">
+                        <!--Js渲染的-->
+                    </div>
+                </div>
+
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="LAY-filter-demo-form">立即提交</button>
+                        <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                    </div>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.use(['admin', 'form'], function(){
+        var $ = layui.$
+                ,admin = layui.admin
+                ,element = layui.element
+                ,layer = layui.layer
+                ,form = layui.form;
+
+        //id的值（判断是否编辑）
+        var router = layui.router();
+        var id=router.search.id;
+        if(typeof(id)=='undefined'){
+            id=0;//默认新增
+        }
+
+        //发送请求获取数据(数据的回显)
+        admin.req({
+            type:'POST',
+            url: config.url+'manage_radar/radar_rules/getOneData'//数据接口
+            ,data:{"id":id},
+            done:function(res){
+                if(res.data){
+                    //预设元素
+                    form.val("component-form-group", {
+                        "title": res.data.title,// "name": "value"
+                        "type": res.data.type,// "name": "value"
+                        "event_ids": res.data.event_ids,// "name": "value"
+                    });
+                    //全部事件的值
+                    if (res.data.eventList.length > 0)
+                    {
+                        /*查询现有的回显的事件ID*/
+                        var chooseArr=[];
+                        if (res.data.event_ids)
+                        {
+                            //将逗号拆分为数组
+                            chooseArr=res.data.event_ids.split(',');
+                            //解析为整数
+                            layui.each(chooseArr, function(index, item){
+                                chooseArr[index]=parseInt(item)
+                            });
+                        }
+                        //构建多选框数据
+                        var strs='';
+                        layui.each(res.data.eventList, function(index, item){
+//                            console.log(chooseArr.indexOf(item.id));
+                            //如果在数组内  选中
+                            if (chooseArr.indexOf(item.id) >=0)
+                            {
+                                strs+='<input type="checkbox" value="'+item.id+'" name="event_ids" title="'+item.title+'" checked>';
+                            }
+                            else
+                            {
+                                strs+='<input type="checkbox" value="'+item.id+'" name="event_ids" title="'+item.title+'">';
+                            }
+                        });
+                        $("#selectEvent").html(strs);
+                    }
+                    form.render();
+                }
+            }
+        });
+
+        /* 监听提交 */
+        form.on('submit', function(data){
+
+            //所有勾选的复选框
+            var effectModel = $("input:checkbox[name *='event_ids']:checked").map(function(index,elem) {
+                return $(elem).val();
+            }).get().join(',');
+
+            data.field.event_ids=effectModel;
+
+            //发送请求
+            admin.req({
+                type:'POST',
+                url: config.url+'manage_radar/radar_rules/edit'//数据接口
+                ,data:{"id":id,"data":data.field},
+                done:function(res){
+                    if(res.data<0){
+                        layer.msg(res.msg, {
+                            offset: '15px'
+                            ,icon: 2
+                            ,time: 1000
+                        });
+                    }else{
+                        layer.msg('成功', {
+                            offset: '15px'
+                            ,icon: 1
+                            ,time: 1000
+                        }, function(){
+                            window.location.href =config.html_url+'manage_radar/radar_rules/';
+                        });
+                    }
+                }
+            });
+            return  false;
+        });
+    });
+
+</script>

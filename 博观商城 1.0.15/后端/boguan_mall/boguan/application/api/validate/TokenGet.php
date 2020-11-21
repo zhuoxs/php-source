@@ -1,0 +1,2 @@
+<?php
+ namespace app\api\validate; class TokenGet extends BaseValidate { protected $rule = array("\x63\157\x64\x65" => "\162\145\161\165\151\162\x65\x7c\x69\163\116\157\x74\x45\x6d\x70\x74\x79"); protected $message = array("\143\157\x64\145" => "\347\xbc\272\xe5\260\x91\xe5\x8f\x82\xe6\x95\260\143\x6f\144\x65\xef\274\201"); }

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<title>支付</title>
+{template 'common/header'}
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title>支付</title>
+		<link rel="stylesheet" href="{MODULE_URL}/template/static/toupiao_sou/css/weui.css" />
+
+	<style>
+		body{margin: 0;padding: 0;padding-top: 50px;background-color: rgb(239, 239, 244);}
+		.pay_one{width: 100%; text-align: center;font-family: "微软雅黑";font-size: 14px; color: #000000;}
+		.pay_two{width: 100%; text-align: center;font-family: "微软雅黑";font-size: 38px; font-weight: bold; color: #000000;}
+		.pay_two span{font-size: 30px;}
+		.tijiao{width: 86%; margin: 0 auto;margin-top: 25px;}
+                .text-center
+                {
+                    display: none !important;
+                }
+	</style>
+        {if $type == 0}
+        
+        {elseif $type == 1}
+        <form action='' method="post" >
+            <div class="pay_two"><span>￥</span>{$money}</div>
+            <div class="tijiao">
+                
+                <button class="weui_btn weui_btn_primary" type="button" id="zf">支付</button>
+            </div>
+        </form>
+        <script>
+            $('#zf').click(function () {
+                        run_confim = true;
+                        var giftid = {$giftid};
+                        var count = {$count};
+                        $.ajax({
+                            type: "POST",
+                            url: "{php echo $this->createMobileUrl('pay', array('rid' => $rid,'id' => $id,'ty' => 1,'type'=>1))}",
+                            data: {giftid:giftid,count:count},
+                            dataType: "json",
+                            success: function (str) {
+                                if (str!=null && str!='' && str.error!=1) {
+                                      payment = str.message.message;
+                                    WeixinJSBridge.invoke("getBrandWCPayRequest", {
+                                            appId: payment.appId,
+                                            timeStamp: payment.timeStamp,
+                                            nonceStr: payment.nonceStr,
+                                            "package": payment["package"],
+                                            signType: payment.signType,
+                                            paySign: payment.paySign
+                                    },
+                                   function(res){     
+                                       if(res.err_msg == "get_brand_wcpay_request:ok" ) {
+                                            alert("支付成功");
+                                            setTimeout(location.href ="{php echo $this->createMobileUrl('view', array('rid' => $rid,'id' => $id,'saiquid'=>$saiquid))}",3000); 
+
+                                       }else if(res.err_msg == "get_brand_wcpay_request:cancel"){
+                                            alert("已取消支付");return false;
+                                       }else{
+                                            alert(res.err_msg);return false;
+                                       }
+                                   }
+                                   ); 
+                                      
+                                } else {
+                                     alert(str.error);
+                                }
+                            },
+                            error: function (err) {
+                                alert('错误 刷新页面重试');
+                            }
+                        });
+
+
+
+            });            
+        </script>
+        {/if}
+{template 'common/footer'}

@@ -1,0 +1,84 @@
+{template 'web/common/common'}
+{template 'web/system/navbar'}
+{template 'web/webThing/navbar'}
+<div class="layui-card">
+    <button class="layui-btn layui-btn-sm" id="updateDevice">
+        <i class="layui-icon">&#xe653;</i> 一键更新设备
+    </button>
+    <div class="layui-form">
+        <table class="layui-table" lay-skin="line">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>MAC</th>
+                    <th>设备名称</th>
+                    <th>设备号</th>
+                    <th>创建时间</th>
+                    <th>最近一次更新时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {loop $data['list'] $index $item}
+                <tr>
+                    <td>{$item['id']}</td>
+                    <td>{$item['mac']}</td>
+                    <td>{$item['dev_alias']}</td>
+                    <td>{$item['did']}</td>
+                    <td><?php echo date("Y-m-d H:i:s",$item['create_time']);?></td>
+                    <td><?php echo date("Y-m-d H:i:s",$item['update_time']);?></td>
+                    <td>
+                        {if $item['mac']==''}
+                          <button class="layui-btn layui-btn-danger layui-btn-xs delete" data-id="{$item['id']}">
+                            <i class="layui-icon">&#xe640;</i>删除
+                          </button>
+                        {else}
+                        --
+                        {/if}
+
+                    </td>
+                </tr>
+              {/loop}
+            </tbody>
+        </table>
+        <div style="text-align: right;">
+            {$data['pager']}
+        </div>
+    </div>
+</div>
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form,layer = layui.layer;
+        $('#updateDevice').click(function () {
+            layer.confirm('确认获取并更新最新设备信息吗？',function (t) {
+                var load=layer.load();
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'getDList','action'=>'webThing')}",
+                    dataType:'json',
+                    success:function(res){
+                        layer.close(load);
+                        layer.close(t);
+                        layer.msg(res.msg,{time:1000},function () {
+                            if(res.code==0){
+                                window.location.reload();
+                            }
+                        });
+                    }
+                })
+            })
+        })
+
+        $(".delete").click(function(){
+            var that=$(this);
+            var id=$(this).attr('data-id');
+            var url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'device_list_delete','action'=>'webThing')}"
+            updateData(url,{id:id},'确认删除吗');
+
+        });
+
+
+    });
+
+</script>

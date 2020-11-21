@@ -1,0 +1,108 @@
+<view class="container" wx:if="{{completed}}">
+    <view class="list-item" wx:if="{{list.length>0}}" wx:for="{{list}}" wx:key="key">
+        <view class="item-ordersn">订单号：{{item.ordersn}}</view>
+        <navigator hoverClass="none" url="../detail/index?id={{item.itemid}}{{type=='sell'?'&myOrder=1':''}}&orderid={{item.id}}">
+            <view class="inline">
+                <image class="item-img" src="{{item.cover?item.cover:'../../libs/images/holder.png'}}"></image>
+            </view>
+            <view class="inline w80">
+                <view class="item-title zan-ellipsis">{{item.title}}</view>
+                <view class="zan-font-14 zan-c-gray-dark zan-ellipsis" wx:if="{{item.reply}}">备注：{{item.reply}}</view>
+            </view>
+        </navigator>
+        <zan-cell title="{{type=='sell'?'赚了: ':'花费: '}}{{item.price>0?item.price+item.unit:item.credit+credit_title}}">
+            <button class="order-btn" disabled="true" slot="footer" wx:if="{{item.status==-3}}">已退款</button>
+            <view slot="footer" wx:if="{{item.status==-1}}">
+                <block wx:if="{{type=='sell'}}">
+                    <button class="order-btn" disabled="true" slot="footer">买家申请退款</button>
+                    <form bindsubmit="refund" data-id="{{item.id}}" reportSubmit="true">
+                        <button class="order-btn" formType="submit">退款</button>
+                    </form>
+                </block>
+                <button class="order-btn" disabled="true" slot="footer" wx:if="{{type=='buy'}}">待退款</button>
+            </view>
+            <view slot="footer" wx:if="{{item.status==1&&type=='sell'}}">
+                <button class="order-btn" disabled="true" slot="footer" wx:if="{{item.trade_type==2}}">待自提</button>
+                <form bindsubmit="showBottomModal" data-id="{{item.id}}" reportSubmit="true" wx:if="{{item.trade_type!=2}}">
+                    <button class="order-btn" formType="submit">点击发货</button>
+                </form>
+            </view>
+            <view slot="footer" wx:if="{{item.status==1&&type=='buy'}}">
+                <block wx:if="{{item.trade_type==2}}">
+                    <form bindsubmit="showAddress" data-address="{{item.fetch_address}}" reportSubmit="true">
+                        <button class="order-btn bg-green" formType="submit">查看自提地址</button>
+                    </form>
+                    <form bindsubmit="confirmReceive" data-id="{{item.id}}" reportSubmit="true">
+                        <button class="order-btn" formType="submit">确认收货</button>
+                    </form>
+                </block>
+                <button class="order-btn" disabled="true" wx:if="{{item.trade_type!=2}}">待发货</button>
+                <form bindsubmit="cacelOrder" data-id="{{item.id}}" reportSubmit="true">
+                    <button class="order-btn bg-yellow" formType="submit">申请退款</button>
+                </form>
+            </view>
+            <button class="order-btn" disabled="true" slot="footer" wx:if="{{item.status==2&&type=='sell'&&item.trade_type!=2}}">已发货</button>
+            <view slot="footer" wx:if="{{item.status==2&&type=='buy'}}">
+                <form bindsubmit="checkExpress" data-id="{{item.id}}" reportSubmit="true" wx:if="{{item.trade_type==1}}">
+                    <button class="order-btn bg-olive" formType="submit">查看物流</button>
+                </form>
+                <form bindsubmit="confirmReceive" data-id="{{item.id}}" reportSubmit="true">
+                    <button class="order-btn" formType="submit">确认收货</button>
+                </form>
+            </view>
+            <view class="inline" slot="footer" wx:if="{{item.status==3&&type=='buy'}}">
+                <form bindsubmit="goComment" data-id="{{item.id}}" reportSubmit="true">
+                    <button class="order-btn" formType="submit">去评价</button>
+                </form>
+            </view>
+            <button class="order-btn" disabled="true" slot="footer" wx:if="{{item.status==4}}">已完成</button>
+        </zan-cell>
+    </view>
+    <view class="no-data" wx:if="{{list.length==0}}">空空如也</view>
+    <view class="back-home">
+        <navigator hoverClass="none" openType="redirect" url="../home/index">
+            <text class="iconfont icon-index"></text>
+        </navigator>
+    </view>
+</view>
+<view class="container-loading" wx:else>
+    <image mode="widthFix" src="{{loadingImg}}"></image>
+</view>
+<zan-toptips content="{{content}}" id="zan-toptips"></zan-toptips>
+<block wx:if="{{showModal}}">
+    <view class="mask"></view>
+    <view class="modal">
+        <view class="modal-title">请输入原因</view>
+        <form bindsubmit="formSubmit" reportSubmit="true">
+            <view class="modal-content text-left">
+                <textarea autoFocus="true" fixed="true" name="content" placeholder="在此输入内容..." showConfirmBar="{{confirmBar}}"></textarea>
+            </view>
+            <view class="modal-footer">
+                <button bindtap="closeModal" class="modal-btn">取消</button>
+                <button class="modal-btn confirm-btn" formType="submit">确定</button>
+            </view>
+        </form>
+    </view>
+</block>
+<view class="cu-modal bottom-modal {{showBottomModal?'show':''}}">
+    <view class="cu-dialog">
+        <form bindsubmit="sendOrder" reportSubmit="true">
+            <view class="cu-form-group">
+                <view class="title">快递公司</view>
+                <picker bindchange="PickerChange" range="{{expressList}}" rangeKey="name" value="{{epIndex}}">
+                    <view class="picker">
+                        {{epIndex!=undefined?expressList[epIndex].name:'请选择快递公司'}}
+                    </view>
+                </picker>
+            </view>
+            <view class="cu-form-group">
+                <view class="title">快递单号</view>
+                <input name="express_no" placeholder="请填写快递单号"></input>
+            </view>
+            <view class="padding flex flex-direction">
+                <button class="cu-btn bg-green lg" formType="submit">确定</button>
+                <button bindtap="closeBottomModal" class="cu-btn bg-orange margin-tb-sm lg">取消</button>
+            </view>
+        </form>
+    </view>
+</view>

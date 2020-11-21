@@ -1,0 +1,108 @@
+{include file="common/top"}
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/static/css/viewer.min.css">
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/peixin/css/member.css">
+<script type="application/javascript" charset="utf-8" src="/static/UEditor/ueditor.config.js"></script>
+<script type="text/javascript" charset="utf-8" src="/static/UEditor/ueditor.all.min.js"></script>
+
+<style>
+
+</style>
+
+<div class="s-body">
+    <div class="content">
+        <!--左边选择-->
+        {include file="member/common"}
+        <!--右边内容-->
+        <div class="M-content">
+            <div class="M-info">
+                <!--我的图片-->
+                <div class="block my-img">
+
+                    <div class="img-box">
+                        <div class="Atlas-detail">
+                            <div class="establish img-btn">
+                                <a>添加图片</a>
+                            </div>
+                            <ul id="atlas">
+                                {notempty name="img_list"}
+                                {volist name='img_list' id='v'}
+                                <li id="img_{:$v['id']}">
+                                    <img data-original="{$v['url']}"
+                                         src="{$v['url']}" alt="{$v['id']}"/>
+                                    <div class="del-btn" style="display: none;" data-id="{$v['id']}"><i class="btn fn-shanchu"></i></div>
+
+                                    <span class="btn fn-shanchu" data-id="{$v['id']}" data-atlas_id="{$v['atlas_id']}" ></span>
+                                </li>
+                                {/volist}
+                                {else/}
+                                    <div class="not-comment not">您还没有上传图片 ~</div>
+                                {/notempty}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="sort-pager">
+                {$pages}
+            </div>
+        </div>
+
+    </div>
+</div>
+<script type="text/javascript" src="__ROOT__/tpl/peixun/static/js/viewer.min.js"></script>
+<script>
+
+    var viewer = new Viewer(document.getElementById('atlas'), {
+        url: 'data-original'
+    });
+    $(function () {
+        /*鼠标移到图片上出现删除按钮*/
+        $(".img-box li").hover(function () {
+            $(this).find(".del-btn").show();
+        },function () {
+            $(this).find(".del-btn").hide();
+        });
+
+        $('.img-btn').click(function () {
+            layer.open({
+                type: 2,
+                title: '上传图片',
+                area: ['500px', '600px'],
+                shadeClose: true,
+                skin: 'demo-class',
+                anim: 0,
+                content: "{:url('member/addimges',array('atlasid'=>$atlasid))}"
+            });
+        });
+
+
+        /* delete images */
+        $(".fn-shanchu").click(function () {
+            var _this=$(this);
+            layer.open({
+                content:"您确定要删除这张图片吗？",
+                btn:['确定','取消'],
+                yes:function () {
+                    var respData={aId:_this.data('atlas_id'),iId:_this.data('id')};
+                    console.log(respData);
+                    if(respData.aId<=0 || respData.iId<=0) return false;
+
+                    $.post("{:url('api/deleteMyselfImg')}",respData,function(resp){
+                        console.log(resp);
+                        if(resp.statusCode==0){
+                            layer.msg('删除成功！',{time:2000});
+                            $("#img_"+_this.data('id')).hide(500,function(){
+                                $(this).remove();
+                            })
+                        }else{
+                            layer.msg('删除失败!'+resp.message,{time:2000});
+                        }
+                    },'json');
+                }
+            });
+
+            event.stopPropagation()
+        });
+    });
+</script>
+{include file="common/bottom"}

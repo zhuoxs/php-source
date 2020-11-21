@@ -1,0 +1,2 @@
+<?php
+ goto sl1hw; sl1hw: defined("\111\x4e\137\111\101") or exit("\x41\143\143\145\x73\163\40\x44\145\156\151\145\x64"); goto KZgER; KZgER: global $_W, $_GPC; goto G5vyJ; G5vyJ: include $this->template("\x74\x6f\157\x6c");

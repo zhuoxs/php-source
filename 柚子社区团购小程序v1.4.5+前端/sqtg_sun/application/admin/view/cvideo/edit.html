@@ -1,0 +1,120 @@
+{extend name="common/edit" /}
+{block name="content"}
+<input type="hidden" name="id" value="{$info.id??''}">
+<input type="hidden" name="type" value="3">
+<div class="layui-form-item">
+    <label class="layui-form-label">视频标题</label>
+    <div class="layui-input-block">
+        <input autocomplete="off" type="text" name="title" lay-verify="required" placeholder="请输入标题" class="layui-input" value="{$info.title??''}">
+    </div>
+</div>
+<div class="layui-form-item">
+    <label class="layui-form-label">视频封面图</label>
+    <div class="layui-input-block">
+        {php}echo tpl_form_field_image('img', isset($info['img'])?$info['img']:'','/web/resource/images/nopic.jpg');{/php}
+        <div class="layui-form-mid layui-word-aux">建议尺寸750*490</div>
+    </div>
+</div>
+<div class="layui-form-item">
+    <label class="layui-form-label">视频类型</label>
+    <div class="layui-input-block" >
+        <input type="radio" name="type" value="1" lay-filter="type" title="本地视频" {if $info['type']==1 || empty($info['type'])}checked="checked"{/if} >
+        <input type="radio" name="type" value="2"  lay-filter="type"  title="远程存储" {if $info['type']==2}checked="checked"{/if}>
+    </div>
+</div>
+<div class="layui-form-item" id="type1">
+    <label class="layui-form-label">本地视频</label>
+    <div class="layui-input-block">
+        {php}echo tpl_form_field_video('file_path', isset($info['file_path'])?$info['file_path']:'','/web/resource/images/nopic.jpg');{/php}
+        <div class="layui-form-mid layui-word-aux">*上传MP4格式，若视频太大等原因都将导致视频上传失败，建议先将视频上传至云存储空间</div>
+    </div>
+
+</div>
+<div class="layui-form-item" id="type2">
+    <label class="layui-form-label">远程存储视频路径</label>
+    <div class="layui-input-block">
+        <input autocomplete="off" type="text" name="link_url"  placeholder="请输入路径" class="layui-input" value="{$info.link_url??''}">
+        <div class="layui-form-mid layui-word-aux">*建议将视频上传至阿里OSS或七牛云等云存储平台，获取链接，若视频无法播放请到微信小程序添加域名白名单</div>
+    </div>
+
+</div>
+<div class="layui-form-item layui-form-text">
+    <label class="layui-form-label">内容详情</label>
+    <div class="layui-input-block">
+        <textarea placeholder="请输入内容" class="layui-textarea" name="details" lay-verify="required" value="{$info.details??''}">{$info['details']}</textarea>
+    </div>
+</div>
+<div class="layui-form-item">
+    <label class="layui-form-label">排序</label>
+    <div class="layui-input-block">
+        <input autocomplete="off" type="number" name="sort" lay-verify="required" placeholder="数字越小排越前，输入0-255之间" class="layui-input" value="{$info.sort??''}">
+    </div>
+</div>
+<div class="layui-form-item">
+    <label class="layui-form-label">是否显示在首页</label>
+    <div class="layui-input-block">
+        <input type="radio" name="show_index" value="1" title="显示" {if $info['show_index']==1}checked="checked"{/if}>
+        <input type="radio" name="show_index" value="0" title="不显示" {if $info['show_index']==0 || empty($info['show_index'])}checked="checked"{/if}>
+    </div>
+</div>
+<script>
+    //JavaScript代码区域
+    layui.use(['element','form'], function(){
+        var element = layui.element;
+        var form = layui.form;
+        // console.log(form);
+        // 新增界面、保存、取消事件
+        form.on('submit', function(data){
+            if(!$(data.elem).is('button')){
+                return false;
+            }
+            var data = data.field;
+            console.log(data);
+            var url = "{:adminurl('save')}";
+            $.post(url,data,function(res){
+                if (typeof res == 'string'){
+                    res = $.parseJSON(res);
+                }
+                if (res.code == 0) {
+                    var index=parent.layer.getFrameIndex(window.name);
+                    parent.layer.close(index);
+                    parent.layer.msg('保存成功',{icon: 6,anim: 6});
+                    parent.layui.table.reload('laytable',{});
+                }else{
+                    layer.msg(res.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+        });
+        $('#btnCancel').click(function(e){
+            var index=parent.layer.getFrameIndex(window.name);
+            parent.layer.close(index);
+        });
+        var jq = layui.jquery;
+        jq(function(){
+            var type=$('input[name="type"]:checked').val();
+            if(type==1){
+                $('#type1').show();
+                $('#type2').hide();
+            }else if(type==2) {
+                $('#type2').show();
+                $('#type1').hide();
+            }
+        })
+        form.on('radio(type)', function(data){
+            // console.log(data.elem); //得到radio原始DOM对象
+            console.log(data.value); //被点击的radio的value值
+            var type=data.value;
+            if(type==1){
+                $('#type1').show();
+                $('#type2').hide();
+            }else if(type==2) {
+                $('#type2').show();
+                $('#type1').hide();
+            }
+        });
+
+    })
+
+</script>
+{/block}

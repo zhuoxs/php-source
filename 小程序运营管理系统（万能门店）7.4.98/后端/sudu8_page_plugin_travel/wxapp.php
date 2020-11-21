@@ -1,0 +1,2 @@
+<?php
+ defined("\x49\116\x5f\111\x41") or exit("\101\143\x63\x65\x73\x73\40\104\145\156\151\145\144"); class Sudu8_page_plugin_travelModuleWxapp extends WeModuleWxapp { public function doPageTest() { goto uvHWP; wYC2u: $data = array(); goto PDbYe; PDbYe: return $this->result($errno, $message, $data); goto Y20D3; CVrTx: $message = "\350\xbf\x94\xe5\x9b\x9e\346\xb6\210\xe6\x81\257"; goto wYC2u; X_XsG: $errno = 0; goto CVrTx; uvHWP: global $_GPC, $_W; goto X_XsG; Y20D3: } }

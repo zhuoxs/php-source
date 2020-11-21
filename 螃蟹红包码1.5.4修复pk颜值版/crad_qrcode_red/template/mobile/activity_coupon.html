@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>卡券记录-{$activity['name']}</title>
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/mui.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/write_off.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/bootstrap.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/font-awesome.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/bootstrap-datetimepicker.min.css" />
+        <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/jquery-3.2.1.min.js" ></script>
+        <script>
+            $(document).ready(function () {
+                $(".cont_one").click(function () {
+                    $(this).addClass("ins").siblings().removeClass("ins");
+                    $(".top").eq($(this).index()).show().siblings().hide();
+                    $("#search_field").val($(this).index() + 1);
+                });
+                $(".choose_one").click(function () {
+                    $(this).addClass("xuanz").siblings().removeClass("xuanz");
+                    $("#status").val($(this).index() + 1);
+                    ajax_get_data();
+                    g = 2;
+                });
+            });
+
+        </script>
+    </head>
+    <body>
+        <div class="cont">
+            <div class="cont_one ins">时间期限</div>
+            <div class="cont_one">核销状态</div>
+            <div class="cont_one">昵称Code码</div>
+            <input type="hidden"  id="search_field" value=""/>
+            <input id="status" type="hidden" value="">
+        </div>
+        <div class="top_boos">
+            <div class="top">
+                <div class="top_two">
+                    <div class="form-group">
+                        <div class="col-xs-12 input-group" style="padding: 0;">
+                            <input type="text" placeholder="不限" readonly="readonly" id="startTime" class="form-control"/>
+                            <span class="input-group-addon">至</span>
+                            <input type="text" placeholder="不限" readonly="readonly" id="endTime" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="top_one">
+                    <div class="one_li">
+                        查询
+                    </div>
+                </div>
+            </div>
+            <div class="top" hidden>
+                <div class="choose">
+                    <div class="choose_one bds_left xuanz">未核销</div>
+                    <div class="choose_one bds_right ">已核销</div>
+                </div>
+            </div>
+            <div class="top" hidden>
+                <div class="suo">
+                    <div class="top_two">
+                        <input type="text"  placeholder="请输入昵称或Code码" name="keyword" id="keyword"/>
+                    </div>
+                    <div class="top_one">
+                        <div class="one_li">
+                            搜索
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div  id="container">
+        </div>
+        <div class="load">
+            加载更多
+        </div>
+        {template 'shop_footer'}
+
+        <!--弹窗-->
+        <div class="code" {if empty($coupon_info)||$coupon_info['status']!=1}hidden{/if}>
+            <div class="code_li">
+                <div class="dialogs">
+                    <div class="dialogs_topsb">
+                        <span class="mui-icon mui-icon-close guang"></span>
+                    </div>
+                    <div class="outtime">
+                        <div class="outtime_one">
+                            <img src="{$coupon_user['headimgurl']}" />
+                            {$coupon_user['nickname']}
+                        </div>
+                    </div>
+                    <div class="dialogs_center">
+                        <!--折扣券-->
+                        <div class="list_he" {if $coupon_info['coupon_type']!=1}hidden{/if}>
+                            <div class="green">
+                                <div class="green_center">
+                                    <div class="lin">
+                                        <div class="lin_one">
+                                            <div class="green_top">
+                                                <div class="idmun">
+                                                    <div class="area">
+                                                        折扣券
+                                                    </div>
+                                                </div>
+                                                <div class="time">到期时间：{if $coupon_info['end_expiration']}{$coupon_info['end_expiration']}{else}永久有效{/if}</div>
+                                            </div>
+                                            <div class="yellow">
+                                                <span>核</span>
+                                            </div>
+                                            <div class="mark">
+                                                {if $coupon_info['use_condition']}{$coupon_info['use_condition']}{else}无门槛{/if}
+                                            </div>
+                                            <div class="news">
+                                                {if $shop['image_logo']}
+                                                <div class="logo">
+                                                    <img src="{php echo tomedia($shop['image_logo'])}" />
+                                                </div>  
+                                                {/if}
+                                                <div class="money">
+                                                    <div class="money_one">
+                                                        {php echo $coupon_info['coupon_content']['discount']/10} <span>折</span>
+                                                    </div>
+                                                    <div class="money_two">
+                                                        <div class="zuo">
+                                                            <span>{$shop['name']}</span>
+                                                        </div>
+                                                        <div class="you">
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!--现金券-->
+                        <div class="list_he" {if $coupon_info['coupon_type']!=2}hidden{/if}>
+                            <div class="green">
+                                <div class="green_center">
+                                    <div class="lin">
+                                        <div class="lin_one">
+                                            <div class="green_top">
+                                                <div class="idmun">
+                                                    <div class="area" style="background: #ff7272;">
+                                                        现金券
+                                                    </div>
+                                                </div>
+                                                <div class="time">到期时间：{if $coupon_info['end_expiration']}{$coupon_info['end_expiration']}{else}永久有效{/if}</div>
+                                            </div>
+                                            <div class="yellow">
+                                                <span>核</span>
+                                            </div>
+                                            <div class="mark">
+                                                {if $coupon_info['use_condition']}{$coupon_info['use_condition']}{else}无门槛{/if}
+                                            </div>
+                                            <div class="news">
+                                                {if $shop['image_logo']}
+                                                <div class="logo">
+                                                    <img src="{php echo tomedia($shop['image_logo'])}" />
+                                                </div>  
+                                                {/if}
+                                                <div class="money">
+                                                    <div class="money_one">
+                                                       {$coupon_info['coupon_content']['reduce_cost']} <span>元</span>
+                                                    </div>
+                                                    <div class="money_two">
+                                                        <div class="zuo">
+                                                            <span>{$shop['name']}</span>
+                                                        </div>
+                                                        <div class="you">
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!--礼品券-->
+                        <div class="list_he" {if $coupon_info['coupon_type']!=3}hidden{/if}>
+                            <div class="green">
+                                <div class="green_center">
+                                    <div class="lin">
+                                        <div class="lin_one">
+                                            <div class="yellow">
+                                                <span>核</span>
+                                            </div>
+                                            <div class="money_er">
+                                                <div class="green_top">
+                                                    <div class="idmun">
+                                                        <div class="area" style="background: #3dc34a;">
+                                                            礼品券
+                                                        </div>
+                                                    </div>
+                                                <div class="time">到期时间：{if $coupon_info['end_expiration']}{$coupon_info['end_expiration']}{else}永久有效{/if}</div>
+                                                </div>
+                                                <div class="money_one_er">
+                                                    {$coupon_info['coupon_content']['gift']}
+                                                </div>
+                                                <div class="money_two">
+                                                    <div class="zuo_er">
+                                                        {if $shop['image_logo']}
+                                                        <div class="shen">
+                                                            <img src="{php echo tomedia($shop['image_logo'])}" />
+                                                        </div>  
+                                                        {/if}
+                                                        <div class="shen_two">{$shop['name']}</div>
+                                                    </div>
+                                                    <div class="you_er">
+                                                        <span>{if $coupon_info['use_condition']}{$coupon_info['use_condition']}{else}无门槛{/if}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="xuans">
+                        <div class="dialogs_yes" onclick="consume({$id},1)">核销</div>
+                        <div class="dialogs_no" >取消</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+
+                $(".guang,.dialogs_no").click(function () {
+                    $(".code").hide();
+                       setTimeout("window.location.href='" + jump_url + "'", 3000);
+                });
+
+        </script>
+    </body>
+</html>
+<script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/bootstrap-datetimepicker.js" ></script>
+<script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/mui.min.js" ></script>
+
+
+
+<script type="text/javascript">
+    var jump_url="{php echo $this->createMobileUrl('activity_coupon', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid))}";
+    {if $coupon_info['status']==3}
+    show_message(0, '卡券已核销', 3000, 1);
+    setTimeout("window.location.href='" + jump_url + "'", 3000);
+    {/if}
+    {if $coupon_info['status']==2}
+    show_message(0, '卡券已过期', 3000, 1);
+    setTimeout("window.location.href='" + jump_url + "'", 3000);
+    {/if}
+    
+            var loading = $(".load").data("on", false);
+            var g = 2;
+            ajax_get_data();
+            $(window).scroll(function () {
+
+                if (loading.data("on"))
+                    return;
+                if ($(document).scrollTop() + 100 >
+                        $(document).height() - $(window).height()) {
+                    $(".load").html("正在加载中. . .");
+                    loading.data("on", true).fadeIn();
+
+                    $.get(
+                            "{php echo $this->createMobileUrl('ajax_shop', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid, 'cid' => $cid))}",
+                            {"op": "coupon", "p": g, "starttime": $('#startTime').val(), "endtime": $('#endTime').val(), "status": $('#status').val(), "search_field": $('#search_field').val(), "keyword": $('#keyword').val()},
+                            function (data) {
+                                loading.data("on", false);
+                                if (data.sta == 0) {
+                                    $(".load").html(data.error);
+                                    setTimeout("loading.fadeOut();", 3000);
+                                } else {
+                                    var html = "";
+                                    for (i = 0; i < data.length; i++) {
+                                        html += "<div class='list'><div class='li_left'>";
+                                        html += "<img src='" + data[i]['headimgurl'] + "' /></div>";
+                                        html += "<div class='li_right'><div class='right_top'><div class='weixin'>" + data[i]['nickname'] + "</div>";
+                                        html += "<div class='time'>" + data[i]['content'] + "</div></div>";
+                                        if (data[i]['status'] == 3) {
+                                            html += " <div class='right_bottmo'><div class='click_out'>已核销</div></div></div></div>";
+
+                                        } else if (data[i]['expiration'] == 1) {
+                                            html += " <div class='right_bottmo'><div class='click_out'>已过期</div></div></div></div>";
+                                        } else {
+                                            html += " <div class='right_bottmo' id='op" + data[i]['id'] + "'><div class='click' onclick='consume(" + data[i]['id'] + ",0)'>核销</div></div></div></div>";
+                                        }
+                                    }
+                                    $('#container').append(html);
+                                    g++;
+                                    loading.fadeOut();
+                                }
+                            },
+                            "json"
+                            );
+                }
+
+
+            });
+
+
+            $(".cont_one").click(function () {
+                $(this).addClass("ins").siblings().removeClass("ins");
+                $(".top").eq($(this).index()).show().siblings().hide();
+                $("#search_field").val($(this).index() + 1);
+                if ($(this).index() == 1 && $("#status").val() < 1) {
+                    $("#status").val(1);
+                    ajax_get_data();
+
+                }
+            });
+            $(".choose_one").click(function () {
+                $(this).addClass("xuanz").siblings().removeClass("xuanz");
+                $("#status").val($(this).index() + 1);
+                ajax_get_data();
+   
+            });
+
+            $('.one_li').on('click', function () {
+                ajax_get_data();
+
+            });
+
+            $('.show_coupon').on('click', function () {
+                ajax_get_data();
+
+            });
+
+
+
+            function ajax_get_data() {
+                $('#container').html("");
+                $(".load").html("正在加载中. . .");
+                loading.data("on", true).fadeIn();
+                $.get(
+                        "{php echo $this->createMobileUrl('ajax_shop', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid, 'cid' => $cid))}",
+                        {"op": "coupon", "p": 1, "starttime": $('#startTime').val(), "endtime": $('#endTime').val(), "status": $('#status').val(), "search_field": $('#search_field').val(), "keyword": $('#keyword').val()},
+                        function (data) {
+                            loading.data("on", false);
+                            if (data.sta == 0) {
+                                $(".load").html(data.error);
+                                setTimeout("loading.fadeOut();", 3000);
+                            } else {
+                                get_html(data);
+                                loading.fadeOut();
+                            }
+                        },
+                        "json"
+                        );
+            }
+
+
+            function get_html(data) {
+                var html = "";
+                for (i = 0; i < data.length; i++) {
+                    html += "<div class='list'><div class='li_left'>";
+                    html += "<img src='" + data[i]['headimgurl'] + "' /></div>";
+                    html += "<div class='li_right'><div class='right_top'><div class='weixin'>" + data[i]['nickname'] + "</div>";
+                    html += "<div class='time'>" + data[i]['content'] + "</div></div>";
+                    if (data[i]['status'] == 3) {
+                        html += " <div class='right_bottmo'><div class='click_out'>已核销</div></div></div></div>";
+
+                    } else if (data[i]['expiration'] == 1) {
+                        html += " <div class='right_bottmo'><div class='click_out'>已过期</div></div></div></div>";
+                    } else {
+                        html += " <div class='right_bottmo' id='op" + data[i]['id'] + "'><div class='click' onclick='consume(" + data[i]['id'] + ",0)'>核销</div></div></div></div>";
+                    }
+                }
+                $('#container').html(html);
+            }
+
+
+            function consume(id,jump) {
+                var btnArray = ['确定', '取消'];
+                var run_confim = false;
+                mui.confirm('你确定要核销吗？', '核销提示', btnArray, function (e) {
+                    if (e.index == 0 && !run_confim) {
+                        run_confim = true;
+                        $.get(
+                                "{php echo $this->createMobileUrl('ajax_shop', array('token'=>$token, 'shopid' => $shopid))}",
+                                {"op": "consume", "id": id},
+                                function (data) {
+                                    if (data.sta == 1) {
+                                        $('#op' + id).html("<div class='click_out'>已核销</div>");
+                                        show_message(1, '核销成功', 3000, 1);
+                                        if(jump==1){
+                                             var jump_url="{php echo $this->createMobileUrl('activity_coupon', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid))}";
+                                             setTimeout("window.location.href='" + jump_url + "'", 2000);
+                                        }
+                                        return;
+                                    }
+                                    show_message(0, data.error, 3000, 1);
+                                },
+                                "json"
+                                );
+                    }
+                });
+
+            }
+
+
+
+</script>
+
+
+
+
+<script>
+    //日历
+    $("#startTime").datetimepicker({
+        language: 'zh-CN',
+        weekStart: 1,
+        todayBtn: 1,
+        autoclose: 1,
+        todayHighlight: 1,
+        startView: 2,
+        minView: "0",
+        format: 'yyyy-mm-dd hh:ii',
+        forceParse: 0
+    }).on('hide', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        var startTime = event.date;
+        $("#endTime").datetimepicker('setStartDate', startTime);
+        $("#endTime").val("");
+    });
+    $("#endTime").datetimepicker({
+        language: 'zh-CN',
+        weekStart: 1,
+        todayBtn: 1,
+        autoclose: 1,
+        todayHighlight: 1,
+        startView: 2,
+        minView: "0",
+        format: 'yyyy-mm-dd hh:ii',
+        forceParse: 0
+    }).on('hide', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        var endTime = event.date;
+        $("#startTime").datetimepicker('setEndDate', endTime);
+    });
+</script>

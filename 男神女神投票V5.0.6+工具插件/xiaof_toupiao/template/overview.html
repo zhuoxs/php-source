@@ -1,0 +1,305 @@
+<script type="text/javascript" src="//cdn.bootcss.com/echarts/3.4.0/echarts.js"></script>
+{template 'common/header'}
+<ul class="nav nav-tabs">
+    <li class="active"><a href="{php echo $this->createWebUrl('overview', array('sid' => $_GPC['sid'],'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}">数据概览</a></li>
+    <li><a href="{php echo $this->createWebUrl('charts', array('version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}">统计图表</a></li>
+    <li><a href="{php echo $this->createWebUrl('safe', array('version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}">数据监控</a></li>
+    <li><a href="{php echo $this->createWebUrl('votelog', array('version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}">投票日志</a></li>
+    <li><a href="{php echo $this->createWebUrl('sharelog', array('version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}">分享日志</a></li>
+</ul>
+<style>
+    .item-title-continer{
+        width: 100%;
+        height: 50px;
+        line-height: 50px;
+        vertical-align: middle;
+        float: left;
+        margin-top: 10px;
+    }
+    .item-title{
+        font-size: 18px;
+        font-weight: bold;
+        float: left;
+    }
+    .myselect{
+        margin-left: 15px;
+        line-height: 34px;
+        margin-top: 5px;
+    }
+    .choosetime{
+        margin-left: 15px;
+    }
+    .quota-continer{
+        width: 200px;
+        margin-top: 10px;
+        float: left;
+        margin-right: 80px;
+        border: 1px solid rgba(128, 128, 128, 1);
+    }
+    .quota-title{
+        height: 25px;
+        width: 100%;
+        margin-top: 10px;
+        line-height: 25px;
+        vertical-align: middle;
+        text-align: center;
+        font-size: 12px;
+        color: rgba(191, 191, 191, 1);
+    }
+    .quota-num{
+        height: 25px;
+        width: 100%;
+        line-height: 25px;
+        vertical-align: middle;
+        text-align: center;
+        font-size: 20px;
+        margin-bottom: 10px;
+        color: rgba(0, 0, 0, 1);
+    }
+    #myecharts{
+        width: 100%;
+        height: 400px;
+    }
+    .quota-item-icon-c{
+        width: 40%;
+        float: left;
+        text-align: right;
+    }
+    .quota-item-icon-c img{
+        margin-top: 16px;
+    }
+    .quota-item-data-c{
+        width: 40%;
+        float: left;
+    }
+</style>
+<div class="main">
+    <div class="main-continer">
+        <div class="item-title-continer">
+            <span class="item-title">数据指标</span>
+            <select name="sid" class="myselect" onchange="changesetting()">
+                <option {if empty($_GPC['sid'])}selected{/if} value="">所有活动</option>
+                {loop $settinglists $items}
+                <option {if $_GPC['sid'] === $items['id']} selected{/if} value="{$items['id']}">{$items['tit']}</option>
+                {/loop}
+            </select>
+        </div>
+        <div class="quota-continer">
+            <div class="quota-item-icon-c">
+                <img src="{MODULE_URL}resources/image/joinnum.png" width="40">
+            </div>
+            <div class="quota-item-data-c">
+                <div class="quota-title">报名人数</div>
+                <div class="quota-num quota-join-num">0</div>
+            </div>
+
+        </div>
+        <div class="quota-continer">
+            <div class="quota-item-icon-c">
+                <img src="{MODULE_URL}resources/image/votenum.png" width="40">
+            </div>
+            <div class="quota-item-data-c">
+                <div class="quota-title">投票人次</div>
+                <div class="quota-num quota-vote-num">0</div>
+            </div>
+        </div>
+        <div class="quota-continer">
+            <div class="quota-item-icon-c">
+                <img src="{MODULE_URL}resources/image/paynum.png" width="40">
+            </div>
+            <div class="quota-item-data-c">
+                <div class="quota-title">支付人次</div>
+                <div class="quota-num quota-pay-num">0</div>
+            </div>
+        </div>
+        <div class="quota-continer">
+            <div class="quota-item-icon-c">
+                <img src="{MODULE_URL}resources/image/incomenum.png" width="40">
+            </div>
+            <div class="quota-item-data-c">
+                <div class="quota-title">收入流水</div>
+                <div class="quota-num quota-income-num">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="main-continer">
+        <div class="item-title-continer">
+            <span class="item-title">累计数据</span>
+        </div>
+        <div class="quota-continer">
+            <div class="quota-item-icon-c">
+                <img src="{MODULE_URL}resources/image/joinnum.png" width="40">
+            </div>
+            <div class="quota-item-data-c">
+                <div class="quota-title">报名人数</div>
+                <div class="quota-num all-join-num">0</div>
+            </div>
+        </div>
+        <div class="quota-continer">
+            <div class="quota-item-icon-c">
+                <img src="{MODULE_URL}resources/image/votenum.png" width="40">
+            </div>
+            <div class="quota-item-data-c">
+                <div class="quota-title">投票人次</div>
+                <div class="quota-num all-vote-num">0</div>
+            </div>
+        </div>
+        <div class="quota-continer">
+            <div class="quota-item-icon-c">
+                <img src="{MODULE_URL}resources/image/paynum.png" width="40">
+            </div>
+            <div class="quota-item-data-c">
+                <div class="quota-title">支付人次</div>
+                <div class="quota-num all-pay-num">0</div>
+            </div>
+        </div>
+        <div class="quota-continer">
+            <div class="quota-item-icon-c">
+                <img src="{MODULE_URL}resources/image/incomenum.png" width="40">
+            </div>
+            <div class="quota-item-data-c">
+                <div class="quota-title">收入流水</div>
+                <div class="quota-num all-income-num">0</div>
+            </div>
+        </div>
+        <div class="item-title-continer">
+            <span class="item-title">数据曲线</span>
+            <span class="choosetime">选择时间：</span>{php echo tpl_form_field_daterange('times', array('start' => $starttime,'end'=> $endtime),true);}
+        </div>
+        <div style="clear: both"></div>
+        <div id="myecharts"></div>
+    </div>
+</div>
+<input type="hidden" class="url" value="{$_GPC['sid']}">
+<script>
+    require(["daterangepicker"], function(){
+        $(function(){
+            $(".daterange.daterange-time").each(function(){
+                var elm = this;
+                $(this).daterangepicker({
+                    startDate: $(elm).prev().prev().val(),
+                    endDate: $(elm).prev().val(),
+                    format: "YYYY-MM-DD HH:mm",
+                    timePicker: true,
+                    timePicker12Hour : false,
+                    timePickerIncrement: 1,
+                    minuteStep: 1
+                }, function(start, end){
+                    $(elm).find(".date-title").html(start.toDateTimeStr() + " 至 " + end.toDateTimeStr());
+                    $(elm).prev().prev().val(start.toDateTimeStr());
+                    $(elm).prev().val(end.toDateTimeStr());
+                    requestData();
+                });
+            });
+        });
+    });
+    $(document).ready(function(){
+        requestData();
+    });
+
+    function changesetting() {
+        var sid = $('.myselect').val();
+        $('.url').val(sid);
+        requestData();
+    }
+    function requestData(){
+        console.log($('.url').val());
+        var url = "{php echo $this->createWebUrl('overview', array('op' => 'reauestdata'))}"+'&asid='+$('.url').val()+'&start='+$("input[name='times[start]']").val()+'&end='+$("input[name='times[end]']").val();
+        $.ajax({
+            type: 'post',
+            url: url,
+            data: {'id': ''},
+            dataType: 'json',
+            success: function (resp) {
+                console.log(resp);
+                loadcharts(resp);
+            }
+        })
+    }
+    function loadcharts(resp) {
+        $('.quota-join-num').html(resp.tplayernum);
+        $('.quota-vote-num').html(resp.tpvotemannum);
+        $('.quota-pay-num').html(resp.tpaymannum);
+        $('.quota-income-num').html(resp.tincomenum);
+        $('.all-join-num').html(resp.allplayernum);
+        $('.all-vote-num').html(resp.allpvotemannum);
+        $('.all-pay-num').html(resp.allpaymannum);
+        $('.all-income-num').html(resp.allincomenum);
+        var xData = [];
+        var yData1 = [];
+        var yData2 = [];
+        var yData3 = [];
+        var yData4 = [];
+        console.log(resp.echartsdata);
+        for(var i=0;i<resp.echartsdata.length;i++){
+            xData.push(resp.echartsdata[i]['date']);
+            yData1.push(resp.echartsdata[i]['playernum']);
+            yData2.push(resp.echartsdata[i]['votenum']);
+            yData3.push(resp.echartsdata[i]['paymannum']);
+            yData4.push(resp.echartsdata[i]['incomenum']);
+        }
+        var mycharts = echarts.init(document.getElementById('myecharts'));
+        var option = {
+            title: {
+                text: ''
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            legend: {
+                icon: 'circle',//形状
+                x: 'right',//位置
+                data:['报名人数','投票数量','送礼人数','收入']
+            },
+            grid: {
+                left: '1%',
+                right: '3%',
+                bottom: '1%',
+                containLabel: true
+            },
+            toolbox: {
+                feature: {
+                    saveAsImage: {}
+                }
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: xData
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [
+                {
+                    name:'报名人数',
+                    type:'line',
+                    //stack: '总量',
+                    data:yData1
+                },
+                {
+                    name:'投票数量',
+                    type:'line',
+                    //stack: '总量',
+                    data:yData2
+                },
+                {
+                    name:'送礼人数',
+                    type:'line',
+                    //stack: '总量',
+                    data:yData3
+                },
+                {
+                    name:'收入',
+                    type:'line',
+                    //stack: '总量',
+                    data:yData4
+                }
+            ]
+        };
+        mycharts.setOption(option);
+    }
+
+</script>
+{template 'edition'}
+{template 'common/footer'}

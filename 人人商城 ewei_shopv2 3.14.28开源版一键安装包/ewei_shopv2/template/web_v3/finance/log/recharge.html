@@ -1,0 +1,179 @@
+{template '_header'}
+<style>
+    .style i{
+        vertical-align: middle;
+    }
+</style>
+<div class="page-header">当前位置：<span class="text-primary">充值记录</span></div>
+<div class="page-content">
+    <form action="./index.php" method="get" class="form-horizontal table-search" role="form" id="form1">
+        <input type="hidden" name="c" value="site" />
+        <input type="hidden" name="a" value="entry" />
+        <input type="hidden" name="m" value="ewei_shopv2" />
+        <input type="hidden" name="do" value="web" />
+        <input type="hidden" name="r" value="finance.log.recharge" />
+        <div class="page-toolbar">
+            <span class="pull-left">
+                    {php echo tpl_daterange('time', array('sm'=>true,'placeholder'=>'充值时间'),true);}
+                </span>
+            <div class="input-group">
+                <span class="input-group-select">
+                    <select name="status" class="form-control"   style="width:75px;"  >
+                        <option value="" {if $_GPC['status']==''}selected{/if}>状态</option>
+                            <option value="1" {if $_GPC['status']=='1'}selected{/if}>{if $_GPC['type']==0}充值成功{else}完成{/if}</option>
+                            <option value="0" {if $_GPC['status']=='0'}selected{/if}>{if $_GPC['type']==0}未充值{else}申请中{/if}</option>
+                            {if $_GPC['type']==1}<option value="-1" {if $_GPC['status']=='-1'}selected{/if}>失败</option>{/if}
+                    </select>
+                </span>
+                <span class="input-group-select">
+                    <select name="groupid" class="form-control" style="width:100px;"  >
+                        <option value="">会员分组</option>
+                        {loop $groups $group}
+                        <option value="{$group['id']}" {if $_GPC['groupid']==$group['id']}selected{/if}>{$group['groupname']}</option>
+                        {/loop}
+                    </select>
+                </span>
+                <span class="input-group-select">
+                    <select name="level" class="form-control" style="width:100px;"  >
+                        <option value="">会员等级</option>
+                        {loop $levels $level}
+                        <option value="{$level['id']}" {if $_GPC['level']==$level['id']}selected{/if}>{$level['levelname']}</option>
+                        {/loop}
+                    </select>
+                </span>
+                <span class="input-group-select">
+                    {if $_GPC['type']==0}
+                    <select name="rechargetype" class="form-control" style="width:100px;"  >
+                        <option value='' {if $_GPC['rechargetype']==''}selected{/if}>充值方式</option>
+                        <option value='wechat' {if $_GPC['rechargetype']=='wechat'}selected{/if}>微信</option>
+                        <option value='alipay' {if $_GPC['rechargetype']=='alipay'}selected{/if}>支付宝</option>
+                        <option value='system' {if $_GPC['rechargetype']=='system'}selected{/if}>后台</option>
+                        <option value='system1' {if $_GPC['rechargetype']=='system1'}selected{/if}>后台扣款</option>
+                        {if p('ccard')}<option value='ccard' {if $_GPC['rechargetype']=='ccard'}selected{/if}>充值卡返佣</option>{/if}
+                    </select>
+                    {/if}
+                </span>
+                <span class="input-group-select">
+                    <select name="searchfield"  class="form-control"   style="width:100px;"  >
+                        <option value="logno" {if $_GPC['searchfield']=='logno'}selected{/if}>充值单号</option>
+                        <option value="member" {if $_GPC['searchfield']=='member'}selected{/if}>会员信息</option>
+                    </select>
+                </span>
+                <input type="text" class="form-control"  name="keyword" value="{$_GPC['keyword']}" placeholder="请输入关键词" />
+                <span class="input-group-btn">
+                    <button class="btn  btn-primary" type="submit"> 搜索</button>
+                    {ifp 'finance.log.recharge.export'}
+                        <button type="submit" name="export" value="1" class="btn btn-success ">导出</button>
+                    {/if}
+                </span>
+            </div>
+        </div>
+    </form>
+    {if empty($list)}
+    <div class="panel panel-default">
+        <div class="panel-body empty-data">未查询到相关数据</div>
+    </div>
+    {else}
+    <div class="row">
+        <div class="col-md-12">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th style='width:200px;'>充值单号</th>
+                    <th>粉丝</th>
+                    <th>会员信息</th>
+                    <th>充值金额</th>
+                    <th style='width:100px;'>充值时间</th>
+                    <th style='width:100px;text-align: center;'>充值方式</th>
+                    <th style='width:100px;text-align: center;'>状态</th>
+                    <th style="text-align: center;">操作</th>
+                </tr>
+                </thead>
+                <tbody>
+                {loop $list $row}
+                <tr>
+                    <td>{if !empty($row['logno'])}
+                        {if strlen($row['logno'])<=22}
+                        {$row['logno']}
+                        {else}
+                        recharge{$row['id']}
+                        {/if}
+                        {else}
+                        recharge{$row['id']}
+                        {/if}
+                    </td>
+                    <td data-toggle='tooltip' title='{$row['nickname']}'>
+                    {ifp 'member.list.edit'}
+                    <a  href="{php echo webUrl('member/list/detail',array('id' => $row['mid']));}" target='_blank'>
+                        <img class="radius50" src='{php echo tomedia($row['avatar'])}' style='width:30px;height:30px;padding1px;border:1px solid #ccc' / onerror="this.src='../addons/ewei_shopv2/static/images/noface.png'"> {$row['nickname']}
+                    </a>
+                    {else}
+                    <img src='{php echo tomedia($row['avatar'])}' style='width:30px;height:30px;padding1px;border:1px solid #ccc' /> {$row['nickname']}
+                    {/if}
+
+                    </td>
+                    <td>{if !empty($row['realname'])}{$row['realname']}{else}匿名{/if}<br/>{if !empty($row['mobile'])}{$row['mobile']}{else}暂无{/if}</td>
+                    <td>{$row['money']}</td>
+                    <td>{php echo date('Y-m-d',$row['createtime'])}<br/>{php echo date('H:i',$row['createtime'])}</td>
+                    <td style="text-align: center;" class="style">
+                        {if $row['rechargetype']=='alipay'}
+                        <i class="icow icow-zhifubao text-primary"></i>支付宝
+                        {else if $row['rechargetype']=='wechat'}
+                       <i class="icow icow-weixin text-success"></i> 微信
+                        {else if $row['rechargetype']=='system'}
+                        {if $row['money']>0}
+                       <i class="icow icow-yue text-warning" ></i>后台
+                        {else}
+                      <i class="icow icow-youqiatuikuanxiecha text-danger"></i>扣款
+                        {/if}
+                        {else if $row['rechargetype']=='ccard'}
+                        <span class='label label-primary'>充值卡返佣</span>
+                        {/if}
+                    </td>
+                    <td style="text-align: center;">
+                        {if $row['status']==0}
+                        <span class='text-default'>{if $row['type']==1}申请中{else}未充值{/if}</span>
+                        {else if $row['status']==1}
+                        <span class='text-success'>成功</span>
+                        {else if $row['status']==-1}
+                        <span class='text-default'>{if $row['type']==1}拒绝{else}失败{/if}</span>
+                        {else if $row['status']==3}
+                        <span class='text-danger'>{if $row['type']==0}退款{/if}</span>
+                        {/if}
+                    </td>
+                    <td style="text-align: center;">
+                        {if $row['status']==1}
+                        {if $row['rechargetype']=='alipay' || $row['rechargetype']=='wechat'}
+                        {ifp 'finance.log.refund'}
+                        <a class='btn btn-sm btn-danger' data-toggle='ajaxPost' data-confirm="确认退款到{if $row['rechargetype']=='alipay'}支付宝{else}微信钱包{/if}?" href="{php echo webUrl('finance/log/refund',array('id' => $row['id']));}">
+                            退款
+                        </a>
+                        {/if}
+                        {/if}
+                        {/if}
+                    </td>
+                </tr>
+                {if !empty($row['remark'])}
+                <tr style=";border-bottom:none;background:#f9f9f9;">
+                    <td colspan='8' style='text-align:left'>
+                        备注:<span class="text-info">{$row['remark']}</span>
+                    </td>
+                </tr>
+                {/if}
+                {/loop}
+                </tbody>
+                <tfoot>
+                <tr>
+                    </td>
+                    <td colspan="8" style="text-align: right">
+                        {$pager}
+                    </td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    {/if}
+
+</div>
+{template '_footer'}

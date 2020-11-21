@@ -1,0 +1,306 @@
+{php include wl_template('common/header');}
+<div class="page-group" >
+    <div class="page page-current" id="page-index">
+		{php include wl_template('pocket/footerbar');}
+		<div class="content infinite-scroll">
+			<div class="buttons-tab">
+		    	<a href="{php echo app_url('pocket/pocket/myinform',array('status'=>'all'))}" class="button {if $status == 'all'}active{/if}">全部</a>
+				<a href="{php echo app_url('pocket/pocket/myinform',array('status'=>0))}" class="button {if empty($status)}active{/if}">显示中</a>
+				<a href="{php echo app_url('pocket/pocket/myinform',array('status'=>1))}" class="button {if $status == 1}active{/if}">审核中</a>
+				<a href="{php echo app_url('pocket/pocket/myinform',array('status'=>2))}" class="button {if $status == 2}active{/if}">未通过</a>
+			</div>
+			<div class="allorder">
+				<!--全部订单表-->
+			</div>
+			<div class="weui-loadmore loading_more" style="display: none;">
+	            <i class="weui-loading"></i>
+	            <span class="weui-loadmore__tips">正在加载</span>
+	        </div>
+	        <div class="weui-loadmore weui-loadmore_line" style="display: none;">
+	            <span class="weui-loadmore__tips" style="background-color: #EFEFF4;">暂无更多数据</span>
+	        </div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="orderlist">
+{{# for(var i = 0, len = d.length; i < len; i++){ }}
+	<div class="field">
+		<div class="field-head">
+			<span class="field-head-name"><i class="icon iconfont icon-top"></i>{{# if(d[i].top == 1){ }}<span style="color: red;">置顶中</span>{{# } else { }}<span style="color: #333;">未置顶</span>{{# } }}</span>
+	  		<span class="field-head-status field-head-status-light">{{# if(d[i].status == 0){ }}显示中{{# } else if(d[i].status == 1){ }}审核中{{# } else if(d[i].status == 5){ }}未支付{{# } else if(d[i].status == 3){ }}已删除{{# } else if(d[i].status == 2){ }}未通过{{# } }}</span>
+		</div>
+	    <a class="field-item" {{# if(d[i].status != 3){ }}  href="{{ d[i].url }}" {{# }else{ }}  href="javascript:;"  {{# } }} >
+	     	<div class="avatar">
+	      		<img src="{{ d[i].goodsimg }}" class="avatar-img">
+	        </div>
+	        <div class="contentt">
+	        	<div class="contentt-t-d">
+			        <p class="delivery_tip">{{ d[i].goodsname }}</p>
+			        <p class="order-time">{{ d[i].createtime }}</p>
+		        </div>
+	        	<p class="price">{{ d[i].content }}</p>
+	        </div>
+	        <i class="field-arrow icon-arrow-right"></i>
+	    </a>
+	    <div class="field-console-btns-d">
+	    	<!--{if p('sharegift')}
+				{{# if(d[i].redpack == 0.00){ }}
+					<div class="field-console-btns" style="display:none;">
+						<a class="order-option-btn order-option-s2 create-actions" data-infoid="{{ d[i].id }}" href="javascript:;">红包</a>
+					</div>
+				{{# } }}
+	        {/if}-->
+	    	{{# if(d[i].status != 3){ }}
+	    	{{# if(d[i].status == 5){ }}
+	    	<div class="field-console-btns">
+	        	<a class="order-option-btn order-option-s2" href="{{ d[i].zhifu }}">支付</a>
+	        </div>
+	    	{{# }else{ }} 
+	        <div class="field-console-btns">
+	        	<a class="order-option-btn order-option-s2" href="{{ d[i].bianji }}">编辑</a>
+	        </div>
+	        {{# } }}
+	        <div class="field-console-btns detele">
+	        	<a class="order-option-btn order-option-s2 " onclick = dele("{{ d[i].id }}") href="javascript:;">删除</a>
+	        </div>
+	        {{# } }}
+	    </div>
+	</div>
+{{# } }}
+</script>
+<script>
+	$(function() {
+		$(document).on("pageInit", "#page-index", function(e, id, page) {
+			var loading = false;
+			var pagenum = 1,
+			    pagesize = 8,
+			    endmark = 0;
+			function addItems() {
+				$.post("{php echo app_url('pocket/pocket/myinform',array('status'=>$status))}",{},function(d){
+//					alert(JSON.stringify(d));
+					if (d.length > 0) {
+						var gettpl1 = document.getElementById('orderlist').innerHTML;
+						sessionStorage.setItem("demokey",JSON.stringify(d));
+						var contentdata = d.slice(0,pagesize);
+						laytpl(gettpl1).render(contentdata, function(html){
+						   $(".allorder").append(html);
+						});
+					}else{
+						$(".allorder").html('<div class="common-no-con"><img src="{URL_APP_IMAGE}order_no_con.png" alt=""><p>您还没有帖子，赶紧去发布</p></div>');
+					}
+				}, 'json');
+			}
+			addItems();
+			$(page).on('infinite', function() {
+				if (endmark || loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+					loading = false;
+					var dt = JSON.parse(sessionStorage.getItem("demokey"));
+					var xxx = dt.slice(pagenum*pagesize ,pagenum*pagesize+pagesize);
+					addnew(xxx);
+					$.refreshScroller();
+				}, 500);
+			});
+			function addnew(cont){
+				if(cont.length){
+					$(".loading_more").hide();
+					var gettpl1 = document.getElementById('orderlist').innerHTML;
+					laytpl(gettpl1).render(cont, function(html){
+						$(".allorder").append(html);
+					});
+					pagenum++;loading = false;
+				}else{
+					$(".loading_more").hide();
+					$(".weui-loadmore_line").show();
+					endmark = 1;
+				}
+			}
+		});
+		$(document).on('click','.create-actions', function () {
+			var infoid = $(this).data('infoid');
+	      	var buttons1 = [
+		      	{text: '请选择红包金额',label: true},
+		        {
+		          	text: '1元分20包',
+		          	onClick: function() {
+		            	location.href = "{php echo app_url('pocket/pocket/createRedOrder')}&price=1&package=20&id=" + infoid;
+		          	}
+		        },
+                {
+                    text: '3元分50包',
+                    onClick: function() {
+                        location.href = "{php echo app_url('pocket/pocket/createRedOrder')}&price=3&package=50&id=" + infoid;
+                    }
+                },
+                {
+                    text: '5元分80包',
+                    onClick: function() {
+                        location.href = "{php echo app_url('pocket/pocket/createRedOrder')}&price=5&package=80&id=" + infoid;
+                    }
+                },
+                {
+                    text: '10元分120包',
+                    onClick: function() {
+                        location.href = "{php echo app_url('pocket/pocket/createRedOrder')}&price=10&package=200&id=" + infoid;
+                    }
+                }
+	      	];
+	      	var buttons2 = [{text: '取消'}];
+	      	var groups = [buttons1, buttons2];
+	      	$.actions(groups);
+	  	});
+		$.init();
+	});
+	function dele(id){
+		 $.confirm('删除后无法恢复，确定吗?',
+            function() { //确定后操作。
+				$.post("{php echo app_url('pocket/pocket/delete')}",{id:id},function(d){
+					if(d){
+						$.toast('删除成功');
+						location.reload();
+					}else{
+						$.toast('删除失败');
+					}
+				}, 'json');
+            },
+            function() { //取消后操作。
+        });
+	}
+</script>
+
+<style>
+.buttons-tab:after {
+	height: 0;
+}
+.field {
+	margin-top: .5rem;
+}
+.field-head-status-light {
+	color: #fe4d3d;
+	font-size: .65rem;
+}
+.buttons-tab .button {
+	font-size: .75rem;
+	-webkit-flex: 0 0 25%;
+	flex: 0 0 25%;
+}
+.buttons-tab .button.active {
+	color: #fe4d3d;
+    border-color: #fe4d3d;
+}
+.field-head-name {
+	font-size: .75rem;
+}
+.field-head-name i {
+	font-size: .75rem;
+	vertical-align: 0;
+	font-weight: 600;
+	margin-right: .05rem;
+}
+.field-item {
+	height: 3.15rem;
+	padding: .75rem;
+	box-sizing: initial;
+	background-color: #f9f9f9;
+}
+.field-item:before {
+	border-top: none;
+}
+.field .contentt {
+	margin-left: 3.65rem;
+}
+.avatar {
+	width: 3.15rem;
+	height: 3.15rem;
+}
+.avatar img {
+	width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+}
+.contentt-t-d {
+	display: -webkit-flex;
+	display: flex;
+	justify-content: space-between;
+}
+.delivery_tip {
+	-webkit-flex-shrink: 1;
+	flex-shrink: 1;
+}
+.order-time {
+	-webkit-flex-shrink: 0;
+	flex-shrink: 0;
+}
+.field .contentt .price {
+	color: #888;
+	font-size: .75rem;
+	overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+	display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+.field .contentt .delivery_tip {
+	height: 1.05rem;
+	line-height: 1.05rem;
+	color: #333;
+	font-size: .75rem;
+}
+.field-console-btns-d {
+	padding: 0 .75rem;
+}
+.field-console-btns-d:after {
+	content: "";
+	display: block;
+	clear: both;
+}
+.field-console-btns {
+	position: relative;
+	right: 0;
+	bottom: 0;
+	float: right;
+}
+.field-console-btns:first-child .order-option-s2 {
+	color: #df231c;
+    border: 1px solid #df231c;
+}
+.field-console-btns a {
+    width: 3.7rem;
+    height: 1.2rem;
+	line-height: 1.2rem;
+    color: #333;
+    font-size: .7rem;
+    text-align: center;
+    margin: .4rem 0;
+    margin-left: .4rem;
+    border: 1px solid #eee;
+    -webkit-border-radius: 2rem;
+    border-radius: 3.8rem;
+    box-sizing: initial;
+    overflow: hidden;
+    display: inline-block;
+    float: right;
+}
+.field .order-option-btn {
+	font-size: .7rem;
+	padding: .05rem 0;
+	-webkit-border-radius: 3.8rem;
+    border-radius: 3.8rem;
+}
+.field-console-btns .order-option-s2 {
+    color: #333;
+    border: 1px solid #eee;
+}
+.field-head {
+	height: 2.2rem;
+	line-height: 2.2rem;
+}
+</style>
+
+{php include wl_template('common/footer');}

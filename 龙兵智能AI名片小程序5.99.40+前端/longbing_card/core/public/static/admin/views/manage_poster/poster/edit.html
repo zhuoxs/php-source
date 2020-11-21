@@ -1,0 +1,231 @@
+
+<title>添加海报</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>添加海报</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-header">添加海报</div>
+        <div class="layui-card-body" style="padding: 15px;">
+
+            <form class="layui-form" action="" lay-filter="component-form-group" onsubmit=" return  false;">
+
+                <input type="hidden" name="itemId">
+                <input type="hidden" name="company_id">
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">标题</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="title" required lay-verify="required" placeholder="" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">海报分类</label>
+                    <div class="layui-input-block">
+                        <select name="classify_id" id="selectType" lay-verify="required">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">图片</label>
+                    <div class="layui-upload">
+                        <button type="button" class="layui-btn" id="btn-upload-img">上传图片</button>
+                        <div class="layui-upload-list del-image"  id="div-upload-img"><ul></ul></div>
+
+                        <blockquote style="margin-left: 110px" class="layui-elem-quote" style="margin-top: 10px;">
+                            商品列表展示图片, 尺寸:
+                        </blockquote>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">排序值</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="top" required   placeholder="" autocomplete="off" class="layui-input">
+                    </div>
+                    <blockquote style="margin-left: 110px" class="layui-elem-quote" style="margin-top: 10px;">
+                        排序值, 倒序, 值越大排序越靠前, 请填写数字
+                    </blockquote>
+                </div>
+
+                <!--提交数-->
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="LAY-filter-demo-form">立即提交</button>
+                        <button id="backlist" class="layui-btn layui-btn-primary">返回</button>
+                    </div>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.use(['admin', 'form'], function(){
+        var $ = layui.$
+            ,admin = layui.admin
+            ,element = layui.element
+            ,layer = layui.layer
+            ,form = layui.form;
+
+        layer.load();
+
+        //id的值（判断是否编辑）
+        var router = layui.router();
+        var id=router.search.poster_id;
+        if(typeof(id)=='undefined'){
+            id=0;//默认新增
+        }
+        $("#backlist").click(function(){
+            window.history.back();
+            return false;
+        });
+
+        $('.del-image').on('click','.layui-icon', function () {
+            $(this).parents('dd').remove();
+        });
+
+        //发送请求获取数据(数据的回显)
+        admin.req({
+            type:'POST',
+            url: config.url+'manage_poster/poster/detail'//数据接口
+            ,data:{"id":id},
+            done:function(res){
+                if(res.data){
+                    layer.closeAll();
+                    //预设元素
+                    form.val("component-form-group", {
+                        "itemId": res.data.id,// "name": "value"
+                        "company_id": res.data.company_id,// "name": "value"
+                        "title": res.data.title,// "name": "value"
+                        "type": res.data.type,// "name": "value"
+                        "price": res.data.price,// "name": "value"
+                        "cover": res.data.cover,// "name": "value"
+                        "carousel": res.data.carousel,// "name": "value"
+                        "images": res.data.images,// "name": "value"
+                        "top": res.data.top,// "name": "value"
+                    });
+
+                    if (res.data.classifyList.length > 0)
+                    {
+                        var typeChoosed = 0;
+                        if (res.data.classify_id)
+                        {
+                            typeChoosed = res.data.classify_id;
+                        }
+                        var strs='';
+                        layui.each(res.data.classifyList, function(index, item){
+                            if (typeChoosed == item.id)
+                            {
+                                strs += '<option value="' + item.id + '" selected>' + item.title + '</option>';
+                            }
+                            else
+                            {
+                                strs += '<option value="' + item.id + '">' + item.title + '</option>';
+                            }
+
+                        });
+                        $("#selectType").html(strs);
+                    }
+                    form.render();
+
+                    //图片的回显
+
+                    //单张图片
+                    if(res.data.img && res.data.img.length > 0){
+                        var str = '<dd><i class="layui-icon" >&#x1007;</i> <img  width="100px" src="'+res.data.img[0].path+'">' +
+                            '<p id=""></p>' +
+                            '<input type="hidden" name="img" value="'+res.data.img[0].id+'"></dd>';
+                        $('#div-upload-img ul').append(str);
+                        /*$('#test-upload-normal-img-avatar').attr('src', res.data.person_avatar);*/
+                    }
+
+                }
+            }
+        });
+
+        /* 监听提交 */
+        form.on('submit', function(data){
+
+            layer.load();
+            //发送请求
+            var data = data.field;
+            admin.req({
+                type:'POST',
+                url: config.url+'manage_poster/poster/edit'//数据接口
+                ,data:data,
+                done:function(res){
+                    if(res.code == 400)
+                    {
+                        layer.closeAll();
+                        layer.msg(data.msg);
+                        return false;
+                    }
+                    layer.msg('成功', {
+                        offset: '15px'
+                        ,icon: 1
+                        ,time: 1000
+                    });
+                    window.history.back();
+                }
+            });
+            return  false;
+        });
+
+
+
+        /*上传图片*/
+        layui.use(['admin', 'upload'], function(){
+            var $ = layui.jquery
+                ,upload = layui.upload;
+
+            //封面图
+            var uploadInst = upload.render({
+                elem: '#btn-upload-img'
+                ,url: config.url+'manage_base/base_admin/upload'//上传地址
+                ,data:{"type":"picture"}
+                ,before: function(obj){
+                    //预读本地文件示例，不支持ie8
+                    /* obj.preview(function(index, file, result){
+                         $('#test-upload-normal-img-avatar').attr('src', result); //图片链接（base64）
+                     });*/
+                    layer.load(0, {
+                        offset: 'auto'
+                    });
+                }
+                ,done: function(res){
+                    if (res.code > 0) {
+                        return layer.msg('上传失败');
+                    }
+                    $('#div-upload-img  ul').empty();
+                    var str = '<dd><i class="layui-icon">&#x1007;</i> <img  width="100px" src="'+res.data.src+'"> ' +
+                        '<p id="p-upload-img"></p>' +
+                        '<input type="hidden" name="img" value="'+res.data.id+'" id="cover"></dd>';
+                    $('#div-upload-img ul').append(str);
+                    layer.closeAll();
+                }
+                ,error: function(){
+                    //演示失败状态，并实现重传
+                    var demoText = $('#p-upload-img');
+                    demoText.html('<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-mini demo-reload">重试</a>');
+                    demoText.find('.demo-reload').on('click', function(){
+                        uploadInst.upload();
+                    });
+                }
+            });
+
+        });
+
+    });
+
+</script>

@@ -1,0 +1,177 @@
+{{include file='common/head.html'}}
+<script type='text/javascript' src='{{$STATIC}}scripts/domains.js'>
+</script>
+<script type='text/javascript'>
+function domain_sync(id)
+{
+	return alert('还未实现');
+	if (confirm('是否要对该域名进行同步?') === false) {
+		return ;
+	}
+	$.ajax({
+		type :'get',
+		url : '?c=domains&a=domainSync',
+		data:'id=' + id,
+		dataType:'json',
+		success:function(ret) {
+			if (ret['code']  != 200) {
+				return alert(ret['msg'] ? ret['msg'] : '同步失败');
+			}
+			alert('同步成功');
+		}});
+}
+/**
+ * 2013,5,3
+ */
+function piao_domain_add()
+{
+	var html = '<form action="{{$action}}" method="post">';
+	html += '<p id="registrar"></p>';
+	html += '<p>用户&nbsp;&nbsp;名:<input name="username" id="domainusername"></p>';
+	html += '<p>域&nbsp;&nbsp;&nbsp;&nbsp;名:<input name="domain" id="domaindomain"></p>';
+	html += '<p>注册时间:<input name="add_time" id="add_time" id="domainadd_time">*datetime</p>'
+	html += '<p>过期时间:<input name="expire_time" id="domainexpire_time">*datetime</p>';
+	html += '<p><input type="button" value="提交" onclick="domain_add()"></p>'
+	html += '</form>';
+	var dlog = art.dialog({id:'id22',title:'导入域名',icon: '',top:'50%'});	
+	dlog.content(html);
+	$.ajax({url:'?c=domains&a=getRegistrars',dataType:'json',success:function(ret) {
+		var registrar = ret['registrar'];
+		var regstr = '所属接口:<select name="registrar" id="domainregistrar">';
+		for (var i in registrar) {
+			regstr += '<option value='+ registrar[i]+ '>' + registrar[i] + '</option>'
+		}
+		regstr += '</select>';
+		$("#registrar").html(regstr);
+	}});
+	var date = new Date(); //日期对象
+	var now = date.getFullYear()+"-" + (filledTime(date.getMonth()+1))+"-"+ filledTime(date.getDate())+" "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds(); 
+	$("#add_time").val(now);
+}
+/**
+ * 2013,5,3
+ */
+function filledTime($time)
+{
+	if ($time.toString().length==1) {
+		return '0'+$time.toString();
+	}
+	return $time;
+}
+/**
+ * 2013,5,3
+ */
+function domain_add()
+{
+	var username = $("#domainusername").val();
+	var domain = $("#domaindomain").val();
+	var registrar = $("#domainregistrar").val();
+	var add_time = $("#domainadd_time").val();
+	var expire_time = $("#domainexpire_time").val();
+	if (!username || !domain || !registrar || !expire_time) {
+		return alert("参数不正确");
+	}
+	var reg = new RegExp(/^[A-z][A-z0-9_-]+?[.][a-z]{1,4}$/g);
+	if (!reg.test(domain)){
+		alert(domain+"域名输入不正确");
+		return ;
+	}
+	$.ajax({url:'?c=domains&a=add',data:{username:username,domain:domain,registrar:registrar,add_time:add_time,expire_time:expire_time},dataType:'json',success:function(ret){
+		if (ret['code'] != 200) {
+			var content = ret['msg'] ? ret['msg'] :'导入' + domain + '失败';
+			var ddlog = art.dialog({id:'id223',title:'导入域名',time:3,content:content, icon: 'error',top:'50%'});	
+		}else {
+			var content = '导入域名'+ domain + '成功';
+			var ddlog = art.dialog({id:'id223',title:'导入域名',time:2,content:content, icon: 'succeed',top:'50%'});	
+			setTimeout(function(){
+				window.location = window.location;
+			},2000);
+		}
+	}});
+	
+}
+
+	
+
+</script>
+
+<body bgcolor='#ffffff' text='#000000' leftmargin='0' topmargin='0'>
+	<div align="center">
+		<div class="wid_main mar_main" align="left">
+			<div class="block_top" align="left">当前位置：域名管理 --> 注册列表</div>
+			<table class="table_main2" cellpadding="0" cellspacing="1">
+				<tr>
+					<td colspan="11" class="hg_main">
+						<table width="100%" cellpadding="0" cellspacing="0">
+							<tr id="bg_yellow">
+								<td align="left">
+									<form action='{{$action}}&search={{$search}}&status={{$status}}&order={{$order}}' method='post'>
+										直达:<input name='page' size='5'>&nbsp;页 <input
+											type='submit' value='GO'>
+									</form>
+								</td>
+
+								<td align="left">
+									<form action='{{$action}}&status={{$status}}&order={{$order}}' method='post'>
+										搜索:<input name='search' size='18'>
+										<input type='submit' value='查找'>
+										<input type='button' value='导入域名' onclick='piao_domain_add()'>
+									</form>
+								</td>
+								
+								<td align='left'>
+									<form action='{{$action}}&search={{$search}}&order={{$order}}' method='post'>
+									<select name='status'>
+									<option value=0>正常</option>
+									<option value=1>暂停</option>
+									</select>
+									<input type='submit' value='查找'>
+									</form>
+								</td>
+								
+								<td align="right">{{if $page>1}} <a
+									href='{{$action}}&page=0&search={{$search}}&status={{$status}}'>首页</a> <a
+									href='{{$action}}&page={{$page-1}}&search={{$search}}&status={{$status}}'>上一页</a>
+									{{else}} 首页 上一页 {{/if}} {{if $page!=$total_page}} <a
+									href='{{$action}}&page={{$page+1}}&search={{$search}}&status={{$status}}'>下一页</a>
+									<a href='{{$action}}&page={{$total_page}}&search={{$search}}&status={{$status}}'>尾页</a>
+									{{else}}下一页 尾页 {{/if}} {{$page}}/{{$total_page}}&nbsp;
+									共计{{$count}}记录&nbsp;
+								</td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="11" class="bg_main"><b>域名列表</b></td>
+				</tr>
+				<tr id="bg_yellow">
+					<td>操作</td>
+					<td>域名</td>
+					<td>会员</td>
+					<td>模块</td>
+					<td>开通时间</td>
+					<td>到期时间</td>
+					<td>状态</td>
+				</tr>
+				{{foreach from=$list item=row}}
+				<tr>
+					<td>
+					[<a href='javascript:domains_del({{$row.id}})'>删除</a>] 
+					[<a	href="?c=domains&a=editFrom&id={{$row.id}}">修改</a>]
+					<!--  [<a href='javascript:;' onclick='domain_sync({{$row.id}})'>同步</a>]-->
+					</td>
+					<td>{{$row.domain}}</td>
+					<td>{{$row.username}}</td>
+					<td>{{$row.registrar}}
+					<td title='{{$row.add_time}}'>{{substr($row.add_time,0,10)}}</td>
+					<td title='{{$row.expire_time}}'>{{substr($row.expire_time,0,10)}}</td>
+					<td title='{{$row.status}}'>{{($row.status==0) ? '正常' : '暂停'}}</td>
+				</tr>
+				{{/foreach}}
+			</table>
+		</div>
+	</div>
+</body>
+</html>

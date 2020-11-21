@@ -1,0 +1,204 @@
+{template 'web/common/common'}
+{template 'web/soil/navbar'}
+<style>
+    p{margin: 0}
+    .layui-form-select{display: none;}
+    .input-group{width: 35%;}
+</style>
+<blockquote class="layui-elem-quote layui-text">
+    种植管理
+</blockquote>
+<div class="layui-card">
+    <form  method="get" class="form_table layui-form" role="form">
+        <div class="page-toolbar">
+            <div class="input-group" style="display: flex">
+                <select name="select_type" id="select_type" style="display: block;width: 200px;">
+                    <option value="">请选择</option>
+                    <option value="name" <?php if($_GPC['select_type']=='name'){echo 'selected';}?> >真实姓名</option>
+                    <option value="phone" <?php if($_GPC['select_type']=='phone'){echo 'selected';}?>>电话号码</option>
+                    <option value="order_number" <?php if($_GPC['select_type']=='order_number'){echo 'selected';}?>>订单编号</option>
+                </select>
+                <input type="text" class="form-control " name="keyword" value="{$_GPC['keyword']}"  placeholder="请输入订单编号、用户名、联系电话进行搜索">
+                <span class="input-group-btn">
+                    <button class="btn  btn-primary" type="button" lay-filter="formSubmit" lay-submit="">搜索</button>
+                </span>
+                {if $_GPC['type']==1}
+                <span class="input-group-btn">
+                    <button class="layui-btn layui-btn-sm layui-btn-danger bitchDel" style="margin-left: 70px;margin-top: 2px;" type="button">批量删除</button>
+                </span>
+                {/if}
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="layui-card">
+    <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief" style="top: 164px;">
+        <ul class="layui-tab-title">
+
+            <a href="{url 'site/entry/admin',['m'=>'kundian_farm','op'=>'plantList','action'=>'soil','type'=>2]}"><li class="{if $_GPC['type']==2} layui-this {/if}">进行中</li></a>
+            <a href="{url 'site/entry/admin',['m'=>'kundian_farm','op'=>'plantList','action'=>'soil','type'=>3]}"><li class="{if $_GPC['type']==3} layui-this {/if}">种植中</li></a>
+            <a href="{url 'site/entry/admin',['m'=>'kundian_farm','op'=>'plantList','action'=>'soil','type'=>4]}"><li class="{if $_GPC['type']==4} layui-this {/if}">已完成</li></a>
+            <a href="{url 'site/entry/admin',['m'=>'kundian_farm','op'=>'plantList','action'=>'soil','type'=>1]}"><li class="{if $_GPC['type']==1} layui-this {/if}">未支付</li></a>
+        </ul>
+    </div>
+    <form action="" class="layui-form">
+        <table class="layui-table" lay-skin="line" style="margin-top: 24px;">
+            <thead>
+            <tr style="color: black">
+                {if $_GPC['type']==1}
+                <th style="width: 0.1%;">
+                    <input type="checkbox" id="checkAll"  lay-filter="checkAll" lay-skin="primary" title="" style="margin-right: 10px;">
+                </th>
+                {/if}
+                <th style="width: 2%;">ID</th>
+                <th style="width: 6%">土地</th>
+                <th style="width: 6%">用户</th>
+                <th style="width: 5%">订单</th>
+                <th style="width: 5%">状态</th>
+                <th style="width: 5%;">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $data['list'] $index $v}
+            <tr>
+                {if $_GPC['type']==1}
+                <td><input type="checkbox" class="orderid" name="orderid" lay-filter="check_one" value="{$v['id']}" lay-skin="primary"></td>
+                {/if}
+                <td>{$v['id']}</td>
+                <td style="display: flex">
+                    <img src="{$v['land']['cover']}" style="width: 120px;height: 70px;" alt="">
+                    <div style="margin-left: 20px;">
+                        <p>名称：{$v['land']['land_name']}</p>
+                        <p>编号：{$v['spec']['land_num']}</p>
+                        <p>面积：{$v['spec']['area']} ㎡</p>
+                        <p>价格：￥{$v['spec']['cost']}</p>
+                    </div>
+                </td>
+                <td>
+                    <p>{$v['user']['nickname']}(UID:{$v['uid']})</p>
+                    <p>{$v['username']}</p>
+                    <p>{$v['phone']}</p>
+                </td>
+                <td>
+                    <p>订单编号：{$v['order_number']}</p>
+                    <p>下单时间：{php echo date("Y-m-d H:i:s",$v['create_time']);}</p>
+                    {if $v['status']==1}
+                    <p>商户订单号：{$v['pay_method']}</p>
+                    <p>支付时间：{php echo date("Y-m-d H:i:s",$v['pay_time']);}</p>
+                    {/if}
+                </td>
+
+                <td>
+                    {if $v['status']==0}
+                        {if $v['is_cancel']==0}
+                            <span class="layui-badge layui-bg-gray">未支付</span>
+                        {else}
+                            <span class="layui-badge layui-bg-gray">已取消</span>
+                        {/if}
+                    {elseif $v['status']==1}
+                        {if $v['is_confirm']==1}
+                            <span class="layui-badge layui-bg-blue">已完成</span>
+                        {elseif $v['is_refund']==1}
+                            <span class="layui-badge layui-bg-orange">已退款</span>
+                        {else}
+                            <span class="layui-badge layui-bg-blue">已支付</span>
+                        {/if}
+                    {/if}
+                    {if $v['status']==1}
+                    <p>支付方式：{$v['pay_method']}</p>
+                    {/if}
+                </td>
+                <td>
+                    <div class="btn-group">
+                        {if $v['status']==0 && $v['is_cancel']==0}
+                        <a href="#" style="color: blue;" class="cancelOrder" data-id="{$v['id']}">取消订单</a>
+                        {/if}
+                        {if $v['status']==0 && $v['is_cancel']==1}
+                        <a class="btn btn-op btn-operation  orderDel" data-id="{$v['id']}" data-toggle="ajaxRemove" href="#">
+                            <i class="iconfont icon-el-icon-dev-delete"></i>
+                        </a>
+                        {/if}
+
+                        {if $v['status']==1 && in_array('soil.plantDetail',$perm)}
+                        <a style="color: #44abf7 !important;" href="{url 'site/entry/admin',['m'=>'kundian_farm','op'=>'plantDetail','action'=>'soil','id'=>$v['id']]}">查看详情</a>
+                        {/if}
+                    </div>
+                </td>
+            </tr>
+            {/loop}
+            </tbody>
+        </table>
+    </form>
+    <div style="text-align: right;">
+        {$data['pager']}
+    </div>
+</div>
+{template 'common/footer'}
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate','layer'], function(){
+        var form = layui.form,layer = layui.layer;
+        $(".cancelOrder").click(function(){
+            var id=$(this).attr('data-id');
+            var url="{url 'site/entry/admin',array('m'=>$_GPC['m'],'op'=>'operationOrder','action'=>'soil')}";
+            updateData(url,{id:id,type:1},'确认取消订单吗？')
+
+        });
+        $(".orderDel").click(function(){
+            var id=$(this).attr('data-id');
+            var url="{url 'site/entry/admin',array('m'=>$_GPC['m'],'op'=>'operationOrder','action'=>'soil')}";
+            updateData(url,{id:id,type:2},'确认删除订单吗？')
+
+        });
+        /** 搜索查询*/
+        form.on('submit(formSubmit)',function (data) {
+            $("input[name='flag']").val('');
+            var formData = data.field;
+            let url = "{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'plantList','action'=>'soil','type'=>$_GPC['type'])}";
+            if(formData['keyword']){
+                url+="&keyword="+formData['keyword']+'&select_type='+formData['select_type'];
+            }
+            window.location.href=url;
+        })
+
+        //全选
+        form.on('checkbox(checkAll)', function(data){
+            var a = data.elem.checked;
+            console.log(a);
+            if(a == true){
+                $(".orderid").prop("checked", true);
+                form.render('checkbox');
+            }else{
+                $(".orderid").prop("checked", false);
+                form.render('checkbox');
+            }
+        });
+
+        //其中一个不选，取消全选
+        form.on('checkbox(check_one)', function(data){
+            var item = $(".orderid");
+            for(var i=0;i<item.length;i++){
+                if(item[i].checked == false){
+                    $("#checkAll").prop("checked", false);
+                    form.render('checkbox');
+                }
+            }
+        });
+
+        $(".bitchDel").click(function () {
+            let order_id=[];
+            $("input:checkbox[name='orderid']:checked").each(function() { // 遍历name=goodsid的多选框
+                order_id.push($(this).val());
+            });
+
+            if(order_id.length==0){
+                layer.alert('请选择要进行批量操作的订单！');return false;
+            }
+            let url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'operationOrder','action'=>'soil')}";
+            updateData(url,{order_id,type:6},'确认要进行批量删除操作吗？');
+        })
+
+    });
+</script>
+

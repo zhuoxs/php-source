@@ -1,0 +1,198 @@
+{template 'common/header'}
+<script src="../addons/crad_qrcode_red/template/mobile/js/MagicZoom.js"></script>
+<ul class="nav nav-tabs">
+    <li class="active"><a href="{php echo $this->createWebUrl('qrcode', array('aid' => $aid,'bid' => $bid))}">二维码列表</a></li>
+</ul>
+<div class="panel panel-info">
+    <div class="panel-heading">筛选</div>
+    <div class="panel-body">
+        <form action="./index.php" method="get" class="form-horizontal" role="form">
+            <input type="hidden" name="c" value="site" />
+            <input type="hidden" name="a" value="entry" />
+            <input type="hidden" name="m" value="crad_qrcode_red" />
+            <input type="hidden" name="do" value="qrcode" />
+            {if $sid}
+            <input type="hidden" name="sid" id="sid" value="{$sid}" />
+            {/if}
+            {if $aid}
+            <div class="form-group" >
+                <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">所属活动</label>
+                <div class="col-sm-9 col-lg-4">
+                    <select  name="aid" id="aid">
+                        {loop $activity_info $activity_val}
+                        <option value="{$activity_val['id']}" {if $activity_val['id']==$aid}selected{/if}>{$activity_val['name']}
+                                {/loop}
+                </select>
+                <span class="help-block"></span></div>
+        </div>
+            {/if}
+            {if $bid}
+            <div class="form-group" >
+                <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">预印码</label>
+                <div class="col-sm-9 col-lg-4">
+                    <select  name="bid" id="bid">
+                        {loop $beforehand_list $beforehand_item}
+                                <option value="{$beforehand_item['id']}" {if $beforehand_item['id']==$bid}selected{/if}>{$beforehand_item['name']}</option>
+                                {/loop}
+                </select>
+                <span class="help-block"></span></div>
+        </div>
+{/if}
+        <div class="form-group" >
+            <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">状态</label>
+            <div class="col-sm-9 col-lg-4">
+                <select  name="status" id="status">
+                    <option value="0" {if empty($status)}selected{/if}>所有</option>
+                    <option value="4" {if $status==4}selected{/if}>未使用</option>
+                    <option value="1" {if $status==1}selected{/if}>已使用</option>
+                    <option value="2" {if $status==2}selected{/if}>红包未发送</option>
+                    <option value="3" {if $status==3}selected{/if}>红包已发送</option>
+                </select>
+                <span class="help-block"></span></div>
+        </div>
+        <div class="form-group">
+            <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">关键字</label>
+            <div class="col-sm-9 col-lg-4">
+                <input class="form-control" name="keyword" id="keyword" placeholder="输入用户openid查询" type="text" value="{$_GPC['keyword']}">
+            </div>
+            <div class=" col-xs-12 col-sm-2 col-lg-2">
+                <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+            </div>
+        </div>
+    </form>
+</div>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading">总数：{$total}</div>
+    <div class="table-responsive panel-body">
+        <form action="" method="post" id="form1" class="form-horizontal form" enctype="multipart/form-data">
+            <table class="table table-hover">
+                <thead class="navbar-inner">
+
+                    <tr>
+                        <th class='with-checkbox' style="width: 20px;"><input type="checkbox" class="check_all" /></th>
+                        <th style="width:50px;">ID</th>
+                        <th>领取人</th>
+                        <th style="width:100px;">二维码</th>
+                        <th style="width:150px;">活动</th>
+                        <th style="width:60px;">编号</th>
+                        <th style="width:100px;">扫码时间</th>
+                        <th style="width:100px;">状态</th>
+                        <th style="width:120px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {loop $list  $item}
+                    <tr>
+                        <td class="with-checkbox"><input type="checkbox" name="ids[]" value="{$item['id']}"></td>
+
+                        <td>{$item['id']}</td>
+
+                        <td>
+                            {$item['nickname']}</br>{$item['openid']}
+                        </td>
+
+
+                        <td>
+                            {if !empty($item['uuid'])}
+                            <a  href="{php echo $this->createWebUrl('qr', array('raw' => base64_encode($item['qrcode_url'])))}" class="MagicThumb">
+
+                                <img src="{php echo $this->createWebUrl('qr', array('raw' => base64_encode($item['qrcode_url'])))}" style="height:80px;width:80px"></a>&nbsp;&nbsp;
+                            {else}
+                            暂无图片
+                            {/if}
+
+                        </td>
+                         
+                        <td>{$item['activity_name']}</td>
+                        <td>{if $item['code']}{php echo $item['sbid']?$item['sbid']:$item['bid']}_{$item['code']}{/if}</td>
+                       <td>{if $item['usetime']}{php echo date("Y-m-d H:i:s",$item['usetime'])}{/if}</td>
+                      
+                        <td>{if $item['status'] == 3}
+                            <span class="label label-success">红包已发送</span>
+                             {elseif $item['status'] == 2}
+                            <span class="label label-warning">红包未发送</span>
+                            {elseif $item['status'] == 1}
+                            <span class="label label-danger">已使用</span>
+                            {else}
+                            <span class="label label-default">未使用</span>
+                            {/if}</td>
+                        <td class="norightborder">
+                            <a href="{php echo $this->createWebUrl('qrcode', array('id' => $item['id'], 'op' => 'del'))}" onclick="return confirm('该操作将会删除本条数据，是否确认操作？');return false;" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="删除">删除</a>
+                            {if $item['status'] == 1}
+                            <a href="{php echo $this->createWebUrl('qrcode', array('id' => $item['id'], 'op' => 'reset'))}" onclick="return confirm('该操作将会把二维码变为未使用状态，是否确认操作？');return false;" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="重置">重置</a>
+                            {/if}
+                        </td>
+                    </tr>
+                    {/loop}
+                </tbody>
+                <tr>
+                    <td colspan="10">
+                        <input name="op" id="op" type="hidden" value="" />
+                        <input name="aid" type="hidden" value="{$aid}"/>
+                        <input name="token" type="hidden" value="{$_W['token']}" />
+                        <button type="button" class="btn btn-primary" name="btndeleteall" id="btndeleteall"/>批量删除</button>&nbsp;&nbsp;&nbsp; &nbsp; 
+                        <button  type="button" class="btn btn-danger text-right" onclick="delete_all()">清空（删除所有记录）</button>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+    {$pager}
+</div>
+
+<script type="text/javascript">
+    {if $bid}
+     function delete_all() {
+        if (confirm('确认删除所有信息吗,删除完不可恢复?')) {
+            var bid = $("#bid").val();
+            var status = $("#status").val();
+            window.location.href = "{php echo $this->createWebUrl('qrcode',array('op'=>'deleteall'))}" + "&bid=" + bid+ "&status=" + status;
+        }
+    }
+    {elseif $sid}
+     function delete_all() {
+        if (confirm('确认删除所有信息吗,删除完不可恢复?')) {
+            var sid = $("#sid").val();
+            var status = $("#status").val();
+            window.location.href = "{php echo $this->createWebUrl('qrcode',array('op'=>'deleteall'))}" + "&sid=" + sid+ "&status=" + status;
+        }
+    }
+    {else}
+     function delete_all() {
+        if (confirm('确认删除所有信息吗,删除完不可恢复?')) {
+            var aid = $("#aid").val();
+            var status = $("#status").val();
+            window.location.href = "{php echo $this->createWebUrl('qrcode',array('op'=>'deleteall'))}" + "&aid=" + aid+ "&status=" + status;
+        }
+    }
+    
+    {/if}
+   
+    $(function () {
+        var pattern = "{$pattern}";
+        if (pattern) {
+            $('#pattern').val(pattern);
+        }
+
+        $(".check_all").click(function () {
+            var checked = $(this).get(0).checked;
+            $("input[type=checkbox]").prop("checked", checked);
+        });
+
+        $("#btndeleteall").click(function () {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if (check.length < 1) {
+                alert('请选择要删除的数据!');
+                return false;
+            }
+            if (confirm("确认要删除选择的数据?删除后不可恢复")) {
+                $('#op').val('deleteids');
+                $('#form1').submit();
+            }
+        });
+
+    });
+</script>
+{template 'common/footer'}

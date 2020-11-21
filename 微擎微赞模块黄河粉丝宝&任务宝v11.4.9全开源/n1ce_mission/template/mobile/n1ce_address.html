@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, ,user-scalable=no" />
+		<title>兑换信息</title>
+		<!--css-->
+		<link rel="stylesheet" href="{CSS}comon.css" />
+		<link rel="stylesheet" href="{CSS}add.css" />
+		<link rel="stylesheet" href="{CSS}mobileSelect.css" />
+		<script type="text/javascript" src="{JS}jquery-1.7.2.min.js"></script>
+		<script type="text/javascript" src="../app/resource/js/app/util.js"></script>
+	</head>
+
+	<body style="background-image: url({$_W['siteroot']}addons/n1ce_mission/style/img/bg_body.jpg) !important;background-repeat: repeat;">
+		<form action="" method="post" data-ajax="false" onsubmit="return formValidate()">
+			<input name="gid" type="hidden" id="id" value="{$gid}" />
+			<input name="act" type="hidden"  value="module">
+			<input name="name" type="hidden"   value="n1ce_mission">
+			<input name="do" type="hidden"  value="Exchange">
+			<input name="rid" type="hidden"  value="{$rid}">
+			<input name="from_user" type="hidden"  value="{$from_user}">
+			<div class="main">
+
+
+				<!--姓名-->
+				<label class="all-title name-title" for="fullName">姓名</label>
+				<input class="all name" name="fullName" type="text" maxlength="6" />
+
+				<!--电话-->
+				<label class="all-title phone-title" for="tel">电话</label>
+				<input class="all phone" name="tel" type="number" maxlength="11" />
+				{if $goods['goodstype']==1}
+				<!--所在地区-->
+				<div id="addInfo" class="all add"></div>
+				<text class="add-title">所在地区</text>
+				<input type="hidden" name="area" />
+				<!--详细地址-->
+				<label class="all-title add-info-title" for="address">详细地址</label>
+				<textarea class="all add-info" name="address"></textarea>
+				{/if}
+			</div>
+			{if $goods['get_price'] || $goods['postage']}
+			<!--价格区域-->
+			<div class="price">
+				<span>原价：{php echo $goods['markert_price']/100}元</span>
+				{if $goods['goodstype']==1}
+				<text>邮费：{php echo $goods['postage']/100}元</text>
+				{else}
+				<text>到店自提</text>
+				{/if}
+				
+				<p>现价：{php echo $goods['get_price']/100}元</p>
+			</div>
+			{else}
+			<input class="sub-btn" id="subbtn" type="submit" name="submit" value="确认兑换" />
+			<input type="hidden" name="token" value="{$_W['token']}" />
+			{/if}
+			
+		</form>
+		{if $goods['get_price'] || $goods['postage']}
+		<button class="sub-btn" id="pay">支付{php echo ($goods['get_price']+$goods['postage'])/100}元兑换</button>
+		<button class="sub-btn" id="payfail" style="display:none;" onclick="wx.closeWindow();">关闭页面</button>
+		{/if}
+		<div class="modal-hint">
+			
+		</div>
+		
+	</body>
+	{php echo register_jssdk(false);}
+	<!--js-->
+	<script src="{JS}jquery.min.js"></script>
+	<script src="{JS}adaptive.js"></script>
+	<script src="{JS}mobileSelect.js"></script>
+	<script src="{JS}all.js"></script>
+
+	<!--自定义函数区域-->
+	<script>
+		
+		//姓名格式验证
+		function isChinaName(name) {
+			var pattern = /^[\u4E00-\u9FA5]{1,6}$/;
+			return pattern.test(name);
+		};
+
+		//电话号码
+		function IsTelephone(phone) // 正则判断
+		{
+			var pattern = /^1\d{10}$/;
+			return pattern.test(phone);
+		};
+
+		//省市选择
+		var cityChange = new MobileSelect({
+			trigger: "#addInfo",
+			title: "",
+			wheels: [{
+				data: city
+			}],
+			position:[0,0]
+		});
+		
+		//一次性定时器
+		function setHide(obj){
+			setTimeout(function(){
+				(obj).hide();
+			},1500);
+		}
+		
+		//表单验证
+		function formValidate() {
+			var str = '';
+			//姓名
+			var name;
+			if($("input[name='fullName']").val().length == 0) {
+				str = "姓名不能为空";
+				$(".modal-hint").html(str);
+				$(".modal-hint").show();
+				setHide($(".modal-hint"));
+			} else if(isChinaName($("input[name='fullName']").val()) == false) {
+				str = '请输入1至6位中文字';
+				$(".modal-hint").html(str);
+				$(".modal-hint").show();
+				setHide($(".modal-hint"));
+			} else {
+				name = $("input[name='fullName']").val();
+			}
+
+			//电话
+			var phone;
+			if(IsTelephone($("input[name='tel']").val()) == false) {
+				str = "请输入11位手机号";
+				$(".modal-hint").html(str);
+				$(".modal-hint").show();
+				setHide($(".modal-hint"));
+			} else {
+				phone = $("input[name='tel']").val();
+			}
+			
+			//地区
+			var info;
+			info=$("#addInfo").html();
+			$("input[name='area']").val(info);
+			if(str != '') {
+				return false;
+			} else {
+				return true;
+			}
+		};
+
+		//提交表单
+		$("#subbtn").click(function() {
+			formValidate();
+		});
+	</script>
+	<script>
+			$('#pay').click(function(){	
+				var ret = formValidate();
+				if(!ret){
+					return false;
+				}
+				$('#pay').hide();
+				$('#payfail').show();
+				$(".modal-hint").html('数据处理中……');
+				$(".modal-hint").show();
+				var realname = $("input[name='fullName']").val();
+				var mobile = $("input[name='tel']").val();
+				var area = $("input[name='area']").val();
+				var address = $("textarea[name='address']").val();
+				var url = "{php echo $this->createMobileUrl('jspay',array('rid'=>$rid,'gid'=>$gid,'from_user'=>$from_user))}";
+				var payurl = "{php echo $this->createMobileUrl('we7pay')}";
+				$.ajax
+				({
+					url: url,
+					type:'POST',
+					data: {
+						'fullName' : realname,
+						'tel' : mobile,
+						'residedist' : area + address
+					},
+					dataType:'json',
+					error: function () {
+						$(".modal-hint").hide();
+						alert('网络通讯异常，请稍后再试！');
+					},
+					success: function (result) {
+						if(result.code == '404'){
+							$(".modal-hint").hide();
+							alert(result.msg);
+							return false;
+						}
+						if(result.code == '101'){
+							
+							window.location = payurl + '&orderid=' + result.orderid;
+						}	
+					}
+				});
+			});
+	</script>
+</html>

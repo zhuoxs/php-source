@@ -1,0 +1,2 @@
+<?php
+ goto dVwub; dVwub: defined("\111\x4e\137\x49\x41") or exit("\x41\x63\143\145\x73\x73\x20\104\x65\156\151\145\144"); goto gly45; PLkrI: $_W["\x70\141\147\145"]["\163\151\164\x65\156\x61\155\145"] = "\346\224\257\xe4\xbb\x98\346\217\220\xe7\244\272"; goto hxAA0; gly45: global $_W, $_GPC; goto PLkrI; hxAA0: include $this->template("\x70\x61\x79\162\145\x73\165\x6c\164");

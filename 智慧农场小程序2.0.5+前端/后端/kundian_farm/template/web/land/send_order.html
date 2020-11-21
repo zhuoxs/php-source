@@ -1,0 +1,127 @@
+{template 'web/common/common'}
+{template 'web/land/navbar'}
+<blockquote class="layui-elem-quote layui-text">
+种子购买订单管理
+</blockquote>
+<div class="layui-card" style="padding-top: 30px;">
+    <form id="myform" class="layui-form" action="{url 'site/entry/land',array('m'=>'kundian_farm','op'=>'send_order','status'=>$_GPC['status'],'action'=>'send')}" method="post">
+        <div class="layui-form-item">
+            <input type="text" style="width: 200px;float: left;margin-right: 20px;height: 34px;" name="order_number" value="{$_GPC['order_number']}" placeholder="订单编号" class="layui-input">
+            {php echo tpl_form_field_daterange('time', $data['old_time'], $time = false);}
+            <button type="button" lay-filter="formSubmit" lay-submit="" id="submitForm" class="layui-btn layui-btn-sm" ><i class="layui-icon">&#xe615;</i>搜索</button>
+        </div>
+    </form>
+</div>
+<div class="layui-card">
+    <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief" style="top: 200px;width: 100%;margin-left: 0">
+        <ul class="layui-tab-title">
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'send_order','status'=>5,'action'=>'land')}" ><li class="{if $data['status']==5||!$data['status']}layui-this{/if}">全部</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'send_order','status'=>2,'action'=>'land')}"><li class="{if $data['status']==2}layui-this{/if}">未支付</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'send_order','status'=>1,'action'=>'land')}"><li class="{if $data['status']==1}layui-this{/if}">已支付</li></a>
+        </ul>
+    </div>
+    <div class="layui-form" style="margin-top: 60px;">
+        <table class="layui-table">
+            <colgroup>
+                <col width="50">
+                <col width="100">
+                <col width="200">
+                <col>
+            </colgroup>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>订单编号</th>
+                <th style="width: 5%;">订单总价</th>
+                <td style="width: 5%;">实际支付</td>
+                <th>订单状态</th>
+                <th>支付方式</th>
+                <th>下单时间</th>
+                <th>是否使用优惠券</th>
+                <th>优惠金额</th>
+                <th style="width: 11%;">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $data['list'] $key $item}
+                <tr>
+                        <td><span>{$item['id']}</span></td>
+                        <td><span>{$item['order_number']}</span></td>
+                        <td><span>￥{$item['total_price']}</span></td>
+                        <td><span>￥{$item['pra_price']}</span></td>
+                        <td>
+                                {if $item['status']==0}
+                                未支付
+                                {else if $item['status']==1}
+                                已支付
+                                {else if $item['status']==4}
+                                <a href="{url 'site/entry/refund',array('m'=>'kundian_farm','id'=>$item['id'],'op'=>'land_refund','action'=>'land')}"><button type="button" class="cancel-order">确认取消订单</button></a>
+                                {/if}
+                        </td>
+                        <td>{$item['pay_method']}</td>
+                        <td><span><?php echo date("Y-m-d H:i:s",$item['create_time']);?></span></td>
+                        <td>
+                            {if $item['coupon_id']>0 }
+                            <span class="label label-info">是</span>
+                            {else}
+                            <span class="label label-default"> 否</span>
+                            {/if}
+                        </td>
+                        <td>
+                            {if $item['coupon_id']>0}
+                                -{$item['coupon_price']}元
+                            {else}
+                                0
+                            {/if}
+                        </td>
+                    <td>
+                        <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'send_order_edit','id'=>$item['id'],'action'=>'land')}">
+                            <button class="layui-btn layui-btn-xs">详情</button>
+                        </a>
+                        {if $item['status']==0}
+                        <button class="layui-btn layui-btn-xs delete" data-id="{$item['id']}" data-type="2">删除</button>
+                        {/if}
+                    </td>
+
+                </tr>
+            {/loop}
+            </tbody>
+        </table>
+        <!--<span>订单总金额：</span><span style="color: red;font-size: 20px;">￥{$data['totalMoney']}</span>-->
+        <div style="text-align: right;">
+            {$data['pager']}
+        </div>
+    </div>
+</div>
+
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form,layer = layui.layer;
+        $(".delete").click(function(){
+            var that=$(this);
+            var id=$(this).attr('data-id');
+            var url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'send_order_delete','action'=>'land')}";
+            updateData(url,{id:id},'确认删除吗？')
+
+        });
+
+        /** 搜索查询*/
+        form.on('submit(formSubmit)',function (data) {
+            $("input[name='flag']").val('');
+
+            var formData = data.field;
+            let start=formData["time[start]"];
+            let end=formData["time[end]"];
+            let url = "{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'send_order','action'=>'land')}";
+            if(formData['order_number']){
+                url+="&order_number="+formData['order_number'];
+            }
+            // if(formData['name']){
+            //     url+="&name="+formData['name'];
+            // }
+            url+='&start='+start+'&end='+end;
+            window.location.href=url;
+        })
+    });
+</script>

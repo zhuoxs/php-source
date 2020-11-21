@@ -1,0 +1,622 @@
+{php include wl_template('common/header');}
+<style type="text/css">
+	.page-heading {
+    padding: 5px 0;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 20px;
+    position: relative;
+    margin-left: 15px;
+</style>
+<style>
+	td>i{cursor:pointer; display:inline-block; width:100%; height:100%; color:#428bca;}
+	.category-caret{display:inline-block; width:20px; margin: 0 10px; text-align:center; cursor:pointer; color:#d9534f;}
+	.add.add_level0{cursor:pointer;}
+	.panel-stat .panel-heading strong{font-size: 14px}
+	.panel-stat{border: #ddd;}
+	.panel-stat .panel-heading, .panel-display .panel-heading, .panel-trend .panel-heading{border-color: #DDDDDD; background-color: #F5F5F5;}
+	.panel-stat .panel-heading h3, .panel-trend .panel-heading h3, .panel-display .panel-heading h3{display: inline-block; margin-top: 0; margin-bottom: 0; padding-left: 10px; font-size: 14px; font-weight: bold; border-left: 4px solid #06c1ae}
+	.panel-stat .panel-heading .pull-right a{color: #2A2A2A}
+	.panel-stat .panel-body, .panel-trend .panel-body{margin-top: 15px; background-color: #f8f8f8;}
+	.panel-stat .panel-body>div[class*=col-]{border-right: 1px dotted #ccc; background-color: #F5F5F5;padding-top: 5px;}
+	.panel-stat .panel-body>div[class*=col-]:last-child{border-right: none}
+	.panel-stat .panel-body .title{text-align: center}
+	.panel-stat .panel-body .num-wrapper{text-align: center; }
+	.panel-stat .panel-body .num{color: #333; font-size: 40px; display: block}
+	.panel-stat .panel-body .info{display: inline-block; color: #999}
+	.panel-stat .panel-body{width: 100%; margin: 0 auto; padding: 10px;}
+</style>
+<ul class="nav nav-tabs" id="myTab">
+	<li class="active"><a href="#tab_basic">财务概况</a></li>
+</ul>
+<div class="app-content">
+	<div class="app-filter">
+		<div class="filter-action">
+			<a class="btn btn-primary btn-sm" href="{php echo web_url('finace/wlCash/cashSurvey',array('refresh'=>1));}"><i class="fa fa-refresh"></i> 刷新</a>
+			<span class="label label-danger"> {$time}更新</span>
+		</div>
+		<div class="filter-list">
+			<form action="./index.php" method="get" class="form-horizontal" role="form">
+				<input type="hidden" name="c" value="site" />
+				<input type="hidden" name="a" value="entry" />
+				<input type="hidden" name="m" value="{MODULE_NAME}" />
+				<input type="hidden" name="p" value="finace" />
+				<input type="hidden" name="ac" value="wlCash" />
+				<input type="hidden" name="do" value="cashSurvey" />
+				<input type="hidden" name="timetype" value="{$_GPC['timetype']}" id="timetype"/>
+				<input type="submit" id="submitButton" style="display: none"/>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">时间筛选</label>
+					<div class="col-sm-9">
+						<div class="btn-group">
+							<a href="{php echo filter_url('timetype:1');}" class="btn {if $timetype == 1} btn-primary {else}btn-default {/if}">今天</a>
+							<a href="{php echo filter_url('timetype:2');}" class="btn {if $timetype == 2} btn-primary {else}btn-default {/if}">最近7天</a>
+							<a href="{php echo filter_url('timetype:3');}" class="btn {if $timetype == 3} btn-primary {else}btn-default {/if}">最近30天</a>
+							<a href="{php echo filter_url('timetype:0');}" class="btn {if empty($timetype)} btn-primary {else}btn-default {/if}">全部</a>
+							<a href="javascript:;" class="btn {if $timetype == 5} btn-primary {else}btn-default {/if} timeslot" >时间段</a>
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label"></label>
+					<div class="col-sm-9">
+							<div class="timess" style="{if $timetype != 5}display: none;{/if}">
+								{php echo tpl_form_field_daterange('time_limit', array('starttime' => date('Y-m-d',$starttime), 'endtime' => date('Y-m-d', $endtime)));}
+								<span class="btn btn-default"  id="search">查询</span>
+							</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+	<div class="app-form">
+		<form action="" method="post" >
+			<div class="clearfix">
+				<div class="panel panel-stat">
+					<div class="panel-heading">
+						<h3>总览</h3>
+					</div>
+					<div class="panel-body">
+						<div class="col-md-3">
+							<div class="title">
+								订单总额(元)
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="所有支付过的订单的总金额，包括已退款订单。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-total-fee">￥{$newdata['all']['allmoney']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								订单总数
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="已完成订单：{$newdata['all']['fishorder']}个，未完成订单:{$newdata['all']['ingorder']}个。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-final-fee">{$newdata['all']['allorder']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								已完成订单金额
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="被标记为已完成或待评价的订单。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-total-success-order">￥{$newdata['all']['fishordermoney']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								未完成订单金额
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-total-cancel-order">￥{$newdata['all']['ingordermoney']}</span>
+								</a>
+							</div>
+						</div>
+					</div>
+					<div class="panel-body">
+						<div class="col-md-3">
+							<div class="title">
+								平台佣金收入
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="只计算了已结算订单的抽成"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-total-serve-fee">￥{$newdata['all']['sysincome']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								已结算金额
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-total-delivery-fee">￥{$newdata['all']['fishSettlement']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								未结算金额
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="不包括未完成订单的金额"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-total-deliveryer-fee">￥{$newdata['all']['ingSettlement']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								总退款
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-total-refund-fee">￥{$newdata['all']['refund']}</span>
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="clearfix">
+				<div class="panel panel-stat">
+					<div class="panel-heading">
+						<h3>团购</h3><span class="pull-right"><a style="color: #428bca;" href="javascript:;" flag="1" plugin="groupon" class="js-plugin-hide">隐藏</a></span>
+					</div>
+					<div class="panel-body" id="groupon-body">
+						<div class="col-md-3">
+							<div class="title">
+								订单总额(元)
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="所有支付过的订单的总金额，包括已退款订单。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-groupon-fee">￥{$newdata['groupon']['grouponallmoney']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								订单总数
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="已完成订单：{$newdata['groupon']['grouponfishorder']}个，未完成订单:{$newdata['groupon']['grouponingorder']}个。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-final-fee">{$newdata['groupon']['grouponallorder']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								已完成订单金额
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="被标记为已完成或待评价的订单。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-groupon-success-order">￥{$newdata['groupon']['grouponfishordermoney']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								未完成订单金额
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-groupon-cancel-order">￥{$newdata['groupon']['grouponingordermoney']}</span>
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="clearfix">
+				<div class="panel panel-stat">
+					<div class="panel-heading">
+						<h3>抢购</h3><span class="pull-right"><a style="color: #428bca;" href="javascript:;" flag="1" plugin="rush" class="js-plugin-hide">隐藏</a></span>
+					</div>
+					<div class="panel-body" id="rush-body">
+						<div class="col-md-3">
+							<div class="title">
+								订单总额(元)
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="所有支付过的订单的总金额，包括已退款订单。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-rush-fee">￥{$newdata['rush']['rushallmoney']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								订单总数
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="已完成订单：{$newdata['rush']['rushfishorder']}个，未完成订单:{$newdata['rush']['rushingorder']}个。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-final-fee">{$newdata['rush']['rushallorder']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								已完成订单金额
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="被标记为已完成或待评价的订单。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-rush-success-order">￥{$newdata['rush']['rushfishordermoney']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								未完成订单金额
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-rush-cancel-order">￥{$newdata['rush']['rushingordermoney']}</span>
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="clearfix">
+				<div class="panel panel-stat">
+					<div class="panel-heading">
+						<h3>拼团</h3><span class="pull-right"><a style="color: #428bca;" href="javascript:;" flag="1" plugin="fight" class="js-plugin-hide">隐藏</a></span>
+					</div>
+					<div class="panel-body" id="fight-body">
+						<div class="col-md-3">
+							<div class="title">
+								订单总额(元)
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="所有支付过的订单的总金额，包括已退款订单。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-fight-fee">￥{$newdata['fight']['fightallmoney']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								订单总数
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="已完成订单：{$newdata['fight']['fightfishorder']}个，未完成订单:{$newdata['fight']['fightingorder']}个。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-final-fee">{$newdata['fight']['fightallorder']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								已完成订单金额
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="被标记为已完成或待评价的订单。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-fight-success-order">￥{$newdata['fight']['fightfishordermoney']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+							成团数量
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-fight-cancel-order">{$newdata['fight']['successnum']}</span>
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="clearfix">
+				<div class="panel panel-stat">
+					<div class="panel-heading">
+						<h3>卡券</h3><span class="pull-right"><a style="color: #428bca;" href="javascript:;" flag="1" plugin="coupon" class="js-plugin-hide">隐藏</a></span>
+					</div>
+					<div class="panel-body" id="coupon-body">
+						<div class="col-md-3">
+							<div class="title">
+								已完成订单金额(元)
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="被标记为已完成或待评价的订单。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-coupon-fee">￥{$newdata['coupon']['couponallmoney']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								订单总数
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="已完成订单：{$newdata['coupon']['couponfishorder']}个，未完成订单:{$newdata['coupon']['couponingorder']}个。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-final-fee">{$newdata['coupon']['couponallorder']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								已结算订单金额(元)
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="已结算的卡券订单金额"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-coupon-success-order">￥{$newdata['coupon']['couponfishordermoney']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+							已使用卡券总数
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-coupon-cancel-order">{$newdata['coupon']['couponnum']}</span>
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="clearfix">
+				<div class="panel panel-stat">
+					<div class="panel-heading">
+						<h3>一卡通</h3><span class="pull-right"><a style="color: #428bca;" href="javascript:;" flag="1" plugin="halfcard" class="js-plugin-hide">隐藏</a></span>
+					</div>
+					<div class="panel-body" id="halfcard-body">
+						<div class="col-md-3">
+							<div class="title">
+								开通订单金额(元)
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="一卡通所有统计订单都为已完成订单。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-halfcard-fee">￥{$newdata['halfcard']['halfcardallmoney']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								开通次数
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-final-fee">{$newdata['halfcard']['halfcardallorder']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								已结算订单金额(元)
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="已结算的开通一卡通订单金额"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-halfcard-success-order">￥{$newdata['halfcard']['halfcardfishordermoney']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+							一卡通用户数量
+							<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="现有的一卡通用户人数，不会随时间条件改变。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-halfcard-cancel-order">{$newdata['halfcard']['halfcardnum']}</span>
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="clearfix">
+				<div class="panel panel-stat">
+					<div class="panel-heading">
+						<h3>掌上信息</h3><span class="pull-right"><a style="color: #428bca;" href="javascript:;" flag="1" plugin="pocket" class="js-plugin-hide">隐藏</a></span>
+					</div>
+					<div class="panel-body" id="pocket-body">
+						<div class="col-md-3">
+							<div class="title">
+								订单金额(元)
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="掌上信息所有统计订单都为已完成订单。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-pocket-fee">￥{$newdata['pocket']['pocketallmoney']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								订单数量
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-final-fee">{$newdata['pocket']['pocketallorder']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+								已结算订单金额(元)
+								<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="已结算的开通一卡通订单金额"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-pocket-success-order">￥{$newdata['pocket']['pocketfishordermoney']}</span>
+								</a>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="title">
+							掌上信息帖子数量
+							<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="现有的帖子数量，不会随时间条件改变。"></i>
+							</div>
+							<div class="num-wrapper">
+								<a class="num" href="javascript:;">
+									<span id="html-pocket-cancel-order">{$newdata['pocket']['pocketnum']}</span>
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="panel panel-default">
+				<div class="panel-heading clearfix"><span style="display: inline-block;border-left: 4px solid #06c1ae;padding-left: 10px;" class="pull-left">代理与商户</span><span class="pull-right"><a href="javascript:;" class="js-category-all">全部展开 </a></span></div>
+				<div class="panel-body table-responsive">
+					<table class="table table-hover">
+						<thead>
+							<tr>
+								<th style="width:200px;">代理名称</th>
+								<th style="width:120px; text-align:center;">交易额</th>
+								<th style="width:200px; text-align:center;">所占比例</th>
+							</tr>
+						</thead>
+						<tbody>
+							{loop $agents $item}
+							<tr>
+								<td class="text-left">
+									<input type="text" class="form-control" maxlength="50" style='display:inline;width:150px;'name="name[{$item['id']}]" value="{$item['agentname']}" />
+									<span class="category-caret">
+										<i class="fa fa-caret-down js-category-down"  pid="{$item['id']}">商家</i>
+										<i class="fa fa-caret-up js-category-up" style="display:none;" pid="{$item['id']}">商家</i>
+									</span>
+								</td>
+								<td class="text-center">
+									{$item['aMoney']}元
+								</td>
+								<td>
+								   <div class="progress" style="max-width:500px;height:30px;line-height:30px;">
+									   <div style="width: {$item['forpercent']}%;" class="progress-bar progress-bar-info"><span style="color:#000">{$item['forpercent']}%</span></div>
+								   </div>
+								</td>
+							</tr>
+								{loop $children[$item['id']] $ccate}
+									<tr class="js-collpase js-child-category" pid="{$item['id']}">
+										<td class="text-left">
+											<div style="padding-left:50px;height:30px;line-height:30px;background:url('./resource/images/bg_repno.gif') no-repeat -245px -545px;">
+												<img src="{php echo tomedia($ccate['logo']);}" width='45' height="45" onerror="$(this).remove()" class="scrollLoading" style='float:left;' />
+												<input type="text" class="form-control" maxlength="50" style='display:inline;width:150px;'name="name[{$ccate['id']}]" value="{$ccate['storename']}" />
+											</div>
+										</a>
+										</td>
+										<td class="text-center">
+											{$ccate['sMoney']}元
+										</td>
+										<td>
+										   <div class="progress" style="max-width:500px;">
+											   <div style="width: {$ccate['forpercent']}%;background-color: #78D09F;" class="progress-bar progress-bar-info" ><span style="color:#000">{$ccate['forpercent']}%</span></div>
+										   </div>
+										</td>
+									</tr>
+								{/loop}
+								{$pager}
+							{/loop}
+							<!--<tr>
+								<td colspan="4"><div class="add add_level0"><i class="fa fa-plus-circle"></i> 添加分类</div></td>
+							</tr>-->
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</form>
+		<div class="app-table-foot clearfix">
+			<div class="pull-left">
+				<h5>总成交金额：{$allMoney} &nbsp;&nbsp;&nbsp;&nbsp;  最高成交额：{$max}</h5>
+			</div>
+			<div class="pull-right">
+
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+    $('.timeslot').click(function(){
+        $('.timess').show();
+    });
+    $("#search").click(function(){
+        $("#timetype").val(5);
+        $('#submitButton').click();
+    });
+</script>
+<script type="text/javascript">
+	require(['jquery', 'util'], function($, util){
+		$('.js-copy').each(function(){
+			var id=$(this).attr('data-id');
+			util.clip($("#js-copy"+id), $(this).attr('data-url'));
+		});
+	});
+</script>
+<script>
+	$(function(){
+		$('.js-child-category').hide();
+		//添加父分类
+		//控制显示
+		$('.js-category-all').click(function() {
+			if($(this).hasClass('js-collapse')) {
+				$('.js-child-category').fadeOut("slow");
+				$('.fa-caret-up').hide();
+				$('.fa-caret-down').show();
+				$(this).text('全部展开').removeClass('js-collapse');
+			} else {
+				$('.js-child-category').fadeIn("slow");
+				$('.fa-caret-up').show();
+				$('.fa-caret-down').hide();
+				$(this).text('全部折叠').addClass('js-collapse');
+			}
+		});
+
+		$('.js-category-up').click(function() {
+			var parentId = $(this).attr('pid');
+			console.log(parentId);
+			$('tr[pid="'+parentId+'"]').fadeOut("slow");
+			$(this).prev().show();
+			$(this).hide();
+		});
+		$('.js-category-down').click(function() {
+			var parentId = $(this).attr('pid');
+			console.log(parentId);
+			$('tr[pid="'+parentId+'"]').fadeIn("slow");
+			$(this).next().show();
+			$(this).hide();
+		});
+		$('[data-toggle="popover"]').hover(function() {
+	        $(this).popover("show");
+	    },
+	    function() {
+	        $(this).popover("hide");
+	    });
+	    $('.js-plugin-hide').click(function(){
+	    	var flag = $(this).attr('flag');
+	    	var pg =  $(this).attr('plugin');
+	    	if(flag>0){
+	    		$(this).attr('flag',0);
+	    		$('#'+pg+'-body').hide();
+	    		$(this).text('显示');
+	    	}else{
+	    		$(this).attr('flag',1);
+	    		$('#'+pg+'-body').show();
+	    		$(this).text('隐藏');
+	    	}
+	    });
+	});
+</script>
+
+{php include wl_template('common/footer');}

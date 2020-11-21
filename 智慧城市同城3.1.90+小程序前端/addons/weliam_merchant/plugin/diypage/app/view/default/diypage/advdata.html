@@ -1,0 +1,237 @@
+<div id="adv">
+	<div class="adv-loadBf" style="display: none;" v-show="loadBf">
+		<div class="diypages-advert" v-if="advertData !== ''">
+			<div class="advert" v-if="advertShow && !advertFlag && advertDataData.length > 0">
+				<div class="advert-style1" v-if="advertData.params.style == 'default'">
+					<div class="advert-mask" :style="'background-color: #000; opacity: 0.65;'" @click="advertClose()"></div>
+					<div class="advert-style1-d">
+						<div class="advert-style1-close" v-if="advertData.params.canclose == 0 && advertData.params.autoclose !== '0'">{{ countTimeNmu }}&nbsp;秒</div>
+						<div class="advert-style1-close" @click="advertClose()" v-if="advertData.params.canclose == 1 && advertData.params.autoclose !== '0'">{{ countTimeNmu }}&nbsp;关闭</div>
+						<div class="advert-style1-close" @click="advertClose()" v-if="advertData.params.canclose == 1 && advertData.params.autoclose == '0'">关闭</div>
+						<div class="swiper-container-advert">
+					      <div class="swiper-wrapper">
+					        <div class="swiper-slide" v-for="(item, key) in advertDataData" :key="key">
+					        	<a class="a" :href="item.linkurl" v-if="item.click == 0">
+									<img class="image" :src="item.imgurl">
+								</a>
+								<div class="a" v-if="item.click == 1" @click="advertClose()">
+									<img class="image" :src="item.imgurl">
+								</div>
+					        </div>
+					      </div>
+					      <div class="swiper-pagination"></div>
+				        </div>
+					</div>
+				</div>
+				<div class="advert-style2" v-else-if="advertData.params.style == 'small-bot'">
+					<div class="advert-mask" :style="'background-color: '+advertData.style.background+'; opacity: '+advertData.style.opacity+';'" @click="advertClose()"></div>
+					<div class="advert-d">
+						<div class="advert-close" @click="advertClose()" v-if="advertData.params.canclose == 1" >
+							<img   class="image" src="{URL_MODULE}web/resource/diy/images/adv_close.png" / >
+						</div>
+						<div class="swiper-container-advert" v-if="advertDataData.length > 1">
+					      <div class="swiper-wrapper">
+					        <div class="swiper-slide" v-for="(item, key) in advertDataData" :key="key">
+					        	<a class="a" :href="item.linkurl" v-if="item.click == 0">
+									<img class="image" :src="item.imgurl">
+								</a>
+								<div class="a" v-if="item.click == 1" @click="advertClose()">
+									<img class="image" :src="item.imgurl">
+								</div>
+					        </div>
+					      </div>
+					      <div class="swiper-pagination"></div>
+				        </div>
+				        <div class="swiper-container-advert-one" v-else>
+				        	<div class="swiper-slide" v-for="(item, key) in advertDataData" :key="key">
+					        	<a class="a" :href="item.linkurl" v-if="item.click == 0">
+									<img class="image" :src="item.imgurl">
+								</a>
+								<div class="a" v-if="item.click == 1" @click="advertClose()">
+									<img  class="image" :src="item.imgurl">
+								</div>
+					        </div>
+				        </div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	new Vue({
+		el: '#adv',
+		data: {
+			loadBf: false,
+			datas: {
+				basic: {}
+			},
+			advId: '',
+			imgPrefix: '',
+			advertShow: true,
+			advertFlag: false,
+			advertData: '',
+			countTimeNmu: 0,
+			advertDataData: []
+		},
+		mounted: function () {
+			var that = this
+			var getData = '{php echo json_encode($advdata);}';
+			that.advId = getData.id;
+			if(typeof getData == 'string'){
+				getData = JSON.parse(getData)
+			}
+			that.advertData = getData.data;
+			for(var i in that.advertData.data){
+				that.advertDataData.push(that.advertData.data[i])
+			}
+			if(that.advertData.params.style == 'default' && that.advertData.params.autoclose !== '0'){
+				that.countTimeNmu = parseInt(that.advertData.params.autoclose)
+				setTimeout(that.countTime,1000)
+			}
+			this.$nextTick(function () {
+				var swiper_advert = new Swiper('.swiper-container-advert', {
+					speed: 400,
+					autoplayDisableOnInteraction: false,
+					setWrapperSize: true,
+					pagination: '.swiper-pagination',
+					paginationClickable: true
+				});
+			});
+
+			//设置广告cookie
+			/*
+			var timestamp = Date.parse(new Date()) / 1000 + parseInt(that.advertData.params.showtime) * 60
+			var exp = new Date();
+			exp.setTime(exp.getTime() + parseInt(that.advertData.params.showtime)*60*1000);
+			document.cookie = "advstate_"+that.advId + "="+ timestamp + ";expires=" + exp.toGMTString();
+			*/
+
+			that.loadBf = true;
+		},
+		methods: {
+			advertClose: function () {
+				var that = this
+				that.advertShow = false
+				that.advertFlag = true
+				that.countTimeNmu = 0
+				clearTimeout(that.countTime)
+			},
+			countTime: function () {
+				var that = this
+				that.countTimeNmu += -1
+				if(that.countTimeNmu > 0){
+					setTimeout(that.countTime,1000)
+				}else{
+					that.advertClose()
+				}
+			}
+		}
+	})
+</script>
+
+<style scoped>
+#adv {
+	position: relative;
+	z-index: 999;
+}
+.advert-mask {
+     width: 100%;
+     height: 100%;
+     background-color: rgba(0,0,0,.65);
+     position: fixed;
+     top: 0;
+     left: 0;
+     z-index: 200;
+}
+ .advert-d {
+     width: 100%;
+     height: calc((100vw - 3rem) / 0.7142);
+     position: fixed;
+     top: 0.5rem;
+     left: 0;
+     z-index: 201;
+	 height: 60%;
+}
+ .advert-close {
+     width: calc(2rem - 2px);
+     height: calc(2rem - 2px);
+     line-height: 2rem;
+     text-indent: 0.1rem;
+     text-align: center;
+     margin-left: -1rem;
+     position: absolute;
+     left: 50%;
+     bottom: -4.5rem;
+     box-sizing: initial;
+}
+ .advert-close .image {
+ 	width: 100%;
+ 	height: 100%;
+ 	display: block;
+ }
+ .advert-close .i {
+ 	 color: #fff;
+     font-size: 1.2rem;
+     display: inline;
+}
+ .advert-d .swiper-container-advert {
+     height: 100%;
+}
+ .advert-d .swiper-slide {
+     width: calc(100vw - 3rem);
+	 margin-top: 37px;;
+}
+ .advert-d .swiper-slide .a {
+     height: 100%;
+     padding: 0 2rem;
+     display: block;
+}
+.advert-d .swiper-container-advert-one .swiper-slide {
+	width: 100%;
+}
+ .advert-d .swiper-slide .a .image {
+     width: 100%;
+	 height: 100%;
+     border-radius: 0.25rem;
+     display: block;
+	 object-fit: cover;
+}
+ .advert-style1-d {
+     width: 100%;
+     height: 100%;
+     position: fixed;
+     top: 0;
+     left: 0;
+     z-index: 201;
+}
+ .advert-style1-close {
+     height: 1.5rem;
+     line-height: 1.5rem;
+     color: #fff;
+     font-size: 0.75rem;
+     padding: 0 0.5rem;
+     background-color: rgba(0,0,0,.65);
+     border-radius: 2.5rem;
+     position: absolute;
+     top: 0.75rem;
+     right: 0.75rem;
+     z-index: 199;
+}
+ .advert-style1-d .swiper-container-advert {
+     height: 100%!important;
+}
+ .advert-style1-d .swiper-slide {
+     width: 100vw;
+}
+ .advert-style1-d .swiper-slide .a {
+     height: 100%;
+}
+ .advert-style1-d .swiper-slide .a .image {
+     width: 100%;
+     height: 100%;
+     object-fit: cover;
+     background-color: #fff;
+     display: block;
+}
+</style>

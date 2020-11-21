@@ -1,0 +1,164 @@
+{template 'web/common/header'}
+<!-- <script type="text/javascript" src="{MODULE_URL}static/js/jquery.js"></script> -->
+<style>
+#sonscatas select{margin-bottom: 15px}
+.delbtn{border-color: #e7e7eb;float: left;background: #eee;width: 40px;text-align: center;padding: 3px 6px;font-size: 12px;}
+</style>
+<div class="page">
+<div class="page_content">
+<div style="height:55px">
+<!--     <div>
+        <a class="btn btn-success btn-sm" href="{php echo $this->createWeburl('Datashow', array('opt'=>'display','op'=>'statistics','proType'=>'duo','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']));}">多规格商品</a>
+        <a class="btn btn-success btn-sm" href="{php echo $this->createWeburl('Datashow', array('opt'=>'display','op'=>'statistics','proType'=>'miaosha','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']));}">秒杀商品</a>
+        <a class="btn btn-success btn-sm" href="{php echo $this->createWeburl('Datashow', array('opt'=>'display','op'=>'statistics','proType'=>'yuyue','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']));}">预约预定商品</a>
+    </div> -->
+    <h4 style="float: left;margin-top: 10px;">
+    {if $proType == 'duo'}多规格商品销售统计{/if}
+    {if $proType == 'miaosha'}秒杀商品销售统计{/if}
+    {if $proType == 'yuyue'}预约预定商品销售统计{/if}
+    </h4>
+</div>
+<form class="form-horizontal" action="" method="post">
+<div style="margin-bottom:10px">
+    <div style="display: inline-block;">
+        <select name="proType" id="year_now" style="width: 150px">
+            <option value="duo" {if $proType == 'duo'}selected="selected"{/if}>多规格商品</option>
+            <option value="miaosha" {if $proType == 'miaosha'}selected="selected"{/if}>秒杀商品</option>
+            <option value="yuyue" {if $proType == 'yuyue'}selected="selected"{/if}>预约预定商品</option>
+        </select>
+    </div>  
+    <div style="display: inline-block;">
+        <select name="year_now" id="year_now" style="width: 150px">
+            {loop $years $y}
+                <option value="{$y}" {if $y == $year_now}selected="selected"{/if}>{$y}年</option>
+            {/loop}
+        </select>
+    </div>  
+    <div style="display: inline-block;">
+        <select name="month" id="month" style="width: 150px">
+            <option value="0">月份</option>
+            {loop $montharr $m}
+            <option value="{$m}" {if $month == $m}selected="selected"{/if}>{$m}月</option>
+            {/loop}
+        </select>
+    </div>  
+    <div style="display: inline-block;">
+        <select name="day" id="day" style="width: 150px">
+            <option value="0">日期</option>
+        </select>
+    </div>   
+    <div style="display: inline-block;">
+        <select name="type" id="type" style="width: 100px">
+            <option value="0" {if $type==0}selected="selected"{/if}>交易额</option>
+            <option value="1" {if $type==1}selected="selected"{/if}>交易量</option>
+        </select>
+    </div>   
+    <div style="display: inline-block;">
+        <input name="token" type="hidden" value="{$_W['token']}" />
+        <input type="hidden" name="dataType" value="{$proType}">
+        <input type="submit" class="btn" style="border-radius: 0px; background-color: #428bca; border: 1px solid #428bca; color:#ffffff" name="submit" value="提交" />
+    </div> 
+</div>
+</form>
+    <div style="margin-bottom: 5px;display: block">
+        {if $type == 0}总交易额：{else}交易量：{/if}<span style="color:red; ">{if $type == 0}￥{/if}{$alls}</span>，
+
+        最高{if $type == 0}交易额：{else}交易量：{/if}<span style="color:red; ">{if $type == 0}￥{/if}{$maxs}</span>
+    </div>
+    <table class="table we7-table table-hover article-list vertical-middle">
+        <tr>
+            <td style="width:100px">
+            {if $day > 0}
+            小时
+            {else if $month >0}
+            日期
+            {else}
+            月份
+            {/if}
+            </td>
+            <td> {if $type == 0}交易额{else}交易量{/if}</td>
+            <td>所占比例</td>
+        </tr>
+        {loop $alldata $kk $item}
+        <tr>
+            <td style="width: 150px">
+            {if $day>0}
+
+               <?php echo ($kk-1);?>点 - {$kk}点
+            {else}
+                {$kk}
+            {/if}
+            </td>
+            <td style="width: 200px">
+                {$item['all']}
+            </td>
+            <td>
+                {$item['per']}%
+            </td>
+        </tr>
+        {/loop}
+    </table>
+    </div>
+
+</div>
+
+<script language='javascript'>
+
+    function get_days(){
+       
+        var year = $('select[name=year_now]').val();
+        var month =$('select[name=month]').val();
+        var day  = $('select[name=day]');
+
+        day.get(0).options.length = 0 ;
+        if(month== 0){
+            day.append("<option value=''>日期</option");
+            return;
+        }
+
+        day.get(0).options.length = 0 ;
+
+        day.append("<option value=0>...</option").attr('disabled',true);
+        $.ajax({
+            url:"{php echo $this->createWeburl('Datashow', array('opt'=>'getdays','op'=>'statistics','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']));}",
+            dataType:"json",
+            type:"post",
+            data:{
+                year:year,
+                month:month
+            },success:function(days){
+                if(days>0){
+                     day.get(0).options.length = 0 ;
+
+                     day.removeAttr('disabled');
+
+                     days =parseInt(days);
+
+                     day.append("<option value=''>日期</option");
+
+                     for(var i=1;i<=days;i++){
+
+                         day.append("<option value='" + i +"'>" + i + "日</option");
+
+                     }
+
+                  
+
+                     {if !empty($day)}
+
+                        day.val( {$day});
+
+                     {/if}
+                }
+            }
+        })
+    }
+
+    $('select[name=month]').change(function(){
+           get_days();
+
+    })
+
+    get_days();
+
+ </script>

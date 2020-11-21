@@ -1,0 +1,86 @@
+<?php
+global $_GPC, $_W;
+$GLOBALS['frames'] = $this->getMainMenu();
+ $item=pdo_get('yzmdwsc_sun_system',array('uniacid'=>$_W['uniacid']));
+if($item['shopdes_img']){
+    if(strpos($item['shopdes_img'],',')){
+        $shopdes_img= explode(',',$item['shopdes_img']);
+    }else{
+        $shopdes_img=array(
+            0=>$item['shopdes_img']
+        );
+    }
+}
+if($item['shop_banner']){
+    if(strpos($item['shop_banner'],',')){
+        $shop_banner= explode(',',$item['shop_banner']);
+    }else{
+        $shop_banner=array(
+            0=>$item['shop_banner']
+        );
+    }
+}
+
+    if(checksubmit('submit')){
+            $data['pt_name']=$_GPC['pt_name'];
+            $data['tel']=$_GPC['tel'];
+            $data['details']=html_entity_decode($_GPC['details']);
+            $data['uniacid']=$_W['uniacid'];
+            $data['total_num']=$_GPC['total_num'];
+            $data['link_name']=$_GPC['link_name'];
+            $data['link_logo']=$_GPC['link_logo'];
+            $data['fontcolor']=$_GPC['fontcolor'];
+            $data['mask']=$_GPC['mask'];
+            $data['announcement']=$_GPC['announcement'];
+            $data['shopmsg']=$_GPC['shopmsg'];
+            $data['shopmsg2']=$_GPC['shopmsg2'];
+            $data['shopmsg_img']=$_GPC['shopmsg_img'];
+            $data['shopmsg_status']=$_GPC['shopmsg_status'];
+            $data['distribution']=$_GPC['distribution'];
+      		$data['ddmd_img']=$_GPC['ddmd_img'];
+      		$data['ddmd_title']=$_GPC['ddmd_title'];
+            $data['is_by']=$_GPC['is_by']?$_GPC['is_by']:0;
+            $data['is_xxpf']=$_GPC['is_xxpf']?$_GPC['is_xxpf']:0;
+            $data['index_title']=$_GPC['index_title'];  
+            $data['is_layout']=$_GPC['is_layout']; 
+            $data['is_review']=$_GPC['is_review'];
+            $data['map_key']=$_GPC['map_key'];
+            if($_GPC['shopdes_img']){
+                $data['shopdes_img']=implode(",",$_GPC['shopdes_img']);
+            }else{
+                $data['shopdes_img']='';
+            }
+            if($_GPC['shop_banner']){
+            	$data['shop_banner']=implode(",",$_GPC['shop_banner']);
+            }else{
+                $data['shop_banner']='';
+            }
+          
+            if($_GPC['color']){
+                $data['color']=$_GPC['color'];
+            }else{
+                $data['color']="#000000";
+            }
+            if($_GPC['sign']){
+                $data['sign']=$_GPC['sign'];
+            }else{
+                $data['sign']="本店招牌";
+            }
+            $data['store_tag']=$_GPC['store_tag'];
+            if($_GPC['id']==''){                
+                $res=pdo_insert('yzmdwsc_sun_system',$data);
+                if($res){
+                    message('添加成功',$this->createWebUrl('settings',array()),'success');
+                }else{
+                    message('添加失败','','error');
+                }
+            }else{
+                $res = pdo_update('yzmdwsc_sun_system', $data, array('id' => $_GPC['id']));
+                if($res){
+                    message('编辑成功',$this->createWebUrl('settings',array()),'success');
+                }else{
+                    message('编辑失败','','error');
+                }
+            }
+        }
+include $this->template('web/settings');

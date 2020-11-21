@@ -1,0 +1,134 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs" id="myTab">
+	<li {if $status == '1'} class="active" {/if}><a href="{php echo web_url('distribution/dissysbase/applist', array('status'=>'1'));}">审核中</a></li>
+	<li {if $status == '2'} class="active" {/if}><a href="{php echo web_url('distribution/dissysbase/applist', array('status'=>'2'));}">已审核</a></li>
+	<li {if $status == '3'} class="active" {/if}><a href="{php echo web_url('distribution/dissysbase/applist', array('status'=>'3'));}">已驳回</a></li>
+	<li {if $status == '4'} class="active" {/if}><a href="{php echo web_url('distribution/dissysbase/applist', array('status'=>'4'));}">已打款</a></li>
+</ul>
+
+<div class="app-content">
+	<div class="app-filter">
+		<div class="filter-action">
+			<button id="export" class="btn btn-primary" ><i class="fa fa-download"></i> 导出记录</button>
+		</div>
+	</div>
+	<div class="app-table-list">
+		<div class="table-responsive">
+			<table class="table table-hover">
+				<thead class="navbar-inner">
+				<tr>
+					<th width="20%" class="text-center">申请人信息</th>
+					<th width="10%"  class="text-center">申请金额</th>
+					<th width="10%"  class="text-center">实获金额</th>
+                    <th width="10%"  class="text-center">提现方式</th>
+					<th width="10%"  class="text-center">申请状态</th>
+					<th width="10%" class="text-center">申请时间</th>
+					<th width="10%" class="text-center">操作时间</th>
+					<th width="20%" class="text-center">操作</th>
+				</tr>
+				</thead>
+				<tbody>
+				{loop $applylist $li}
+				<tr id="{$li['id']}"  class="text-center">
+					<td>
+						<img style="height: 50px;width: 50px;" src="{php echo tomedia($li['avatar'])}" >
+						<div style="display: inline-block;position: relative;top: .7rem;">
+							{$li['nickname']}<br />
+							{$li['mobile']}
+						</div>
+					</td>
+					<td><span class="label label-warning">￥{$li['sapplymoney']}</span></td>
+					<td><span class="label label-success">￥{$li['sgetmoney']}</span></td>
+                    <td>
+                        {if $li['payment_type'] == 1}
+                            <label class="label label-default label-warning">支付宝:{$li['alipay']}</label>
+                        {elseif $li['payment_type'] == 2}
+                            <label class="label label-default label-info">微信</label>
+                        {elseif $li['payment_type'] == 3}
+                            <label class="label label-default label-success">银行卡:{$li['card_number']}</label><br />
+                            <label class="label label-default label-success">开户行:{$li['bank_name']}</label>
+                        {else}
+                            <!--这里是未添加红包打款前的提现信息 默认为微信-->
+                            <label class="label label-default label-info">微信</label>
+                            <!--<label class="label label-default label-danger">未选择提现方式</label>-->
+                        {/if}
+                    </td>
+					<td>
+                        {if $li['status'] == 6}
+                        <span class="label label-info">审核中</span>
+                        {else if $li['status']==7}
+                        <span class="label label-info">审核中</span>
+                        {else if $li['status']==8}
+                        <span class="label label-info">已审核</span>
+                        {else if $li['status'] ==9 && $li['settletype'] == 1}
+                        <span class="label label-success">手动完成</span>
+                        {else if $li['status'] ==9 && $li['settletype'] == 3}
+                        <span class="label label-success">已打款</span>
+                        {else if $li['status']==10}
+                        <span class="label label-danger">已驳回</span>
+                        {else if $li['status']==11}
+                        <span class="label label-danger">已驳回</span>
+                        {/if}
+                    </td>
+					<td>{php echo date('Y-m-d H:i:s',$li['applytime'])}</td>
+					<td>{if $li['updatetime']}{php echo date('Y-m-d H:i:s',$li['updatetime'])}{else} <span class="label label-warning">未操作</span> {/if}</td>
+                    <td>
+						<a class="label label-default" href="{php echo web_url('distribution/dissysbase/distributordetail',array('todo'=>'base','memid'=>$li['mid']))}">用户详情</a>
+						{if $status == 1}<a href="javascript:;" appid = "{$li['id']}" class="pass label label-default label-success"> 通过审核</a>{/if}
+						{if $status == 1}<a href="javascript:;" appid = "{$li['id']}" class="reject label label-default label-danger"> 驳回</a>{/if}
+						{if $status == 2}<a href="javascript:;" appid = "{$li['id']}" class="tocash label label-default label-warning"> 打款</a>{/if}
+						{if $status == 2}<a href="javascript:;" appid = "{$li['id']}" class="tofinish label label-default label-info"> 标记完成</a>{/if}
+					</td>
+				</tr>
+				{/loop}
+				</tbody>
+			</table>
+		</div>
+		<div class="app-table-foot clearfix">
+			<div class="pull-left">
+				
+			</div>
+			<div class="pull-right">
+				{$pager}
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	$('.tocash').click(function(e) {
+		e.stopPropagation();
+		var id = $(this).attr('appid');
+		util.nailConfirm(this, function(state) {
+			if(!state) return;
+			location.href = "{php echo web_url('distribution/dissysbase/tocash')}id="+id;
+		}, {html: "确认打款给分销商?"});
+	});
+	$('.reject').click(function(e) {
+		e.stopPropagation();
+		var id = $(this).attr('appid');
+		util.nailConfirm(this, function(state) {
+			if(!state) return;
+			location.href = "{php echo web_url('distribution/dissysbase/reject')}id="+id;
+		}, {html: "确认驳回申请?"});
+	});
+	$('.tofinish').click(function(e) {
+		e.stopPropagation();
+		var id = $(this).attr('appid');
+		util.nailConfirm(this, function(state) {
+			if(!state) return;
+			location.href = "{php echo web_url('distribution/dissysbase/tofinish')}id="+id;
+		}, {html: "确认标记完成?"});
+	});
+	$('.pass').click(function(e) {
+		e.stopPropagation();
+		var id = $(this).attr('appid');
+		util.nailConfirm(this, function(state) {
+			if(!state) return;
+			location.href = "{php echo web_url('distribution/dissysbase/pass')}id="+id;
+		}, {html: "确认审核通过?"});
+	});
+	$('#export').click(function(){
+		location.href = "{php echo web_url('distribution/dissysbase/applist',array('status'=>$status,'export'=>1))}";
+	});
+</script>	 
+{php include wl_template('common/footer');}

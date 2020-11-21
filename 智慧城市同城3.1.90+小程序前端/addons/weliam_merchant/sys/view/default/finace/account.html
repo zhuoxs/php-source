@@ -1,0 +1,357 @@
+{php include wl_template('common/header');}
+{if $_GPC['type']=='settlement'}
+<ul class="nav nav-tabs">
+	<li {if $_GPC['type']=='settlement' && $_GPC['accountType']=='f2f' }class="active"{/if}><a href="{php echo web_url('finace/wlCash/settlement', array('id'=>$id,'accountType'=>'f2f'));}">手动结算</a></li>
+	<li {if $_GPC['type']=='settlement' && $_GPC['accountType']=='weixin'}class="active"{/if}><a href="{php echo web_url('finace/wlCash/settlement', array('id'=>$id,'accountType'=>'weixin'));}">结算到微信钱包</a></li>
+</ul>
+<div class="app-content">
+{if $_GPC['type']=='settlement' && $_GPC['accountType']=='weixin'}
+<div class="app-table-list">
+<div class="panel panel-default">
+<div class="table-responsive">
+		<table class="table table-hover" style="min-width: 300px;">
+			<thead class="navbar-inner">
+				<thead class="navbar-inner">
+				<tr>
+					<th class="col-sm-2">{if $settlementRecord['type']==1}商户{else}代理{/if}信息</th>
+					<th class="col-sm-2">申请金额</th>
+					<th class="col-sm-2">系统提成</th>
+					<th class="col-sm-3">提现</th>
+					<th class="col-sm-3">申请时间</th>
+					<th class="col-sm-3">操作时间</th>
+					<th class="col-sm-3">状态</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>{if $settlementRecord['type']==1}{$settlementRecord['sName']}{else}{$settlementRecord['aName']}{/if}</td>
+					<td>{$settlementRecord['sapplymoney']}元</td>
+					<td>{$settlementRecord['spercent']}%</td>
+					<td>
+						{if $settlementRecord['type']==1}<label class="label label-default label-danger">商家提现</label>{/if}
+						{if $settlementRecord['type']==2}<label class="label label-default label-danger">代理提现</label>{/if}
+						<br>
+						<br>
+						{if $settlementRecord['settletype']==1}<label class="label label-default label-success">手动处理{elseif $settlementRecord['settletype']==2}<label class="label label-default label-info">微信零钱{else}<label class="label label-default">未结算{/if}</label>
+					</td>
+					<td>{php echo date('Y-m-d',$settlementRecord['applytime'])}<br>{php echo date('H:i:s',$settlementRecord['applytime'])}</td>
+					<td>{php echo date('Y-m-d',$settlementRecord['updatetime'])}<br>{php echo date('H:i:s',$settlementRecord['updatetime'])}</td>
+					<td>{if $settlementRecord['status']==1}<label class="label label-default label-info">代理审核中</label>{/if}
+						{if $settlementRecord['status']==2}<label class="label label-default label-danger">系统审核中</label>{/if}
+						{if $settlementRecord['status']==3}<label class="label label-default label-success">系统审核通过，待结算</label>{/if}
+						{if $settlementRecord['status']==4}<label class="label label-default label-success">已结算到代理</label>{/if}
+						{if $settlementRecord['status']==5}<label class="label label-default label-success">已结算到商家</label>{/if}
+						{if $settlementRecord['status']==-1}<label class="label label-default label-default">系统审核不通过</label>{/if}
+						{if $settlementRecord['status']==-2}<label class="label label-default label-default">代理审核不通过</label>{/if}
+					</td>
+				</tr>
+				<tr>
+			</tr>
+			</tbody>
+		</table>
+	</div>
+	</div>
+	</div>
+	<div class="app-form">
+	<div id="weixin">
+	    <div class="panel panel-default">
+	    <div class="panel-heading">结算注意</div>
+	    <div class="panel-body">
+            <div class="form-group">
+			<label class="col-xs-12 col-sm-2 col-md-2 col-lg-12 control-label" style="text-align: left;padding-right: 30px;">       接口调用规则：<br>
+				
+				◆ 给同一个实名用户付款，单笔单日限额2W/2W<br>
+				
+				◆ 给同一个非实名用户付款，单笔单日限额2000/2000<br>
+				
+				◆ 一个商户同一日付款总额限额100W<br>
+				
+				◆ 单笔最小金额默认为1元<br>
+				
+				◆ 每个用户每天最多可付款10次，可以在商户平台--API安全进行设置<br>
+				
+				◆ 给同一个用户付款时间间隔不得低于15秒
+ 			</label>
+	   		</div>
+	    </div>
+	</div> 
+	<form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+<div class="panel panel-default">
+    <div class="panel-body">
+    <div class="panel-body">
+    	<!--结算给代理-->
+         <div class="form-group">
+            <label class="col-xs-12 col-sm-3 col-md-2 control-label">代理名</label>
+            <div class="col-sm-9 col-xs-12">
+                <div class="form-control-static">{$settlementRecord['aName']}</div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-xs-12 col-sm-3 col-md-2 control-label">申请商家</label>
+            <div class="col-sm-9 col-xs-12">
+                <div class="form-control-static">{$settlementRecord['sName']}</div>
+            </div>
+        </div>
+        <div class="page-heading">
+    	<h4>系统</h4>
+		</div>
+         <div class="form-group">
+			<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label" >系统提成</label>
+			<div class="col-md-4">
+			<div class="input-group">
+				<input type="text" name="spercent" class="form-control" value="{$settlementRecord['spercent']}" />
+				<span class="input-group-addon">%</span>
+			</div>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label" >系统所得佣金</label>
+			<div class="col-md-4">
+			<div class="input-group">
+				<span class="input-group-addon">￥</span>
+				<input type="text" name="spercentmoney" class="form-control" value="{php echo sprintf("%.2f", $settlementRecord['spercent']*$settlementRecord['sapplymoney']/100)}" />
+			</div>
+			</div>
+		</div>
+		<style type="text/css">
+			.page-heading {
+		    padding: 5px 0;
+		    border-bottom: 1px solid #ccc;
+		    margin-bottom: 20px;
+		    position: relative;
+		    margin-left: 15px;
+		</style>
+		<div class="page-heading">
+			<h4>结算</h4>
+		</div>
+		<div class="form-group">
+			<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label" >实际结算给{if $settlementRecord['type']==1}商户{else}代理{/if}</label>
+			<div class="col-md-4">
+			<div class="input-group">
+				<span class="input-group-addon">￥</span>
+				<input type="text" name="sgetmoney" class="form-control" value="{php echo sprintf("%.2f",$settlementRecord['sapplymoney'] -  $settlementRecord['spercent']*$settlementRecord['sapplymoney']/100)}" />
+			</div>
+			</div>
+		</div>
+        <div class="form-group">
+            <label class="col-xs-12 col-sm-3 col-md-2 control-label"></label>
+            <div class="col-sm-9 col-xs-12">
+                    <input type="hidden" name="id" value="{$id}">
+                    <input type="hidden" name="accountType" value="{$_GPC['accountType']}">
+                    <input type="hidden" name="token" value="{$_W['token']}">
+                    <input name="submit" type="submit" value="确定" class="btn btn-primary span2" onclick="return confirm('确认？');return false;">
+            </div>
+           </div>
+  
+        </div>
+        </div>
+    </div>
+ 
+</form>
+</div>
+</div>
+{/if}
+{if $_GPC['type']=='settlement' && $_GPC['accountType']=='f2f'}
+<div class="app-table-list">
+<form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+<div class="panel panel-default">
+	<div class="table-responsive">
+		<table class="table table-hover" style="min-width: 300px;">
+			<thead class="navbar-inner">
+				<thead class="navbar-inner">
+				<tr>
+					<th class="col-sm-2">{if $settlementRecord['type']==1}商户{else}代理{/if}信息</th>
+					<th class="col-sm-2">申请金额</th>
+					<th class="col-sm-2">系统提成</th>
+					<th class="col-sm-3">提现</th>
+					<th class="col-sm-3">申请时间</th>
+					<th class="col-sm-3">操作时间</th>
+					<th class="col-sm-3">状态</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>{if $settlementRecord['type']==1}{$settlementRecord['sName']}{else}{$settlementRecord['aName']}{/if}</td>
+					<td>{$settlementRecord['sapplymoney']}元</td>
+					<td>{$settlementRecord['spercent']}%</td>
+					<td>
+						{if $settlementRecord['type']==1}<label class="label label-default label-danger">商家提现</label>{/if}
+						{if $settlementRecord['type']==2}<label class="label label-default label-danger">代理提现</label>{/if}
+						<br>
+						<br>
+						{if $settlementRecord['settletype']==1}<label class="label label-default label-success">手动处理{elseif $settlementRecord['settletype']==2}<label class="label label-default label-info">微信零钱{else}<label class="label label-default">未结算{/if}</label>
+					</td>
+					<td>{php echo date('Y-m-d',$settlementRecord['applytime'])}<br>{php echo date('H:i:s',$settlementRecord['applytime'])}</td>
+					<td>{php echo date('Y-m-d',$settlementRecord['updatetime'])}<br>{php echo date('H:i:s',$settlementRecord['updatetime'])}</td>
+					<td>{if $settlementRecord['status']==1}<label class="label label-default label-info">代理审核中</label>{/if}
+						{if $settlementRecord['status']==2}<label class="label label-default label-danger">系统审核中</label>{/if}
+						{if $settlementRecord['status']==3}<label class="label label-default label-success">系统审核通过，待结算</label>{/if}
+						{if $settlementRecord['status']==4}<label class="label label-default label-success">已结算到代理</label>{/if}
+						{if $settlementRecord['status']==5}<label class="label label-default label-success">已结算到商家</label>{/if}
+						{if $settlementRecord['status']==-1}<label class="label label-default label-default">系统审核不通过</label>{/if}
+						{if $settlementRecord['status']==-2}<label class="label label-default label-default">代理审核不通过</label>{/if}
+					</td>
+				</tr>
+				<tr>
+			</tr>
+			</tbody>
+		</table>
+	</div>
+    <div class="panel-body">
+         <div class="form-group">
+            <label class="col-xs-12 col-sm-3 col-md-2 control-label">申请代理</label>
+            <div class="col-sm-9 col-xs-12">
+                <div class="form-control-static">{$settlementRecord['aName']}</div>
+            </div>
+        </div>
+        {if $settlementRecord['sName']}
+        <div class="form-group">
+            <label class="col-xs-12 col-sm-3 col-md-2 control-label">申请商家</label>
+            <div class="col-sm-9 col-xs-12">
+                <div class="form-control-static">{$settlementRecord['sName']}</div>
+            </div>
+        </div>
+        {/if}
+         <div class="form-group">
+			<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label" >系统提成</label>
+			<div class="col-md-4">
+			<div class="input-group">
+				<input type="text" name="spercent" class="form-control" value="{$settlementRecord['spercent']}" />
+				<span class="input-group-addon">%</span>
+			</div>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label" >系统提成金额</label>
+			<div class="col-md-4">
+			<div class="input-group">
+				<span class="input-group-addon">￥</span>
+				<input type="text" name="spercentmoney" class="form-control" value="{php echo sprintf("%.2f", $settlementRecord['spercent']*$settlementRecord['sapplymoney']/100)}" />
+			</div>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label" >实际结算给{if $settlementRecord['type']==1}商户{else}代理{/if}</label>
+			<div class="col-md-4">
+			<div class="input-group">
+				<span class="input-group-addon">￥</span>
+				<input type="text" name="sgetmoney" class="form-control" value="{php echo sprintf("%.2f",$settlementRecord['sapplymoney'] -  $settlementRecord['spercent']*$settlementRecord['sapplymoney']/100)}" />
+			</div>
+			</div>
+		</div>
+        
+        <div class="form-group">
+            <label class="col-xs-12 col-sm-3 col-md-2 control-label"></label>
+            <div class="col-sm-9 col-xs-12">
+                    <input type="hidden" name="id" value="{$id}">
+                    <input type="hidden" name="accountType" value="{$_GPC['accountType']}">
+                    <input type="hidden" name="token" value="{$_W['token']}">
+                    <input name="submit" type="submit" value="确定" class="btn btn-primary span2" onclick="return confirm('确认？');return false;">
+            </div>
+           </div>
+  
+        </div>
+    </div>
+ 
+</form>
+</div>
+{/if}
+{elseif $_GPC['type']=='settlementRecord'}
+   <!--<div class="panel panel-default">
+		<div class="table-responsive">
+			<table class="table table-hover" style="min-width: 300px;">
+				<tbody>
+					<tr>
+						<td><image src="{php echo tomedia($merchant['thumb']);}" style="max-width: 48px; max-height: 48px; border: 1px dotted gray"></td>
+						<td>{$merchant['name']}</td>
+						<td>总成交额：{if $merchant['amount']}{$merchant['amount']}元{else}0.00元{/if}</td>
+						<td>目前可结算金额：{if $merchant['no_money']}{$merchant['no_money']}元{else}0.00元{/if}</td>
+						<td>需上缴佣金：{php echo currency_format($merchant['no_money']*$merchant['percent']*0.01);}元</td>
+						<td>佣金百分比：{if !empty($merchant['percent'])}{$merchant['percent']}%{else}0.00%{/if}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>-->
+<div class="app-table-list">
+	<div class="panel panel-default">
+		<div class="panel-body table-responsive">
+			<table class="table table-hover">
+				<thead class="navbar-inner">
+					<tr>
+						<th style="width:80px;">处理状态</th>
+						<th style="width:80px;">结算金额</th>
+						<th style="width:80px;">到账金额</th>
+						<th style="width:80px;">佣金</th>
+						<th style="width:80px;">佣金百分比</th>
+						<th style="width:80px;">操作时间</th>
+					</tr>
+				</thead>
+				<tbody>
+					{loop $list $item}
+					<tr>
+						<td>
+							{if $item['status']==1}<label class="label label-default label-default">待确认</label>{/if}
+							{if $item['status']==2}<label class="label label-default label-danger">已确认，待打款</label>{/if}
+							{if $item['status']==3}<label class="label label-default label-success">已打款</label>{/if}
+						</td>
+						<td>{$item['money']}元</td>
+						<td>{$item['get_money']}元</td>
+						<td>{if $item['commission']}{$item['commission']}{else}0.00{/if}</td>
+						<td>{if $item['percent']}{$item['percent']}{else}0.00{/if}%</td>
+						<td>{php echo date("Y-m-d H:i:s",$item['createtime'])}</td>
+					</tr>
+					{/loop}
+				</tbody>
+			</table>
+		</div>
+	</div>
+	{$pager}
+</div>
+{elseif $_GPC['type'] == 'moneyRecord'}
+    <!--<div class="panel panel-default">
+		<div class="table-responsive">
+			<table class="table table-hover" style="min-width: 300px;">
+				<tbody>
+					<tr>
+						<td><image src="{php echo tomedia($merchant['logo']);}" style="max-width: 48px; max-height: 48px; border: 1px dotted gray"></td>
+						<td>{$merchant['storename']}</td>
+						<td>总成交额：{if $merchant['amount']}{$merchant['amount']}元{else}0.00元{/if}</td>
+						<td>目前可结算金额：{if $merchant['no_money']}{$merchant['no_money']}元{else}0.00元{/if}</td>
+						<td>佣金百分比：{if !empty($merchant['percent'])}{$merchant['percent']}%{else}0.00%{/if}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>-->
+<div class="app-table-list">
+	<div class="panel panel-default">
+		<div class="panel-body table-responsive">
+			<table class="table table-hover">
+				{loop $moneyRecord $item1}
+					<tr>
+						<td>{if !empty($item1['order'])}
+							订单支付 &nbsp;ID：<a href="#">{$item1['orderid']}</a><br>
+							{$item1['order']['name']}
+							{else}商家结算{/if}
+						</td>
+						<td>{if $item1['type']==1}支付成功，总金额
+							{elseif $item1['type']==2 || $item['type']==9}发货(核销)成功，可结算金额
+							{elseif $item1['type']==3}取消发货(核销)，可结算金额
+							{elseif $item1['type']==4}商家结算，可结算金额
+							{elseif $item1['type']==5}退款，总金额
+							{/if}&nbsp;&nbsp;  <span style="color: #F26C4F;font-size: 20px;"><b>{if $item1['money']>0}+{/if}</b>{$item1['money']}</span>
+							
+						</td>
+						<td>{$item1['detail']}</td>
+						<td>{php echo date("Y-m-d H:i:s",$item1['createtime']);}</td>
+					</tr>
+					{/loop}
+			</table>
+		</div>
+	</div>
+	{$pager}
+</div>
+{/if}
+</div>
+{php include wl_template('common/footer');}

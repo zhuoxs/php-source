@@ -1,0 +1,169 @@
+{template 'web/common/common'}
+{template 'web/user/navbar'}
+
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/css_1.9.0/public.css"/>
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/css_1.9.0/common.css"/>
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/css_1.9.0/user.css"/>
+<style>
+    .btn-op{padding: 2px !important}
+</style>
+<blockquote class="layui-elem-quote layui-text">
+    提现管理
+</blockquote>
+<div class="layui-card">
+
+    <div class="user">
+
+        <!--详情栏-->
+        <div class="row">
+            <div class="col-md-12">
+                <table class="table table-responsive">
+                    <thead>
+                    <tr>
+                        <th style="width: 55px;">UID</th>
+                        <th style="width: 40px;">用户</th>
+                        <th style="width: 150px">姓名/打款账号</th>
+                        <th style="width: 80px">提现金额</th>
+                        <th style="width: 80px">状态</th>
+                        <th style="width: 150px">申请时间</th>
+                        <th style="width: 65px;">提现方式</th>
+                        <th style="width: 120px;">备注</th>
+                        <th style="width: 260px;text-align: center;">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tbody">
+                    {loop $data['list'] $key $item}
+                    <tr>
+                        <td>{$item['uid']}</td>
+                        <td style="overflow: visible;">
+                            <img class="img-30" src="{$item['avatarurl']}" style="border-radius:50%;border:1px solid #efefef;" onerror="">
+                            <span style="padding-left: 5px">
+                                <span class="nickname">
+                               {$item['truename']}
+                                </span>
+                            </span>
+                        </td>
+                        <td>
+                            <p>姓名：{$item['name']}</p>
+                            <p>账号：{$item['wx_account']}</p>
+                        </td>
+                        <!--<td>{$item['wx_account']}</td>-->
+                        <td>{$item['price']}</td>
+                        <td>
+                            {if $item['status']==0}
+                            <span class="label label-info" data-toggle="ajaxSwitch" data-switch-refresh="true" data-switch-value="1">待审核</span>
+                            {else if $item['status']==1}
+                            <span class="label label-success" data-toggle="ajaxSwitch" data-switch-refresh="true" data-switch-value="1">已打款</span>
+                            {else if $item['status']==2}
+                            <span class="label label-danger" data-toggle="ajaxSwitch" data-switch-refresh="true" data-switch-value="1">已拒绝</span>
+                            {/if}
+                        </td>
+                        <td><?php echo date("Y/m/d H:i:s",$item['create_time']);?></td>
+                        <td>
+                            {if $item['method']==1}
+                            微信
+                            {else}
+                            支付宝
+                            {/if}
+                        </td>
+                        <td name="bz">{$item['remark']}</td>
+
+                        <td style="overflow: visible; text-align: center;">
+                            <div class="btn-group">
+
+                            {if $item['status']==0}
+                                {if $item['method']==1}
+                                    {if in_array('user.agreeWithdraw',$perm)}
+                                    <p class="btn btn-op btn-operation btn-lg btn-success agreeWithdraw" data-id="{$item['id']}">
+                                        <span data-toggle="tooltip" data-placement="top" title="">
+                                            <i class="layui-icon">&#xe6af;</i>
+                                            微信打款
+                                        </span>
+                                    </p>
+                                    {/if}
+
+                                {else}
+                                    {if in_array('user.agreeWithdraw',$perm)}
+                                        <p class="btn btn-op btn-operation btn-lg btn-success agreeWithdraw" data-id="{$item['id']}">
+                                            <span data-toggle="tooltip" data-placement="top" title="">
+                                                <i class="layui-icon">&#xe6af;</i>打款
+                                            </span>
+                                        </p>
+                                        <button class="layui-btn layui-btn-xs agreeWithdraw" data-id="{$item['id']}"><i class="layui-icon">&#xe6af;</i>打款</button>
+                                    {/if}
+                                {/if}
+                                {if in_array('user.deny_withdraw',$perm)}
+                                <a class="btn  btn-op btn-operation btn-lg btn-danger" name="no" data-toggle="ajaxRemove" href="{url 'site/entry/admin',array('m'=>'kundian_farm','id'=>$item['id'],'op'=>'deny_withdraw','action'=>'user')}">
+                                    <span data-toggle="tooltip" data-placement="top" title="">
+                                        <i class="layui-icon">&#xe69c;</i>
+                                        拒绝
+                                    </span>
+                                </a>
+                                {/if}
+
+                            {else}
+                            --
+                            {/if}
+                            </div>
+                        </td>
+                    </tr>
+                    {/loop}
+                    </tbody>
+                </table>
+                <div style="text-align: right;">
+                {$data['pager']}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--拒绝退款原因填写-->
+    <div id="mask" class="zent-dialog-backdrop" style="display: none;"></div>
+    <div id="entry" class="zent-dialog" style="display: block; top: 250px;">
+        <div class="zent-dialog-header">
+            <div class="zent-dialog-title">拒绝退款原因填写</div>
+        </div>
+        <div class="zent-dialog-body">
+            <textarea id="textarea" class="js-remark" rows="4" placeholder="最多可输入30个字" maxlength="30" style="width: 396px;"></textarea>
+        </div>
+        <div class="btn-group">
+            <p class="btn btn-op btn-operation btn-lg btn-success" name="yes" href="">
+                <span data-toggle="tooltip" data-placement="top" title="">确认</span>
+            </p>
+            <p class="btn  btn-op btn-operation btn-lg btn-danger" name="qx" data-toggle="ajaxRemove" href="">
+                <span data-toggle="tooltip" data-placement="top" title="">取消</span>
+            </p>
+        </div>
+    </div>
+
+</div>
+{template 'common/footer'}
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form,layer = layui.layer,layedit = layui.layedit,laydate = layui.laydate;
+
+        $(".agreeWithdraw").click(function(){
+            var that=$(this);
+            var id=$(this).attr('data-id');
+            layer.confirm('确认立即打款吗?',function (index) {
+                var load=layer.load();
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'agreeWithdraw','action'=>'user')}",
+                    data:{id:id},
+                    dataType:'json',
+                    success:function(res){
+                        layer.msg(res.msg,{time:1000},function () {
+                            layer.close(index);
+                            layer.close(load);
+                            if(res.code==0){
+                                window.location.reload();
+                            }
+                        })
+                    }
+                })
+            })
+        });
+    });
+</script>
+

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>任务管理-{$activity['name']}</title>
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/mui.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/examine.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/bootstrap.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/font-awesome.css" />
+        <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/jquery-3.2.1.min.js" ></script>
+
+    </head>
+    <body>
+
+        <div  id="container">
+
+        </div>
+        <div class="load">
+            加载更多
+        </div>
+
+        <!--弹窗-->
+        <div class="code">
+            <div class="code_li">
+                <div class="dialogs">
+                    <div class="dialogs_topsb">
+                        <span class="mui-icon mui-icon-close guang"></span>
+                    </div>
+                    <div class="outtime">
+                        <div class="outtime_one">上次领红包时间</div>
+                        <div class="outtime_two"></div>
+                    </div>
+                    <div class="dialogs_center">
+                        <img id="task_image" src="" />
+                    </div>
+                    <div class="words">
+                        <input type="hidden" value="" id="task_id">
+                        <input type="hidden" value="" id="status">
+                        <textarea readonly="readonly" id="task_content"></textarea>
+                    </div>
+                    <div class="xuans">
+                        <div class="dialogs_yes" id="yes" onclick="check_task(1)">通过</div>
+                        <div class="dialogs_no" id="no" onclick="check_task(2)">拒绝</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {template 'shop_footer'}
+    </body>
+</html>
+<script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/mui.min.js" ></script>
+<script type="text/javascript">
+                            $(document).ready(function () {
+                                $(".guang").click(function () {
+                                    $(".code").hide();
+                                });
+                            });
+
+</script>
+
+
+<script type="text/javascript">
+    var loading = $(".load").data("on", false);
+    var g = 2;
+    ajax_get_data();
+    $(window).scroll(function () {
+        if (loading.data("on"))
+            return;
+        if ($(document).scrollTop() + 100 > $(document).height() - $(window).height()) {
+            $(".load").html("正在加载中. . .");
+            loading.data("on", true).fadeIn();
+            $.get(
+                    "{php echo $this->createMobileUrl('ajax_shop', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid))}",
+                    {"op": "task", "p": g},
+                    function (data) {
+                        loading.data("on", false);
+                        if (data.sta == 0) {
+                            $(".load").html(data.error);
+                            setTimeout("loading.fadeOut();", 3000);
+                        } else {
+                            var html = "";
+                            for (i = 0; i < data.length; i++) {
+                                 if (data[i]['status'] >0) {
+                                    html += " <div class='list' onclick=\"show_check_html(" + data[i]['id'] + ",'" + data[i]['image'] + "','" + data[i]['content'] + "','" + data[i]['red_time'] + "',1);\">";
+                                }else {
+                                    html += "<div class='list' onclick=\"show_check_html(" + data[i]['id'] + ",'" + data[i]['image'] + "','" + data[i]['content'] + "','" + data[i]['red_time'] + "',0);\">";
+                                }
+                                html += "<div class='li_left'>";
+                                html += "<img src='" + data[i]['headimgurl'] + "' /></div>";
+                                html += "<div class='li_right'><div class='right_top'><div class='weixin'>" + data[i]['nickname'] + "</div>";
+                                html += "<div class='time'>" + data[i]['createtime'] + " <span class='gong'>共领" + data[i]['red_times'] + "次</span></div></div>";
+                                if (data[i]['status'] == 2) {
+                                    html += " <div class='right_bottmo' ><div class='click through'>未通过</div></div></div></div>";
+
+                                } else if (data[i]['status'] == 1) {
+                                    html += " <div class='right_bottmo'><div class='click lvss'>已通过</div></div></div></div>";
+                                } else {
+                                    html += " <div class='right_bottmo' id='op" + data[i]['id'] + "'><div class='click adopt'>审核</div></div></div></div>";
+                                }
+
+                            }
+                            $('#container').append(html);
+                            g++;
+                            loading.fadeOut();
+                        }
+                    },
+                    "json"
+                    );
+        }
+    });
+
+    function show_check_html(id, image, content, red_time, type) {
+        $('#task_id').val(id);
+        $('#task_image').attr('src', image);
+        if (content) {
+            content = content.replace("<br>","\r\n");
+            $('#task_content').val(content);
+            $('.words').show();
+        } else {
+            $('.words').hide();
+        }
+        if (red_time) {
+            $('.outtime_two').html(red_time);
+            $('.outtime').show();
+        } else {
+            $('.outtime').hide();
+        }
+        if (type == 1) {
+            $('.xuans').hide();
+        } else {
+            $('.xuans').show();
+        }
+        $('.code').show();
+    }
+
+    function ajax_get_data() {
+        $('#container').html("");
+        $(".load").html("正在加载中. . .");
+        loading.data("on", true).fadeIn();
+        $.get(
+                "{php echo $this->createMobileUrl('ajax_shop', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid))}",
+                {"op": "task", "p": 1},
+                function (data) {
+                    loading.data("on", false);
+                    if (data.sta == 0) {
+                        $(".load").html(data.error);
+                        setTimeout("loading.fadeOut();", 3000);
+                    } else {
+                        get_html(data);
+                        loading.fadeOut();
+                    }
+                },
+                "json"
+                );
+    }
+
+
+    function get_html(data) {
+        var html = "";
+        for (i = 0; i < data.length; i++) {
+           if (data[i]['status'] >0) {
+                                    html += " <div class='list' onclick=\"show_check_html(" + data[i]['id'] + ",'" + data[i]['image'] + "','" + data[i]['content'] + "','" + data[i]['red_time'] + "',1);\">";
+                                }else {
+                                    html += "<div class='list' onclick=\"show_check_html(" + data[i]['id'] + ",'" + data[i]['image'] + "','" + data[i]['content'] + "','" + data[i]['red_time'] + "',0);\">";
+                                }
+                                html += "<div class='li_left'>";
+                                html += "<img src='" + data[i]['headimgurl'] + "' /></div>";
+                                html += "<div class='li_right'><div class='right_top'><div class='weixin'>" + data[i]['nickname'] + "</div>";
+                                html += "<div class='time'>" + data[i]['createtime'] + " <span class='gong'>共领" + data[i]['red_times'] + "次</span></div></div>";
+                                if (data[i]['status'] == 2) {
+                                    html += " <div class='right_bottmo' ><div class='click through'>未通过</div></div></div></div>";
+
+                                } else if (data[i]['status'] == 1) {
+                                    html += " <div class='right_bottmo'><div class='click lvss'>已通过</div></div></div></div>";
+                                } else {
+                                    html += " <div class='right_bottmo' id='op" + data[i]['id'] + "'><div class='click adopt'>审核</div></div></div></div>";
+                                }
+        }
+        $('#container').html(html);
+    }
+
+
+    function check_task(status) {
+        var status_task = $('#status').val();
+        if (status_task > 0) {
+            show_message(0, '已经审核过此任务了', 3000, 1);
+            return;
+        }
+        var btnArray = ['确定', '取消'];
+        if (status == 1) {
+            var tip_str = "你确定要审核通过吗？";
+            var run_confim = false;
+            mui.confirm(tip_str, '审核通过提示', btnArray, function (e) {
+                if (e.index == 0 && !run_confim) {
+                    run_confim = true;
+                    var id = $('#task_id').val();
+                    $.get(
+                            "{php echo $this->createMobileUrl('ajax_shop', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid))}",
+                            {"op": "check_task", "id": id, "status": status},
+                            function (data) {
+                                if (data.sta == 1 || data.sta == 2) {
+                                    $(".code").hide();
+
+                                    $('#op' + id).html("<div class='click lvss'>已通过</div>");
+                                    if (data.sta == 2) {
+                                        var res_str = "已审核通过，红包" + data.money + "元已发送给用户";
+                                    } else {
+                                        var res_str = "已审核通过";
+                                    }
+                                    show_message(1, res_str, 3000, 1);
+                                    return;
+                                }
+                                show_message(0, data.error, 3000, 1);
+                            },
+                            "json"
+                            );
+                }
+            });
+        } else {
+            var tip_str = "你确定要审核拒绝吗？";
+            mui.prompt('拒绝理由：', '请输入您的拒绝理由', '审核拒绝提示', btnArray, function (e) {
+                if (e.index == 0 && !run_confim) {
+                    run_confim = true;
+                    var id = $('#task_id').val();
+                    $.get(
+                            "{php echo $this->createMobileUrl('ajax_shop', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid))}",
+                            {"op": "check_task", "id": id, "status": status, "check_tips": e.value},
+                            function (data) {
+                                if (data.sta == 1 || data.sta == 2) {
+                                    $(".code").hide();
+                                    $('#op' + id).html("<div class='click through'>未通过</div>");
+                                    show_message(1, '拒绝审核成功', 3000, 1);
+                                    return;
+                                }
+                                show_message(0, data.error, 3000, 1);
+                            },
+                            "json"
+                            );
+                }
+            });
+        }
+
+    }
+
+
+</script>

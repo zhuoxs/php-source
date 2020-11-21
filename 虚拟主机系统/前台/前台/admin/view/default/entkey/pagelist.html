@@ -1,0 +1,201 @@
+{{include file='common/head.html'}}
+<style type='text/css'>
+</style>
+<script language='javascript'>
+	var hrefurl = '{{$hrefurl}}';
+	var msg = "{{$msg}}";
+</script>
+<script language='javascript' src="{{$STATIC}}scripts/entkey.js"></script>
+<script language='javascript'>
+	function go_export()
+	{
+		var url = '?c=entkey&a=entkeyExport';
+		var isverification = isVerification();
+		var str = '';
+		if (isverification == 1) {
+			str = prompt('该操作需要管理密钥,请输入管理密钥');
+			if (str == null) {
+				return;
+			}
+			if (jQuery.trim(str) == '') {
+				alert("管理密钥不能为空");
+				return;
+			}
+			url += '&operating_string='+str;
+		} 
+		window.location = url;
+	}
+	function select_all()
+	{
+		$(":checkbox").each(function(){
+			$(this).attr('checked',true);
+		});
+	}
+	function select_any()
+	{
+		$(":checkbox").each(function(){
+			var checked = $(this).attr('checked');
+			$(this).attr('checked',checked=='checked' ? false : true);
+		});
+	}
+	function del_select()
+	{
+		var ids = '';
+		$(":checkbox:checked").each(function(){
+			if (ids != '') {
+				ids += ',';
+			}
+			ids += this.value;
+		});
+		var url = '?c=entkey&a=delSelectById';
+		var isverification = isVerification();
+		var str = '';
+		if (isverification == 1) {
+			str = prompt('该操作需要管理密钥,请输入管理密钥');
+			if (str == null) {
+				return;
+			}
+			if (jQuery.trim(str) == '') {
+				alert("管理密钥不能为空");
+				return;
+			}
+			url += '&operating_string='+str;
+		} else {
+			if (!confirm("确定要删除?")) {
+				return;
+			}
+		}
+		$.ajax({url:url,type:'post',data:'ids='+ids,dataType:'json',success:function(ret) {
+				if (ret['code'] != 200) {
+					var msg = ret['msg'] ? ret['msg'] : '删除失败';
+					art.dialog({id:'id22',time:2,content:msg,icon: 'error'});
+				}else {
+					art.dialog({id:'id22',time:2,content:ret['count']+ ' 记录删除成功',icon: 'succeed'});
+					setTimeout(function() {
+						window.location = window.location;
+					},2000);
+				}
+		}});
+	}
+	function show_key_operat(obj)
+	{
+		var offset = $("#"+obj.id).offset();
+		var left = offset.left+15;
+		var top = offset.top;
+		var html = '<div><a href="javascript:del_select()">删除</a></div><br>';
+			html += '<div><a href="javascript:select_all()">全选</a></div><br>';
+			html += '<div><a href="javascript:select_any()">反选</a></div>';
+		var dlog = art.dialog({id:'id2ff2',content:html,icon: '',width:'20px'});
+		dlog.position(left,top);
+	}
+	function go_entkey_update(id)
+	{
+		var url = '?c=entkey&a=updateFrom&id='+id;
+		var isverification = isVerification();
+		var str = '';
+		if (isverification == 1) {
+			str = prompt('该操作管理密钥,请输入管理密钥');
+			if (str == null) {
+				return;
+			}
+			if (jQuery.trim(str) == '') {
+				alert("管理密钥不能为空");
+				return;
+			}
+			url += '&operating_string='+str;
+		} 
+		window.location = url;
+	}
+	$(document).ready(function(){
+		if (msg != '') {
+			art.dialog({id:'id22',time:2,icon:'succeed',content:msg,title:'小纸条'});
+		}
+	});
+</script>
+
+<body bgcolor='#ffffff' text='#000000' leftmargin='0' topmargin='0'	onLoad="javascript:form1.search.focus();">
+	<div align="center">
+		<div class="wid_main mar_main" align="left">
+			<div class="block_top" align="left">当前位置：财务管理 --> 折抵码</div>
+			<table class="table_main2" cellpadding="0" cellspacing="1">
+				<tr>
+					<td align="left" class="td_bgc right_2">
+						<form name="form1" action='{{$hrefurl}}' method='post'>
+							模糊搜索: <input name='search' size=32> <input type='submit' value='搜索'>
+						</form>
+					</td>
+					<td align="left" class="td_bgc right_2">
+						<form name='form4' action='' method='post'>
+							显示:<select name='status' id='status'	onchange='show_key(this.value)'>
+								<option value='null'>状态</option>
+								<option value='0'>未使用</option>
+								<option value='1'>已使用</option>
+								<option value='2'>暂停</option>
+							</select>
+						</form>
+					</td>
+					<td align="left" class="td_bgc right_2">[<a href='?c=entkey&a=addFrom'><b>生成折抵码</b></a>]</td>
+					<td align="left" class="td_bgc right_2"><input type='button' onclick='go_export()' value='导出所有折抵码'></td>
+				</tr>
+			</table>
+			<table class="table_main2" cellpadding=0 cellspacing=1>
+				<tr bgcolor=ebf0fa>
+					<td class="td_bgc right_2">操作</td>
+					<td class="td_bgc right_2">所属代理</td>
+					<td class="td_bgc right_2">折抵码</td>
+					<td class="td_bgc right_2">价格</td>
+					<td class="td_bgc right_2">生成时间</td>
+					<td class="td_bgc right_2">到期时间</td>
+					<td class="td_bgc right_2">领取用户名</td>
+					<td class="td_bgc right_2">领取时间</td>
+					<td class="td_bgc right_2">状态</td>
+				</tr>
+				{{foreach from=$list item=row}}
+				<tr>
+					<td class="td_bgc right_2">
+						[<a	href='javascript:entkey_del({{$row.id}})'>删除</a>]
+						[<a	href='javascript:go_entkey_update({{$row.id}})'>修改</a>]
+						<input name='ids[]' type='checkbox' value='{{$row.id}}' id='input{{$row.id}}' onclick='show_key_operat(this);'>
+					</td>
+					<td class="td_bgc right_2">{{$row.agent_user}}</td>
+					<td class="td_bgc right_2">{{$row.randkey}}</td>
+					<td class="td_bgc right_2">{{$row.price}}</td>
+					<td class="td_bgc right_2">{{$row.add_time}}</td>
+					<td class="td_bgc right_2">{{$row.expire_time}}</td>
+					<td class="td_bgc right_2">{{$row.user}}</td>
+					<td class="td_bgc right_2">{{$row.try_time}}</td>
+					<td class="td_bgc right_2">
+					<select name='status'	onChange="edit_status(this.value,'{{$row.id}}')"> 
+					{{for	$i=0; $i<3; $i++}}
+							<option value='{{$i}}' {{if $i==$row.status}}selected{{/if}}>{{if $i==0}}未使用{{else if $i==1}}已使用{{else}}暂停{{/if}}</option> 
+					{{/for}}
+					<option value='100' {{if 100==$row.status}}selected{{/if}}>可充值</option> 
+					</select></td>
+				</tr>
+				{{/foreach}}
+				<tr>
+					<td>
+						<form action='{{$hrefurl}}' method='post'>
+							直达:<input name='page' size='5'>&nbsp;页<input
+								type='submit' value='GO'>
+						</form>
+					</td>
+
+					<td colspan="8" align="right">{{if $page>1}} <a
+						href='{{$hrefurl}}&order={{$order}}&page=0&search={{$search}}&status={{$status}}'>首页</a> <a
+						href='{{$hrefurl}}&order={{$order}}&page={{$page-1}}&search={{$search}}&status={{$status}}'>上一页</a>
+						{{else}} 首页 上一页 {{/if}} {{if $page!=$total_page}} <a
+						href='{{$hrefurl}}&order={{$order}}&page={{$page+1}}&search={{$search}}&status={{$status}}'>下一页</a> <a
+						href='{{$hrefurl}}&order={{$order}}&page={{$total_page}}&search={{$search}}&status={{$status}}'>尾页</a>
+						{{else}}下一页 尾页 {{/if}} {{$page}}/{{$total_page}}&nbsp;
+						共计{{$count}}记录&nbsp;
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	<div id='msg' class='piao_entkey' style='display: none'>
+		<div id='msg_div' class='msg_div'></div>
+	</div>
+</body>
+</html>

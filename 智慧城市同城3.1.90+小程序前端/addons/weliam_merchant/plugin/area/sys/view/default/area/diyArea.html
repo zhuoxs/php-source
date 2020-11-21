@@ -1,0 +1,356 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+    <li class="active"><a href="{php echo web_url('area/custom/index')}">自定义地区</a></li>
+</ul>
+<style>
+    td>i{cursor:pointer; display:inline-block; width:100%; height:100%; color:#428bca;}
+    .category-caret{display:inline-block; width:20px; margin: 0 10px; text-align:center; cursor:pointer; color:#d9534f;}
+    .add.add_level0{cursor:pointer;}
+    .scrollLoading{border-radius: 50px;}
+    .areaNameStyle{display:block;width:100px;text-align:left;float:left;}
+    .lineheight30{line-height:30px}
+    .provinceAreaName{height:30px;line-height:30px;width:180px;}
+    .provinceAreaState{display: block;width: 30px;float: left;text-align: center;cursor: pointer;}
+    .cityAreaName{padding-left:50px;height:30px;line-height:30px;background:url('./resource/images/bg_repno.gif') no-repeat -245px -545px;width:150px;position: relative;margin-left:70px;}
+    .cityAreaState{position: absolute;left: -30px;width: 30px;text-align: center;cursor: pointer;}
+    .districtAreaName{padding-left:50px;height:30px;line-height:30px;background:url('./resource/images/bg_repno.gif') no-repeat -245px -545px;width:150px;margin-left: 120px;position: relative;}
+    .districtAreaState{position: absolute;left: -30px;width: 30px;text-align: center;cursor: pointer;}
+    .townAreaName{padding-left:50px;height:30px;line-height:30px;background:url('./resource/images/bg_repno.gif') no-repeat -245px -545px;margin-left: 170px;}
+    .glyphicon.glyphicon-chevron-up {color:#CCC;}
+    .glyphicon.glyphicon-chevron-down {color:#ff0000;;}
+</style>
+<div class="app-content">
+    <div class="app-filter">
+        <div class="filter-action">
+            <a href="{php echo web_url('area/custom/edit',array('parentid'=>0,'level'=>1))}" class="btn btn-primary">添加地区</a>
+        </div>
+    </div>
+    <div class="app-table-list">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th class="text-center" width="50%">地区名称</th>
+                    <th class="text-center" width="10%">地区ID</th>
+                    <th class="text-center" width="10%">地区类型</th>
+                    <th class="text-center" width="10%">开启状态</th>
+                    <th class="text-center" width="15%">操作</th>
+                </tr>
+                </thead>
+                <tbody id="tableDody">
+                {loop $categorys  $category}
+                    <tr class="js-collpase js-child-category">
+                        <td class="text-left" style="display: flex;">
+                            <div  class="provinceAreaName">
+                                <span class="provinceAreaState" areaid="{$category['id']}" state="1" ><i class="glyphicon glyphicon-chevron-up"></i></span>
+                                <span class="areaNameStyle">{$category['name']}</span>
+                            </div>
+                            <div>
+                                <span class="areaNameStyle">
+                                    <a href="{php echo web_url('area/custom/edit',array('parentid'=>$category['id'],'level'=>2))}" class="add add_level1" title="添加子分类" >
+                                        <i class="fa fa-plus-circle"></i> 添加子地区
+                                    </a>
+                                </span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <label class='label label-warning'>{$category['id']}</label>
+                        </td>
+                        <td class="text-center">
+                            {if $category['displayorder'] == 0}
+                                <label class='label label-success'>系统</label>
+                            {else}
+                                <label class="label label-warning">自定义</label>
+                            {/if}
+                        </td>
+                        <td class="text-center">
+                            {if $category['visible'] == 2}
+                                <label class='label label-success'>开启</label>
+                            {else}
+                                <label class='label label-default'>关闭</label>
+                            {/if}
+                        </td>
+                        <td class="text-center" style="position:relative;">
+                            {if $_W['isfounder']}
+                                <a href="{php echo web_url('area/custom/edit',array('id'=>$category['id'],'parentid'=>$category['pid']))}" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="top" title="修改">
+                                    编辑
+                                </a>
+                                -
+                                <a href="{php echo web_url('area/custom/delete',array('id'=>$category['id']))}"class="btn btn-default btn-sm" data-toggle="ajaxRemove" data-confirm="确认删除当前地区吗？">
+                                    删除
+                                </a>
+                            {else}
+                                <a href="javascript:;">无操作权限</a>
+                            {/if}
+                        </td>
+                    </tr>
+                {/loop}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+    var showicon = "glyphicon glyphicon-chevron-up";
+    var hideicon = "glyphicon glyphicon-chevron-down";
+    $(function () {
+        $("#tableDody .provinceAreaState").click();
+    });
+    /**
+     * 点击隐藏/显示 当前省级下的所有区域
+     */
+    $("#tableDody").on("click",".provinceAreaState",function () {
+        var id = $(this).attr("areaid");
+        var state = $(this).attr("state");
+        if(state == 1){
+            $("[provinceid='"+id+"']").hide();
+            //更换状态值
+            $(this).attr("state",0);
+            $("[provinceid='"+id+"']").contents("td").contents("div").contents(".cityAreaState").attr("state",0);
+            $("[provinceid='"+id+"']").contents("td").contents("div").contents(".districtAreaState").attr("state",0);
+            //更换图标
+            $("[provinceid='"+id+"']").contents("td").contents("div").contents(".cityAreaState").contents("i").attr('class',hideicon);
+            $("[provinceid='"+id+"']").contents("td").contents("div").contents(".districtAreaState").contents("i").attr('class',hideicon);
+            $(this).contents("i").attr('class',hideicon);
+        }else{
+            //判断是否存在内容  不存在获取内容  市区等级 2
+            var len = $("[provinceid='"+id+"'][level='2']").length;
+            if(len <= 0){
+                getAreaInfo(id,2);
+            }
+            //显示内容
+            $("[provinceid='"+id+"'][level='2']").show();
+            $(this).attr("state",1);
+            //更换图标
+            $(this).contents("i").attr('class',showicon);
+        }
+    });
+    /**
+     * 点击隐藏/显示 当前市级下的所有区域
+     */
+    $("#tableDody").on("click",".cityAreaState",function () {
+        var id = $(this).attr("areaid");
+        var state = $(this).attr("state");
+        if(state == 1){
+            $("[cityid='"+id+"']").hide();
+            $(this).attr("state",0);
+            $("[provinceid='"+id+"']").contents("td").contents("div").contents(".districtAreaState").attr("state",0);
+            //更换图标
+            $("[provinceid='"+id+"']").contents("td").contents("div").contents(".districtAreaState").contents("i").attr('class',hideicon);
+            $(this).contents("i").attr('class',hideicon);
+        }else{
+            //判断是否存在内容  不存在获取内容  区/县等级 3
+            var len = $("[cityid='"+id+"'][level='3']").length;
+            if(len <= 0){
+                getAreaInfo(id,3);
+            }
+            //显示内容
+            $("[cityid='"+id+"'][level='3']").show();
+            $(this).attr("state",1);
+            //更换图标
+            $(this).contents("i").attr('class',showicon);
+        }
+    });
+    /**
+     * 点击隐藏/显示 当前区/县级下的所有区域
+     */
+    $("#tableDody").on("click",".districtAreaState",function () {
+        var id = $(this).attr("areaid");
+        var state = $(this).attr("state");
+        if(state == 1){
+            $("[districtid='"+id+"']").hide();
+            $(this).attr("state",0);
+            //更换图标
+            $(this).contents("i").attr('class',hideicon);
+        }else{
+            //判断是否存在内容  不存在获取内容  镇/乡等级 4
+            var len = $("[districtid='"+id+"'][level='4']").length;
+            if(len <= 0){
+                getAreaInfo(id,4);
+            }
+            //显示内容
+            $("[districtid='"+id+"'][level='4']").show();
+            $(this).attr("state",1);
+            //更换图标
+            $(this).contents("i").attr('class',showicon);
+        }
+    });
+
+
+
+    var exitUrl = "{php echo web_url('area/custom/edit')}";//添加子地区  编辑
+    var delUrl = "{php echo web_url('area/custom/delete')}";//删除
+    /**
+     * 获取下级地址信息
+     * @param id
+     * @param lv
+     */
+    function getAreaInfo(id,lv) {
+        var url = "{php echo web_url('area/custom/getAreaInfo')}";
+        var position = $("[areaid='"+id+"']").parents("tr");
+        $.ajax({
+            url:url,
+            data:{id:id,lv:lv},
+            dataType:"json",
+            ansyn:false,
+            success:function (res) {
+                var data = res.data;
+                if(lv == 2){
+                    //建立市级区域
+                    appendCity(data,position);
+                }else if(lv == 3){
+                    //建立区/县级区域
+                    appendDistrict(data,position);
+                }else if(lv == 4){
+                    //建立镇/乡级区域
+                    appendTown(data,position);
+                }
+            }
+        });
+    }
+    /**
+     * 建立市级区域
+     */
+    function appendCity(data,position) {
+        var html = '';
+        $.each(data,function (k,v) {
+            html += ' <tr class="js-collpase js-child-category" level="2" provinceid="'+v['pid']+'"  pid="'+v['pid']+'">\n' +
+                '   <td class="text-left" style="display: flex;">\n' +
+                '       <div class="cityAreaName">\n' +
+                '           <span class="cityAreaState" areaid="'+v['id']+'" state="0"><i class="'+hideicon+'"></i></span>\n' +
+                '           <span class="areaNameStyle">'+v['name']+'</span>\n' +
+                '       </div>\n' +
+                '       <div>\n' +
+                '           <span class="lineheight30 areaNameStyle">\n' +
+                '               <a href="'+exitUrl+'parentid='+v['id']+'&level=3" class="add add_level1" title="添加子分类" >\n' +
+                '                   <i class="fa fa-plus-circle"></i> 添加子地区\n' +
+                '               </a>\n'+
+                '           </span>\n' +
+                '       </div>\n' +
+                '   </td>\n' +
+                '   <td class="text-center">\n' +
+                '       <label class=\'label label-default\'>'+v['id']+'</label>\n' +
+                '   </td>\n' +
+                '   <td class="text-center">\n' +
+                getAreaType(v['displayorder'])+
+                '   </td>\n' +
+                '   <td class="text-center">\n' +
+                getAreaState(v['visible'])+
+                '   </td>\n' +
+                '   <td class="text-center"; style="position:relative;">\n' +
+                getOperationButton(v['id'],v['pid'],v['displayorder'])+
+                '     </td>\n' +
+                '</tr>\n' +
+                '';
+        });
+        position.after(html);
+    }
+    /**
+     * 建立区/县级区域
+     */
+    function appendDistrict(data,position) {
+        var provinceid = position.attr("provinceid");
+        var html = '';
+        $.each(data,function (k,v) {
+            html += '<tr class="js-collpase js-child-category" level="3"  provinceid="'+provinceid+'" cityid="'+v['pid']+'" pid="'+v['pid']+'">\n' +
+                '    <td class="text-left" style="display: flex;">\n' +
+                '        <div class="districtAreaName">\n' +
+                '            <span class="districtAreaState" areaid="'+v['id']+'" state="0"><i class="'+hideicon+'"></i></span>\n' +
+                '            <span class="areaNameStyle">'+v['name']+'</span>\n' +
+                '        </div>\n' +
+                '        <div >\n' +
+                '            <span class="areaNameStyle lineheight30">\n' +
+                '                <a href="'+exitUrl+'parentid='+v['id']+'&level=4" class="add add_level1" title="添加子分类" >\n' +
+                '                    <i class="fa fa-plus-circle"></i> 添加子地区\n' +
+                '                </a>\n' +
+                '            </span>\n' +
+                '        </div>\n' +
+                '    </td>\n' +
+                '    <td class="text-center">\n' +
+                '        <label class=\'label label-default\'>'+v['id']+'</label>\n' +
+                '    </td>\n' +
+                '    <td class="text-center">\n' +
+                getAreaType(v['displayorder'])+
+                '    </td>\n' +
+                '    <td class="text-center">\n' +
+                getAreaState(v['visible'])+
+                '    </td>\n' +
+                '    <td class="text-center"; style="position:relative;">\n' +
+                getOperationButton(v['id'],v['pid'],v['displayorder'])+
+                '    </td>\n' +
+                '</tr>\n' +
+                '';
+        });
+        position.after(html);
+    }
+    /**
+     * 建立镇/乡级区域
+     */
+    function appendTown(data,position) {
+        var provinceid = position.attr("provinceid");
+        var cityid = position.attr("cityid");
+        var html = '';
+        $.each(data,function (k,v) {
+            html += '<tr class="js-collpase js-child-category" level="4"  provinceid="'+provinceid+'"  cityid="'+cityid+'" districtid="'+v['pid']+'" pid="'+v['pid']+'">\n' +
+                    '   <td class="text-left">\n' +
+                    '       <div class="townAreaName">'+v['name']+'</div>\n' +
+                    '   </td>\n' +
+                    '   <td class="text-center">\n' +
+                    '       <label class=\'label label-default\'>'+v['id']+'</label>\n' +
+                    '   </td>\n' +
+                    '    <td class="text-center">\n' +
+                    getAreaType(v['displayorder'])+
+                    '    </td>\n' +
+                    '    <td class="text-center">\n' +
+                    getAreaState(v['visible'])+
+                    '    </td>\n' +
+                    '   <td class="text-center"; style="position:relative;">\n' +
+                    getOperationButton(v['id'],v['pid'],v['displayorder'])+
+                    '   </td>\n' +
+                    '</tr>\n' +
+                    '';
+        });
+        position.after(html);
+    }
+    /**
+     * 获取地区开启状态
+     * @param state
+     * @returns {string}
+     */
+    function getAreaState(state) {
+        var html = "<label class='label label-success'>开启</label>";
+        if(state == 1){
+            html = "<label class='label label-default'>关闭</label>";
+        }
+        return html;
+    }
+    /**
+     * 获取地区类型
+     * @param state
+     * @returns {string}
+     */
+    function getAreaType(state) {
+        var html = "<label class='label label-warning'>自定义</label>";
+        if(state == 0){
+            html = "<label class='label label-success'>系统</label>";
+        }
+        return html;
+    }
+    /**
+     * 获取操作按钮
+     * @param id    区域id
+     * @param pid   区域pid(上级区域的id)
+     * @param cid   cid(公众号id  为0级系统/公共区域)
+     */
+    function getOperationButton(id,pid,cid) {
+       html = ' <a href="'+exitUrl+'id='+id+'&parentid='+pid+'" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="top" title="修改">\n' +
+           '编辑\n' +
+           '</a>\n' +
+           '-\n' +
+           '<a href="'+delUrl+'id='+id+'" class="btn btn-default btn-sm" data-toggle="ajaxRemove" data-confirm="确认删除当前地区吗？">\n' +
+           '    删除\n' +
+           '</a>';
+        return html;
+    }
+</script>
+{php include wl_template('common/footer');}

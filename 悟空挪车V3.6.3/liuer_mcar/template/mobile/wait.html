@@ -1,0 +1,100 @@
+{template 'header'}
+<body class="pageMovelog">
+<div id="hook-app">
+    <header>
+        <div class="avatar"><img src="{$_W['fans']['avatar']}" alt="" /></div>
+    </header>
+    <div class="step">
+        <yd-step theme="2" current="1" current-color="#4f7ff9">
+            <yd-step-item> <span slot="top">通知车主</span> </yd-step-item>
+            <yd-step-item> <span slot="top">完成挪车</span> </yd-step-item>
+        </yd-step>
+    </div>
+    <div class="dialog">
+        <span class="dialog-success">
+          <yd-icon name="checkoff" size=".7rem" color="#ffffff"></yd-icon>
+        </span>
+    </div>
+    <div class="wait"><span>通知成功</span></div>
+    <div class="hurry-up">
+        <i class="icon iconfont icon-ercicuifu"></i> 催一催
+    </div>
+    <div class="go-notify" @click.stop="hurryMobile">
+        <div class="phone-notify">
+            <yd-icon name="phone2"></yd-icon> <br />拨打电话
+        </div>
+        <div class="wechat-notify" @click.stop="hurryWechat">
+            <yd-icon name="weixin"></yd-icon> <br />微信通知
+        </div>
+    </div>
+    <div class="tips">
+        <i class="icon iconfont icon-tips"></i>
+        拨打电话不会显示您和车主手机号码，不收取任何费用
+    </div>
+    <div id="hook-hurry" class="hurry-btn">
+        <yd-button size="large" type="primary" @click.native="done">挪车完成</yd-button>
+    </div>
+</div>
+
+<script>
+    var movelog_id = "{$movelogInfo['id']}";
+    var hurryUrl = "{php echo $this->createMobileUrl('hurry');}";
+    var doneUrl = "{php echo $this->createMobileUrl('done',['id'=>$movelogInfo['id']]);}";
+
+    var app = new Vue({
+        el: '#hook-app',
+        data: {
+        },
+        methods: {
+            hurryMobile: function(){
+                this.$dialog.loading.open('获取号码中，请稍后...');
+                $.post(hurryUrl,{movelog_id:movelog_id,type:1}).then(function(resp) {
+                    app.$dialog.loading.close();
+                    resp = JSON.parse(resp);
+
+                    if(resp.error){
+                        app.message(resp.msg,'error');
+                        return false;
+                    }else{
+                        location.href = "tel:" + resp.xMobile;
+                        return false;
+                    }
+
+                });
+                return false;
+            },
+            hurryWechat: function(){
+                this.$dialog.loading.open('微信通知中...');
+                $.post(hurryUrl,{movelog_id:movelog_id,type:2}).then(function(resp){
+                    app.$dialog.loading.close();
+                    console.log(typeof resp);
+                    resp = JSON.parse(resp);
+                    if(resp.error){
+                        app.message(resp.msg,'error');
+                    }else{
+                        app.message(resp.msg);
+                    }
+                })
+            },
+            done: function(){
+                this.$dialog.confirm({
+                    title: '温馨提示',
+                    mes: '你确定要完成挪车吗？',
+                    opts: function(){
+                        location.href = doneUrl;
+                    }
+                });
+            },
+            message:function(msg,icon){
+                icon = icon || 'success'
+                this.$dialog.toast({
+                    mes: msg,
+                    timeout: 1500,
+                    icon:icon
+                });
+            },
+        }
+    });
+</script>
+</body>
+</html>

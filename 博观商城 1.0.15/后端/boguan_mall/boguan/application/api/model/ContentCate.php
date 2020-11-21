@@ -1,0 +1,2 @@
+<?php
+ namespace app\api\model; class ContentCate extends BaseModel { public function getDisplayAttr($value) { goto NJ8qS; KO98x: return json_decode($value, true); goto czoqP; RtGtu: gXk1i: goto KO98x; NJ8qS: if (!empty($value)) { goto gXk1i; } goto OhWrw; OhWrw: return null; goto RtGtu; czoqP: } }

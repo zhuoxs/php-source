@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, ,user-scalable=no" />
+    <title>{$goods['title']}</title>
+    <!--css-->
+    <link rel="stylesheet" href="{CSS}comon.css" />
+    <link rel="stylesheet" href="{CSS}index.css" />
+    <link rel="stylesheet" href="{CSS}idangerous.swiper2.7.6.css" />
+    <link rel="stylesheet" href="{$_W['siteroot']}addons/n1ce_mission/template/js/sweetalert.css" />
+  </head>
+  <body>
+    <!--商品展示轮播-->
+    <div class="swiper-container swiper" id="swiper">
+      <!--展示图片-->
+      <div class="swiper-wrapper">
+        {loop $goods_img $r}
+        <div class="swiper-slide">
+          <div class="inset">
+            <img src="{php echo tomedia($r)}" />
+          </div>
+        </div>
+        {/loop}
+      </div>
+
+      <!--展示图片下标-->
+      <div class="pagination"></div>
+
+      <!--库存-->
+      <div class="inventory">
+        库存{$goods['quality']}件
+      </div>
+    </div>
+
+    <!--商品名字-->
+    <div class="product-case">
+      {$goods['title']}
+    </div>
+
+    <!--商品价格-->
+    <div class="price-case">
+      <span>市场价:{php echo $goods['markert_price']/100}元</span>
+      {if $goods['goodstype'] == 1}
+      <text>邮费:{if $goods['postage']}{php echo $goods['postage']/100}元{else}包邮{/if}</text>
+      {else}
+      <text>到店自提</text>
+      {/if}
+      <p>现价:{php echo $goods['get_price']/100}元</p>
+    </div>
+
+    <!--富文本区域-->
+    <div class="rich-text">
+      {php echo htmlspecialchars_decode($goods['goods_desc']);}
+    </div>
+
+    <!--兑换按钮-->
+    <div class="btn-case">
+      <input class="btn" type="button" value="" />
+    </div>
+
+  </body>
+
+  <!--js-->
+  {php echo register_jssdk(false);}
+  <script type="text/javascript">
+      wx.ready(function () {
+          wx.hideAllNonBaseMenuItem();   
+      });
+  </script>
+  <script src="{JS}jquery.min.js"></script>
+  <script src="{JS}adaptive.js"></script>
+  <script src="{$_W['siteroot']}addons/n1ce_mission/template/js/sweetalert.min.js"></script>
+  <script src="{JS}idangerous.swiper2.7.6.min.js"></script>
+
+  <!--自定义函数区域-->
+  <script>
+    //轮播
+    $(function() {
+      var mySwiper = new Swiper('#swiper', {
+        loop: true,
+        autoplay:4000,
+        speed: 1000,
+        pagination: '.pagination',
+        paginationClickable :true,
+      });
+    });
+    
+    //兑换
+    var num="{$num}";
+    var type = "{$goods['goodstype']}";
+    var address = "{$address}";
+    var hasEx = "{$exchange['status']}";
+    var checkID = "{$exchange['id']}";
+    var checkUrl = "{php echo $this->createMobileUrl('checkCode',array('gid'=>$gid))}";
+    if(num==0){
+      $(".btn").val("立即兑换");
+      $(".btn").css("background","#0091EA");
+      $(".btn").click(function(){
+        $(location).attr("href",address);
+      })
+    }else{
+      if(num>0){
+        $(".btn").val("还需邀请"+num+"人即可兑换");
+      }else{
+        if(type == 1){
+          $(".btn").val("您已经兑换了");
+        }else{
+          if(hasEx == 2){
+            $(".btn").val("点击核销");
+            $(".btn").css("background","#0091EA");
+            $(".btn").click(function(){
+              swal({ 
+                title: "核销提示", 
+                text: "请店员输入核销密码",
+                type: "input", 
+                showCancelButton: true, 
+                closeOnConfirm: false,
+                confirmButtonText:'核销',
+                cancelButtonText:'取消',
+                animation: "slide-from-top", 
+                inputPlaceholder: "核销密码" 
+              },
+              function(inputValue){ 
+                if (inputValue === false) 
+                  return false; 
+                
+                if (inputValue === "") { 
+                  swal.showInputError("请店员输入核销密码");
+                  return false;
+                }else{
+                  $.ajax
+                  ({
+                    url: checkUrl,
+                    type:'POST',
+                    data: {
+                      'id' : checkID,
+                      'code':inputValue
+                    },
+                    dataType:'json',
+                    error: function () {
+                      $(".modal-hint").hide();
+                      alert('网络通讯异常，请稍后再试！');
+                    },
+                    success: function (result) {
+                      if(result.code == '404'){
+                        swal("消息提示！", result.msg,"error")
+                      }
+                      if(result.code == '101'){ 
+                        swal("消息提示！", '核销成功！',"success"); 
+                        wx.closeWindow();
+                      } 
+                    }
+                  });
+                }
+              });
+            })
+          }else{
+            $(".btn").val("您已经核销了");
+          }
+        }
+        
+      } 
+      
+    }
+  </script>
+
+</html>

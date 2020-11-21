@@ -1,0 +1,109 @@
+{php include wl_template('common/header');}
+<div class="app-init-container">
+	<div class="ui-nav">
+		<ul class="nav nav-tabs">
+			<li class="active"><a href="{php echo web_url('order/delivery', array('op'=>'display'))}">运费模板列表</a></li>
+			<li ><a href="{php echo web_url('order/delivery', array('op'=>'post'))}">添加运费模板</a></li>
+		</ul>
+	</div>
+	<div class="page-trade-delivery panel panel-default">
+		<div class="freight-list panel-body table-responsive">
+			<!--<div class="freight-head" style="margin-bottom:20px;"><a href="{php echo url('order/delivery/post', array());}" class="btn btn-success">新建运费模板</a></div>-->
+			<form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+			<table class="table table-hover">
+				<thead class="js-freight-cost-list-header">
+					<tr>
+						<th style="width:250px;">运费模板</th>
+						<th style="width:250px;">所属商家</th>
+						<th style="width:150px;">开启状态</th>
+						<th style="width:150px" class="text-right">操作</th>
+					</tr>
+				</thead>
+				<tbody>
+				{loop $prices $key $price}
+					<tr>
+						<td>{$price['name']}</td>
+						<td>{$price['merchantname']}</td>
+						<td><input class="status" status-id="{$price['id']}" type="checkbox" value="2" {if $price['status'] == 2}checked="checked"{/if} /></td>
+						<td class="text-right ">
+							<a href="{php echo web_url('order/delivery', array('op'=>'post','id'=>$price['id']))}">编辑</a> - 
+							<a href="javascript:;" price-id="{$price['id']}" class="js-delete-delivery">删除</a> - 
+							<a href="javascript:;" price-id="{$price['id']}" class="js-select-delivery">查看</a>
+						</td>
+					</tr>
+					<tr class="price-id-{$price['id']} hidden">
+						<td colspan="3">
+							<table class="table table-hover mb0">
+								<thead class="js-freight-cost-list-header">
+								<tr>
+									<th>可配送至</th>
+									<th style="width:120px;">运费（元）</th>
+								</tr>
+								</thead>
+								<tbody>
+									{loop $price['region'] $district}
+									{if !empty($district)}
+									<tr>
+										<td style="white-space: normal;"><span>{$district['cities']}</span></td>
+										<td>{$district['first_fee']}</td>
+									</tr>
+									{/if}
+									{/loop}
+								</tbody>
+							</table>
+						</td>
+					</tr>
+					{/loop}
+				</tbody>
+			</table>
+			</form>
+		</div>
+	</div>
+</div>
+<script>
+	
+	$(function(){
+		require(['bootstrap.switch'],function($){
+			// 启用状态
+			$('.status:checkbox').bootstrapSwitch({onText: '启用', offText: '禁用'});
+			$('.status:checkbox').on('switchChange.bootstrapSwitch', function(event, state) {
+				var status_id = $(this).attr('status-id');
+				var status = state ? 2 : 1;
+				$.post("{php echo web_url('order/delivery', array('op'=>'editstatus'))}", {id : status_id, status : status}, function (data){
+				}, 'json');
+			});
+		
+		});
+		$('.js-select-delivery').click(function() {
+			var $this = $(this);
+			var $price_id = $this.attr('price-id');
+			var $content = $this.parent().parent().next();
+			if ($content.hasClass('hidden')) {
+				$content.removeClass('hidden');
+				$this.text('收起');
+			} else {
+				$content.addClass('hidden');
+				$this.text('查看');
+			}
+		});
+		$('.js-delete-delivery').click(function(e) {
+			e.stopPropagation();
+			var id = $(this).attr('price-id');
+			var $this = $(this);
+			util.nailConfirm(this, function(state) {
+				if (!state) {
+					return;
+				}
+				$.post("{php echo web_url('order/delivery', array('op'=>'delete'))}", {id : id}, function(data){
+					if(data.errno){
+						util.tips(data.message);
+					} else {
+						$this.parent().parent().remove();
+					};
+				}, 'json');
+			});
+		});
+	})
+</script>
+
+{php include wl_template('common/footer');}

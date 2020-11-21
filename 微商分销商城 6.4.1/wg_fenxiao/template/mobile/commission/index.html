@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="hb-loaded"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no, viewport-fit=cover">
+    <title>佣金列表</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="stylesheet" href="{STATIC_ROOT}/css/collect.css">
+</head>
+<body>
+<div class="wx_wrap" style="margin-bottom: 80px;">
+
+    <!-- S 导航 -->
+    <div class="fav_nav" id="fav_top_tab">
+        <ul>
+            <li class="<?php if($status == 'all'){echo 'cur';}?>"><a href="{php echo $this->createMobileUrl('commission')}">全部</a></li>
+            <li class="<?php if($status == 'pay'){echo 'cur';}?>"><a href="{php echo $this->createMobileUrl('commission',['status' => 'pay'])}">可提现</a></li>
+            <li class="<?php if($status == 'unpay'){echo 'cur';}?>"><a href="{php echo $this->createMobileUrl('commission',['status' => 'unpay'])}">待到账</a></li>
+            <li class="<?php if($status == 'payed'){echo 'cur';}?>"><a href="{php echo $this->createMobileUrl('commission',['status' => 'payed'])}">已提现</a></li>
+        </ul>
+    </div>
+    <!-- E 导航 -->
+
+
+    <!--S-收藏商品的总数-->
+    <p class="fav_count" style="height: 10px;">
+
+    </p>
+
+    <!--S-收藏商品的列表-->
+    <div class="fav_items" id="favlist">
+
+     </div>
+    <!--E-收藏商品的列表-->
+
+    <!--S-加载完毕-->
+    <p class="fav_nothing" id="no_more" style="display:none;">加载完毕</p>
+    <!--E-加载完毕-->
+
+    <!--S-正在加载图标-->
+    <div class="wx_loading2" id="loading" style="font-size:10px;display: none;">
+    <i class="wx_loading_icon"></i>
+</div>
+<!--E-正在加载图标-->
+
+{template 'public/footer_nav'}
+
+    <script id="template_item" type="text/html">
+        <%for(var i in list){%>
+        <div class="fav_item">
+            <a class="fav_link fav_link_goods">
+                <p class="price seperator" style="overflow: hidden;">
+                <p class="name">订单：<%=list[i].ordersn%></p>
+                    <span class="price_value" style="font-size:10px;color: #5a5454;float: left">
+                       时间：<%=list[i].time%> &nbsp;&nbsp;&nbsp;佣金：<%=list[i].money%>
+                    </span>
+                        <%if(list[i].status == 0 && list[i].fahuoshijian > 0 && list[i].fahuoshijian < <?php echo time()-$time;?>){%>
+                        <span data-id="<%=list[i].id%>" class="more_notice btn money_pay" style="border: 0;color: red;">提现到余额 </span>
+                        <%}else if(list[i].status == 0){%>
+                         <span class="more_notice btn" style="border: 0;"><%=list[i].text%></span>
+                         <%}else if(list[i].status == 1){%>
+                         <span class="more_notice btn" style="border: 0;color: #5a5454">已提现到余额 </span>
+                        <%}else if(list[i].status == 2){%>
+                         <span class="more_notice btn" style="border: 0;">提现失败 </span>
+                        <%}else if(list[i].status == 3){%>
+                         <span class="more_notice btn" style="border: 0;">提现错误 </span>
+                        <%}%>
+
+                </p>
+            </a>
+        </div>
+        <%}%>
+    </script>
+    <script src="{STATIC_ROOT}/js/jquery-3.3.1.min.js"></script>
+    <script src="{STATIC_ROOT}/js/template.min.js"></script>
+{template 'public/more_new'}
+<script>
+    var url = "{php echo $this->createMobileUrl('commission',['op' => 'more','status' => $status])}";
+    initLoadingData_new(true, url, 1, $('#template_item').html(), 'favlist');
+    $(function () {
+        var order_del_url = "{php echo $this->createMobileUrl('commission',['op' => 'getmoney'])}";
+        $('#favlist').delegate(".money_pay", "click", function() {
+            var dom_in = $(this);
+            var id = dom_in.attr('data-id');
+            if(!id) {
+                return false;
+            }
+            $.post(order_del_url,{id:id},function (data) {
+                if(data.code ==0) {
+                    dom_in.attr('data-id', '');
+                    dom_in.html('已提现');
+                }else {
+                    showNotice(data.msg);
+                }
+            },'JSON');
+        });
+    })
+</script>
+</body></html>

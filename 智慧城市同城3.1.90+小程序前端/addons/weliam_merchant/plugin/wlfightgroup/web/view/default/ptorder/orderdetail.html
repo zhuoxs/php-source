@@ -1,0 +1,652 @@
+{php include wl_template('common/header');}
+<style type="text/css">
+	.rank img{width:16px; height:16px;}
+	ul.order-process li {float : left; width : 20%; text-align : center; overflow : hidden;}
+	ul.order-process li p {margin-bottom : 10px;}
+	ul.order-process .order-process-time {color : #CCC;}
+	ul.order-process .order-process-state {color : #999;}
+	ul.order-process .square {display : inline-block; width : 20px; height : 20px; border-radius : 10px; background-color : #E6E6E6; color : #FFF;font-style : normal; position : absolute; left : 50%; z-index : 2; top : 50%; margin : -10px 0 0 -10px;}
+	ul.order-process .square.finish{padding-top:2px; padding-right:2px;}
+	ul.order-process .bar {position : relative; height : 20px;}
+	ul.order-process .bar:after {content : " "; display : block; width : 100%; height : 4px; background-color : #E6E6E6; position : absolute; top : 50%; margin-top : -2px; z-index : 1;}
+	ul.order-process li:first-child .bar:after {margin-left : 50%;}
+	ul.order-process li:last-child .bar:after {margin-left :-50%;}
+	ul.order-process .active .square,ul.order-process .active .bar:after {background-color : #80CCFF;}
+	ul.order-process .active .order-process-state {color : #80CCFF;}
+	.order-detail-info>div{margin-bottom:10px; padding-left:15px;}
+	.page-trade-order h4{font-size:14px; font-weight:700;}
+	.page-trade-order .form-group{margin-bottom:0;}
+	.page-trade-order .form-group .control-label{font-weight:normal; color:#999;}
+	.page-trade-order .order-infos{border-right:1px solid #ddd;}
+	.page-trade-order .parting-line{height:1px;border-top:1px dashed #e5e5e5; margin:3px 0;}
+	.page-trade-order .order-state{padding-left:40px; position:relative; margin:20px 0 40px;}
+	.page-trade-order .order-state>span{color:#07d; position:absolute; left:0; top:5px; font-size:25px; display:inline-block; width:30px; height:30px; border:1px solid #07d; border-radius:30px; text-align:center; line-height:30px;}
+	#close-order ul li{padding:5px 15px; cursor:pointer;}
+	#close-order ul li:hover{background:#eee;}
+	.fix a.js-order-edit-address{display:none; color:red;}
+	.fix:hover a.js-order-edit-address{display:inline;}
+	.page-trade-order .col-sm-9{word-break: break-word; overflow:hidden;}
+</style>
+<div class="app-content">
+	<!--订单物流 start-->
+	<div class="page-trade-order">
+		<div class="order-list">
+			<div class="freight-content">
+				<div class="freight-template-item panel panel-default">
+					<div class="panel-heading clearfix">
+						<div class="pull-left">
+							<strong>订单号：{$item['orderno']}</strong>
+						</div>
+					</div>
+					<div class="panel-body table-responsive collapse in" id="freight-template-item-0" style="padding:0;  overflow-y:hidden;">
+						<div class="app-table-list">
+							<table class="table">
+								<tbody>
+								<tr>
+									<div style="margin-top:20px;">
+										<ul class="order-process clearfix">
+											<li {if !empty($item['orderno'])}class="active"{/if}>
+											<p class="order-process-state">买家已下单</p>
+											<p class="bar"><i class="square">{if !empty($item['orderno'])}√{else}!{/if}</i></p>
+											<p class="order-process-time">{php echo date("Y-m-d H:i:s", $item['createtime'])}</p>
+											</li>
+											{if $item['status'] == 5}
+											<li class="active">
+												<p class="order-process-state">买家己取消</p>
+												<p class="bar"><i class="square">√</i></p>
+												<p class="order-process-time">已取消</p>
+											</li>
+											{else}
+											<li {if !empty($item['paytime'])}class="active"{/if}>
+											<p class="order-process-state">买家己付款</p>
+											<p class="bar"><i class="square">{if !empty($item['paytime'])}√{else}!{/if}</i></p>
+											<p class="order-process-time">{if !empty($item['paytime'])}{php echo date("Y-m-d H:i:s", $item['paytime'])}{/if}</p>
+											</li>
+											{/if}
+											{if $item['fightstatus'] == 1}
+											<li {if $group['status'] != 1}class="active"{/if}>
+											<p class="order-process-state">{if $group['status'] == 1}组团中{/if}{if $group['status'] == 2}组团成功{/if}{if $group['status'] == 3}组团失败{/if}</p>
+											<p class="bar"><i class="square">{if $group['status'] != 1}√{else}!{/if}</i></p>
+											<p class="order-process-time">{if $group['status'] == 2}{php echo date("Y-m-d H:i:s", $group['successtime'])}{/if}{if $group['status'] == 3}{php echo date("Y-m-d H:i:s", $group['failtime'])}{/if}</p>
+											</li>
+											{/if}
+											{if $item['expressid'] && $item['status'] != 6 && $item['status'] != 7}
+											<!--快递单子-->
+											<li {if $item['status'] == 4 || $item['status'] == 2}class="active"{/if}>
+											<p class="order-process-state">卖家已发货</p>
+											<p class="bar"><i class="square">{if !empty($item['paytime'])}√{else}!{/if}</i></p>
+											<p class="order-process-time">{if !empty($express['sendtime'])}{php echo date("Y-m-d H:i:s",$express['sendtime'])}{/if}</p>
+											</li>
+											<li {if $item['status'] == 2}class="active"{/if}>
+											<p class="order-process-state">买家已收货</p>
+											<p class="bar"><i class="square">{if !empty($express['receivetime'])}√{else}!{/if}</i></p>
+											<p class="order-process-time">{if !empty($express['receivetime'])}{php echo date("Y-m-d H:i:s",$express['receivetime'])}{/if}</p>
+											</li>
+											{/if}
+											{if $item['recordid'] && $group['status'] != 6 && $item['status'] != 7}
+											<!--核销单子-->
+											<li {if $item['status'] == 4 || $item['status'] == 2}class="active"{/if}>
+											<p class="order-process-state">等待买家上门消费</p>
+											<p class="bar"><i class="square">{if !empty($item['paytime'])}√{else}!{/if}</i></p>
+											<p class="order-process-time">{if !empty($group['successtime'])}{php echo date("Y-m-d H:i:s",$group['successtime'])}{else}{php echo date("Y-m-d H:i:s",$item['paytime'])}{/if}</p>
+											</li>
+											<li {if $item['status'] == 2}class="active"{/if}>
+											<p class="order-process-state">订单已核销</p>
+											<p class="bar"><i class="square">{if !empty($record['usedtime'])}√{else}!{/if}</i></p>
+											<p class="order-process-time">{if !empty($record['usedtime'])}{php echo date("Y-m-d H:i:s", $record['usedtime'][0]['time'])}{/if}</p>
+											</li>
+											{/if}
+											{if $item['status'] == 6 || $item['status'] == 7}
+											<li {if $item['status'] == 7}class="active"{/if}>
+											<p class="order-process-state">订单已退款</p>
+											<p class="bar"><i class="square">{if $item['status'] == 7}√{else}!{/if}</i></p>
+											<p class="order-process-time">{if !empty($item['refundtime'])}{php echo date("Y-m-d H:i:s", $item['refundtime'])}{/if}</p>
+											</li>
+											{/if}
+										</ul>
+									</div>
+								</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!--订单概况 start-->
+	<div class="page-trade-order">
+		<div class="order-list">
+			<div class="freight-content">
+				<div class="freight-template-item panel panel-default">
+					<div class="panel-body clearfix">
+						<div class="app-form">
+							<form class="form-horizontal" role="form">
+								<div class="col-xs-12 col-sm-6 order-infos">
+									<h4>订单信息</h4>
+									<div class="form-group clearfix">
+										<label class="col-md-3 control-label">订单编号：</label>
+										<div class="col-md-9 form-control-static">
+											{$item['orderno']}
+										</div>
+									</div>
+									<div class="form-group clearfix">
+										<label class="col-md-3 control-label">付款类型：</label>
+										<div class="col-md-9 form-control-static">
+											{if $item['paytype'] == 4}货到付款{elseif  $item['paytype'] == 2}微信支付{elseif  $item['paytype'] == 1}余额支付{elseif  $item['paytype'] == 3}支付宝支付{/if}
+										</div>
+									</div>
+									<div class="form-group clearfix">
+										<label class="col-md-3 control-label">支付流水：</label>
+										<div class="col-md-9 form-control-static">
+											￥{$item['price']}
+										</div>
+									</div>
+									<div class="form-group clearfix" >
+										<label class="col-md-3 control-label">支付单号：</label>
+										<div class="col-md-9 form-control-static">
+											{if $item['transid']}{$item['transid']}{else}-{/if}
+										</div>
+									</div>
+									<div class="form-group clearfix hidden">
+										<label class="col-md-3 control-label">买家：</label>
+										<div class="col-md-9 form-control-static">
+											非粉丝
+										</div>
+									</div>
+									<div class="parting-line"></div>
+									{if $item['expressid']}
+									<div class="form-group clearfix">
+										<label class="col-md-3 control-label">配送方式：</label>
+										<div class="col-md-9 form-control-static">
+											快递
+										</div>
+									</div>
+									<div class="form-group clearfix">
+										<label class="col-md-3 control-label">物流公司：</label>
+										<div class="col-md-9 form-control-static">
+											{if !empty($express['expressname'])} {$express['expressname']}{else} - {/if}
+										</div>
+									</div>
+									<div class="form-group clearfix">
+										<label class="col-md-3 control-label">物流单号：</label>
+										<div class="col-md-9 form-control-static">
+											{if $express['expresssn']} {$express['expresssn']} {else} - {/if}
+										</div>
+									</div>
+									<div class="form-group clearfix">
+										<label class="col-md-3 control-label">收货信息：</label>
+										<div class="col-md-9 form-control-static fix">
+											<p class="js-receive-address" order-id="{$item['id']}">
+												<span id="newaddress">{$express['address']}, {$express['name']}, {$express['tel']}</span>
+												<!--<a href="javascript:;" style="display:inline-block;" class="js-order-edit-address" order-id="{$item['id']}">[编辑]</a>-->
+												</a>
+										</div>
+									</div>
+									{else}
+									<div class="form-group clearfix">
+										<label class="col-md-3 control-label">配送方式：</label>
+										<div class="col-md-9 form-control-static">
+											上门消费
+										</div>
+									</div>
+									<div class="form-group clearfix">
+										<label class="col-md-3 control-label">用户信息：</label>
+										<div class="col-md-9 form-control-static">
+											{$member['nickname']} - {$member['mobile']}
+										</div>
+									</div>
+									<div class="form-group clearfix">
+										<label class="col-md-3 control-label">消费店铺：</label>
+										<div class="col-md-9 form-control-static fix">
+											{if !empty($merchant['storename'])}
+											<p>{$merchant['storename']}</p>
+											{else}
+											-
+											{/if}
+										</div>
+									</div>
+									{/if}
+									<div class="parting-line"></div>
+									<div class="form-group clearfix">
+										<label class="col-md-3 control-label">买家留言：</label>
+										<div class="col-md-9 form-control-static">
+											{$item['buyremark']}
+										</div>
+									</div>
+								</div>
+								<div class="col-xs-12 col-sm-6">
+									<div class="order-state">
+										<span><i class="fa fa-exclamation"></i></span>
+										<h4>
+											订单状态 : <span class="label label-{$item['statusCss']}">{$item['statusName']}</span>
+											<h5 class="text-gray" id="order_status_content"></h5>
+											<h5 class="js-cancel-reason b">
+												如买家未在设置时间内确认收货，订单将自动成为已签收订单；
+											</h5>
+										</h4>
+									</div>
+									<div class="form-group clearfix js-fee">
+										<div class="col-md-offset-1 col-md-6">
+											<div>
+												<h5>货价<span class="pull-right text-currency b">￥{php echo $item['price'] - $express['expressprice'] + $item['card_fee'];}</span></h5>
+												{if $express}
+												<h5>运费<span class="pull-right b">￥{$express['expressprice']}</span></h5>
+												{/if}
+												{if $item['card_type'] == 1}
+												<h5>VIP减免<span class="pull-right b">￥{php echo - $item['card_fee']}</span></h5>
+												{/if}
+												{if $item['is_usecard'] == 1 || !empty($item['first_fee'])}
+												<h5 class="js-discount-info" style="cursor: pointer;">
+													优惠
+													<i class="fa fa-caret-right"></i>
+													<span class="pull-right b js-discount-fee" style="display: block;">
+												</span>
+												</h5>
+												<div style="padding-left: 1em;display: none;" class="js-discount-info-detail">
+													{if $coupon_template['name']}
+													<h6>优惠券减({php echo cutstr($coupon_template['name'], '15', true);})<span class="pull-right">- ￥{php echo $item['discount_fee'];}</span></h6>
+													{/if}
+													{if !empty($item['first_fee'])}
+													<h6>团长优惠(团ID：{$item['tuan_id']})<span class="pull-right">- ￥{php echo $item['first_fee'];}</span></h6>
+													{/if}
+													{if $enough_give}
+													<h6>满{$enough_give[0]}减{$enough_give[1]}<span class="pull-right">- ￥{php echo $enough_give[1];}</h6>
+													{/if}
+													{if $ednum}
+													<h6>包邮<span class="pull-right">- ￥{php echo $ednum;}</h6>
+													{/if}
+													{if $edmoney}
+													<h6>包邮<span class="pull-right">- ￥{php echo $edmoney;}</h6>
+													{/if}
+													{if $deduct}
+													<h6>积分抵扣：消耗{$deduct[0]}积分抵扣{$deduct[1]}元<span class="pull-right">- ￥{php echo $deduct[1];}</h6>
+													{/if}
+												</div>
+												{/if}
+												<hr>
+												<h4><span class="big">已付金额：</span><span class="pull-right text-currency b big">￥{php echo $item['price'];}</span><p></p></h4>
+											</div>
+										</div>
+									</div>
+									<div class="parting-line"></div>
+									<div class="form-group clearfix">
+										<label class="col-md-3 control-label">卖家备注：</label>
+										<div class="col-md-9 form-control-static js-admin-remark">
+											{if $item['remark']} {$item['remark']} {else} - {/if}
+										</div>
+									</div>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	{if $record['usedtime']}
+	<div class="page-trade-order">
+		<div class="order-list">
+			<div class="freight-content">
+				<div class="freight-template-item panel panel-default">
+					<div Class="panel-heading">
+						核销详情
+					</div>
+					<div class="panel-body table-responsive collapse in" style="overflow-y:hidden;">
+						<div class="app-table-list">
+							<table class="table">
+								<thead class="js-freight-cost-list-header">
+								<tr>
+									<th style="width:20%;">核销次数</th>
+									<th style="width:40%; text-align: center;">核销时间</th>
+									<th style="width:40%; text-align: center;">核销方式</th>
+								</tr>
+								</thead>
+								<tbody>
+								{loop $record['usedtime'] $k $time}
+								<tr>
+									<td  class="goods-info">第{php echo $k+1}次</td>
+									<td style="white-space: normal;text-align: center;">{php echo date("Y-m-d H:i:s",$time['time'])}</td>
+									<td class="text-center">{$time['type']}{if $time['ver']}:{$time['ver']}{/if}</td>
+								</tr>
+								{/loop}
+								<tr>
+									<td class="text-center b"></td>
+									<td class="text-center b">剩余使用次数:</td>
+									<td class="text-center b">
+										<span class="js-count-payment" >{$record['usetimes']}次</span>
+									</td>
+								</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	{/if}
+	<div class="page-trade-order">
+		<div class="order-list">
+			<div class="freight-content">
+				<div class="freight-template-item panel panel-default">
+					<div Class="panel-heading">
+						清单
+					</div>
+					<div class="panel-body table-responsive collapse in" style="overflow-y:hidden;">
+						<div class="app-table-list">
+							<table class="table">
+								<thead class="js-freight-cost-list-header">
+								<tr>
+									<th style="width:33%;">商品名称</th>
+									<th style="width:33%; text-align: center;">规格</th>
+									<th style="width:33%; text-align: center;">数量</th>
+								</tr>
+								</thead>
+								<tbody>
+								<tr>
+									<td  class="goods-info"><img width="50" height="50" src="{php echo tomedia($goods['logo'])}" style="margin-right: 10px;">{$goods['name']}</td>
+									<td style="white-space: normal;text-align: center;">{if $item['spec']}{$item['spec']}{else}无规格{/if}</td>
+									<td class="text-center">{$item['num']}</td>
+								</tr>
+								<tr>
+									<td class="text-center b">合计:</td>
+									<td class="text-center b">
+										<span class="js-count-payment" >￥{php echo $item['price'];}</span>
+									</td>
+								</tr>
+								<tr>
+									<input type="hidden" name="id" id="id" value="{$id}" />
+									<td colspan="10" class="text-right">
+										{if $item['expressid']}
+										{if $item['status'] == 8}
+										<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-confirmsend">确认发货</button>
+										{/if}
+										{if $item['status'] == 6}
+										<!--<button  class="btn btn-danger js-cancelsend">取消发货</button>-->
+										{/if}
+										{else}
+										{if $item['status'] == 4}
+										<button type="button" class="btn btn-primary js-confirmHexiao" data-toggle="modal" data-target="#modal-confirmsend">确认核销</button>
+										{/if}
+										{if $item['status'] == 2}
+										<!--<button  class="btn btn-danger js-cancelHexiao">取消核销</button>-->
+										{/if}
+										{/if}
+										{if $item['status'] == 7}
+										<button  class="btn btn-success" >已退款</button>
+										{else if $item['status']== 5}
+										{if $item['applyrefund']== 1}
+										<button class="btn btn-success js-refund" >退款</button>
+										{/if}
+										<button  class="btn btn-danger" >已取消</button>
+										{elseif $item['status']== 1 || $item['status']== 6 || $item['status']== 2 || $item['status']== 4 || $item['status']== 8}
+										<button class="btn btn-success js-refund" >退款</button>
+										{/if}
+									</td>
+								</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div id="modal-confirmsend" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true" style="width:600px;margin:0px auto;height: 600px;">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button aria-hidden="true" data-dismiss="modal" class="close" type="button">×</button>
+					<h3>快递信息</h3>
+				</div>
+				<div class="modal-body">
+					<div class="form-group" style="height: 50px;">
+						<label class="col-xs-10 col-sm-3 col-md-3 control-label">是否需要快递</label>
+						<div class="col-xs-12 col-sm-9 col-md-8 col-lg-8">
+							<label for="radio_1" class="radio-inline">
+								<input type="radio" name="isexpress" value="1" onclick="$('#expresspanel').show();" checked> 是
+							</label>
+							<label for="radio_2" class="radio-inline">
+								<input type="radio" name="isexpress" value="0" onclick="$('#expresspanel').hide();"> 否
+							</label>
+						</div>
+					</div>
+					<div class="form-group" style="height: 50px;">
+						<label class="col-xs-10 col-sm-3 col-md-3 control-label">快递公司</label>
+						<div class="col-xs-12 col-sm-9 col-md-8 col-lg-8">
+							<select class="form-control" name="express" id="express">
+								<option value="" data-name="">其他快递</option>
+								<option value="顺丰" data-name="顺丰">顺丰</option>
+								<option value="申通" data-name="申通">申通</option>
+								<option value="韵达快运" data-name="韵达快运">韵达快运</option>
+								<option value="天天快递" data-name="天天快递">天天快递</option>
+								<option value="圆通速递" data-name="圆通速递">圆通速递</option>
+								<option value="中通速递" data-name="中通速递">中通速递</option>
+								<option value="ems快递" data-name="ems快递">ems快递</option>
+								<option value="汇通快运" data-name="汇通快运">汇通快运</option>
+								<option value="邮政平邮" data-name="邮政平邮">邮政平邮</option>
+								<option value="全峰快递" data-name="全峰快递">全峰快递</option>
+								<option value="安能快递" data-name="安能快递">安能快递</option>
+								<option value="快捷快递" data-name="快捷快递">快捷快递</option>
+								<option value="宅急送" data-name="宅急送">宅急送</option>
+								<option value="aae全球专递" data-name="aae全球专递">aae全球专递</option>
+								<option value="安捷快递" data-name="安捷快递">安捷快递</option>
+								<option value="安信达快递" data-name="安信达快递">安信达快递</option>
+								<option value="彪记快递" data-name="彪记快递">彪记快递</option>
+								<option value="bht" data-name="bht">bht</option>
+								<option value="百福东方国际物流" data-name="百福东方国际物流">百福东方国际物流</option>
+								<option value="coe" data-name="中国东方（COE）">中国东方（COE）</option>
+								<option value="长宇物流" data-name="长宇物流">长宇物流</option>
+								<option value="大田物流" data-name="大田物流">大田物流</option>
+								<option value="德邦物流" data-name="德邦物流">德邦物流</option>
+								<option value="dhl" data-name="dhl">dhl</option>
+								<option value="dpex" data-name="dpex">dpex</option>
+								<option value="dsukuaidi" data-name="d速快递">d速快递</option>
+								<option value="递四方" data-name="递四方">递四方</option>
+								<option value="fedex" data-name="fedex（国外）">fedex（国外）</option>
+								<option value="飞康达物流" data-name="飞康达物流">飞康达物流</option>
+								<option value="fenghuangkuaidi" data-name="凤凰快递">凤凰快递</option>
+								<option value="feikuaida" data-name="飞快达">飞快达</option>
+								<option value="国通快递" data-name="国通快递">国通快递</option>
+								<option value="百世汇通" data-name="百世汇通">百世汇通</option>
+
+							</select>
+							<input type='hidden' name='expresscom' id='expresscom' />
+						</div>
+					</div>
+					<div class="form-group"  style="height: 50px;">
+						<label class="col-xs-10 col-sm-3 col-md-3 control-label">快递单号</label>
+						<div class="col-xs-12 col-sm-9 col-md-8 col-lg-8">
+							<input type="text" id="expresssn" name="expresssn" class="form-control" />
+						</div>
+					</div>
+					<div id="module-menus"></div>
+				</div>
+				<div class="modal-footer" style="height: 100px;">
+					<button  class="btn btn-primary span2 js-confirmsend" >确认发货</button>
+					<a href="#" class="btn btn-default" data-dismiss="modal" aria-hidden="true">关闭</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+$('.js-confirmsend').click(function(e){
+	e.stopPropagation();
+	var id = $('#id').val();
+	var express = $('#express').val();
+	var expresssn = $('#expresssn').val();
+	var radio_2 = $('input[name=isexpress]:checked').val();
+	if(radio_2==1){
+		if(expresssn==''){
+			alert("未填订单号!");return false;
+		}
+	}
+	location.href = "{php echo web_url('wlfightgroup/fightorder/confirmsend')}&id="+id+"&express="+express+"&expresssn="+expresssn;
+});
+$('.js-confirmHexiao').click(function(e) {
+	e.stopPropagation();
+	var id = $('#id').val();
+	util.nailConfirm(this, function(state) {
+		if(!state) return;
+		$.post("{php echo web_url('wlfightgroup/fightorder/confirmHexiao')}",{id:id},function(d){
+			location.href = "{php echo web_url('wlfightgroup/fightorder/orderdeail')}&id="+id;
+	},"json");
+	}, {html: "确认核销?"});
+});
+$('.js-refund').click(function(e) {
+	e.stopPropagation();
+	var id = $('#id').val();
+	util.nailConfirm(this, function(state) {
+		if(!state) return;
+		location.href = "{php echo web_url('wlfightgroup/fightorder/refundfight')}&id="+id;
+	}, {html: "确认退款?"});
+});
+//require(['jquery', 'order'], function($, o){
+//	$(function(){
+//		$('.js-discount-info').click(function(){
+//			$arrow = $(this).find('i');
+//			if($arrow.hasClass('fa-caret-right')) {
+//				$(this).next().show()
+//				$arrow.removeClass('fa-caret-right').addClass('fa-caret-down');
+//				$('.js-discount-fee').hide();
+//			} else {
+//				$arrow.removeClass('fa-caret-down').addClass('fa-caret-right');
+//				$(this).next().hide()
+//				$('.js-discount-fee').show();
+//			}
+//		});
+//		o.rank($('.rank').get(0));
+//		
+//		$('.goods-info').hover(function() {
+//			var obj = this;
+//			var img = $(this).find('img').attr('src');
+//			var $pop = util.popover(obj, function($popover, obj) {
+//				obj.$popover = $popover;
+//			}, '<div><img src="'+ img+'" style="max-width:200px; max-height:200px;"></div>');
+//		}, function() {
+//			this.$popover.remove();
+//		});
+//		{if !empty($item['express']) && !empty($item['express_no'])}
+//		$(".js-logistics").click(function() {
+//			var obj = this;
+//			var expressid = "{$item['express']}";
+//			var expressno = "{$item['express_no']}";
+//			util.loading();
+//			$.post("{php echo url('order/express/logistics_info');}", {type : expressid, postid : expressno}, function(data) {
+//				if (!data.errno) {
+//					var html = '';
+//					$.each(data, function(index, content) {
+//						if (content != '') {
+//							html += '<div><span class="time">' +content.time+ '</span>'+'<span class="content">' +content.content+ '</span></div>';
+//						};
+//					});
+//					util.loaded();
+//					var $pop = util.popover(obj, function($popover, obj) {
+//						obj.$popover = $popover;
+//					}, {placement: 'right', html : '<div id="return-data" style="height:300px; overflow-y:scroll;"><p>查询结果：</p>' + html+'</div>'});
+//				} else {
+//					util.loaded();
+//					$pop = util.popover(obj, function($popover, obj) {
+//						obj.$popover = $popover;
+//					}, {placement: 'right', html : '<p>查询结果：</p>' + '<div><span class="content">' +data.message+ '</span></div>'});
+//				}
+//			}, 'json');
+//		});
+//		{/if}
+//		$('.js-receive-address').click(function() {
+//			var order_id = $(this).attr('order-id');
+//			$('.js-order-remark-post').attr("order-id",order_id);
+//			$('#order-remark-container').show();
+//			$('.page-trade-order').css("opacity","0.2");$('.big-menu').css("opacity","0.2");
+//		});
+//		$('.js-cancel,.close').click(function() {
+//			$('#order-remark-container').hide();
+//			$('.page-trade-order').css("opacity","1");$('.big-menu').css("opacity","1");
+//		});
+//		$('.js-order-remark-post').click(function() {
+//			var order_id = $(this).attr('order-id');
+//			
+//			var address = $('#address').val();
+//			var realname = $("#realname").val();
+//			var mobile = $("#mobile").val();
+//			$.post("{php echo web_url('order/order/address')}",{id:order_id,address:address,realname:realname,mobile:mobile},function(d){
+//				if(!d.errno){
+//					var a = address+ ","+ realname + ","+mobile;
+//					$("#newaddress").html(a);
+//					util.tips('修改成功');
+//				}
+//			},"json");
+//			$('#order-remark-container').hide();
+//			$('.page-trade-order').css("opacity","1");$('.big-menu').css("opacity","1");
+//		});
+//		
+//		$('.js-confrimpay').click(function(e) {
+//			e.stopPropagation();
+//			var id = $('#id').val();
+//			util.nailConfirm(this, function(state) {
+//				if(!state) return;
+//				location.href = "{php echo web_url('order/order/confrimpay')}&id="+id;
+//			}, {html: "确认付款?"});
+//			
+//		});
+//		$('.js-confirmHexiao').click(function(e) {
+//			e.stopPropagation();
+//			var id = $('#id').val();
+//			util.nailConfirm(this, function(state) {
+//				if(!state) return;
+//				$.post("{php echo web_url('order/order/confirmHexiao')}",{id:id},function(d){
+//					location.href = "{php echo web_url('order/order/detail')}&id="+id;
+//			},"json");
+//				
+//			}, {html: "确认核销?"});
+//			
+//		});
+//		$('.js-cancelHexiao').click(function(e) {
+//			e.stopPropagation();
+//			var id = $('#id').val();
+//			util.nailConfirm(this, function(state) {
+//				if(!state) return;
+//				location.href = "{php echo web_url('order/order/cancelHexiao')}&id="+id;
+//			}, {html: "确认取消?"});
+//			
+//		});
+//		$('.js-confirmsend').click(function(e){
+//			alert('ok');
+//			e.stopPropagation();
+//			alert('ok1');
+//			var id = $('#id').val();
+//			var express = $('#express').val();
+//			var expresssn = $('#expresssn').val();
+//			var radio_2 = $('input[name=isexpress]:checked').val();
+//			if(radio_2==1){
+//				if(expresssn==''){
+//					alert("未填订单号!");return false;
+//				}
+//			}
+//			alert('ok2');
+//			location.href = "{php echo web_url('wlfightgroup/fightorder/confirmsend')}&id="+id+"&express="+express+"&expresssn="+expresssn;
+//		});
+//		$('.js-cancelsend').click(function(e) {
+//			e.stopPropagation();
+//			var id = $('#id').val();
+//			util.nailConfirm(this, function(state) {
+//				if(!state) return;
+//				location.href = "{php echo web_url('order/order/cancelsend')}&id="+id;
+//			}, {html: "确认取消发货?"});
+//			
+//		});
+//		$('.js-refund').click(function(e) {
+//			var id = $('#id').val();
+//			e.stopPropagation();
+//			util.nailConfirm(this, function(state) {
+//				if(!state) return;
+//				location.href = "{php echo web_url('order/order/refund')}&id="+id;
+//			}, {html: "确认退款?"});
+//			
+//		});
+//	});
+//});
+</script>
+{php include wl_template('common/footer');}

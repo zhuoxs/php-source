@@ -1,0 +1,140 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+	<li class="active"><a href="{php echo web_url('halfcard/realcard/cardlist');}">实体卡列表</a></li>
+</ul>
+<div class="app-content">
+	<div class="app-filter">
+		<div class="filter-action">
+			<a href="{php echo web_url('halfcard/realcard/addcard')}" class="btn btn-primary">生成实体卡</a>
+		</div>
+		<div class="filter-list">
+			<form action="./index.php" method="get" class="form-horizontal" role="form">
+				<input type="hidden" name="c" value="site" />
+				<input type="hidden" name="a" value="entry" />
+				<input type="hidden" name="m" value="{MODULE_NAME}" />
+				<input type="hidden" name="p" value="halfcard" />
+				<input type="hidden" name="ac" value="realcard" />
+				<input type="hidden" name="do" value="cardlist" />
+				<input type="hidden" name="status" value="{$_GPC['status']}" />
+				<div class="form-group">
+					<label class="col-md-2 control-label">实体卡状态</label>
+					<div class="col-sm-8 col-xs-12">
+						<div class="btn-group">
+							<a href="{php echo web_url('halfcard/realcard/cardlist');}" class="btn {if $_GPC['status'] == -1 || $_GPC['status'] == ''}btn-primary{else}btn-default{/if}">不限</a>
+							<a href="{php echo web_url('halfcard/realcard/cardlist',array('status'=>1));}" class="btn {if $_GPC['status'] == 1}btn-primary{else}btn-default{/if}">待激活</a>
+							<a href="{php echo web_url('halfcard/realcard/cardlist',array('status'=>2));}" class="btn {if $_GPC['status'] == 2}btn-primary{else}btn-default{/if}">已激活</a>
+							<a href="{php echo web_url('halfcard/realcard/cardlist',array('status'=>3));}" class="btn {if $_GPC['status'] == 3}btn-primary{else}btn-default{/if}">已失效</a>
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">实体卡信息</label>
+					<div class="col-sm-6 col-lg-8 col-xs-12">
+						<input type="text" name="keyword" class="form-control" value="{$keyword}" placeholder="请输入实体卡编号或场景备注">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 control-label">生成时间</label>
+					<div class="col-sm-3 col-lg-3 col-xs-12">
+						{php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d H:i:s', $starttime),'endtime'=>date('Y-m-d H:i:s', $endtime)),'true');}
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label"></label>
+					<div class="col-md-9">
+						<button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+						<button class="btn btn-default min-width" name="export" type="submit" value="export"><i class="fa fa-download"></i> 导出实体卡</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+	<div class="app-table-list">
+		<div class="table-responsive">
+			<table class="table table-hover">
+				<thead>
+				<tr>
+					<th style="width:30px;"><input type="checkbox" onclick="var ck = this.checked;$(':checkbox').each(function(){this.checked = ck});" /></th>
+					<th style="width:70px;">实体卡编号</th>
+					<th style="width:40px;">包含时长</th>
+					<th style="width:40px;">使用状态</th>
+					<th style="width:90px;">场景备注</th>
+					<th style="width:60px;">二维码</th>
+					<th style="width:80px;">会员等级</th>
+					<th style="width:100px;">生成时间</th>
+					<th style="width:100px;">绑定时间</th>
+					<th style="width:40px;">操作</th>
+				</tr>
+				</thead>
+				<tbody>
+				{loop $list $row}
+				<tr>
+					<td class="text-center" style="width:30px; height: auto;">
+						<input type="checkbox" name="checkbox[]" class="checkbox" value="{$row['id']}" />
+					</td>
+					<td>{php echo $row['cardsn']}</td>
+					<td>{$row['days']}天</td>
+					<td>{if $row['icestatus']}<span class="label label-danger">已冻结</span>{else if $row['cardid']}<span class="label label-success">已绑定</span>{else}{if $row['status'] == 3}<span class="label label-default">已失效</span>{else}<span class="label label-warning">未绑定</span>{/if}{/if}</td>
+					<td>{$row['remark']}</td>
+					<td><a href="javascript:void(0);" onclick="javascript:layer.open({type: 2,title: '实体卡二维码',shadeClose: true,shade: 0.8,area: ['385px', '420px'],content: '{$row['showurl']}'});">查看</a></td>
+					<td>{$row['levelname']}</td>
+					<td style="font-size:12px; color:#666;">
+						{php echo date('Y-m-d H:i:s', $row['createtime']);}
+					</td>
+					<td style="font-size:12px; color:#666;">
+						{if $row['bindtime']}{php echo date('Y-m-d H:i:s', $row['bindtime']);}{else}待绑定{/if}
+					</td>
+					<td>
+						<a href="{php echo web_url('halfcard/realcard/editrealcard',array('id'=>$row['id']))}" data-toggle="ajaxModal">编辑</a> -
+						{if empty($row['icestatus'])}
+						<a href="{php echo web_url('halfcard/realcard/icerealcard',array('id'=>$row['id'],'type'=>'1'))}" data-toggle="ajaxModal">冻结</a> -
+						{else}
+						<a href="{php echo web_url('halfcard/realcard/icerealcard',array('id'=>$row['id'],'type'=>'0'))}" data-toggle="ajaxModal">解冻</a> -
+						{/if}
+						<a href="{php echo web_url('halfcard/realcard/deletemodal',array('id'=>$row['id']))}" data-toggle="ajaxModal">删除</a>
+					</td>
+				</tr>
+				{/loop}
+				</tbody>
+			</table>
+		</div>
+		<div id="de1" class="app-table-foot clearfix">
+			<div class="pull-left">
+				<a href="javascript:;" class="btn btn-default min-width js-batch js-delete">删除选中实卡</a>
+			</div>
+			<div class="pull-right">
+				{$pager}
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	$(function(){
+		//删除用户记录
+		$('#de1').delegate('.js-delete','click',function(e){
+			e.stopPropagation();
+			var order_ids = [];
+			var $checks=$('.checkbox:checkbox:checked');
+			$checks.each(function() {
+				if (this.checked) {
+					order_ids.push(this.value);
+				};
+			});
+			var $this = $(this);
+			var ids = order_ids;
+			//alert(ids);
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				$.post("{php echo web_url('halfcard/realcard/deletecard')}", { ids : ids }, function(data){
+					if(!data.errno){
+						util.tips("删除成功！");
+						location.reload();
+					};
+				}, 'json');
+			}, {html: '确认删除?'});
+		});
+	});
+</script>
+
+
+{php include wl_template('common/footer');}

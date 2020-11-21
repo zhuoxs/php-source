@@ -1,0 +1,178 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+	<li {if $op == 'display' && $status == '' }class="active"{/if}>
+        <a href="{php echo web_url('order/import', array('op' => 'display'))}">全部待发货({$total_all})</a>
+    </li>
+    <li {if $op == 'display' && $status == '1'} class="active"{/if}>
+        <a href="{php echo web_url('order/import', array('op' => 'display', 'status' => 1))}">团购成功待发货({$total_tuan})</a>
+    </li>
+	<li {if $op == 'display' && $status == '0'} class="active"{/if}>
+        <a href="{php echo web_url('order/import', array('op' => 'display', 'status' => 0))}">单独购买待发货({$total_single})</a>
+    </li>
+</ul>
+{if $op == 'display'}
+<div class="main">
+    <div class="panel panel-info">
+	    <div class="panel-heading">批量发货步骤</div>
+	    <div class="panel-body">
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-2 col-md-2 col-lg-12 control-label" style="text-align: left;padding-right: 30px;">
+                1.按条件搜索出需要导出的待发货订单文件。
+                </label>
+                 <label class="col-xs-12 col-sm-2 col-md-2 col-lg-12 control-label" style="text-align: left;padding-right: 30px;">
+                2.导出订单文件，填写快递单号、快递公司。
+                </label>
+                 <label class="col-xs-12 col-sm-2 col-md-2 col-lg-12 control-label" style="text-align: left;padding-right: 30px;">
+                3.导入该订单文件<span style="color: red;">（xls或csv格式文件）</span>，批量发货完成。
+                </label>
+            	
+	   		</div>
+	    </div>
+	</div> 
+	<div class="panel panel-info">
+	    <div class="panel-heading">筛选</div>
+	    <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form" id="form2">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="feng_merchants" />
+                <input type="hidden" name="do" value="order" />
+                <input type="hidden" name="ac" value="import" />
+                <input type="hidden" name="status" value="{$status}"/>
+                 <input type="hidden" name="op" value="{$op}"/>
+                 <div class="form-group">
+					<label class="col-xs-12 col-sm-4 col-md-4 col-lg-1 control-label">所属商家</label>
+					<div class="col-xs-12 col-sm-4 col-md-4 col-lg-4">
+						<select name="merchantid" class="form-control">
+						{loop $merchants $row}
+				            <option value="{$row['id']}" {if $_GPC['merchantid']==$row['id']}selected="selected"{/if}>{$row['name']}</option>
+						{/loop}}
+				        </select>
+					</div>
+					<label class="col-xs-12 col-sm-4 col-md-4 col-lg-1 control-label">商名称搜索</label>
+                    <div class="col-xs-12 col-sm-4 col-md-4 col-lg-4">
+                        <select name="goodsid2" class="form-control">
+                            <option value="">--所有--</option>
+                            {loop $allgoods $key $type}
+                            <option value="{$type['id']}" {if $_GPC['goodsid2']==$type['id']}selected="selected"{/if}>{$type['gname']}</option>
+                            {/loop}
+                        </select>
+                    </div>
+				</div>
+                <div class="form-group">
+	            	<label class="col-xs-12 col-sm-4 col-md-4 col-lg-1 control-label">商品ID:</label>
+	                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-4">
+						<input type="text" name="goodsid" class="form-control" value="{$_GPC['goodsid']}" placeholder="可查询商品ID"/>
+					</div>
+					<label class="col-xs-12 col-sm-4 col-md-4 col-lg-1 control-label">订单号</label>
+                    <div class="col-xs-12 col-sm-4 col-md-4 col-lg-4">
+                        <input class="form-control" name="keyword" id="" type="text" value="{$_GPC['keyword']}" placeholder="可查询商品ID">
+                    </div>
+                 </div>
+                 
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-4 col-md-4 col-lg-1 control-label">用户信息</label>
+                    <div class="col-xs-12 col-sm-4 col-md-4 col-lg-4">
+                        <input class="form-control" name="member" id="" type="text" value="{$_GPC['member']}" placeholder="可查询手机号 / 姓名">
+                    </div>
+                     <label class="col-xs-12 col-sm-4 col-md-4 col-lg-1 control-label">下单时间</label>
+                        <div class="col-xs-12 col-sm-4 col-md-4 col-lg-4">
+                            {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d H:i:s', $starttime),'endtime'=>date('Y-m-d H:i:s', $endtime)),true);}
+                        </div>
+                        <div class="col-sm-3 col-lg-2" style="text-align:right;"><button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                        </div>
+                </div>
+            </form>
+	    </div>
+	</div>
+	<div class="panel panel-info">
+	    <div class="panel-heading">发货</div>
+	    <div class="panel-body">
+           <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-4 col-lg-1 control-label" style="text-align: right;padding-right: 30px;">导出订单</label>
+            	<a href='{php echo web_url('order/import', array('op' => 'output','status'=>$status,'keyword'=>$keyword,'member'=>$member,'starttime'=>$starttime,'endtime'=>$endtime,'time'=>$time,'goodsid'=>$_GPC['goodsid'],'goodsid2'=>$_GPC['goodsid2'],'merchantid'=>$_GPC['merchantid']))}'>
+            		<button class="btn btn-info"><i class="fa fa-download"></i> 导出订单</button>
+            	</a>
+	   		</div>
+	    	<form name="sendForm" enctype="multipart/form-data" class="form-horizontal" action="{php echo web_url('order/import', array('op' => 'import'))}" method="post">
+	   		   <div class="form-group">
+                    <label class="col-xs-12 col-sm-4 col-md-4 col-lg-1 control-label">导入发货订单</label>
+                    <div class="col-sm-5 col-lg-7 col-xs-12">
+                        <input type="file" name="fileName" class="btn btn-success" />
+                    </div>
+                    <div class="col-sm-3 col-lg-2" style="text-align:right;"><button id="searchBtn" type="submit" class="btn btn-success"> 导 入 </button>
+                    </div>
+                </div>
+	   		</form>
+	    </div>
+	</div> 
+		<div class="panel panel-default">
+		<div class="panel-body table-responsive">
+			<table class="table table-hover">
+				<thead class="navbar-inner">
+					<tr>
+						<th style="width:60px;" class="text-center">商品ID</th>
+						<th style="width:200px;">订单号</th>
+						<th style="width:120px;">订单类型</th>
+						<th style="width:150px;">商品信息</th>
+						<th style="width:150px;">所属商家</th>
+						<th style="width:100px;">商品规格</th>
+						<th style="width:60px;" >数量</th>
+						<th style="width:70px;">姓名</th>
+						<th style="width:150px;">电话</th>
+						<th style="width:80px;">运费</th>
+						<th style="width:80px;">总价</th>
+						<th style="width:80px;">状态</th>
+						<th style="width:180px; text-align:right;">操作<br>下单时间</th>
+					</tr>
+				</thead>
+				<tbody>
+					{loop $list $item}
+					<tr>
+						<td class="text-center">{$item['gid']}</td>
+						<td>{$item['orderno']}</td>
+						<td>{if $item['is_tuan']==1 || $item['is_tuan']==3}<span class="label label-warning">拼团单：{$item['tuan_id']}号</span>{else}<span class="label label-success">直购单</span>{/if}</td>
+						<td class="text-center"><img src="{php echo tomedia($item['gimg'])}" style="width: 40px; height: 40px;padding:1px;"> &nbsp;{$item['gname']}</td>
+						<td class="text-center">{$item['merchant']['name']}</td>
+						<td>{if $item['optionname']}{$item['optionname']}{else}不限{/if}</td>
+						<td class="text-center">{$item['gnum']}</td>
+						<td>{if $item['cname']}{$item['cname']}{else}{$item['addname']}{/if}</td>
+						<td>{if $item['tel']}{$item['tel']}{else}{$item['mobile']}{/if}</td>
+						<td>{$item['freight']} 元</td>
+						<td>{$item['price']} 元</td>
+						<td>
+							<span class="label label-{$item['statuscss']}">{$item['status']}</span>
+						</td>
+						<td style="text-align:right;">
+							<div class="btn-group">
+							<a href="{php echo $this->createWebUrl('order', array('op' => 'detail', 'id' => $item['id'],'is_tuan'=>1))}" class="btn btn-success btn-sm">查看订单</a>
+						</div>	
+						<br>
+								{php echo date('Y-m-d H:i:s', $item['createtime'])}
+						</td>
+					</tr>
+					{/loop}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+{$pager}
+<script type="text/javascript">
+	require(['daterangepicker'], function($){
+		$('.daterange').on('apply.daterangepicker', function(ev, picker) {
+			$('#form1')[0].submit();
+		});
+	});
+</script>
+	<script>
+	require(['bootstrap'],function($){
+		$('.btn').hover(function(){
+			$(this).tooltip('show');
+		},function(){
+			$(this).tooltip('hide');
+		});
+	});
+</script>
+{/if}
+{php include wl_template('common/footer');}

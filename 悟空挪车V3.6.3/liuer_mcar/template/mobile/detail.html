@@ -1,0 +1,139 @@
+{template 'header'}
+<style>
+    .detail-do > div{
+        padding: 0 5px;
+    }
+</style>
+<body class="pageLog pageFooter">
+<div id="hook-app">
+    <?php if($config['header_isshow']): ?>
+    <div class="header">
+        <yd-navbar title="挪车记录详情">
+            <router-link to="#" slot="left">
+                <yd-navbar-back-icon></yd-navbar-back-icon>
+            </router-link>
+        </yd-navbar>
+    </div>
+    <?php endif; ?>
+    <div class="movelog-detail">
+        <yd-cell-group>
+            <yd-cell-item>
+                <span slot="left">车牌号</span> <span slot="right">{$logInfo['chepaihao']}</span>
+            </yd-cell-item>
+            <yd-cell-item>
+                <span slot="left">位置</span>
+                <span slot="right">{$logInfo['address']}</span>
+            </yd-cell-item>
+        </yd-cell-group>
+        <yd-cell-group>
+            <yd-cell-item>
+                <span slot="left">发起人</span> <span slot="right">{php echo get_user_nickname($logInfo['from_openid'])}</span>
+            </yd-cell-item>
+            <yd-cell-item>
+                <span slot="left">头像</span>
+                <span slot="right"><img src="{php echo get_user_avatar($logInfo['from_openid'])}" alt="" width="30" height="30" style="border-radius: 50%"
+                /></span>
+            </yd-cell-item>
+            <yd-cell-item>
+                <span slot="left">挪车原因</span>
+                <span slot="right">{$logInfo['remark']}</span>
+            </yd-cell-item>
+            <!--<yd-cell-item>
+                <span slot="left">语音信息</span>
+                <span slot="right">我是语音信息</span>
+            </yd-cell-item>-->
+            <yd-cell-item>
+                <span slot="left">发起时间</span>
+                <span slot="right">{php echo date('Y-m-d H:i',$logInfo['created_at'])}</span>
+            </yd-cell-item>
+        </yd-cell-group>
+        <div class="detail-do">
+            <?php if($me == 0): ?>
+            <?php if($config['is_access']): ?>
+            <div class="pull-left">
+                <yd-button size="large" type="warning" @click.native="openCallb" bgcolor="#4f7ff9" color="#ffffff"><i class="fa fa-phone"></i> 点击回拨</yd-button>
+            </div>
+            <?php endif; ?>
+            <?php if($logInfo['status'] == Table::MOVE_NORMAL): ?>
+            <div class="pull-left">
+                <yd-button size="large" type="warning" @click.native="openFinish" color="#ffffff"><i class="fa fa-reply"></i> 处理完成</yd-button>
+            </div>
+            <?php endif; ?>
+            <?php endif; ?>
+            <div class="pull-right">
+                <yd-button size="large" type="primary" @click.native="openAddress"><i class="fa fa-map-pin"></i> 查看位置</yd-button>
+            </div>
+        </div>
+    </div>
+    {template 'footer'}
+</div>
+
+<script>
+    var latitude = parseFloat("{$logInfo['latitude']}");
+    var longitude = parseFloat("{$logInfo['longitude']}");
+    var movelog_id = "{$logInfo['id']}";
+    var hurryUrl = "{php echo $this->createMobileUrl('hurry');}";
+
+    var app = new Vue({
+        el: '#hook-app',
+        data: {
+        },
+        methods: {
+            openCallb: function(){
+                this.$dialog.loading.open('请稍后...');
+                $.post(hurryUrl,{movelog_id:movelog_id,type:3}).then(function(resp) {
+                    app.$dialog.loading.close();
+                    resp = JSON.parse(resp);
+
+                    if(resp.error){
+                        app.message(resp.msg,'error');
+                        return false;
+                    }else{
+                        location.href = "tel:" + resp.xMobile;
+                        return false;
+                    }
+
+                });
+                return false;
+            },
+            openFinish: function(){
+                $.post(hurryUrl,{movelog_id:movelog_id,type:5}).then(function(resp) {
+                    app.$dialog.loading.close();
+                    resp = JSON.parse(resp);
+
+                    if(resp.error){
+                        app.message(resp.msg,'error');
+                        return false;
+                    }else{
+                        app.message(resp.msg);
+                        setTimeout(function(){
+                            location.reload();
+                        },1500);
+                    }
+
+                });
+                return false;
+            },
+            openAddress: function(){
+                wx.openLocation({
+                    latitude : latitude,
+                    longitude : longitude,
+                    name : '发起人位置', // 位置名
+                    address : '您的爱车停放位置', // 地址详情说明
+                    scale : 16, // 地图缩放级别,整形值,范围从1~28。默认为最大
+                    infoUrl : '' // 在查看位置界面底部显示的超链接,可点击跳转（测试好像不可用）
+                });
+            },
+            message:function(msg,icon){
+                icon = icon || 'success'
+                this.$dialog.toast({
+                    mes: msg,
+                    timeout: 1500,
+                    icon:icon
+                });
+            },
+        }
+    });
+</script>
+</body>
+</html>

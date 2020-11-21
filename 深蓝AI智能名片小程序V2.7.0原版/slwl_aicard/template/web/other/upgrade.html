@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>{$_W['slwl']['lang']['sys_name']}</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="">
+	{template 'public/header'}
+
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+	{template 'public/top'}
+	{template 'public/left'}
+
+	<div class="layui-body">
+		<div class="layui-main">
+			<form class="layui-form fixed" action="" method="post" enctype="multipart/form-data" id="data-form">
+				<div class="layui-tab layui-tab-brief" lay-filter="tab">
+					<ul class="layui-tab-title">
+						<li class="layui-this">系统同步</li>
+					</ul>
+					<div class="layui-tab-content">
+						<!-- 系统同步 -->
+						<div class="layui-tab-item layui-show">
+							<div class="layui-form-item">
+								<label class="layui-form-label">程序完整性</label>
+								<div class="layui-input-block">
+									<div class="layui-form-mid layui-word-aux">
+										<span>同步</span>
+									</div>
+								</div>
+							</div>
+							<div class="layui-form-item">
+								<label class="layui-form-label">数据库结构</label>
+								<div class="layui-input-block">
+									<div class="layui-form-mid layui-word-aux">
+										<span>同步</span>
+									</div>
+								</div>
+							</div>
+							<div class="layui-form-item">
+								<label class="layui-form-label">当前版本</label>
+								<div class="layui-input-block">
+									<div class="layui-form-mid layui-word-aux">
+										<span>V{SLWL_VERSION} RELEASE {SLWL_RELEASE}</span>
+									</div>
+								</div>
+							</div>
+							<div class="layui-form-item">
+								<label class="layui-form-label">最新版本</label>
+								<div class="layui-input-block">
+									<div class="layui-form-mid layui-word-aux" id="check">等待检测...</div>
+								</div>
+							</div>
+							<div class="layui-form-item">
+								<label class="layui-form-label">协议</label>
+								<div class="layui-input-block">
+									<div>
+										<input type="checkbox" name="agreement_1" value="1" lay-skin="primary"
+											title="我已经做好了相关文件的备份工作">
+									</div>
+									<div>
+										<input type="checkbox" name="agreement_2" value="1" lay-skin="primary"
+											title="认同官方的同步行为并自愿承担同步所存在的风险">
+									</div>
+									<div>
+										<input type="checkbox" name="agreement_3" value="1" lay-skin="primary"
+											title="理解官方的辛勤劳动并报以感恩的心态点击同步按钮">
+									</div>
+								</div>
+							</div>
+							<div class="layui-form-item">
+								<div class="layui-input-block">
+									<button class="layui-btn" lay-submit lay-filter="upgrade">保存</button>
+									<input type="hidden" name="token" value="{$_W['token']}" />
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+
+			<script>
+				layui.use('form', function(){
+					var form = layui.form;
+
+					form.on('submit(upgrade)', function(data){
+						var $obj = $(this);
+						let url = "{php echo webUrl('', ['do'=>'other/upgrade', 'op'=>'post'])}";
+
+						if (!$obj.hasClass('lock')) {
+							$obj.addClass('lock'); // 不能再点击
+
+							var layer_index = layer.msg('加载中', {
+								icon: 16,
+								time: 0,
+								shade: 0.1,
+							});
+
+							$.ajax({
+								type: "POST",
+								url: url,
+								dataType: 'json',
+								data: data.field,
+								success: function (rs) {
+
+									layer.close(layer.index);
+									if (rs && rs.code.toString() === '0') {
+										layer.msg('成功' , {
+											time: 1000
+										}, function () {
+											window.location.href = "{php echo webUrl('', ['do'=>'other/upgrade'])}";
+										});
+									} else {
+										layer.msg(rs.msg, {
+											offset: '20%',
+											shift: 6,
+										});
+									}
+									$obj.removeClass('lock');
+								},
+								error: function () {
+									layer.close(layer.index);
+									layer.msg("{$_W['slwl']['lang']['tips_submit_error']}" , {
+										offset: '20%',
+										shift: 6,
+									});
+									$obj.removeClass('lock');
+								}
+							});
+						}
+
+						return false;
+					});
+				});
+
+				$(function () {
+					let $url = "{php echo webUrl('', ['do'=>'other/upgrade','op'=>'check'])}";
+					$.ajax({
+						type: "POST",
+						url: $url,
+						dataType: 'json',
+						success: function (rst) {
+							console.log(rst);
+
+							if (rst && rst.code == '0') {
+								let res = rst.data;
+								let tips_title = '新版本 ' + res.file_version + ' RELEASE ' + res.file_release;
+
+								let html = "";
+								let beta = "";
+								if (!res.isNew) {
+									html += "恭喜您，您现在是最新版本";
+								} else {
+									if (res.file_beta) {
+										beta = ' <span class="layui-badge layui-bg-orange">Beta</span>';
+									}
+									html += '<span style="color: #1E9FFF;">V' + res.file_version + "</span> RELEASE " + res.file_release + beta +"<br />";
+
+									// 由于政策问题-注释
+									// if (res.file_intro != '') {
+									//     html += '<div class="alert alert-info div-log"><pre>' + res.file_intro + '</pre></div>';
+									// }
+								}
+								$("#check").html(html);
+							} else {
+								console.log(rst);
+							}
+						},
+						error: function (e) {
+							console.log(e);
+						}
+					});
+				});
+			</script>
+		</div>
+	</div>
+
+	{template 'public/copyright'}
+</div>
+
+{template 'public/footer'}
+</body>
+</html>

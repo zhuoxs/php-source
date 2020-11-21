@@ -1,0 +1,161 @@
+{template 'common/header'}
+<script src="{VOTE_RES}static/js/jquery-confirm.min.js"></script>
+<link rel="stylesheet" href="{VOTE_RES}static/css/jquery-confirm.min.css">
+<div class="temporary_alert"></div>
+<div class="keyword-list-head clearfix we7-margin-bottom">
+    <form action="" method="get">
+        <input type="hidden" name="c" value="site">
+        <input type="hidden" name="a" value="entry">
+        <input type="hidden" name="do" value="voteactivity">
+        <input type="hidden" name="m" value="vote_res">
+        <div class="input-group pull-left col-sm-4">
+            <input type="text" name="keyword" id="" value="{$_GPC['keyword']}" class="form-control"  placeholder="搜索活动名" />
+            <span class="input-group-btn"><button class="btn btn-default"><i class="fa fa-search"></i></button></span>
+        </div>
+    </form>
+    <div class="pull-right">
+        <a href="{php echo $this->createwebUrl('voteactivity',array('cmd'=>'add'))}" class="btn btn-primary">+添加活动</a>
+    </div>
+</div>
+<table class="table we7-table table-hover table-manage vertical-middle">
+    <col width="10%"/>
+    <col width="10%"/>
+    <col width="50%">
+    <col width="10%"/>
+    <col width="20%"/>
+    <col width="10%"/>
+    <tr>
+        <th>ID</th>
+        <th class="text-left">活动名</th>
+        <th>活动介绍</th>
+        <th>活动状态</th>
+        <th>创建时间</th>
+        <th>操作</th>
+    </tr>
+    {if count($list) > 0}
+    {loop $list $row}
+    <tr>
+        <td>{$row['id']}</td>
+        <td>{$row['title']}</td>
+        <td>{$row['desc']}</td>
+        <td>
+            {if empty($row['enabled'])}
+            <button type="button" class="btn btn-warning success" data-id="{$row['id']}">禁用</button>
+            {else}
+            <button type="button" class="btn btn-success fail" data-id="{$row['id']}">启用</button>
+            {/if}
+        </td>
+        <td>{php echo date('Y-m-d H:i',$row['createtime'])}</td>
+        <td style="overflow:visible;">
+            <div class="btn-group btn-group-sm">
+                <a class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false"
+                   href="javascript:;">操作<span class="caret"></span></a>
+                <ul class="dropdown-menu dropdown-menu-left">
+                    <li><a href="{php echo $this->createwebUrl('voteactivity',array('cmd'=>'add','aid'=>$row['id']))}" title='修改活动'>修改</a></li>
+                    <li>
+                        <a href="#" class="del" data-id="{$row['id']}" >删除</a>
+                    </li>
+                    <li>
+                        <a href="{php echo $this->createwebUrl('voteactivity',array('cmd'=>'content','aid'=>$row['id']))}"><i class='fa'></i>活动内容</a>
+                    </li>
+                </ul>
+            </div>
+        </td>
+    </tr>
+    {/loop}
+    {else}
+    <tr>
+        <td colspan="6" class="text-center">暂无数据</td>
+    </tr>
+    {/if}
+</table>
+<div class="text-right">
+    {$pager}
+</div>
+<script type="text/javascript">
+    $(function(){
+        $('[data-toggle="tooltip"]').tooltip();
+        $('.success').click(function () {
+            var id = $(this).attr('data-id');
+            $.post("{php echo $this->createwebUrl('voteactivity',array('cmd'=>'success'))}",{id:id},function (data) {
+                if (data.status == 1){
+                    $.alert({
+                        title: '成功!',
+                        content: data.result.message,
+                        buttons: {
+                            ok: function(){
+                                location.reload();
+                            }
+                        }
+                    });
+                }else{
+                    $.alert({
+                        title: '错误!',
+                        content: data.result.message,
+                    });
+                }
+            },'json');
+        });
+        $('.fail').click(function () {
+            var id = $(this).attr('data-id');
+            $.post("{php echo $this->createwebUrl('voteactivity',array('cmd'=>'fail'))}",{id:id},function (data) {
+                if (data.status == 1){
+                    $.alert({
+                        title: '成功!',
+                        content: data.result.message,
+                        buttons: {
+                            ok: function(){
+                                location.reload();
+                            }
+                        }
+                    });
+                }else{
+                    $.alert({
+                        title: '错误!',
+                        content: data.result.message,
+                    });
+                }
+            },'json');
+        });
+        $('.del').click(function () {
+            var id = $(this).attr('data-id');
+            $.confirm({
+                icon: 'fa fa-warning',
+                title: '是否确认删除该活动?',
+                content: '删除后将无法恢复',
+                buttons: {
+                    ok: {
+                        text: "确认",
+                        btnClass: 'btn-primary',
+                        keys: ['enter'],
+                        action: function(){
+                            $.post("{php echo $this->createwebUrl('voteactivity',array('cmd'=>'del'))}",{id:id},function (data) {
+                                if (data.status == 1){
+                                    $.alert({
+                                        title: '成功!',
+                                        content: data.result.message,
+                                        buttons: {
+                                            ok: function(){
+                                                location.reload();
+                                            }
+                                        }
+                                    });
+                                }else{
+                                    $.alert({
+                                        title: '错误!',
+                                        content: data.result.message,
+                                    });
+                                }
+                            },'json');
+                        }
+                    },
+                    cancel: {
+                        text: "取消",
+                        action: function(){}
+                    },
+                }
+            });
+        });
+    });
+</script>
+{template 'common/footer'}

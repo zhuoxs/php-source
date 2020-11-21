@@ -1,0 +1,194 @@
+{template 'web/common/common'}
+{template 'web/coupon/navbar'}
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/style.css" />
+<style>
+    .col-sm-8 span{position: relative;top:8px;}
+    .user-list .user-item {
+        text-align: center;
+        width: 120px;
+        border: 1px solid #e3e3e3;
+        padding: 1rem 0;
+        cursor: pointer;
+        display: inline-block;
+        vertical-align: top;
+        margin: 0 1rem 1rem 0;
+        border-radius: .15rem;
+    }
+
+    .user-list .user-item:hover {
+        background: rgba(238, 238, 238, 0.54);
+    }
+
+    .user-list .user-item img {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 999px;
+        margin-bottom: 1rem;
+    }
+
+    .user-list .user-item.active {
+        background: rgba(2, 117, 216, 0.69);
+        color: #fff;
+    }
+
+</style>
+<blockquote class="layui-elem-quote layui-text">
+    优惠券发放
+</blockquote>
+<div class="layui-card">
+    <div class="panel panel-success">
+        <div class="panel-body" id="app">
+            <form id="sign-form" class="layui-form" role="form" method="post" action="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'grant_coupon_save','action'=>'coupon')}" name="submit" style="padding: 20px 0;">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">优惠券名称</label>
+                    <div class="col-sm-8">
+                        <span>{$data['list']['coupon_name']}</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">优惠券类型</label>
+                    <div class="col-sm-8">
+                           <span> 满减券</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">最低消费金额（元）</label>
+                    <div class="col-sm-8">
+                        <span>{$data['list']['low_cash_price']}</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">优惠金额（元）</label>
+                    <div class="col-sm-8">
+                       <span>{$data['list']['coupon_price']}</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">剩余数量</label>
+                    <div class="col-sm-8">
+                        {if $data['list']['count']>0}
+                       <span> {$data['list']['count']}</span>
+                        {else}
+                        <span>无限制</span>
+                        {/if}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">有效期</label>
+                    <div class="col-sm-8">
+                        {if $data['list']['expiry_date']==1}
+                       <span> 发放后{$data['list']['expiry_day']}天内可使用</span>
+                        {else}
+                        <?php echo date("Y-m-d",$data['list']['begin_time']).'~'.date("Y-m-d",$data['list']['end_time']);?>
+                        {/if}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">发放对象</label>
+                        <div class="col-lg-2">
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="nickname" placeholder="微信昵称">
+                                <span class="input-group-btn">
+                            <button class="btn btn-default" type="button" id="searchUser">查找</button>
+                        </span>
+                            </div>
+                        </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label"></label>
+                    <div class="col-sm-8">
+                        <div class="user-list">
+                            <div id="userList">
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="form-group">
+
+                    <div class="col-sm-offset-2 col-sm-10">
+                        <input type="hidden" name="id" value="{$data['list']['id']}">
+                        <button type="button" lay-submit lay-filter="formDemo" name="submit" class="btn btn-primary">确认</button>
+                        <a class="btn btn-default goBack" href="#">返回</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form,layer = layui.layer;
+        //提交数据
+        form.on('submit(formDemo)', function(data) {
+            var uid=new Array();
+            $("input[type='checkbox']:checked").each(function (index,item) {
+                uid.push($(this).val());
+            })
+            console.log(uid);
+
+            var formData = data.field;
+            var url = "{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'grant_coupon','action'=>'coupon')}";
+            var data = {
+                uid: uid.join(','),
+                formData: formData
+            };
+            postData(url, data);
+            return false;
+        });
+    });
+</script>
+<script>
+    require(["../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.js"],function(){
+        $(function () {
+            $(document).on("change", "input[name='user_id_list[]']", function () {
+                console.log($(this).parents("label"));
+                if ($(this).prop("checked")) {
+                    $(this).parents("label").addClass("active");
+                } else {
+                    $(this).parents("label").removeClass("active");
+                }
+            });
+
+            $("#searchUser").click(function () {
+                var nickname=$("input[name='nickname']").val();
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'searchUser','action'=>'coupon')}",
+                    data:{nickname:nickname},
+                    dataType:'json',
+                    success:function(res){
+                       if(res.userData){
+                           var userData=res.userData;
+                           var str='';
+                           for (var i=0;i<userData.length;i++){
+                                str+='<label class="user-item" >';
+                               str+='<img src="'+userData[i].avatarurl+'">';
+                               str+='<input type="checkbox" name="user_id_list[]" value="'+userData[i]['uid']+'" style="display: none">';
+                               str+='<div style="white-space: nowrap;text-overflow: ellipsis;overflow: hidden">';
+                               str+=userData[i]['nickname'];
+                               str+='</div>';
+                               str+='</label>';
+                           }
+                            $("#userList").html(str);
+
+                       }
+                    }
+                })
+            })
+
+            $('.goBack').click(function () {
+                window.history.go(-1);
+            })
+
+        })
+
+
+    })
+</script>

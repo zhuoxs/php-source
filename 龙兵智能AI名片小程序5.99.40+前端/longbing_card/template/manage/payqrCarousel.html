@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/layuiadmin/style/admin.css" media="all">
+    <!--<link rel="stylesheet" href="../../../addons/{$module_name}/images/css/main.css" media="all">-->
+</head>
+<body>
+
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">轮播图</div>
+
+                <div class="layui-card-body">
+
+                    <div class="div-search-body">
+
+                        <a class="layui-btn" href="{$add}&id=0">
+                            <i class="layui-icon">&#xe608;</i> 添加轮播图
+                        </a>
+
+                    </div>
+
+                    <table class="layui-table" id="table-order">
+                        <thead>
+                        <tr>
+                            <th>图片</th>
+                            <th>排序值</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {loop $list $item}
+                        <tr>
+                            <td>
+                                <img src="{$item['img']}" alt="">
+                            </td>
+                            <td>
+                                {$item['top']}
+                            </td>
+                            <td>
+                                {php echo date('Y-m-d H:i:s', $item['create_time'])}
+                            </td>
+                            <td>
+                                {if $item['status'] == 1}
+                                <button type="button" class="layui-btn layui-btn-xs layui-btn-danger btn-down"
+                                        itemId="{$item['id']}">
+                                    关闭
+                                </button>
+                                {else}
+                                <button type="button" class="layui-btn layui-btn-xs btn-on"
+                                        itemId="{$item['id']}">
+                                    开启
+                                </button>
+                                {/if}
+                                <button type="button" class="layui-btn layui-btn-xs btn-edit"
+                                        itemId="{$item['id']}">
+                                    编辑
+                                </button>
+                                <button type="button" class="layui-btn layui-btn-xs layui-btn-primary btn-delete"
+                                        itemId="{$item['id']}">
+                                    删除
+                                </button>
+                            </td>
+                        </tr>
+                        {/loop}
+                        </tbody>
+                    </table>
+
+                    <div id="dataTable" style="text-align: right"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" name="itemId">
+
+
+{template 'common/footer'}
+
+<style>
+    .friend-link{
+        text-align: center;
+    }
+    .copyright{
+        text-align: center;
+        padding-bottom: 20px;
+    }
+</style>
+
+<script src="../../../addons/{$module_name}/images/layuiadmin/layui/layui.js"></script>
+<script src="../../../addons/{$module_name}/images/js/jquery.min.js"></script>
+<script>
+    layui.use(['layer', 'laypage', 'form', 'table'], function () {
+        var layer = layui.layer
+            , laypage = layui.laypage
+            ,form = layui.form;
+
+        //执行一个laypage实例
+        laypage.render({
+            elem: 'dataTable' //注意，这里的 test1 是 ID，不用加 # 号
+            , count: {$count} //数据总数，从服务端得到
+            , curr: {$curr}
+            , limit: {$perPage} //每页显示的条数
+            , layout: ['count', 'prev', 'page', 'next', 'refresh', 'skip']
+            , jump: function (obj, first) {
+                //obj包含了当前分页的所有参数，比如：
+                // console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+
+                //首次不执行
+                if (!first) {
+                    //do something
+                    layer.load();
+                    window.location.href = "{php echo $this->createWebUrl('manage/payqrCarousel')}" + "&page=" + obj.curr;
+                }
+            }
+        });
+
+    });
+
+    //  禁用
+    $('.btn-down').click(function () {
+        var id = $(this).attr('itemId');
+        if (!id) {
+            layer.msg('获取id失败!');
+            return false;
+        }
+        layer.open({
+            content: '是否禁用该轮播图?',
+            yes: function (index, layero) {
+                layer.close(index); //如果设定了yes回调，需进行手工关闭
+                layer.load();
+                var url = "{php echo $this->createWebUrl('manage/payqrCarousel')}";
+                var data = {
+                    action: 'disable',
+                    id: id
+                };
+
+                postDataReload(url, data);
+            }
+        });
+    });
+
+    //  启用
+    $('.btn-on').click(function () {
+        var id = $(this).attr('itemId');
+        if (!id) {
+            layer.msg('获取id失败!');
+            return false;
+        }
+        layer.open({
+            content: '是否开启轮播图?',
+            yes: function (index, layero) {
+                layer.close(index); //如果设定了yes回调，需进行手工关闭
+                layer.load();
+                var url = "{php echo $this->createWebUrl('manage/payqrCarousel')}";
+                var data = {
+                    action: 'enable',
+                    id: id
+                };
+
+                postDataReload(url, data);
+            }
+        });
+    });
+
+    //  删除
+    $('.btn-delete').click(function () {
+        var id = $(this).attr('itemId');
+        if (!id) {
+            layer.msg('获取id失败!');
+            return false;
+        }
+        layer.open({
+            content: '是否关闭轮播图?',
+            yes: function (index, layero) {
+                layer.close(index); //如果设定了yes回调，需进行手工关闭
+                layer.load();
+                var url = "{php echo $this->createWebUrl('manage/payqrCarousel')}";
+                var data = {
+                    action: 'delete',
+                    id: id
+                };
+
+                postDataReload(url, data);
+            }
+        });
+    });
+
+    //  编辑
+    $('.btn-edit').click(function () {
+        var id = $(this).attr('itemId');
+        if (!id) {
+            layer.msg('获取id失败!');
+            return false;
+        }
+        layer.load();
+        var url = "{php echo $this->createWebUrl('manage/payqrCarouselEdit')}" + "&id=" +id;
+        window.location.href = url;
+    });
+</script>
+<script src="../../../addons/{$module_name}/images/js/main.js"></script>
+</body>
+</html>

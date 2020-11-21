@@ -1,0 +1,382 @@
+{template 'common/header'}
+
+<form class="form-horizontal" action="" method="post">
+    <div style="margin-bottom:10px">
+            店铺分类:
+            <div style="display: inline-block;margin-right: 10px">
+                <select name="search_cate" id="search_cate" style="width: 200px">
+                    <option value="">全部</option>
+                    {loop $catelist $v}
+                    <option value="{$v['id']}" {if $v['id'] == $cid}selected="selected"{/if}>{$v['name']}</option>
+                    {/loop}
+                </select>
+            </div> 
+
+            <div class="btn-group btn-group-sm" style="padding-right:0;">
+                <input type="text" name="search_keys" id="search_keys" value="{$search_keys}" style="width: 150px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="搜索关键字" autocomplete="off">
+            </div>
+            <div style="display: inline-block;">
+                <input name="token" type="hidden" value="{$_W['token']}" />
+                <div class="btn btn-primary" id="filter" style="display: inline-block;font-size: 12px;" />提交</div>
+            </div> 
+    </div>
+    <script type="text/javascript">
+        $("#filter").click(function(){
+            var url = window.location.href;
+            window.location.href = url + "&cid=" + $('#search_cate').val() + '&search_keys=' + $('#search_keys').val();
+        })
+    </script>
+</form>
+<ul class="nav nav-tabs">
+    <li {if $op == 'display'}class="active"{/if}><a href="{php echo $this->createWebUrl('shops', array('op' => 'display'))}">管理商户</a></li>
+    <li {if $op == 'post'}class="active"{/if}><a href="{php echo $this->createWebUrl('shops', array('op' => 'post'))}">添加商户</a></li>
+</ul>
+{if $op == 'display'}
+<div>
+    <h3 style="float: left;margin-top: 0;">商户列表</h3>
+</div>
+<form class="form-horizontal" action="" method="post">
+    <table class="table we7-table table-hover article-list vertical-middle">
+        <tr>
+            <td>商户id</td>
+            <td>商户分类</td>
+            <td>商户LOGO</td>
+            <td>商户名称</td>
+            <td>推荐</td>
+            <td>状态</td>
+            <td>营业执照</td>
+            <td class="text-right">操作</td>
+        </tr>
+        {loop $list $item}
+        <tr>
+            <td>
+                <a href="javascript:;" data-id="{$item['id']}" class="label label-success ng-scope js-clip" >{$item['id']}</a>
+            </td>
+            <td>
+                {$item['catename']}
+            </td>
+            <td style="width: 150px">
+                <img src="{media $item['logo']}" width="60" height="60" alt="">
+            </td>
+            <td>
+                {$item['name']}
+            </td>
+            <td>
+                {if $item['hot'] == '1'}推荐{else}不推荐{/if}
+            </td>
+            <td>
+                {if $item['flag'] == '1'}上架{else}下架{/if}
+            </td>
+            <td style="width: 100px">
+                <img src="{media $item['yyzz']}" width="60" height="60" alt="">
+            </td>
+            <td class="text-right">
+                {if $item['status'] == '1'}
+                <a class="btn btn-default btn-sm" href="{php echo $this->createWeburl('shops', array('id' => $item['id'], 'op' =>'post'))}" >编辑</a>
+                <a class="btn btn-default btn-sm" onclick="return confirm('此操作不可恢复，确认吗？'); return false;" href="{php echo $this->createWeburl('shops', array('id' => $item['id'], 'op' => 'delete'))}">删除</a>
+                {elseif $item['status'] == '0'}
+                <a class="btn btn-success btn-sm" onclick="return confirm('此操作不可恢复，确认吗？'); return false;" href="{php echo $this->createWeburl('shops', array('id' => $item['id'], 'op' =>'shenhe'))}" >审核</a>
+                <a class="btn btn-danger btn-sm" onclick="return confirm('此操作不可恢复，确认吗？'); return false;" href="{php echo $this->createWeburl('shops', array('id' => $item['id'], 'op' =>'cancel'))}" >拒绝</a>
+                {else}
+                <label class="label label-danger">已拒绝</label>
+                {/if}
+                <a href="{php echo $this->createWeburl('shops', array('id' => $item['id'], 'op' =>'getewm'))}"  class="btn btn-default btn-sm">二维码</a>             
+            </td>
+        </tr>
+        {/loop}
+    </table>
+</form>
+{$pager}
+<script type="text/javascript">
+    $('.js-clip').each(function(){
+        util.clip(this, $(this).data('id'));
+    });
+
+</script>
+{elseif $op == 'post'}
+
+<form class="form-horizontal" action="" method="post">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">商户管理</h3>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">排序</label>
+                <div class="form-controls col-sm-5" style="padding-right: 30px;">
+                    <input type="number" min='0' name="num" value="{$item['num']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="form-controls col-sm-4 help-block">序号越大越靠前</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">启用</label>
+                <div class="form-controls col-sm-5" style="padding-right: 30px;">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="flag" value="1" {if $item['flag'] == '1'} checked{/if} />
+                        启用
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="flag" value="0" {if $item['flag'] == '0'} checked{/if} />
+                        不启用
+                    </label>
+                </div>
+                <div class="form-controls col-sm-4 help-block">启用后方可显示</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">推荐到首页</label>
+                <div class="form-controls col-sm-5" style="padding-right: 30px;">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="hot" value="1" {if $item['hot'] == '1'} checked{/if} />
+                        推荐
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="hot" value="0" {if $item['hot'] == '0'} checked{/if} />
+                        不推荐
+                    </label>
+                </div>
+                <div class="form-controls col-sm-4 help-block">推荐后在首页显示</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">是否开启店内支付功能</label>
+                <div class="form-controls col-sm-5" style="padding-right: 30px;">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="shoppay_is" value="1" {if $item['shoppay_is'] == '1'} checked{/if} />
+                        开启
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="shoppay_is" value="2" {if $item['shoppay_is'] == '2'} checked{/if} />
+                        关闭
+                    </label>
+                </div>
+                <div class="form-controls col-sm-4 help-block">默认关闭</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">用户名</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="username" {if $item['username']}readonly="readonly"{/if} value="{$item['username']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">商户登录后台时使用</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">登录密码</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="password" value="{$item['password']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">商户登录后台时使用</div>
+            </div>
+
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">openID</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="openid"  value="{$item['openid']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">该商户商家的openid</div>
+            </div>
+            {if $id}
+                {loop $item['cid'] $index $cid}
+                <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">所属分类</label>
+                <div class="form-controls col-sm-5" style="margin-right:45px">
+                    <select name="cid<?php echo $index+1;?>" class="form-control">
+                        <option value="0">--请选择分类--</option>
+                            {loop $cateList $c}
+                            <option value="{$c['id']}" {if $c['id']==$cid}selected{/if}>{$c['name']}</option>
+                            {/loop}
+                    </select>
+                </div>
+                {if $index!=0}<div class="btn btn-danger btn-sm delCate">X</div>{/if}
+                </div>
+                {/loop}
+            {else}
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">所属分类</label>
+                <div class="form-controls col-sm-5" style="margin-right:45px">
+                    <select name="cid1" class="form-control">
+                        <option value="0">--请选择分类--</option>
+                            {loop $cateList $c}
+                            <option value="{$c['id']}">{$c['name']}</option>
+                            {/loop}
+                    </select>
+                </div>
+            </div>
+            {/if}
+            <div class="btn btn-success btn-sm" id="addCate" style="margin-left: 175px;margin-top: -10px;margin-bottom: 30px">添加更多分类</div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">LOGO</label>
+                <div class="form-controls col-sm-5">
+                    {php echo tpl_form_field_image('logo', $item['logo'])}
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">正方形，建议300x300</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">营业执照</label>
+                <div class="form-controls col-sm-5">
+                    {php echo tpl_form_field_image('yyzz', $item['yyzz'])}
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block"></div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">背景图</label>
+                <div class="form-controls col-sm-5">
+                    {php echo tpl_form_field_image('bg', $item['bg'])}
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">最宽750px，高度随意</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">一句话简介</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="intro" value="{$item['intro']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">请填写一句话简介</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">营业时间</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="worktime" value="{$item['worktime']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">如： 9:00 - 21:00</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">店铺名称</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="name" value="{$item['name']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">请填写店铺名称</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">店铺分数</label>
+                <div class="form-controls col-sm-5">
+                    <input type="number" min='1' name="star" value="{$item['star']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">请填写店铺分数1-5</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">电话</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="tel" value="{$item['tel']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">请设置门店电话</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">地址</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="address" value="{$item['address']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">请设置门店地址</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">经纬度</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="latlong" value="{$item['latlong']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">请直接复制<a href="http://lbs.qq.com/tool/getpoint/" target="_blank" style="color:#428BCA"> 经纬度查询</a></div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">服务名称</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="title" value="{$item['title']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">如：商家环境</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:30px">服务组图</label>
+                <div class="col-sm-5">{php echo tpl_form_field_multi_image('images',$item['images']);}</div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">请上传多张图片，大小须一致</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">商户介绍</label>
+                <div class="form-controls col-sm-8">
+                    <!-- <textarea class="form-control" rows="5" name="descp" placeholder="">{$item['descp']}</textarea> -->
+                    {php echo tpl_ueditor('descp', $item['descp']);}
+                </div>
+                <!-- <div class="col-sm-1"></div> -->
+                <!-- <div class="form-controls col-sm-3 help-block">请输入商户介绍</div> -->
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-sm-12">
+            <input name="token" type="hidden" value="{$_W['token']}" />
+            <input type="submit" class="btn btn-primary col-lg-1" name="submit" value="提交" />
+        </div>
+    </div>
+</form>
+<script type="text/javascript">
+    var total = {$cateNum};
+    var i = {$cid_num};
+    if(i >= total){
+        $('#addCate').hide();
+    }
+    $("#addCate").click(function(){
+        i++;
+        var html = '<div class="form-group">\
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">所属分类</label>\
+                <div class="form-controls col-sm-5" style="margin-right:45px">\
+                    <select name="cid'+i+'" class="form-control">\
+                        <option value="0">--请选择分类--</option>\
+                            {loop $cateList $c}\
+                            <option value="{$c["id"]}" {if $c["id"]==$item["cid"]}selected{/if}>{$c["name"]}</option>\
+                            {/loop}\
+                    </select>\
+                </div>\
+                <div class="btn btn-danger btn-sm delCate">X</div>\
+            </div>';
+        $("#addCate").before(html);
+        $(".delCate").each(function(){
+            $(this).bind("click", function(){
+                $(this).parent().remove();
+                i--;
+                if(i < total){
+                    $('#addCate').show();
+                }
+            })
+        })
+        if(i >= total){
+            $('#addCate').hide();
+        }
+    })
+
+    $(".delCate").each(function(){
+        $(this).bind("click", function(){
+            $(this).parent().remove();
+            i--;
+            if(i < total){
+                $('#addCate').show();
+            }
+        })
+    })
+</script>
+{elseif $op == 'getewm'}
+<div style="height:100px">
+    <h3 style="float: left;margin-top: 0;">店铺{$store['name']}的二维码</h3>
+</div>
+<form class="form-horizontal" action="" method="post">
+    <div style="text-align:center">
+        <div style="width:200px; height:200px; border:1px solid #dedede; margin:0 auto" >
+            <img src="{$store['ewm']}" style="width:100%;height:100%">
+        </div>
+    </div>
+
+    <div style="margin-top:30px;text-align:center">
+          <a class="btn btn-default btn-sm" href="{php echo $this->createWeburl('Shops', array('id'=>$id, 'op' =>'getewmsc'))}" >生成二维码</a>    
+    </div>
+
+</form>
+
+{/if}
+{template 'common/footer'}

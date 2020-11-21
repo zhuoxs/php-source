@@ -1,0 +1,564 @@
+{template 'common/header'}
+<ul class="nav nav-tabs">
+	<li {if $_GPC['a'] == 'mass'  && $do == 'list'}class="active"{/if}><a href="{php echo url('material/mass/')}">定时群发</a></li>
+	<li {if $_GPC['a'] == 'mass' && $do == 'send'}class="active"{/if}><a href="{php echo url('material/mass/send')}">发送记录</a></li>
+	<li {if $type == 'image'}class="active"{/if}><a href="{php echo url('material/display/list', array('type' => 'image'));}">图片</a></li>
+	<li {if $type == 'voice'}class="active"{/if}><a href="{php echo url('material/display/list', array('type' => 'voice'));}">语音</a></li>
+	<li {if $type == 'video'}class="active"{/if}><a href="{php echo url('material/display/list', array('type' => 'video'));}">视频</a></li>
+	<li {if $type == 'news' || $action == 'post'}class="active"{/if}><a href="{php echo url('material/display/list', array('type' => 'news'));}">图文</a></li>
+</ul>
+
+{php load()->func('tpl')}
+{php echo tpl_ueditor('', '', array('allow_upload_video' => false));}
+<form action="" class="form form-horizontal" ng-controller="post">
+	<input type="hidden" name="replies" value="">
+	<div class="panel panel-default clearfix">
+		<div class="panel-heading">回复内容</div>
+		<div class="panel-body">
+			<div class="row clearfix reply">
+				<div class="col-xs-6 col-sm-3 col-md-3 panel-group">
+					<div class="panel panel-default" ng-repeat="item in context.items">
+						<div class="panel-body" ng-if="$index == 0">
+							<div class="img">
+								<i class="default">封面图片</i>
+								<img src="" ng-src="{{item.thumb}}">
+								<span class="text-left">{{item.title}}</span>
+								<div class="mask">
+									<a href="javascript:;" ng-click="context.exportFromCms(item)"><i class="fa fa-book"></i>导入文章</a>
+									<a href="javascript:;" ng-click="context.exportFromNews(item)"><i class="fa fa-book"></i>导入图文</a>
+									<a href="javascript:;" ng-click="context.editItem(item)"><i class="fa fa-edit"></i>编辑</a>
+									<a href="javascript:;" ng-click="context.removeItem(item)"><i class="fa fa-times"></i>删除</a>
+								</div>
+							</div>
+						</div>
+						<div class="panel-body" ng-if="$index != 0">
+							<div class="text">
+								<h4>{{item.title}}</h4>
+							</div>
+							<div class="img">
+								<img src="" ng-src="{{item.thumb}}">
+								<i class="default">缩略图</i>
+							</div>
+							<div class="mask">
+								<a href="javascript:;" ng-click="context.exportFromCms(item)"><i class="fa fa-book"></i> 导入文章</a>
+								<a href="javascript:;" ng-click="context.editItem(item)"><i class="fa fa-edit"></i> 编辑</a>
+								<a href="javascript:;" ng-click="context.removeItem(item)"><i class="fa fa-times"></i> 删除</a>
+							</div>
+						</div>
+					</div>
+					<div class="panel panel-default" ng-show="context.items.length < 8">
+						<div class="panel-body">
+							<div class="add" ng-click="context.items.length >= 8 ? '' : context.addItem();"><span><i class="fa fa-plus"></i> 添加</span></div>
+						</div>
+					</div>
+				</div>
+				<div class="col-xs-6 col-sm-9 col-md-9 aside" id="edit-container">
+					<div class="card">
+						<div class="arrow-left"></div>
+						<div class="inner">
+							<div class="panel panel-default">
+								<div class="panel-body">
+									<div class="form-group">
+										<label class="col-xs-12 col-sm-3 col-md-2 control-label">标题</label>
+										<div class="col-sm-9 col-xs-12">
+											<input type="text" class="form-control" placeholder="添加图文消息的标题" ng-model="context.activeItem.title"/>
+											<input type="hidden" ng-model="context.activeItem.id" />
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="col-xs-12 col-sm-3 col-md-2 control-label">作者</label>
+										<div class="col-sm-9 col-xs-12">
+											<input type="text" class="form-control" placeholder="添加图文消息的作者" ng-model="context.activeItem.author"/>
+										</div>
+									</div>
+									<div class="form-group" ng-show="!context.activeItem.isFirst">
+										<label class="col-xs-12 col-sm-3 col-md-2 control-label">排序</label>
+										<div class="col-sm-9 col-xs-12">
+											<input type="text" class="form-control" placeholder="添加排序" ng-model="context.activeItem.displayorder"/>
+											<span class="help-block">排序只能在提交后显示。按照从大到小的顺序对图文排序</span>
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="col-xs-12 col-sm-3 col-md-2 control-label">封面</label>
+										<div class="col-sm-9 col-xs-12">
+											<div class="col-xs-3 img" ng-if="context.activeItem.thumb == ''">
+												<span ng-click="context.changeItem(context.activeItem)"><i class="fa fa-plus-circle green"></i>&nbsp;添加图片</span>
+											</div>
+											<div class="col-xs-3 img" ng-if="context.activeItem.thumb != ''">
+												<h3 ng-click="context.changeItem(context.activeItem)">重新上传</h3>
+												<img ng-src="{{ context.activeItem.thumb }}">
+											</div>
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="col-xs-12 col-sm-3 col-md-2 control-label"></label>
+										<div class="col-sm-9 col-xs-12">
+											<label>
+												封面（大图片建议尺寸：360像素 * 200像素）
+											</label>
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="col-xs-12 col-sm-3 col-md-2 control-label"></label>
+										<div class="col-sm-9 col-xs-12">
+											<label class="checkbox-inline">
+												<input type="checkbox" value="1" ng-model="context.activeItem.incontent" ng-checked="context.activeItem.incontent"/> 封面图片显示在正文中
+											</label>
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="col-xs-12 col-sm-3 col-md-2 control-label">描述</label>
+										<div class="col-sm-9 col-xs-12">
+											<textarea class="form-control" placeholder="添加图文消息的简短描述" ng-model="context.activeItem.description"></textarea>
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="col-xs-12 col-sm-3 col-md-2 control-label">详情</label>
+										<div class="col-sm-9 col-xs-12">
+											<div ng-my-editor ng-my-value="context.activeItem.content"></div>
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="col-xs-12 col-sm-3 col-md-2 control-label">来源</label>
+										<div class="col-sm-9 col-xs-12">
+											<div class="input-group">
+												<input type="text" class="form-control" placeholder="图文消息的来源地址" ng-model="context.activeItem.url"/>
+											<span class="input-group-btn">
+												<button class="btn btn-default" type="button" ng-click="context.selectLink()"><i class="fa fa-external-link"></i> 系统链接</button>
+											</span>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="btn btn-primary" ng-click="context.sync()" id="btn-submit">提 交</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</form>
+<script>
+	require(['angular.sanitize', 'bootstrap', 'underscore'], function(angular, $, _){
+		var running = false;
+		window.onbeforeunload = function(e) {
+			if(running) {
+				return (e || window.event).returnValue = '正在进行创建图文，确定离开页面吗.';
+			}
+		}
+		angular.module('app', ['ngSanitize']).controller('post', function($scope, $http){
+			$scope.context = {};
+			$scope.context.items = [];
+			$scope.context.hasimgs = []; //已经同步的图片
+			$scope.context.wximgs = []; //已经同步的图片对应的微信url
+			if(!$.isArray($scope.context.items)) {
+				$scope.context.items = [];
+			}
+			if($scope.context.items.length == 0) {
+				$scope.context.items.push(
+					{
+						id: '',
+						title: '',
+						author: '',
+						thumb: '',
+						media_id: '',
+						displayorder: '0',
+						description: '',
+						content: '',
+						url: ''
+					}
+				);
+			}
+
+			//当前编辑的回复项目的索引
+			$scope.context.activeIndex = 0;
+			//当前编辑的回复项目
+			$scope.context.activeItem = $scope.context.items[$scope.context.activeIndex];
+
+			$scope.context.editItem = function(item){
+				var index = $.inArray(item, $scope.context.items);
+				if(index == -1) return false
+				$scope.context.triggerActiveItem(index);
+			};
+
+			$scope.context.triggerActiveItem = function(index) {
+				var top = index * 110 + 120;
+				$('#edit-container').css('marginTop', top);
+				$("html,body").animate({scrollTop:top + 50},500);
+				$scope.context.activeIndex = index;
+				$scope.context.activeItem = $scope.context.items[$scope.context.activeIndex];
+				$scope.context.activeItem.detail = $scope.context.activeItem.content != '';
+			};
+
+			$scope.context.changeItem = function(item) {
+				require(['fileUploader'], function(uploader){
+					uploader.init(function(imgs){
+						$scope.context.activeItem.thumb = imgs.url;
+						$scope.$apply()
+					}, {'direct' : true, 'multiple' : false});
+				});
+			};
+
+			$scope.context.selectLink = function(){
+				util.linkBrowser(function(href){
+					var url = '{$_W['siteroot']}app';
+					$scope.context.activeItem.url = url + href.replace('./index', '/index');
+					$scope.$digest();
+				});
+			};
+
+			$scope.context.addItem = function(){
+				$scope.context.items.push({
+					id: '',
+					title: '',
+					author: '',
+					thumb: '',
+					displayorder: '0',
+					description: '',
+					content: '',
+					url: ''
+				});
+				var index = $scope.context.items.length - 1;
+				$scope.context.triggerActiveItem(index);
+			};
+
+			$scope.context.removeItem = function(item){
+				require(['underscore'], function(_){
+					$scope.context.items = _.without($scope.context.items, item);
+					$scope.context.triggerActiveItem(0);
+					$scope.$digest();
+				});
+			};
+
+			//导入文章
+			$scope.context.exportFromCms = function(item) {
+				var index = $.inArray(item, $scope.context.items);
+				if(index == -1) return false
+				$scope.context.triggerActiveItem(index);
+				$scope.context.searchCms();
+			}
+
+			$scope.context.searchCms = function(page) {
+				var html = {};
+				html['header'] = '<ul role="tablist" class="nav nav-pills" style="font-size:14px; margin-top:-20px;">'+
+						'	<li role="presentation" class="active" id="li_goodslist"><a data-toggle="tab" role="tab" aria-controls="articlelist" href="#articlelist">文章列表</a></li>'+
+						'</ul>';
+				html['content'] =
+						'<div class="tab-content">'+
+								'<div id="articlelist" class="tab-pane active" role="tabpanel">' +
+								'	<table class="table table-hover">' +
+								'		<thead class="navbar-inner">' +
+								'			<tr>' +
+								'				<th style="width:40%;">标题</th>' +
+								'				<th style="width:30%">创建时间</th>' +
+								'				<th style="width:30%; text-align:right">' +
+								'					<div class="input-group input-group-sm">' +
+								'						<input type="text" class="form-control">' +
+								'						<span class="input-group-btn">' +
+								'							<button class="btn btn-default" type="button"><i class="fa fa-search"></i></button>' +
+								'						</span>' +
+								'					</div>' +
+								'				</th>' +
+								'			</tr>' +
+								'		</thead>' +
+								'		<tbody></tbody>'+
+								'	</table>'+
+								'	<div id="pager" style="text-align:center;"></div>'+
+								'</div>'+
+								'</div>';
+				html['footer'] = '';
+				html['articleitem'] =
+						'<%_.each(list, function(item) {%> \n' +
+								'<tr>\n' +
+								'	<td><a href="#" data-cover-attachment-url="<%=item.attachment%>" title="<%=item.title%>"><%=item.title%></a></td>\n' +
+								'	<td><%=item.createtime%></td>\n' +
+								'	<td class="text-right">\n' +
+								'		<button class="btn btn-default js-btn-select" js-id="<%=item.id%>">选取</button>\n' +
+								'	</td>\n' +
+								'</tr>\n' +
+								'<%});%>\n';
+				if (!$('#link-search-cms')[0]) {
+					$scope.modalobj = util.dialog(html['header'], html['content'], html['footer'] ,{'containerName' : 'link-search-cms'});
+					$scope.modalobj.find('.modal-body').css({'height':'680px','overflow-y':'auto' });
+					$scope.modalobj.modal('show');
+					$scope.modalobj.on('hidden.bs.modal', function(){$scope.modalobj.remove();});
+					$('#link-search-cms').data('modal', $scope.modalobj);
+				} else {
+					$scope.modalobj = $('#link-search-cms').data('modal');
+				}
+				page = page || 1;
+				$http.get('./index.php?c=utility&a=link&do=articlelist' + '&page=' + page).success(function(result, status, headers, config){
+					if (result.message.list) {
+						$scope.modalobj.find('#articlelist').data('articles', result.message.list);
+						$scope.modalobj.find('#articlelist tbody').html(_.template(html['articleitem'])(result.message));
+						$scope.modalobj.find('#pager').html(result.message.pager);
+						$scope.modalobj.find('#pager .pagination li[class!=\'active\'] a').click(function(){
+							$scope.context.searchCms($(this).attr('page'));
+							return false;
+						});
+						$scope.modalobj.find('.js-btn-select').click(function(){
+							$scope.context.addCms($(this).attr('js-id'));
+							$scope.$apply();
+							$scope.modalobj.modal('hide');
+						});
+					}
+				});
+			};
+
+			$scope.context.addCms = function(id) {
+				var article =$scope.modalobj.find('#articlelist').data('articles')[id];
+				$scope.context.activeItem.title = article.title;
+				$scope.context.activeItem.thumb = article.thumb_url;
+				$scope.context.activeItem.author = article.author;
+				$scope.context.activeItem.description = article.description;
+				$scope.context.activeItem.content = article.content;
+				$scope.context.activeItem.url = article.linkurl;
+			};
+
+			$scope.context.exportFromNews = function(item) {
+				var index = $.inArray(item, $scope.context.items);
+				if(index == -1) return false
+				$scope.context.triggerActiveItem(index);
+				$scope.context.searchNews();
+			}
+
+			$scope.context.searchNews = function(page) {
+				var html = {};
+				html['header'] = '<ul role="tablist" class="nav nav-pills" style="font-size:14px; margin-top:-20px;">'+
+						'	<li role="presentation" class="active" id="li_newslist"><a data-toggle="tab" role="tab" aria-controls="newslist" href="#newslist">图文列表</a></li>'+
+						'</ul>';
+				html['content'] =
+						'<div class="tab-content">'+
+								'<div id="newslist" class="tab-pane active" role="tabpanel">' +
+								'	<table class="table table-hover">' +
+								'		<thead class="navbar-inner">' +
+								'			<tr>' +
+								'				<th style="width:40%;">标题</th>' +
+								'				<th style="width:30%">创建时间</th>' +
+								'				<th style="width:30%; text-align:right">' +
+								'					<div class="input-group input-group-sm">' +
+								'						<input type="text" class="form-control">' +
+								'						<span class="input-group-btn">' +
+								'							<button class="btn btn-default" type="button"><i class="fa fa-search"></i></button>' +
+								'						</span>' +
+								'					</div>' +
+								'				</th>' +
+								'			</tr>' +
+								'		</thead>' +
+								'		<tbody></tbody>'+
+								'	</table>'+
+								'	<div id="pager" style="text-align:center;"></div>'+
+								'</div>'+
+								'</div>';
+				html['footer'] = '';
+				html['newsitem'] =
+						'<%_.each(list, function(item) {%> \n' +
+								'<tr>\n' +
+								'	<td><a href="#" data-cover-attachment-url="<%=item.attachment%>" title="<%=item.title%>"><%=item.title%></a></td>\n' +
+								'	<td><%=item.createtime%></td>\n' +
+								'	<td class="text-right">\n' +
+								'		<button class="btn btn-default js-btn-select" js-id="<%=item.id%>">选取</button>\n' +
+								'	</td>\n' +
+								'</tr>\n' +
+								'<%});%>\n';
+				if (!$('#link-search-news')[0]) {
+					$scope.modalobj = util.dialog(html['header'], html['content'], html['footer'] ,{'containerName' : 'link-search-news'});
+					$scope.modalobj.find('.modal-body').css({'height':'680px','overflow-y':'auto' });
+					$scope.modalobj.modal('show');
+					$scope.modalobj.on('hidden.bs.modal', function(){$scope.modalobj.remove();});
+					$('#link-search-news').data('modal', $scope.modalobj);
+				} else {
+					$scope.modalobj = $('#link-search-news').data('modal');
+				}
+				page = page || 1;
+				$http.get('./index.php?c=utility&a=link&do=newschunk' + '&page=' + page).success(function(result, status, headers, config){
+					if (result.message.list) {
+						$scope.modalobj.find('#newslist').data('news', result.message.list);
+						$scope.modalobj.find('#newslist tbody').html(_.template(html['newsitem'])(result.message));
+						$scope.modalobj.find('#pager').html(result.message.pager);
+						$scope.modalobj.find('#pager .pagination li[class!=\'active\'] a').click(function(){
+							$scope.context.searchCms($(this).attr('page'));
+							return false;
+						});
+						$scope.modalobj.find('.js-btn-select').click(function(){
+							$scope.context.addNews($(this).attr('js-id'));
+							$scope.$apply();
+							$scope.modalobj.modal('hide');
+						});
+					}
+				});
+			};
+
+			$scope.context.addNews = function(id) {
+				var news =$scope.modalobj.find('#newslist').data('news')[id];
+				$scope.context.items = news.items;
+				$scope.$apply();
+				$scope.context.triggerActiveItem(0);
+			};
+
+			$scope.context.uploadMedia = function(thumbs, thumb){
+				running = true;
+				util.message('创建图文中...,请不要关闭或刷新浏览器,', '', 'info');
+				var num = 0;
+				var thumbs = thumbs;
+				var prop = function(thumbs, thumb) {
+					if(thumb) {
+						var thumb = thumb;
+					} else {
+						var thumb = thumbs.shift();
+					}
+					if(!thumb) {
+						$scope.context.getDetailImgs();
+						return false;
+					}
+					if(thumb.val == '') {
+						prop(thumbs);
+						return false;
+					}
+					$http.post("{php echo url('material/post/thumb');}", thumb).success(function(dat){
+						if(dat.message.errno != 0) {
+							num++;
+							if(num < 5) {
+								prop(thumbs, thumb);
+								return false;
+							} else {
+								util.message('第' + (thumb.index + 1) + '条图文的缩略图上传失败.请更换图片', '', 'error');
+								$('#btn-submit').attr('disabled', false);
+								return false;
+							}
+						} else {
+							$scope.context.items[thumb.index].media_id = dat.message.message.media_id;
+						}
+						prop(thumbs);
+					});
+				}
+				prop(thumbs);
+			};
+
+			$scope.context.getDetailImgs = function(){
+				var details = [];
+				angular.forEach($scope.context.items, function(val1, index1){
+					this.push({'index': index1, 'val': val1.content});
+				}, details);
+
+				$http.post("{php echo url('material/post/details');}", details).success(function(dat){
+					if(dat.message.errno != 0) {
+						util.message(dat.message.message, '', 'error');
+						$('#btn-submit').attr('disabled', false);
+						return false;
+					} else {
+						$scope.context.imgs = dat.message.message;
+						$scope.context.uploadDetailImgs();
+					}
+				});
+			};
+
+			$scope.context.uploadDetailImgs = function(){
+				var images = $scope.context.imgs;
+				var num = 0;
+				var propimage = function(image) {
+					if(image) {
+						var image = image;
+					} else {
+						var image = images.shift();
+					}
+					if(!image) {
+						$scope.context.submit();
+						return false;
+					}
+					$http.post("{php echo url('material/post/image');}", {'image': image, 'hasimgs': $scope.context.hasimgs, 'wximgs': $scope.context.wximgs}).success(function(dat){
+						if(dat.message.errno != 0) {
+							if(num < 5) {
+								num++;
+								propimage(image);
+								return false;
+							} else {
+								util.message('图片上传到微信失败,原因:' + dat.message.message + "<br>解决方案:您可以删除该图片或者替换其他图片.<br><a target='_blank' href='"+image+"'>点击查看图片<a>", '', 'error');
+								$('#btn-submit').attr('disabled', false);
+								return false;
+							}
+						} else {
+							$scope.context.hasimgs.push(image);
+							$scope.context.wximgs.push(dat.message.message);
+						}
+						propimage();
+					});
+				}
+				propimage();
+			};
+
+			$scope.context.submit = function() {
+				$('#btn-submit').attr('disabled', true);
+				$http.post("{php echo url('material/post/submit');}", {items: $scope.context.items, 'hasimgs': $scope.context.hasimgs, 'wximgs': $scope.context.wximgs}).success(function(dat){
+					if(dat.message.errno != 0) {
+						$('#btn-submit').attr('disabled', false);
+						util.message(dat.message.message, '', 'error');
+					} else {
+						running = false;
+						util.message('创建微信图文成功,正在跳转到图文列表. ', "{php echo url('material/display/list', array('type' => 'news', 'sync' => 1));}", 'success');
+						return false;
+					}
+				});
+			};
+
+			$scope.context.sync = function() {
+				var error = {title: '', action: ''};
+				angular.forEach($scope.context.items, function(val, index){
+					if(!$.trim(val.title)) {
+						this.title += '第' + (index + 1) + '条图文回复没有设置标题<br>';
+					}
+					if(!$.trim(val.thumb)) {
+						this.title += '第' + (index + 1) + '条图文回复没有设置缩略图<br>';
+					}
+					if(!$.trim(val.content)) {
+						this.title += '第' + (index + 1) + '条图文回复没有设置详情<br>';
+					}
+				}, error);
+				if(error.title) {
+					util.message(error.title, '', 'error');
+					$('#btn-submit').attr('disabled', false);
+					return false;
+				}
+				var thumbs = [];
+				angular.forEach($scope.context.items, function(val, index){
+					if(!val.media_id) {
+						this.push({'index': index, 'val': val.thumb});
+					}
+				}, thumbs);
+				$scope.context.uploadMedia(thumbs);
+				return;
+			}
+		}).directive('ngMyEditor', function(){
+			var editor = {
+				'scope' : {
+					'value' : '=ngMyValue'
+				},
+				'template' : '<textarea id="editor" style="height:600px;width:100%;"></textarea>',
+				'link' : function ($scope, element, attr) {
+					if(!element.data('editor')) {
+						editor = UE.getEditor('editor', ueditoroption);
+						element.data('editor', editor);
+						editor.addListener('contentChange', function() {
+							$scope.value = editor.getContent();
+							$scope.$root.$$phase || $scope.$apply('value');
+						});
+						editor.addListener('ready', function(){
+							if (editor && editor.getContent() != $scope.value) {
+								editor.setContent($scope.value);
+							}
+							$scope.$watch('value', function (value) {
+								if (editor && editor.getContent() != value) {
+									editor.setContent(value ? value : '');
+								}
+							});
+						});
+					}
+				}
+			};
+			return editor;
+		});
+		angular.bootstrap(document, ['app']);
+	});
+</script>
+{template 'common/footer'}

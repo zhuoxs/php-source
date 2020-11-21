@@ -1,0 +1,144 @@
+{include file="common/top"}
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/static/css/viewer.min.css">
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/peixin/css/member.css">
+<script type="application/javascript" charset="utf-8" src="/static/UEditor/ueditor.config.js"></script>
+<script type="text/javascript" charset="utf-8" src="/static/UEditor/ueditor.all.min.js"></script>
+
+
+<div class="s-body">
+    <div class="content">
+        <!--左边选择-->
+        {include file="member/common"}
+        <!--右边内容-->
+        <div class="M-content">
+            <div class="M-info">
+                <!--我的视频-->
+                <div class="block my-video">
+                    <div class="establish upload-btn">
+                        <a>上传视频</a>
+                    </div>
+                    {notempty name="list"}
+                    <div class="video-box">
+                        <ul class="Atlas-box">
+                            {volist name="list" id="vo"}
+                            <li>
+                                <a href="{:url('video/play',array('id'=>$vo['id']))}">
+                                    <img src="{$vo['thumbnail']}"/>
+                                    <span>{$vo['play_time']}</span>
+                                </a>
+                                <div class="edit-box">
+                                    <i class="btn fn-down-bold"></i>
+                                    <div class="editBox">
+                                        <span id="edit_{$vo['id']}"><i class="btn fn-bianji1" ></i>编辑</span>
+                                        <span id="delete_{$vo['id']}"><i class="btn fn-shanchu" ></i>删除</span>
+                                    </div>
+                                </div>
+                                {if condition="$vo['status'] neq 1"}
+                                <span class="btn fn-jiaobiao"><i>已禁用</i></span>
+                                {else/}
+                                {if condition="$vo['is_check'] eq 0"}<span class="btn fn-jiaobiao aspect"><i>审核中</i></span> {/if}
+                                {if condition="$vo['is_check'] eq 2"}<span class="btn fn-jiaobiao"><i>已拒绝</i></span> {/if}
+                                {/if}
+                                <p class="title">{$vo['title']}</p>
+                                <div class="subtitle">{:date('Y-m-d',$vo['update_time'])}<span>{$vo['click']}次播放</span></div>
+                            </li>
+                            {/volist}
+                        </ul>
+                    </div>
+                    {else/}
+                    <div class="not-comment not">您还没有上传过视频哦 ~</div>
+                    {/notempty}
+                    <div class="sort-pager">
+                        {$pages}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+<script>
+    $(function () {
+        /*鼠标移动到视频效果*/
+        $(".Atlas-box li").hover(function () {
+            $(this).find(".edit-box").show();
+        }, function () {
+            $(this).find(".edit-box").hide();
+            $(".edit-box .fn-down-bold").siblings().slideUp();
+        });
+        /*点击视频上按钮效果*/
+        $(".edit-box .fn-down-bold").click(function () {
+            $(this).siblings().slideToggle();
+        });
+
+        /*我的视频、上传视频*/
+        $(".upload-btn a").click(function () {
+            layer.open({
+                type: 2,
+                title: '上传视频',
+                area: ['600px', '650px'],
+                shadeClose: true,
+                skin: 'demo-class',
+                anim: 0,
+                content: "{:url('member/addVideo')}"
+            });
+        });
+        /*我的视频、编辑视频*/
+        $(".video-box .editBox span:first-child").click(function () {
+            var id = $(this).attr('id').substring(5);
+            var url = "/member/editVideo/id/"+id;
+            layer.open({
+                type: 2,
+                title: '编辑视频',
+                area: ['600px', '700px'],
+                shadeClose: true,
+                skin: 'demo-class',
+                anim: 0,
+                content: url
+            });
+        });
+        /*我的视频、删除视频*/
+        $(".video-box .editBox span:last-child").click(function () {
+            var id = $(this).attr('id').substring(7);;
+            var reqData={table:'video',id:id};
+            layer.confirm('确定删除吗？', {
+                btn: ['确定', '取消'] //按钮
+            }, function () {
+                $.ajax({
+                    type: 'POST',
+                    url: "{:url('api/del')}",
+                    data: reqData,
+                    dataType : "json",
+                    success: function(data){
+                        console.log(data);
+                        if(data.resultCode==0){
+                            layer.msg('已成功删除', {icon: 1});
+                            window.location.reload();
+                        }else{
+                            layer.msg('删除失败，原因：'+data.error,{time:2000,icon:2});
+                        }
+                    },
+                });
+            });
+        });
+        /*上传视频、点击视频标签*/
+        $(".form-checkbox").click(function () {
+            $(this).toggleClass("cur");
+        });
+        /*点击视频分类*/
+        $(".text-box").click(function () {
+            $(".drop-down").slideToggle();
+        });
+        $(".drop-down dl .children").click(function () {
+            $(".drop-down").slideUp();
+            $(".drop-down dl .children").removeClass("on");
+            $(this).addClass("on");
+            $(".form-box .text-box").html($(this).text() + "<i class='btn fn-triangle'></i>");
+        });
+
+    });
+</script>
+
+
+{include file="common/bottom"}

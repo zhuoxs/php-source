@@ -1,0 +1,490 @@
+{template 'common/header'}
+<ul class="nav nav-tabs">
+    <li {if $act == 'display'}class="active"{/if}><a href="{php echo $this->createWebUrl('area', array('act' => 'display', 'version_id' => $_GPC['version_id']));}">列表</a></li>
+    {if empty($item['id'])}
+    <li {if $act == 'post'}class="active"{/if}><a href="{php echo $this->createWebUrl('area', array('act' => 'post', 'pid' => 0, 'version_id' => $_GPC['version_id']))}">添加</a></li>
+    {else}
+    <li class="active"><a href="{php echo $this->createWebUrl('area', array('act' => 'post', 'id' => $id, 'version_id' => $_GPC['version_id']));}">编辑</a></li>
+    {/if}
+</ul>
+{if $act == 'display'}
+<style>
+    .category_img {
+        width: 40px;
+        height: 40px;
+    }
+    .category_child {
+        padding-left:50px;
+        background:url('./resource/images/bg_repno.gif') no-repeat -245px -545px;
+    }
+    .category_input {
+        display:inline-block;
+        width:230px;
+    }
+    .child_input {
+        display:inline-block;
+        width:135px;
+    }
+    .category_childs_none {
+        /*display: none;*/
+        display: table-row-group;
+    }
+    .changecomment:hover{
+        cursor: pointer;
+    }
+    .setcommenttime{
+        cursor: pointer;
+    }
+</style>
+<div class="panel panel-info">
+    <div class="panel-heading">搜索</div>
+    <div class="panel-body">
+        <form action="./index.php" method="get" class="form-horizontal" role="form">
+            <input type="hidden" name="c" value="site">
+            <input type="hidden" name="a" value="entry">
+            <input type="hidden" name="m" value="xiaof_toupiao">
+            <input type="hidden" name="do" value="area">
+            <input type="hidden" name="version_id" value="{$_GPC['version_id']}">
+
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">区域</label>
+                <div class="col-xs-12 col-sm-7 col-lg-7">
+                    <input class="form-control" name="key" id="" type="text" value="{$_GPC['key']}">
+                </div>
+                <div class="col-xs-12 col-sm-2 col-lg-2">
+                    <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+<form method="post">
+    <div class="panel panel-default ">
+        <div class="table-responsive panel-body">
+            <table class="table table-hover">
+                <thead class="navbar-inner">
+                <tr>
+                    <th width="40"></th>
+                    <th width="90">排序</th>
+                    <th width="400">名称</th>
+                    <th width="80">状态</th>
+                    <th width="100">评审开启</th>
+                    <th class="text-right">操作</th>
+                </tr>
+                </thead>
+                <tbody id="category_body">
+                {if $list}
+                {loop $list $parent}
+                <tr>
+                    <td>
+                        <a href="javascript:;" class="toggle_collapse">
+                            <i class="fa fa-minus"></i>
+                        </a>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control text-center" name="displayorder[{$parent['id']}]" value="{$parent['displayorder']}">
+                    </td>
+                    <td>
+                        <img class="category_img" src="{php echo tomedia($parent['cover'])}" onerror="this.src='{php echo $this->superman_placeholder}'"/>
+                        <input style="width: 88%" type="text" disabled class="form-control category_input" value="{$parent['title']}">
+                    </td>
+                    <td>
+                        {if $parent['isshow'] == 1}
+                        <span class="label label-success">显示</span>
+                        {else}
+                        <span class="label label-danger">隐藏</span>
+                        {/if}
+                    </td>
+                    <td>
+
+                    </td>
+                    <td class="text-right"
+                        <a href="javascript:(0);" onclick="openrule('{$parent['id']}');" class=""><i class="fa fa-heart-o"></i> 活动入口</a>&nbsp;&nbsp;
+                        <a href="{php echo $this->createWebUrl('area', array('act' => 'post', 'id' => $parent['id'], 'pid' => 0, 'level' => 1, 'version_id' => $_GPC['version_id']))}"><i class="fa fa-pencil"></i> 编辑</a>
+                        <a href="{php echo $this->createWebUrl('area', array('act' => 'delete', 'id' => $parent['id'], 'version_id' => $_GPC['version_id']))}" class="text-danger"  style="padding: 0 .5rem" onclick="return confirm('确认删除此区域吗？\n删除区域后该区域下子区域将一并删除\n该区域及子区域下活动将初始化为无区域状态');return false;"><i class="fa fa-remove"></i> 删除</a>
+                        <a href="{php echo $this->createWebUrl('area', array('act' => 'post', 'pid' => $parent['id'], 'version_id' => $_GPC['version_id']))}" class="text-warning"><i class="fa fa-plus"></i> 添加二级分类</a>
+                    </td>
+                </tr>
+                </tbody>
+                <tbody class="category_childs_none">
+                {if !empty($parent[childs])}
+                {loop $parent['childs'] $child}
+                <tr>
+                    <td>
+                    </td>
+                    <td>
+                    </td>
+                    <td>
+                        <div class="row">
+                            <div class="col-xs-3" style="width:16%; padding-left: 0">
+                                <input type="text" class="form-control text-center" name="displayorder[{$child['id']}]" value="{$child['displayorder']}" >
+                            </div>
+                            <div class="col-xs-9" style="width: 84%">
+                                <div class="">
+                                    <img class="category_img" src="{php echo tomedia($child['cover'])}" onerror="this.src='{php echo $this->superman_placeholder}'"/>
+                                    <input type="text" disabled style="width: 85.5%"  class="form-control child_input" value="{$child['title']}">
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {if $child['isshow'] == 1}
+                        <span class="label label-success">显示</span>
+                        {else}
+                        <span class="label label-danger">隐藏</span>
+                        {/if}
+                    </td>
+                    <td>
+                        {if $child['comment'] == 1}
+                        <span class="label label-success changecomment" comment="{$child['comment']}" cid="{$child['id']}">开启</span>
+                        {else}
+                        <span class="label label-danger changecomment" comment="{$child['comment']}" cid="{$child['id']}">关闭</span>
+                        {/if}
+                    </td>
+                    <td class="text-right">
+                        {php $field_admin = explode(',', $this->module['config']['field_admin'])}
+                        {if $_W['isfounder'] || in_array($_W['user']['username'], $field_admin)}
+                    <a href="{php echo $this->createWebUrl('area', array('act' => 'post', 'op' => 'excle', 'id' => $child['id'], 'version_id' => $_GPC['version_id']))}"><i class="fa fa-sign-out"></i>导出数据&nbsp;&nbsp;</a>
+                        {/if}
+                        <a href="javascript:(0);" onclick="openruletwo('{$child['id']}');" class=""><i class="fa fa-heart-o"></i>活动入口&nbsp;&nbsp;</a>&nbsp;
+                        <a href="javascript:(0);" onclick="openrulethree('{$child['id']}');" class=""><i class="fa fa-heart-o"></i>活动入口2&nbsp;&nbsp;</a>&nbsp;
+                        <a href="{php echo $this->createWebUrl('area', array('act' => 'post', 'id' => $child['id'], 'pid' => $parent['id'], 'level' => 2, 'version_id' => $_GPC['version_id']))}"><i class="fa fa-pencil"></i>编辑&nbsp;&nbsp;</a>
+                        <a href="{php echo $this->createWebUrl('area', array('act' => 'delete', 'id' => $child['id'], 'version_id' => $_GPC['version_id']))}"  class="text-danger" style="padding: 0 .5rem" onclick="return confirm('确认删除此子区域吗？\n该区域下活动将初始化为无区域状态');return false;"><i class="fa fa-remove"></i> 删除</a>
+                        <!--<a href="{php echo $this->createWebUrl('area', array('act' => 'post', 'pid' => $child['id'], 'version_id' => $_GPC['version_id']))}" class="text-warning"><i class="fa fa-plus"></i> 添加三级区域</a>-->
+                    </td>
+                </tr>
+                {if !empty($child[childs])}
+                {loop $child[childs] $v}
+                <tr>
+                    <td>
+                    </td>
+                    <td>
+                    </td>
+                    <td>
+                        <div class="row">
+                            <div class="col-xs-3" style="width:16%; padding-left: 0">
+                                <input type="text" class="form-control text-center" name="displayorder[{$v['id']}]" value="{$v['displayorder']}" >
+                            </div>
+                            <div class="col-xs-9" style="width: 84%">
+                                <div class="category_child">
+                                    <img class="category_img" src="{php echo tomedia($v['cover'])}" onerror="this.src='{php echo $this->superman_placeholder}'"/>
+                                    <input type="text" disabled style="width: 82.5%"  class="form-control child_input" value="{$v['title']}">
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {if $v['isshow'] == 1}
+                        <span class="label label-success">显示</span>
+                        {else}
+                        <span class="label label-danger">隐藏</span>
+                        {/if}
+                    </td>
+                    <td>
+                        <a href="{php echo $this->createWebUrl('area', array('act' => 'post', 'id' => $v['id'], 'pid' => $child['id'], 'level' => 3, 'version_id' => $_GPC['version_id']))}"><i class="fa fa-pencil"></i> 编辑</a>
+                        <a href="{php echo $this->createWebUrl('area', array('act' => 'delete', 'id' => $v['id'], 'version_id' => $_GPC['version_id']))}"  class="text-danger" style="padding: 0 .5rem" onclick="return confirm('确认删除此子区域吗？\n该区域下活动将初始化为无区域状态');return false;"><i class="fa fa-remove"></i> 删除</a>
+                    </td>
+                </tr>
+                {/loop}
+                {/if}
+                {/loop}
+                {/if}
+                </tbody>
+                {/loop}
+                {/if}
+            </table>
+        </div>
+    </div>
+    <input name="submit" type="submit" value="更新排序" class="btn btn-primary col-lg-1" />
+    <input type="hidden" name="token" value="{$_W['token']}" />
+</form>
+<div class="modal fade" id="ruleModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="ruleModalLabel">活动入口</h4>
+            </div>
+            <div class="modal-body">
+                <p id="ruleModalurl">
+                </p>
+                <p id="ruleModalqrcode">
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $('.changecomment').click(function () {
+        var comment = $(this).attr('comment');
+        var cid = $(this).attr('cid');
+        $.ajax({
+            url:'{php echo $this->createWebUrl("area")}',
+            type: 'post',
+            data: "op=comment&cid="+cid+"&comment="+comment,
+            dataType: 'json',
+            success: function(resp){
+                if(resp == 'ok'){
+                    //alert('修改成功');
+                    setInterval(location.reload(),1000);
+                }
+            }
+        });
+    });
+    function openrule(pcid){
+        var result;
+        $("#ruleModalurl").html('');
+        $("#ruleModalqrcode").html('');
+        $.get("{php echo $this->createWebUrl('getrule');}&pcid="+ pcid, function(data){
+            result = $.parseJSON(data);
+            $("#ruleModalurl").html('链接入口：<a target="_blank" href="'+result.url+'" class="btn btn-default" style="margin-left: 8px;">点击PC预览</a><br/><p class="bg-success" style="padding: 5px;margin: 13px 0px;">'+result.url+'</p>');
+            $("#ruleModalqrcode").html('二维码入口：<br/><img src="'+result.qrcode+'"/>');
+            $('#ruleModal').modal('show');
+        });
+
+    }
+    function openruletwo(cid) {
+        var result;
+        $("#ruleModalurl").html('');
+        $("#ruleModalqrcode").html('');
+        $.get("{php echo $this->createWebUrl('getrule');}&cid="+ cid, function(data){
+            result = $.parseJSON(data);
+            $("#ruleModalurl").html('链接入口：<a target="_blank" href="'+result.url+'" class="btn btn-default" style="margin-left: 8px;">点击PC预览</a><br/><p class="bg-success" style="padding: 5px;margin: 13px 0px;">'+result.url+'</p>');
+            $("#ruleModalqrcode").html('二维码入口：<br/><img src="'+result.qrcode+'"/>');
+            $('#ruleModal').modal('show');
+        });
+    }
+    function openrulethree(cid) {
+        var result;
+        $("#ruleModalurl").html('');
+        $("#ruleModalqrcode").html('');
+        $.get("{php echo $this->createWebUrl('getrule');}&cid="+ cid + '&from=three', function(data){
+            result = $.parseJSON(data);
+            $("#ruleModalurl").html('链接入口：<a target="_blank" href="'+result.url+'" class="btn btn-default" style="margin-left: 8px;">点击PC预览</a><br/><p class="bg-success" style="padding: 5px;margin: 13px 0px;">'+result.url+'</p>');
+            $("#ruleModalqrcode").html('二维码入口：<br/><img src="'+result.qrcode+'"/>');
+            $('#ruleModal').modal('show');
+        });
+    }
+    require(['jquery', 'util'], function($, u){
+        $('.toggle_collapse').click(function(){
+            if ($('i', this).hasClass('fa-plus')) {
+                $('i', this).removeClass('fa-plus').addClass('fa-minus');
+                $(this).parent().parent().parent().next().fadeIn();
+
+            } else if ($('i', this).hasClass('fa-minus')) {
+                $('i', this).removeClass('fa-minus').addClass('fa-plus');
+                $(this).parent().parent().parent().next().fadeOut();
+            }
+        });
+    })
+</script>
+{else}
+<style>
+    .qrcode_wrap {
+        position: fixed;
+        top: 10rem;
+        right: 2rem;
+    }
+    .qrcode_wrap img {
+        width:11rem;
+    }
+    .qrcode_wrap > span {
+        display: block;
+        text-align: center;
+    }
+</style>
+<form class="form-horizontal form" action="" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="id" value="{$item['id']}">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            {if empty($item['id'])}
+            添加区域
+            {else}
+            编辑区域
+            {/if}
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label"><span style='color:red'>*</span>区域名称</label>
+                <div class="col-sm-8 col-xs-12">
+                    <input type="text" class="form-control" placeholder="" name="title" value="{$item['title']}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label"><span style='color:red'>*</span>区域图片</label>
+                <div class="col-sm-8 col-xs-12">
+                    {php echo tpl_form_field_image('cover', $item['cover'])}
+                    <span class="help-block">推荐尺寸：100*100</span>
+                </div>
+            </div>
+            {if !$pid > 0}
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">广告图</label>
+                <div class="col-sm-8 col-xs-12">
+                    {php echo tpl_form_field_multi_image('ad_img', $item['ad_img']);}
+                    <span class="help-block"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">广告图链接</label>
+                <div class="col-sm-8 col-xs-12">
+                    <input type="text" class="form-control" placeholder="http://" name="ad_url" value="{$item['ad_url']}">
+                    <span class="help-block">外链需要加http://</span>
+                </div>
+            </div>
+            {/if}
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">是否显示</label>
+                <div class="col-sm-6 col-md-8 col-xs-12">
+                    <div class="input-group">
+                        <label class="radio-inline">
+                            <input type="radio" name="isshow" value="1" {if $item['isshow']}checked{/if}> 是
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" name="isshow" value="0" {if !$item['isshow']}checked{/if}> 否
+                        </label>
+                    </div>
+                    <span class="help-block">选择不显示该区域时，则该区域下活动亦不显示</span>
+                </div>
+            </div>
+            {if $pid > 0 && !empty($_GPC['id'])}
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label" for="">报名时间</label>
+                <div class="col-sm-6 col-md-8 col-xs-12">
+                    {php echo tpl_form_field_daterange('jointimes', array('start' => $item['joinstart'],'end'   => $item['joinend']),true);}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label" for="">投票时间</label>
+                <div class="col-sm-6 col-md-8 col-xs-12">
+                    {php echo tpl_form_field_daterange('times', array('start' => $item['start'],'end'   => $item['end']),true);}
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label" for="">评审时间</label>
+                <div class="col-sm-6 col-md-8 col-xs-12">
+                    {php echo tpl_form_field_daterange('commenttime', array('start' => $item['commentstart'],'end'   => $item['commentend']),true);}
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label" for="">活动简介是否显示</label>
+                <div class="col-sm-6 col-md-8 col-xs-12">
+                    <div class="btn-group" data-toggle="buttons">
+                        <label class="btn btn-primary {if $item['bottomisshow'] === '1'} active{/if}">
+                            <input type="radio" name="bottomisshow" value="1" autocomplete="off" {if $item['bottomisshow'] === '1'} checked{/if}>是
+                        </label>
+                        <label class="btn btn-primary {if empty($item['bottomisshow'])} active{/if}">
+                            <input type="radio" name="bottomisshow" value="0" autocomplete="off" {if empty($item['bottomisshow'])} checked{/if}>否
+                        </label>
+                    </div>
+                    （全局底部说明在页面显示为“活动简介”，开启后页在手机端页面底部显示。）
+                </div>
+
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label" for="">是否开启礼物功能</label>
+                <div class="col-sm-6 col-md-8 col-xs-12">
+                    <div class="btn-group" data-toggle="buttons">
+                        <label class="btn btn-primary {if $item['opengiving'] === '1'} active{/if}">
+                            <input type="radio" name="opengiving" value="1" autocomplete="off" {if $item['opengiving'] === '1'} checked{/if}>是
+                        </label>
+                        <label class="btn btn-primary {if empty($item['opengiving'])} active{/if}">
+                            <input type="radio" name="opengiving" value="0" autocomplete="off" {if empty($item['opengiving'])} checked{/if}>否
+                        </label>
+                    </div>
+                    （开启本功能下面设置才会生效。）
+                </div>
+
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label" for="">礼物展示区域</label>
+                <div class="col-sm-6 col-md-8 col-xs-12">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="givingshow[]" value="usercount" {if (is_array($item['givingshow']) && in_array('usercount', $item['givingshow']))} checked{/if}> 选手页礼物数
+                    </label>
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="givingshow[]" value="userlog" {if (is_array($item['givingshow']) &&  in_array('userlog', $item['givingshow']))} checked{/if}> 选手页礼物记录
+                    </label>
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="givingshow[]" value="topcount" {if (is_array($item['givingshow']) &&  in_array('topcount', $item['givingshow']))} checked{/if}> 排行页礼物数
+                    </label>
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="givingshow[]" value="indexuser" {if (is_array($item['givingshow']) &&  in_array('indexuser', $item['givingshow']))} checked{/if}> 首页选手礼物数
+                    </label>
+                    <div class="help-block">
+                        （选择礼物数据模板中是否展示，选中展示）
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label" for="">礼物记录是否可见</label>
+                <div class="col-sm-6 col-md-8 col-xs-12">
+                    <div class="btn-group" data-toggle="buttons">
+                        <label class="btn btn-primary {if empty($item['giftrecordshow'])} active{/if}">
+                            <input type="radio" name="giftrecordshow" value="0" autocomplete="off" {if empty($item['giftrecordshow'])} checked{/if}>所有人可见
+                        </label>
+                        <label class="btn btn-primary {if $item['giftrecordshow'] === '1'} active{/if}">
+                            <input type="radio" name="giftrecordshow" value="1" autocomplete="off" {if $item['giftrecordshow'] === '1'} checked{/if}>所有人不可见
+                        </label>
+                        <label class="btn btn-primary {if $item['giftrecordshow'] === '2'} active{/if}">
+                            <input type="radio" name="giftrecordshow" value="2" autocomplete="off" {if $item['giftrecordshow'] === '2'} checked{/if}>仅自己可见
+                        </label>
+                    </div>
+                    （设置赠送礼物道具可见权限。）
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">广告图片</label>
+                <div class="col-sm-8 col-xs-12">
+                    {php echo tpl_form_field_image('ad', $item['ad'])}
+                    <span class="help-block">推荐尺寸：100*100</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">广告链接</label>
+                <div class="col-sm-8 col-xs-12">
+                    <input type="text" class="form-control" placeholder="" name="adurl" value="{$item['adurl']}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label" for="">活动描述</label>
+                <div class="col-sm-8 col-xs-12">
+                    <?php if(!empty($item['describe'])){$details['describe'] = $item['describe'];}?>
+                    {php echo tpl_ueditor('describe', $details['describe']);}
+                </div>
+            </div>
+            {/if}
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-sm-12">
+            <input name="submit" type="submit" value="提交" class="btn btn-primary col-lg-1">
+            <input type="hidden" name="token" value="{$_W['token']}" />
+        </div>
+    </div>
+</form>
+<script>
+    require(['jquery', 'util'], function($, u){
+        $('form').submit(function(){
+            var title = $('input[name=title]');
+            if (title.val() == '') {
+                u.message('请输入区域名称！', '', 'error');
+                return false;
+            }
+            var cover = $('input[name=cover]');
+            if (cover.val() == '') {
+                u.message('请选择区域图片！', '', 'error');
+                return false;
+            }
+            return true;
+        });
+    })
+</script>
+{/if}
+{template 'common/footer'}

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/css/main.css" media="all">
+    <!--<script src="../../../addons/{$module_name}/images/js/jquery.min.js"></script>-->
+
+
+    <link href="./resource/css/bootstrap.min.css?v=20170426" rel="stylesheet">
+    <link href="./resource/css/common.css?v=20170426" rel="stylesheet">
+
+    <script type="text/javascript" src="./resource/js/lib/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="./resource/js/lib/bootstrap.min.js"></script>
+    <script type="text/javascript" src="./resource/js/app/util.js?v=20170426"></script>
+    <script type="text/javascript" src="./resource/js/app/common.min.js?v=20170426"></script>
+    <script type="text/javascript" src="./resource/js/require.js?v=20170426"></script>
+</head>
+<body>
+
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">问卷管理</div>
+
+                <div class="layui-card-body">
+
+
+                    <form class="layui-form" action="" onsubmit="return false">
+
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">问卷名</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="title" required lay-verify="required" placeholder="请输入问卷名"
+                                       autocomplete="off" class="layui-input" value="{$data['info']['title']}">
+                                <span class="span-remark">建议输入问卷名后立即点击确认按钮, 随后在问卷列表页右边点击编辑按钮来添加问题, 添加问题时如问题较多建议添加几个点击一次确认按钮以防数据丢失</span>
+                            </div>
+                        </div>
+
+                        <div class="layui-form-item div-add-body">
+                            <label class="layui-form-label">添加问题</label>
+                            <div class="layui-input-block">
+                                <button class="layui-btn btn-add-completion" type="button">添加填空题</button>
+                            </div>
+                        </div>
+
+                        {loop $data['questions'] $item}
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">填空题</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="old[{$item['id']}]" required lay-verify="required"
+                                       placeholder="请输入问题" autocomplete="off" class="layui-input"
+                                       style="display: inline-block;width: 80%" value="{$item['title']}">
+                                <button class="layui-btn layui-btn-sm layui-btn-danger" onclick="removeItem(this)">删除
+                                </button>
+                            </div>
+                        </div>
+                        {/loop}
+
+                        <div class="layui-form-item div-btn-body">
+                            <div class="layui-input-block">
+                                <button class="layui-btn" lay-submit lay-filter="formSub">确认</button>
+                                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                            </div>
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{template 'common/footer'}
+
+<style>
+    .friend-link{
+        text-align: center;
+    }
+    .copyright{
+        text-align: center;
+        padding-bottom: 20px;
+    }
+</style>
+
+<script src="../../../addons/{$module_name}/images/layuiadmin/layui/layui.js"></script>
+<script>
+
+    layui.use(['layer', 'form'], function () {
+        var layer = layui.layer
+            , form = layui.form
+
+        form.on('submit(formSub)', function (data) {
+            var formData = data.field;
+            layer.load();
+
+            var url = "{php echo $this->createWebUrl('manage/questionedit')}";
+
+            var id = '{$id}';
+            var data = formData;
+            data.action = 'edit';
+
+            if (id > 0) {
+                data.id = id;
+            }
+            $.post(url, data, function (data) {
+                data = JSON.parse(data);
+                if (!data.type) {
+                    layer.closeAll();
+                    layer.msg('服务器错误!');
+                    return false;
+                }
+                if (data.type == 'success') {
+                    layer.msg('操作成功');
+                    setTimeout(function () {
+                        var url = "{php echo $this->createWebUrl('manage/question')}";
+                        window.location.href = url;
+                    }, 1000)
+                }
+                else
+                {
+                    layer.msg(data.message);
+                    setTimeout(function () {
+                        layer.closeAll();
+                    }, 1000)
+                }
+            });
+
+            return false;
+        });
+
+    });
+
+    function removeItem(obj) {
+        $(obj).parent().parent().remove();
+    }
+
+    //  添加填空题
+    $('.btn-add-completion').click(function () {
+        var str = '                        <div class="layui-form-item">\n' +
+            '                            <label class="layui-form-label">填空题</label>\n' +
+            '                            <div class="layui-input-block">\n' +
+            '                                <input type="text" name="completion[]" required  lay-verify="required" placeholder="请输入问题" autocomplete="off" class="layui-input" style="display: inline-block;width: 80%"> <button class="layui-btn layui-btn-sm layui-btn-danger" onclick="removeItem(this)">删除</button> \n' +
+            '                            </div>\n' +
+            '                        </div>';
+        $('.div-btn-body').before(str);
+    });
+</script>
+<script src="../../../addons/{$module_name}/images/js/main.js"></script>
+</body>
+</html>

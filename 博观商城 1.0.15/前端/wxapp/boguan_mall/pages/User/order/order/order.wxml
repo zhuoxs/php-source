@@ -1,0 +1,176 @@
+<block wx:if="{{tabbar}}">
+    <import src="../../../resources/tabbar/tabbar.wxml"></import>
+    <template is="tabbar" data="{{tabbar:tabbar}}"></template>
+</block>
+<view class="boguan">
+    <view class="order_search">
+        <view class="search searchLeft">
+            <input bindconfirm="search" placeholder="搜索订单" placeholderClass="search_text" type="text"></input>
+            <view class="search_icon">
+                <image src="../../../img/search.png"></image>
+            </view>
+        </view>
+    </view>
+    <view class="order">
+        <view class="order_status flex-row">
+            <view bindtap="switch" class="status flex-grow-1 {{orderIndex==0?'active':''}}" data-index="0" data-kind="all">
+                <text>全部</text>
+            </view>
+            <view bindtap="switch" class="status flex-grow-1 {{orderIndex==1?'active':''}}" data-index="1" data-kind="wait">
+                <text>待付款</text>
+            </view>
+            <view bindtap="switch" class="status flex-grow-1 {{orderIndex==2?'active':''}}" data-index="2" data-kind="send">
+                <text>待发货</text>
+            </view>
+            <view bindtap="switch" class="status flex-grow-1 {{orderIndex==3?'active':''}}" data-index="3" data-kind="confirm">
+                <text>待收货</text>
+            </view>
+            <view bindtap="switch" class="status flex-grow-1 {{orderIndex==4?'active':''}}" data-index="4" data-kind="completed">
+                <text>已完成</text>
+            </view>
+            <view bindtap="switch" class="status flex-grow-1 {{orderIndex==5?'active':''}}" data-index="5" data-kind="after">
+                <text>售后</text>
+            </view>
+        </view>
+        <view class="order_page" wx:if="{{orderList.length>0}}">
+            <view class="page" wx:if="{{orderIndex!=5}}" wx:for="{{orderList}}" wx:for-item="order" wx:key="key">
+                <view class="flex-row order_header">
+                    <text class="flex-grow-1 order_no">订单号：{{order.order_no}}</text>
+                    <text class="flex-grow-0 status_txt" wx:if="{{order.status==0}}">等待付款</text>
+                    <text class="flex-grow-0 status_txt" wx:if="{{order.status==1}}">等待发货</text>
+                    <text class="flex-grow-0 status_txt" wx:if="{{order.status==2}}">等待收货</text>
+                    <text class="flex-grow-0 status_txt" wx:if="{{order.status==3}}">已完成</text>
+                    <text class="flex-grow-0 status_txt" wx:if="{{order.status==4}}">退款</text>
+                </view>
+                <view class="{{selectedFlag[index]?'weui-cell-rot':''}} {{order.snap_info.length>2?'order_list':''}}">
+                    <navigator class="order_box" hoverClass="none" url="../order_detail/order_detail?express={{order.express}}&express_no={{order.express_no}}&id={{order.id}}" wx:for="{{order.snap_info}}" wx:for-item="goods" wx:key="key">
+                        <view class="orderProducts flex-row">
+                            <view class="orderProduct_pic flex-grow-0">
+                                <image mode="aspectFill" src="{{goods.image}}"></image>
+                            </view>
+                            <view class="orderProduct_tit flex-grow-1">
+                                <view class="name">{{goods.name}}</view>
+                                <view class="spec">
+                                    <block wx:for="{{goods.attr_name}}" wx:key="key">
+                                        <text>{{item}} </text>
+                                        <text>, </text>
+                                    </block>
+                                </view>
+                            </view>
+                            <view class="orderProduct_info flex-grow-0">
+                                <view class="price">￥{{goods.price}}</view>
+                                <view class="number">x{{goods.num}}</view>
+                            </view>
+                        </view>
+                    </navigator>
+                </view>
+                <view wx:if="{{order.snap_info.length>2}}">
+                    <view bindtap="moreUp" class="look_more" data-index="{{index}}" data-num="{{order.snap_info.length}}">{{selectedFlag[index]?'收起商品列表':'查看剩余商品'}}</view>
+                </view>
+                <view class="order_bottom">
+                    <view class="order_tips">共 {{order.snap_info.length}} 件, 应付:
+            <text>￥{{order.o_amount}}</text>
+                    </view>
+                </view>
+                <view class="order_btn">
+                    <text bindtap="topay" class="topay" data-id="{{order.id}}" wx:if="{{order.status==0}}">去支付</text>
+                    <text bindtap="cancelOrder" class="cancel" data-id="{{order.id}}" wx:if="{{order.status==0||order.status==1}}">取消订单</text>
+                    <navigator hoverClass="none" style="display:inline-block" url="../order_express/order_express?express={{order.express}}&express_no={{order.express_no}}&id={{order.id}}&image={{order.snap_img}}" wx:if="{{order.status==2&&order.order_type==1&&order.send_type==1}}">
+                        <text class="cancel express">查看物流</text>
+                    </navigator>
+                    <text bindtap="confirmOrder" class="cancel" data-id="{{order.id}}" wx:if="{{order.status==2}}">确认收货</text>
+                    <navigator hoverClass="none" style="display:inline-block" url="../order_detail/order_detail?express={{order.express}}&express_no={{order.express_no}}&id={{order.id}}" wx:if="{{order.status==3}}">
+                        <text class="cancel express">评价</text>
+                    </navigator>
+                    <navigator hoverClass="none" style="display:inline-block" url="../order_detail/order_detail?express={{order.express}}&express_no={{order.express_no}}&id={{order.id}}" wx:if="{{order.status==3}}">
+                        <text class="cancel express" data-id="{{order.id}}">售后</text>
+                    </navigator>
+                </view>
+            </view>
+        </view>
+        <view class="refund_page page" wx:if="{{orderIndex==5}}" wx:for="{{refundOrder}}" wx:for-item="order" wx:key="key">
+            <view class="flex-row order_header">
+                <text class="flex-grow-1 order_no">订单号：{{order.order_no}}</text>
+                <text class="flex-grow-0 status_txt" wx:if="{{order.status==0}}">待商家处理</text>
+                <text class="flex-grow-0 status_txt" wx:if="{{order.status==1&&order.is_user_send==0}}">退货申请已同意</text>
+                <text class="flex-grow-0 status_txt" wx:if="{{order.status==1&&order.is_user_send==1}}">您已发货，待商家处理</text>
+                <text class="flex-grow-0 status_txt" wx:if="{{order.status==2}}">商家已退款</text>
+                <text class="flex-grow-0 status_txt" wx:if="{{order.status==3}}">商家拒绝退款</text>
+            </view>
+            <view wx:if="{{order.snap_info.length>0}}">
+                <view class="{{selectedFlag[index]?'weui-cell-rot':''}} {{order.snap_info.length>2?'order_list':''}}">
+                    <navigator hoverClass="none" url="../order_refund/order_refund?orderId={{order.id}}&productId={{goods.productId}}" wx:for="{{order.snap_info}}" wx:for-item="goods" wx:key="key">
+                        <view class="orderProducts flex-row">
+                            <view class="orderProduct_pic flex-grow-0">
+                                <image mode="aspectFill" src="{{goods.image}}"></image>
+                            </view>
+                            <view class="orderProduct_tit flex-grow-1">
+                                <view class="name">{{goods.name}}</view>
+                                <view class="spec">
+                                    <block wx:for="{{goods.attr_name}}" wx:key="key">
+                                        <text>{{item}} </text>
+                                        <text>, </text>
+                                    </block>
+                                </view>
+                            </view>
+                            <view class="orderProduct_info flex-grow-0">
+                                <view class="price">￥{{goods.price}}</view>
+                                <view class="number">x{{goods.num}}</view>
+                            </view>
+                        </view>
+                    </navigator>
+                </view>
+                <view wx:if="{{order.snap_info.length>2}}">
+                    <view bindtap="moreUp" class="look_more" data-index="{{index}}" data-num="{{order.snap_info.length}}">{{selectedFlag[index]?'收起商品列表':'查看剩余商品'}}</view>
+                </view>
+                <view class="order_bottom">
+                    <view class="order_tips">共 {{order.snap_info.length}} 件</view>
+                </view>
+                <view class="order_btn">
+                    <navigator hoverClass="none" style="display:inline-block" url="../order_refund/order_refund?orderId={{order.id}}&productId={{order.snap_info[0].productId}}">
+                        <text class="cancel express" data-id="{{order.id}}">查看售后</text>
+                    </navigator>
+                </view>
+            </view>
+            <view wx:else>
+                <navigator hoverClass="none" url="../order_refund/order_refund?orderId={{order.id}}&productId={{order.snap_info.productId}}">
+                    <view class="orderProducts flex-row">
+                        <view class="orderProduct_pic flex-grow-0">
+                            <image mode="aspectFill" src="{{order.snap_info.image}}"></image>
+                        </view>
+                        <view class="orderProduct_tit flex-grow-1">
+                            <view class="name">{{order.snap_info.name}}</view>
+                            <view class="spec">
+                                <block wx:for="{{order.snap_info.attr_name}}" wx:key="key">
+                                    <text>{{item}} </text>
+                                    <text>, </text>
+                                </block>
+                            </view>
+                        </view>
+                        <view class="orderProduct_info flex-grow-0">
+                            <view class="price">￥{{order.snap_info.price}}</view>
+                            <view class="number">x{{order.snap_info.num}}</view>
+                        </view>
+                    </view>
+                </navigator>
+                <view class="order_bottom">
+                    <view class="order_tips">共 {{order.snap_info.num}} 件</view>
+                </view>
+                <view class="order_btn">
+                    <navigator hoverClass="none" style="display:inline-block" url="../order_refund/order_refund?orderId={{order.id}}&productId={{order.snap_info.productId}}">
+                        <text class="cancel express" data-id="{{order.id}}">查看售后</text>
+                    </navigator>
+                </view>
+            </view>
+        </view>
+        <view class="not_order" wx:if="{{orderList.length<=0&&refundOrder.length<=0}}">
+            <image src="../../../img/not-order.png"></image>
+            <text class="not_order_tips">您暂时没有该类型订单哦</text>
+            <navigator class="not_order_btn" hoverClass="none" openType="redirect" url="../index/index">去首页购买</navigator>
+        </view>
+    </view>
+</view>
+<block wx:if="{{!infoAuth}}">
+    <import src="../../../resources/authorize/authorize.wxml"></import>
+    <template is="authorize" data="{{platform:platform,infoAuth:infoAuth}}"></template>
+</block>

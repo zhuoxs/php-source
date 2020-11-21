@@ -1,0 +1,151 @@
+{template 'public/header'}
+{template 'public/comhead'}
+<link rel="stylesheet" type="text/css" href="../addons/zhls_sun/template/public/ygcsslist.css">
+<ul class="nav nav-tabs">
+    <span class="ygxian"></span>
+    <div class="ygdangq">当前位置:</div>    
+    <li class="active"><a href="{php echo $this->createWebUrl('mianddgl')}">追问管理</a></li>
+    <li><a href="{php echo $this->createWebUrl('addmianddgl',array('mid'=>$mid))}">添加解答</a></li>
+</ul>
+<div class="main">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <button class="btn ygshouqian2" id="allselect">批量删除</button>
+            <button class="btn ygyouhui2" id="allnew">批量更新</button>
+        </div>
+    </div>
+    <!-- 门店列表部分开始 -->
+        <div class="panel panel-default">
+            <div class="panel-heading">
+               信息分类
+            </div>
+            <div class="panel-body" style="padding: 0px 15px;">
+                <div class="row">
+                    <table class="yg5_tabel col-md-12">
+                        <tr class="yg5_tr1">
+                            <th class="store_td1 col-md-1">
+                                <input type="checkbox" class="allcheck" />
+                                <span class="store_inp">全选</span>
+                            </th>
+                            <td class="store_td1 col-md-1">提问时间</td>
+                            <td class="col-md-2">咨询内容</td>
+                            <td class="col-md-2">用户追问</td>
+                            <td class="col-md-2">律师解答</td>
+                            <td class="col-md-1">操作</td>
+                        </tr>
+                        {loop $info $row}
+                        <tr class="yg5_tr2">
+                         <td>
+                      <input type="checkbox" name="$row['state']" value="{$row['id']}" id="{$row['state']}">
+                  </td>
+                            <td><div>{$row['huifutime']}</div></td>
+                            <td>{php echo substr($row['problem'],0,90)}...</td>
+                            <td>{php echo substr($row['question'],0,90)}...</td>
+                            <td>{php echo substr($row['answers'],0,90)}...</td>
+                            <td>
+                                <a href="{php echo $this->createWebUrl('addmianddgl', array('id'=>$row['id'],'mid'=>$mid))}" class="storespan btn btn-xs">
+                                    <span class="fa">解</span>
+                                    <span class="bianji">解答
+                                        <span class="arrowdown"></span>
+                                    </span>                            
+                                </a>
+                                <a href="javascript:void(0);" class="storespan btn btn-xs" data-toggle="modal" data-target="#myModal{$row['id']}">
+                                    <span class="fa fa-trash-o"></span>
+                                    <span class="bianji">删除
+                                        <span class="arrowdown"></span>
+                                    </span>
+                                </a>
+                            </td>
+                        </tr>
+                         <div class="modal fade" id="myModal{$row['id']}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                      <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title" id="myModalLabel" style="font-size: 20px;">提示</h4>
+                        </div>
+                        <div class="modal-body" style="font-size: 20px">
+                            确定删除么？
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                            <a href="{php echo $this->createWebUrl('mianddgl', array('mid' => $row['mid']))}" type="button" class="btn btn-info" >确定</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        {/loop}
+                       
+                    </table>
+                </div>
+            </div>
+        </div>
+    {$pager}
+</div>
+<script type="text/javascript">
+    $(function(){
+        $("#frame-7").show();
+        $("#yframe-7").addClass("wyactive");
+        $("#allselect").on('click',function(){
+            var check = $("input[type=checkbox][class!=allcheck]:checked");
+            if(check.length < 1){
+                alert('请选择要删除的分类!');
+                return false;
+            }else if(confirm("确认要删除此分类?")){
+                var id = new Array();
+                check.each(function(i){
+                    id[i] = $(this).val();
+                });
+                console.log(id)
+                $.ajax({
+                    type:"post",
+                    url:"{$_W['siteroot']}/app/index.php?i={$_W['uniacid']}&c=entry&do=alldelete&m=zhls_sun",
+                    dataType:"text",
+                    data:{id:id},
+                    success:function(data){
+                        console.log(data);      
+                       location.reload();
+                    }
+                })
+               
+            }
+        });
+        $(".allcheck").on('click',function(){
+            var checked = $(this).get(0).checked;
+            $("input[type=checkbox]").prop("checked",checked);
+        });
+
+        // 批量下架
+        $("#allnew").on('click',function(){
+            var check = $("input[type=checkbox][class!=allcheck]:checked");
+            if(check.length < 1){
+                alert('请选择要更新的分类!');
+                return false;
+            }else if(confirm("确认要下更新此分类?")){
+                var list = new Array();
+                check.each(function(id,type){
+                    id = $(this).val();
+                    type = $(this).attr("id");
+                    var obj = {};
+                    obj.id = id;
+                    obj.type = type
+                    list.push(obj);
+                });                
+                console.log(list)
+                $.ajax({
+                    type:"post",
+                    url:"{$_W['siteroot']}/app/index.php?i={$_W['uniacid']}&c=entry&do=AllUpdateInfo&m=zhls_sun",
+                    dataType:"text",
+                    data:{arr:list},
+                    success:function(data){
+                        console.log(data);      
+                        location.reload();
+                    }
+                })
+               
+            }
+        });
+        
+    })
+</script>
+<!-- {template 'common/footer'} -->

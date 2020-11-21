@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>{$_W['slwl']['lang']['sys_name']}</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="">
+	{template 'public/header'}
+
+	<style>
+		.warning { color: red;font-weight: bold; }
+		.normal-black { color: #000;font-weight: bold; }
+	</style>
+</head>
+<body class="layui-layout-body">
+
+<div class="layui-layout layui-layout-admin">
+	{template 'public/top'}
+	{template 'public/left'}
+
+	<div class="layui-body">
+		<div class="layui-main">
+			<div class="layui-tab">
+				<ul class="layui-tab-title">
+					<li {if $operation == 'display' } class="layui-this" {/if}>
+						<a href="{php echo webUrl('',['do'=>'basic/auth_qywx'])}">企业微信授权配置</a>
+					</li>
+					<!-- <li {if $operation == 'post_abook' } class="layui-this" {/if}>
+						<a href="{php echo webUrl('',['do'=>'basic/auth_qywx', 'op' =>'post_abook'])}">通讯录助手配置</a>
+					</li> -->
+					<li {if $operation == 'post' } class="layui-this" {/if}>
+						<a href="{php echo webUrl('',['do'=>'basic/auth_qywx', 'op' =>'post'])}">微信服务消息通知</a>
+					</li>
+				</ul>
+			</div>
+
+			{if $operation == 'display'}
+
+				<form class="layui-form" action="" method="post" enctype="multipart/form-data">
+					<div class="layui-form-item">
+						<label class="layui-form-label">企业ID</label>
+						<div class="layui-input-block">
+							<input type="text" class="layui-input" name="options[corpid]" value="{$settings['corpid']}" placeholder="CorpID" />
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label">应用ID</label>
+						<div class="layui-input-block">
+							<input type="text" class="layui-input" name="options[agentid]" value="{$settings['agentid']}" placeholder="AgentId" />
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label">配置状态</label>
+						<div class="layui-input-block">
+							<div class="box-badge-panel">
+								{if $settings['status'] == '1' }
+									<span class="box-badge box-ok">配置成功</span>
+								{else}
+									<span class="box-badge box-err">配置失败</span>
+								{/if}
+							</div>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<div class="layui-input-block">
+							<button class="layui-btn" lay-submit lay-filter="auth_qywx">企业微信授权</button>
+							<a href="javascript:;" class="layui-btn layui-btn-primary a-auth-ipa" title="通讯录助手授权">通讯录助手授权</a>
+							<input type="hidden" name="token" value="{$_W['token']}" />
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label">提示</label>
+						<div class="layui-input-block">
+							<div class="layui-form-mid layui-word-aux">
+								<span class="warning">1、先授权企业微信，再授权通讯录助手；</span>
+								<span class="warning">配置正确信息同步名片才能正常使用，应用ID必需与企业应用的AgentId一致</span>
+							</div>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label"></label>
+						<div class="layui-input-block">
+							<div class="layui-form-mid layui-word-aux">
+								<span class="normal-black">2、授权完成后， 等待3秒过程中不可提前关闭页面，否则将导致授权失败</span>
+							</div>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label"></label>
+						<div class="layui-input-block">
+							<div class="layui-form-mid layui-word-aux">
+								<span class="normal-black">3、确保该企业微信未授权给其他第三方应用</span>
+							</div>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label"></label>
+						<div class="layui-input-block">
+							<div class="layui-form-mid layui-word-aux">
+								<span class="normal-black">4、完成授权后，不可更换企业微信</span>
+							</div>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label">注意</label>
+						<div class="layui-input-block">
+							<div class="layui-form-mid layui-word-aux">
+								<span class="warning">一个小程序只能配置一个企业微信不能共用，否则会导致无法使用。</span>
+							</div>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label"></label>
+						<div class="layui-input-block">
+							<div class="layui-form-mid layui-word-aux">
+								<span class="warning">因多个小程序和多个企业微信共用造成的问题， 官方不会针对每个客户单独处理。</span>
+							</div>
+						</div>
+					</div>
+				</form>
+
+				<script>
+					layui.use('form', function(){
+						var form = layui.form;
+
+						form.on('submit(auth_qywx)', function(data){
+							let url = "{php echo webUrl('', ['do'=>'basic/auth_qywx'])}";
+							var $obj = $(this);
+
+							if (!$obj.hasClass('lock')) {
+								$obj.addClass('lock'); // 不能再点击
+
+								$.ajax({
+									type: "POST",
+									url: url,
+									dataType: 'json',
+									data: data.field,
+									success: function (rs) {
+
+										if (rs && rs.code.toString() === '0') {
+											layer.msg('保存成功！' , {
+												time: 500
+											}, function () {
+												window.location.href = "{php echo webUrl('', ['do'=>'basic/auth_qywx'])}";
+											});
+										} else {
+											layer.msg(rs.msg, {
+												offset: '20%',
+											});
+										}
+										$obj.removeClass('lock');
+									},
+									error: function () {
+										layer.msg('保存过程发生错误，请与管理员联系', {
+											offset: '20%',
+										});
+										$obj.removeClass('lock');
+									}
+								});
+							}
+
+							return false;
+						});
+
+						// 显示通讯录助手授权-面板
+						$(document).on('click', '.a-auth-ipa', function () {
+							$obj = $(this);
+							let $url = "{php echo webUrl('', ['do'=>'basic/auth_qywx', 'op'=>'post_abook'])}";
+
+							if (!$obj.hasClass('lock')) {
+								$obj.addClass('lock'); // 不能再点击
+								let layer_index = layer.msg('拼命加载中...', {
+									icon: 16,
+									offset: '20%',
+									time: 0,
+									shade: 0.1,
+								});
+
+								$.ajax({
+									type: "POST",
+									url: $url,
+									dataType: 'json',
+									data: {},
+									success: function (rs) {
+
+										if (rs && rs.code.toString() === '0') {
+											let t_url = rs.data;
+											console.log(t_url);
+
+											$('#btn-auth-ipa').attr('href', t_url);
+
+											layer.alert($('#auth-tips-body'), {
+												type: 1,
+												offset: '20%',
+												btn: false,
+												area: '500px',
+												scrollbar: false,
+												shadeClose: true,
+											});
+										} else {
+											layer.alert(rs.msg, {
+												offset: '20%',
+											});
+										}
+										$obj.removeClass('lock');
+									},
+									error: function () {
+										layer.close(layer.index);
+										layer.msg('保存过程发生错误，请与管理员联系', {
+											offset: '20%',
+										});
+										$obj.removeClass('lock');
+									}
+								});
+							}
+						});
+
+						// 通讯录助手授权
+						$(document).on('click', '#btn-auth-ipa', function () {
+							$obj = $(this);
+
+							layer.closeAll();
+
+							layer.confirm('是否授权成功', {
+								area: '500px',
+								offset: '20%',
+								btn: ['我已授权成功', '还未授权了'],
+								scrollbar: false,
+								closeBtn: 0,
+							}, function (i) {
+								layer.close(i);
+							}, function (i) {
+								layer.close(i);
+							});
+						});
+					});
+				</script>
+
+
+			{else if $operation == 'post_abook'}
+				<form class="layui-form" action="" method="post" enctype="multipart/form-data">
+					<div class="layui-form-item">
+						<div class="layui-input-block">
+							<button class="layui-btn" lay-submit lay-filter="abook">保存</button>
+							<input type="hidden" name="token" value="{$_W['token']}" />
+						</div>
+					</div>
+				</form>
+
+				<script>
+					layui.use('form', function(){
+						var form = layui.form;
+
+						form.on('submit(abook)', function(data){
+							let url = "{php echo webUrl('',['do'=>'basic/auth_qywx','op'=>'post_abook'])}";
+							var $obj = $(this);
+
+							if (!$obj.hasClass('lock')) {
+								$obj.addClass('lock'); // 不能再点击
+
+								$.ajax({
+									type: "POST",
+									url: url,
+									dataType: 'json',
+									data: data.field,
+									success: function (rs) {
+
+										if (rs && rs.code.toString() === '0') {
+											layer.msg('通信录助手已配置！' , {
+												time: 500
+											});
+										} else if (rs && rs.code.toString() === '2') {
+											layer.open({
+												time: 0,
+												closeBtn: 0,
+												area: '300px',
+												title: '提醒',
+												content: tips_title,
+												btn: ['未完成配置', '已完成配置'],
+												skin: 'layui-layer-notice',
+												yes: function (i) {
+													layer.close(i);
+												},
+												btn2: function (i) {
+													layer.close(i);
+												}
+											});
+										} else {
+											layer.msg(rs.msg, {
+												offset: '20%',
+											});
+										}
+										$obj.removeClass('lock');
+									},
+									error: function () {
+										layer.msg('保存过程发生错误，请与管理员联系', {
+											offset: '20%',
+										});
+										$obj.removeClass('lock');
+									}
+								});
+							}
+
+							return false;
+						});
+					});
+				</script>
+
+
+			{else if $operation == 'post'}
+				<form class="layui-form" action="" method="post" enctype="multipart/form-data">
+					<input type="hidden" name="id" value="{$tmp_wx['id']}" />
+					<div class="layui-form-item">
+						<label class="layui-form-label">模板消息-状态</label>
+						<div class="layui-input-block">
+							<input type="radio" name="options[wx_template_msg_show]" value="1"
+								title="启用" {if $tmp_wx['wx_template_msg_show']==1 }checked{/if}>
+							<input type="radio" name="options[wx_template_msg_show]" value="0"
+								title="关闭" {if $tmp_wx['wx_template_msg_show']==0 }checked{/if}>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label">强制保存协议</label>
+						<div class="layui-input-block">
+							<div>
+								<input type="checkbox" name="agreement_1" value="1" lay-skin="primary"
+									title="我已经做好了相关文件的备份工作">
+							</div>
+						</div>
+					</div>
+
+					<div class="layui-form-item">
+						<div class="layui-input-block">
+							<button class="layui-btn" lay-submit lay-filter="template">保存</button>
+							<input type="hidden" name="token" value="{$_W['token']}" />
+						</div>
+					</div>
+				</form>
+
+				<script>
+					layui.use('form', function(){
+						var form = layui.form;
+
+						form.on('submit(template)', function(data){
+							let url = "{php echo webUrl('',['do'=>'basic/auth_qywx','op'=>'post'])}";
+							var $obj = $(this);
+
+							if (!$obj.hasClass('lock')) {
+								$obj.addClass('lock'); // 不能再点击
+
+								$.ajax({
+									type: "POST",
+									url: url,
+									dataType: 'json',
+									data: data.field,
+									success: function (rs) {
+
+										if (rs && rs.code.toString() === '0') {
+											layer.msg('保存成功！' , {
+												time: 500
+											}, function () {
+												window.location.href = "{php echo webUrl('', ['do'=>'basic/auth_qywx', 'op'=>'post'])}";
+											});
+										} else {
+											layer.msg(rs.msg, {
+												offset: '20%',
+											});
+										}
+										$obj.removeClass('lock');
+									},
+									error: function () {
+										layer.msg('保存过程发生错误，请与管理员联系', {
+											offset: '20%',
+										});
+										$obj.removeClass('lock');
+									}
+								});
+							}
+
+							return false;
+						});
+					});
+				</script>
+
+			{/if}
+
+		</div>
+	</div>
+
+	<div class="hidden">
+		<div id="auth-tips-body" style="padding: 20px; line-height: 24px;">
+			<div>授权完成后请务必 <span style="color: red;">等待倒计时完成</span> 再关闭页面，否则可能会导致授权失败</div>
+			<div style="color: red;">企业微信一经授权不可更换</div>
+			<div style="text-align: right;margin-top: 40px;">
+				<a href="javascript:;" target="_blank" class="layui-btn" id="btn-auth-ipa">朕知道了，马上授权</a>
+			</div>
+		</div>
+	</div>
+
+	{template 'public/copyright'}
+</div>
+
+{template 'public/footer'}
+</body>
+</html>

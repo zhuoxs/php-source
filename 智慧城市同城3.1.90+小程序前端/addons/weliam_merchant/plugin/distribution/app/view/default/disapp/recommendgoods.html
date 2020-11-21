@@ -1,0 +1,130 @@
+{php include wl_template('common/header');}
+<link href="{URL_MODULE}plugin/distribution/app/resource/css/common.css" rel="stylesheet" />
+<div class="page-group" >
+    <div class="page page-current" id="page-goods-list" >
+    	{php include wl_template('disapp/distribution_footerbar');}
+		<div class="content infinite-scroll">
+			<div class="buttons-tab nav-list" >
+				{loop $sort $index $adv}
+				{if $adv['type'] && $adv['status']}
+		      	<a href="javascript:;" class="{if $index == 0}active{/if} button external clickname"  data-cateid="{$adv['type']}">{if $adv['updname']}{$adv['updname']}{else}{$adv['yhnaem']}{/if}</a>
+		      	{/if}
+				{/loop}
+
+		    </div>
+            <div class="list-block media-list">
+			    <ul class="profit_goods">
+			    </ul>
+			</div>
+			
+            <div class="infinite-scroll-preloader">
+				<div class="weui-loadmore" id="loadmore">
+					<i class="weui-loading"></i>
+					<span class="weui-loadmore__tips">正在加载</span>
+				</div>
+				<div style='background-color: #efeff4;display: none;' class="nomore">
+					<div class="weui-loadmore weui-loadmore_line">
+						<span style="background-color: #efeff4;"  class="weui-loadmore__tips">暂无更多数据</span>
+					</div>
+				</div>
+			</div>
+		</div>
+    </div>
+</div>
+<script type="text/html" id="goodslist">
+{{# for(var i = 0, len = d.length; i < len; i++){ }}
+<li>
+  	<a href="{{d[i].a}}" class="item-content">
+	    <div class="item-media" style="background-image: url({{d[i].thumb}});"></div>
+	    <div class="item-inner">
+		    <div class="item-title">{{d[i].name}}</div>
+		    <div class="item-title-row">
+			    <div class="item-subtitle">
+			    	{if $disset['mode'] && $distributor['leadid'] == -1}
+			    	<span class="now-price">一级 ¥{{d[i].onedismoney}}</span>
+			    	{if $disset['ranknum']>1}
+			    	{{# if(d[i].twodismoney > 0){ }}
+			      	<span class="profit-price">  |  <span>二级 ¥</span>{{d[i].twodismoney}}</span>
+			      	{{# } }}
+			      	{/if}
+			    	{else}
+			      	<span class="now-price">¥{{d[i].price}} | </span>
+			      	<span class="profit-price"><span>赚 ¥</span>{{d[i].onedismoney}}</span>
+			      	{/if}
+			    </div>
+			    <div class="item-after">查看商品</div>
+		    </div>
+	    </div>
+  	</a>
+</li>
+{{# } }}
+</script>
+<script>
+	$(function() {
+
+
+		'use strict';
+		//商品列表页
+		var pindex = 1;
+		var psize = 10;
+		var endload = false;
+
+		$(".buttons-tab.nav-list").on('click','.button',function(e){
+			endload = false;
+			var cateid = Number($(e.target).attr('data-cateid'));
+			$(e.target).addClass('active').siblings('.button').removeClass('active');
+			pindex = 1;
+			$('.profit_goods').html('');
+			addItems(pindex, psize,cateid);
+		})
+
+		
+		$(document).on("pageInit", "#page-goods-list", function(e, id, page) {
+			var loading = false;
+			var cateid = $('.nav-list .active').data('cateid');
+			$(page).on('infinite', function() {
+				//console.log(loading,endload);
+				if (loading) return;
+				if (endload) return;
+				loading = true;
+				$('#loadmore').show();
+				var cateid = $('.nav-list .active').attr('data-cateid');
+				setTimeout(function() {
+					loading = false;
+					pindex++;
+					addItems(pindex, psize,cateid);
+					$('#loadmore').hide();
+				}, 1000);
+			});
+		});
+		
+		function addItems(pindex, psize,cateid) {
+            var ajaxurl = "{php echo app_url('distribution/disappbase/getGoods')}" + "&pindex=" + pindex + "&psize=" + psize + "&cateid=" + cateid;
+            $.ajax({
+                type: "POST",
+                url: ajaxurl,
+                dataType: 'json',
+                beforeSend: function(XMLHttpRequest) {},
+                success: function(data) {
+                    $('#loadmore').hide();
+                    if (data.length > 0) {
+                        var gettpl = document.getElementById('goodslist').innerHTML;
+                            laytpl(gettpl).render(data, function(html){
+                            $(".profit_goods").append(html);
+                        });
+                    }else {
+                        $('.nomore').show();
+                        endload = true;
+                    }
+                },
+                error: function() {
+                    $('.error').show();
+                }
+            });
+		}
+		$.init();
+		$(".clickname:eq(0)").click();
+	});
+
+</script> 
+{php include wl_template('common/footer');}

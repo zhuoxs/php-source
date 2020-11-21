@@ -1,0 +1,232 @@
+<style>
+    .bootstrap-select:not([class*=col-]):not([class*=form-control]):not(.input-group-btn) {
+        width: 100% !important;
+    }
+    /*select2样式*/
+    .select2-container--default.select2-container--focus .select2-selection--multiple {
+        border-color: #e7e7eb;
+        border-color: rgba(82,168,236,.8);
+        outline: 0;
+        outline: thin dotted\9;
+        -webkit-box-shadow: 0 0 8px rgba(82,168,236,.6);
+        box-shadow: 0 0 8px rgba(82,168,236,.6);
+    }
+    .select2-container--default .select2-selection--multiple {
+        border-radius: 0;
+        border: 1px solid #e7e7eb;
+    }
+    .select2-dropdown {
+        border-color: #e7e7eb;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        white-space: normal;
+    }
+    .select2-container {
+        display: none;
+    }
+</style>
+<div class="main">
+    <div class="alert alert-info" style="margin-bottom: 15px;">
+        <p>v1.2.0版本之后取消置顶位置设置，改为设置置顶地区，设置完成后不同地区的用户登录小程序后会展示对应地区的置顶物品，<span style="color: #f00;font-weight: bold;">置顶物品的顺序会随机排列</span>每次刷新页面都会刷新置顶物品的顺序。</p>
+        <p>注意：置顶物品只显示在首页人气和最新分类下，附近分类不显示置顶物品</p>
+    </div>
+    <form action="" method="post" class="form-horizontal form">
+        <div class="panel panel-default">
+            <div class="panel-heading">{if !empty($_GPC['id'])}编辑{else}添加{/if}</div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label text-right"><span class="color-red">*</span> 序号</label>
+                    <div class="col-sm-9">
+                        <input type="number" min="0" class="form-control" name="displayorder" value="{$item['displayorder']}">
+                        <span class="help-block">不能重复，序号大的排在前面</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label text-right">
+                        <span class="color-red">*</span> 置顶地区
+                    </label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_district('area', array('province' => $item['area'][0], 'city' => $item['area'][1], 'district' => $item['area'][2]));}
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-4 col-md-2 col-lg-2 control-label"><span style='color:red'>*</span>支付方式</label>
+                    <div class="col-sm-8">
+                        <div class="input-group">
+                            <label class="checkbox-inline">
+                                <input type="checkbox" name="paytype[credit]" {if empty($item['paytype']) || $item['paytype'] == 1}checked{/if}> 积分支付
+                            </label>
+                            <label class="checkbox-inline">
+                                <input type="checkbox" name="paytype[wechat]" {if empty($item['paytype']) || $item['paytype'] == 2}checked{/if}> 微信支付
+                            </label>
+                        </div>
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label text-right">状态</label>
+                    <div class="col-sm-9">
+                        <div class="input-group">
+                            <label class="radio-inline">
+                                <input type="radio" name="status" value="1" {if !isset($item['status'])||$item['status']==1}checked{/if}> 开启
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="status" value="0" {if isset($item['status'])&&$item['status']==0}checked{/if}> 关闭
+                            </label>
+                        </div>
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                价格设置
+            </div>
+            <div class="table-responsive panel-body">
+                <div class="alert alert-info">
+                    <p>可设置在不同展示位置的不同价格</p>
+                    <p>价格设置以天为单位</p>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th width="5%"></th>
+                            <th width="20%">展示位置</th>
+                            <th width="20%">价格（/天）</th>
+                            <th width="20%">{$credit_title['credit1']['title']}（/天）</th>
+                            <th width="5%">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="list_fields" class="ui-sortable">
+                        {if !empty($item['fields'])}
+                        {loop $item['fields'] $k $value}
+                        <tr>
+                            <td>
+                                <a href="javascript:;" class="fa fa-move" title="按住鼠标左键，拖动调整顺序">
+                                    <i class="fa fa-arrows"></i>
+                                </a>
+                            </td>
+                            <td>
+                                <select name="fields[position][]" class="form-control fields_position">
+                                    <option value="1" {if $value['position'] == '1'}selected{/if}>最新</option>
+                                    <option value="2" {if $value['position'] == '2'}selected{/if}>人气</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" name="fields[price][]" value="{$value['price']}" placeholder="0.00">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" name="fields[credit][]" value="{$value['credit']}" placeholder="0.00">
+                            </td>
+                            <td class="text-center">
+                                <a href="javascript:;" class="del_item_link" data-toggle="tooltip" onclick="delItem(this)" title="删除">
+                                    <i class="fa fa-remove" style="color: #f00"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {/loop}
+                        {/if}
+                    </tbody>
+                    <tbody>
+                        <tr>
+                            <td colspan="5">
+                                <button type="button" class="btn btn-warning add_fields" title="添加">
+                                    <span class="glyphicon glyphicon-plus" aria-hidden="true"></span> 添加
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="form-group col-sm-12">
+            <button type="submit" class="btn btn-primary" name="submit" value="提交">提交</button>
+            <input type="hidden" name="token" value="{$_W['token']}" />
+        </div>
+    </form>
+</div>
+<script>
+    require(['jquery', 'util', 'jquery.ui', 'select2'], function($, util){
+        $('form').submit(function(){
+            if ($('input[name=displayorder]').val() == '') {
+                util.message('请填写序号！', '', 'error');
+                return false;
+            }
+            var pid = $('select[name="area[province]"]');
+            if (pid.val() <= 0) {
+                util.message('请选择省/直辖市！', '', 'error');
+                return false;
+            }
+            var cid = $('select[name="area[city]"]');
+            if (cid.val() <= 0) {
+                util.message('请选择市！', '', 'error');
+                return false;
+            }
+            var did = $('select[name="area[district]"]');
+            if (did.val() <= 0) {
+                util.message('请选择区/县！', '', 'error');
+                return false;
+            }
+            var fields_exist = true;
+            if ($('input[name="paytype[credit]"]').is(":checked")) {
+                if ($('input[name="fields[credit][]"]').length > 0) {
+                    $('input[name="fields[credit][]"]').each(function () {
+                        if ($(this).val() == '') {
+                            util.message('价格为空, 请输入！', '', 'error');
+                            fields_exist = false;
+                        }
+                    });
+                } else {
+                    util.message('请设置价格！', '', 'error');
+                    fields_exist = false;
+                }
+            }
+            if ($('input[name="paytype[wechat]"]').is(":checked")) {
+                if ($('input[name="fields[price][]"]').length > 0) {
+                    $('input[name="fields[price][]"]').each(function () {
+                        if ($(this).val() == '') {
+                            util.message('价格为空, 请输入！', '', 'error');
+                            fields_exist = false;
+                        }
+                    });
+                } else {
+                    util.message('请设置价格！', '', 'error');
+                    fields_exist = false;
+                }
+            }
+            if (!fields_exist) {
+                return false;
+            }
+            return true;
+        });
+        //位置移动
+        $('#list_fields').sortable({
+            handle: '.fa-move',
+            placeholder: "list_wrap_highlight",
+            cursor: "move",
+            opacity: 0.6
+        });
+        //添加表单模板
+        $('.add_fields').click(function(){
+            $.ajax({
+                'url': "{php echo $this->createWebUrl('pay_position', array('act' => 'post', 'load' => 'fields'))}",
+                success: function (response) {
+                    $('#list_fields').append(response);
+                    $('.select-new').select2({
+                        tags: true,
+                        maximumSelectionLength: 20,  //最多能够选择的个数
+                        placeholder: '请输入选项回车',
+                        maximumInputLength: 30,  //最多能够输入文字的个数
+                        language: 'zh-CN'
+                    }).removeClass('select-new');
+                }
+            });
+        });
+        //删除模板
+        window.delItem = function(obj) {
+            $(obj).parent().parent().remove();
+        };
+    });
+</script>

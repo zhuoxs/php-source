@@ -1,0 +1,135 @@
+{template 'common/header'}
+<div class="clearfix">
+    <form id="theforms" class="form form-horizontal" action="" method="post">
+        <div class="panel panel-default">
+
+
+            <div class="panel-body">
+                <ul class="nav nav-tabs" id="myTab">
+                    <li class="active"><a href="#tab_basic">基本信息</a></li>
+                    <li><a href="#tab_ad">文章底部广告信息</a></li>
+                </ul>
+            </div>
+
+
+            <div class="tab-content">
+                <div class="tab-pane  active" id="tab_basic">{template 'web/article/basic'}</div>
+                <div class="tab-pane" id="tab_ad">{template 'web/article/ad'}</div>
+            </div>
+
+            <div class="form-group" style="height: 70px;position: fixed;margin: 20px 0 0 0;bottom: 0;z-index: 100;width: 100%;background: #fff;left: 0;right: 0;">
+                <label class="col-sm-5"></label>
+                <div class="col-md-2 " style="margin-top: 20px;">
+                    <input name="submit" id="submit_form" type="submit" value="保存" class="btn btn-primary btn-block" />
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<script>
+require(['jquery','ueditor','datetimepicker'], function ($,UM) {
+    var um = UM.getEditor('myEditor');
+    $('#time_step').datetimepicker({
+        format: 'Y-m-d H:i:s',
+        language: 'zh-CN',
+        step:10,
+        startDate:new Date()
+
+    });
+    $('#myTab a').click(function(e) {
+        e.preventDefault(); //阻止a链接的跳转行为
+        $(this).tab('show'); //显示当前选中的链接及关联的content
+    });
+
+    $('#jump').change(function () {
+        if($(this).val()==0) {
+            $('#url_node').hide();
+        }else{
+            $('#url_node').show();
+        }
+    });
+    $('#type').change(function () {
+        if($(this).val()==1) {
+            $('#content-image').hide();
+            $('#video_type_node').hide();
+            $('#content-editor').show();
+        }else if($(this).val()==2){
+            $('#content-image').show();
+            $('#video_type_node').hide();
+            $('#content-editor').hide();
+        }else if($(this).val()==3){
+            $('#video_type_node').show();
+            $('#content-image').hide();
+            $('#content-editor').show();
+        }
+    });
+    $("#theforms").submit(function(e){
+        if($.trim($('#title').val()) == '') {
+            alert('标题不能为空');
+            return false;
+        }
+        if($("#jump").val() == 1 && $("#url").val() == "") {
+            alert('跳转地址不能为空');
+            return false;
+        }
+        if($('#type').val() == 1) {
+            if($("#jump").val() == 0) {
+                if($.trim(um.getContent()) == '') {
+                    alert('内容不能为空');
+                    return false;
+                }
+            }
+        }else if($('#type').val() == 2) {
+            if($("[name='pic[]']").length == 0) {
+                alert('至少上传一张封面');
+                return false;
+            }
+            if($("[name='content_image[]']").length == 0) {
+                alert('图集图片不能为空');
+                return false;
+            }
+        }else if($('#type').val() == 3) {
+            if($("[name='pic[]']").length == 0) {
+                alert('至少上传一张封面');
+                return false;
+            }
+            if($.trim($('#video_url').val()) == '') {
+                alert('视频地址不能为空');
+                return false;
+            }
+        }
+    });
+    var spider_url = "{php echo $this->createWebUrl('article', array('_wg' => 'spider'))}";
+    
+    function spider_news() {
+        var url = $('#spider_url').val();
+        var reg=/(http|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?/;
+        if(!reg.test(url)){
+            alert("新闻地址错误");
+        } else {
+            $.post(spider_url,{url:url},function (data) {
+                if(data.code != 0) {
+                    alert(data.msg);
+                } else {
+                    $('#title').val(data.data.title);
+                    $('#url').val(data.data.url);
+                    $('#author').val(data.data.site);
+                    $('#time_step').val(data.data.time_step);
+                    um.setContent(data.data.content);
+                }
+            },'JSON');
+        }
+    }
+    $('#spider_news').click(function () {
+        spider_news();
+    });
+    var url_s = "{php echo urldecode($_GET['url']);}";
+    if(url_s) {
+        $('#spider_url').val(url_s);
+        spider_news();
+    }
+    $('#type').change();
+
+});
+</script>
+{template 'common/footer'}

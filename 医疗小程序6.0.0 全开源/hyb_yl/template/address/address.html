@@ -1,0 +1,96 @@
+﻿{template 'common/header'}
+<ul class="nav nav-tabs">
+    <li class="active"><a href="{php echo $this->createWebUrl('address',array('op'=>'display'))}">地区管理</a></li>
+</ul>
+{if $do == 'display'}
+<!--查找 start-->
+<div class="panel panel-info">
+    <div class="panel-heading">查找</div>
+    <div class="panel-body">
+        <form class="form-horizontal" action="" method="get">
+            <input type="hidden" name="a" value="{$_GPC['a']}">
+            <input type="hidden" name="c" value="{$_GPC['c']}">
+            <input type="hidden" name="eid" value="{$_GPC['eid']}">
+            <input type="hidden" name="version_id" value="{$_GPC['version_id']}">
+            <input type="hidden" name="pid" value="{$_GPC['pid']}"/>
+            <div class="form-group">
+                <label class="col-md-2 control-label">地区名称或ID</label>
+                <div class="col-md-8">
+                    <input type="text" class="form-control" placeholder="请输入名称或编码" name="keywords" value="{$_GPC['keywords']}">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-md-8">
+                    <button class="btn btn-default min-width"><i class="fa fa-search"></i>查找</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<!--查找 end-->
+
+<form class="form form-horizontal" action="" method="post">
+    <div class="panel panel-default">
+        <div class="panel-heading">{$title}</div>
+        <div class="panel-body table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th style="width:100px; text-align:center;">编码</th>
+                        <th style="width:200px; text-align:center;">名称</th>
+                        <th style="width:200px; text-align:center;">状态</th>
+                        <th style="width:150px; text-align:center;">排序</th>
+                        <th style="width:120px; text-align:right;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {loop $addresses $address}
+                    <tr>
+                        <td style="white-space: normal;" class="text-center">{$address['id']}</td>
+                        <td class="text-center">{$address['name']}</td>
+                        <td class="text-center"><input class="flag" data-id="{$address['id']}" type="checkbox" name="visible[{$address['id']}]" value="{$address['visible']}" {if $address['visible'] == 1} checked="checked" {/if}></td>
+                        <td class="text-center"><input type="text" class="form-control" name="displayorder[{$address['id']}]" value="{$address['displayorder']}"></td>
+                        <td class="text-right">
+                        {if in_array(intval($address['level']), array(1))}
+                            <a href="{php echo $this->createWebUrl('address',array('pid'=>$address['id'],'eid'=>$_GPC['eid']))}">查看下级</a>
+                        {/if}
+                        {if in_array(intval($address['level']), array(2))}
+                            <a href="{php echo $this->createWebUrl('hospital',array('pid'=>$address['id'],'op'=>'display'))}">添加医院</a>
+                        {/if}
+                        </td>
+                    </tr>
+                {/loop}
+                </tbody>
+            </table>
+            {$pager}
+        </div>
+        <div class="panel-footer">
+            <input type="hidden" name="token" value="{$_W['token']}" />
+            <input name="submit" type="submit" class="btn btn-primary min-width" value="保存">
+            {if $_GPC[pid]}
+            <a href="{php echo $this->createWebUrl('address', array('pid' => $parent_address['pid'],'eid'=>$_GPC['eid']))}" class="btn btn-default min-width">返回</a>
+            {else}
+            <a href="{php echo $this->createWebUrl('address',array('eid'=>'eid'))}" class="btn btn-default min-width">返回</a>
+            {/if}
+        </div>
+    </div>
+</form>
+<script>
+    require(['bootstrap.switch'],function($){
+        // 启用状态
+        $('.flag:checkbox').bootstrapSwitch({onText: '启用', offText: '禁用'});
+        $('.flag:checkbox').on('switchChange.bootstrapSwitch', function(event, state) {
+            var id = $(this).data('id');
+            var visible = state ? 1 : 0;
+            $.post("{php echo $this->createWebUrl('address',array('op'=>'visible'))}", {id : id, visible : visible}, function (data){
+                console.log(data);
+                if(data.message.errno){
+                    util.tips(data.message.message);
+                };
+            }, 'json');
+        });
+        
+    });
+</script>
+{/if}
+{template 'common/footer'}

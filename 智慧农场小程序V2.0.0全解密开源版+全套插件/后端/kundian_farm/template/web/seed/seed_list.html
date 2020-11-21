@@ -1,0 +1,168 @@
+<link rel="stylesheet" type="text/css" href="../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/layui.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/new-common.css" />
+<script src="../addons/kundian_farm/resource/js/jquery-1.11.1.min.js" charset="utf-8"></script>
+<style type="text/css">
+    .form-control{width: 60%;float: left;}
+    .layui-table[lay-size=lg] td, .layui-table[lay-size=lg] th {
+        padding: 6px 20px;
+    }
+</style>
+
+    <div class="layui-form">
+      <table class="layui-table" lay-even="" lay-skin="nob" lay-size="lg">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>种子名称</th>
+            <th>封面</th>
+            <th>种植面积</th>
+            <th>种植天数</th>
+            <th>播种时间</th>
+            <th style="width: 200px;">预计成熟时间</th>
+            <td>状态</td>
+            <th>种植状态修改</th>
+          </tr>
+        </thead>
+        <tbody>
+            {loop $list $index $item}
+                <tr>
+                    <td>{$item['id']}</td>
+                    <td>{$item['send_name']}</td>
+                    <td><img src="{$item['cover']}" style="width: 50px;height: 50px;"></td>
+                    <td>{$item['count']}㎡</td>
+                    <td>{$item['day']}天</td>
+                    <td>{$item['seed_time']}</td>
+                    <td>
+                        <div class="layui-inline">
+                            <div class="layui-input-inline">
+                                <input type="text" class="layui-input expect_time" onfocus="" rel="{$item['id']}" value="{$item['expect_time']}" id="expect_{$item['id']}" placeholder="yyyy-MM-dd">
+                            </div>
+                        </div>
+                        <button class="layui-btn layui-btn-sm update_expect_time" data-id="{$item['id']}">修改</button>
+                    </td>
+                    <td>
+                        {if $item['status']==1}
+                        <span class="layui-badge layui-bg-green">已种植</span>
+                        {elseif $item['status']==2}
+                        <span class="layui-badge layui-bg-orange">已成熟</span>
+                        {else}
+                        <span class="layui-badge layui-bg-gray">未种植</span>
+                        {/if}
+                    </td>
+                    <td>
+                        <select name="seed_status" class="seed_status" data-id="{$item['id']}" style="width: 150px;height:34px;display: block;float: left;margin-right: 20px;">
+                            <option value="0" <?php if($item['status']==0){echo 'selected';}?> >待种植</option>
+                            <option value="1" <?php if($item['status']==1){echo 'selected';}?> >已播种</option>
+                            <option value="2" <?php if($item['status']==2){echo 'selected';}?> >已成熟</option>
+                            <option value="3" <?php if($item['status']==3){echo 'selected';}?> >摘取</option>
+                        </select>
+                        {if $item['status']==2}
+                        <button class="layui-btn layui-btn-sm sendMsg" data-seedid="{$item['id']}" data-smstype="2">发送短信通知</button>
+                        {/if}
+
+                        {if $item['status']==1}
+                        <button class="layui-btn layui-btn-sm sendMsg" data-seedid="{$item['id']}" data-smstype="1">发送短信通知</button>
+                        {/if}
+                    </td>
+                </tr>
+            {/loop}
+        </tbody>
+      </table>
+    </div>
+<!--</div>-->
+{template 'common/footer'}
+<script src="../addons/kundian_farm/resource/layui.js" charset="utf-8"></script>
+<script>
+    layui.use(['laydate','layer'], function(){
+        var laydate = layui.laydate;
+
+        //常规用法
+        laydate.render({
+            elem: '#test1'
+        });
+
+        $(".expect_time").focus(function () {
+            var id=$(this).attr("rel");
+            laydate.render({
+                elem: '#expect_'+id,
+            });
+        })
+
+
+        //时间弹框注册
+        $(".expect_time").each(function() {
+            var id=$(this).attr("rel");
+            laydate.render({
+                elem: '#expect_'+id,
+            });
+        });
+        //预计成熟时间修改
+        $(".update_expect_time").click(function(){
+
+            var id=$(this).attr('data-id');
+            var time=$('#expect_'+id).val();
+            console.log(time);
+            $.ajax({
+                type:"post",
+                url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'expect_time','action'=>'send')}",
+                data:{id:id,expect_time:time},
+                dataType:'json',
+                success:function(res){
+                    if(res.status==1){
+                        layer.alert('操作成功!');
+                    }else{
+                        layer.alert('操作失败!');
+                    }
+                }
+            })
+        })
+
+        $(".seed_status").change(function () {
+            var id=$(this).attr("data-id");
+            var status=$(this).val();
+            var that=$(this);
+            var id=$(this).attr('data-id');
+            console.log(status);
+            layer.confirm('确认修改状态吗？', {icon: 3, title:'提示'}, function(index){
+                $.ajax({
+                    type: "post",
+                    url: "{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'changeSeedStatus','version_id'=>$_GPC['version_id'])}",
+                    data: {id: id, status: status},
+                    dataType: 'json',
+                    success: function (res) {
+                        if (res.status == 1) {
+                            layer.alert('操作成功!');
+                        } else {
+                            layer.alert('操作失败!');
+                        }
+                    }
+                })
+                layer.close(index);
+            });
+        })
+
+        //发送短信通知
+        $(".sendMsg").click(function(){
+            var id=$(this).attr("data-seedid");
+            var smstype=$(this).attr("data-smstype");
+            layer.confirm('确认发送短信通知吗？', {icon: 3, title:'提示'}, function(index) {
+                $.ajax({
+                    type: "post",
+                    url: "{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'sendMsg','version_id'=>$_GPC['version_id'])}",
+                    data: {id: id, smstype: smstype},
+                    dataType: "json",
+                    success: function (res) {
+                        if (res.err_code == 0) {
+                            layer.alert('短信发送成功!');
+                        } else {
+                            layer.alert(res.msg);
+                        }
+                    }
+                })
+            })
+        })
+
+
+    });
+</script>

@@ -1,0 +1,195 @@
+{template '_header'}
+<script src="https://webapi.amap.com/maps?v=1.4.0&key=1fb308f0707e5ff11db5997d42660396&plugin=AMap.PolyEditor,AMap.CircleEditor"></script>
+
+<style type="text/css">
+    .info {
+        border: solid 1px silver;
+        width: 12.5rem;
+        color: #000;
+    }
+    div.info-top {
+        position: relative;
+        background: none repeat scroll 0 0 #fff;
+    }
+    div.info-top div {
+        display: inline-block;
+        color: #000;
+        font-size: .7rem;
+        line-height: .775rem;
+        padding: .25rem .25rem 0;
+    }
+    div.info-top img {
+        position: absolute;
+        top: .5rem;
+        right: .5rem;
+        width: .6rem;
+        transition-duration: 0.25s;
+    }
+    div.info-top img:hover {
+        box-shadow: 0px 0px .125rem #000;
+    }
+    div.info-middle {
+        font-size: .3rem;
+        padding: .75rem;
+        line-height: .5rem;
+        height: 5.2rem;
+    }
+    div.info-middle .info-title{
+        line-height: 1rem;
+        font-size: .7rem;
+    }
+    div.info-bottom {
+        height: 0px;
+        width: 100%;
+        clear: both;
+        text-align: center;
+    }
+    div.info-bottom img {
+        position: relative;
+        z-index: 104;
+    }
+    span {
+        margin-left: .125rem;
+        font-size: .275rem;
+    }
+    .info-middle img {
+        float: left;
+        margin-right: .15rem;
+    }
+    .store-map-page .info-window .address{
+        max-height: 1.7rem;
+    }
+    .store-map-page .info-window .navi {
+        position: absolute;
+        right: .9rem;
+        bottom: .9rem;
+        font-size: .7rem;
+    }
+
+    .fui-list-tel{
+        width: 100%;
+        padding: 0;
+        text-align: center;
+        color: #000;
+        font-size: 0.7rem;
+        line-height: 2rem;
+        display: none;
+        flex-direction: column;
+        -webkit-box-orient:vertical;
+        -webkit-flex-direction:column;
+        -ms-flex-direction:column;
+        flex-direction:column;
+    }
+    .fui-tell{
+        width: 100%;
+        height: 2rem;
+        line-height: 2rem;
+        position: relative;
+    }
+    .fui-tell:after{
+        content: " ";
+        position: absolute;
+        left: 0;
+        right:0;
+        top: 0;
+        height: 1px;
+        border-top: 1px solid #ebebeb;
+        color: #ebebeb;
+        -webkit-transform-origin: 0 0;
+        -ms-transform-origin: 0 0;
+        transform-origin: 0 0;
+        -webkit-transform: scaleY(0.5);
+        -ms-transform: scaleY(0.5);
+        transform: scaleY(0.5);
+    }
+    .fui-tell-close{
+        color: #999;
+        background: #fafafa;
+    }
+
+    .fui-content{
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-flex-direction: column;
+        flex-direction: column;
+    }
+    .map-container{
+        -webkit-box-flex: 1;
+        -webkit-flex: 1;
+        -ms-flex: 1;
+        flex: 1;
+    }
+
+</style>
+<div class='fui-page  fui-page-current store-map-page' >
+
+    <div class="fui-header">
+        <div class="fui-header-left">
+            <a class="back"></a>
+        </div>
+        <div class="title">配送范围</div>
+        <div class="fui-header-right">&nbsp;</div>
+    </div>
+    <div class='fui-content' >
+        <div id='js-map' class='map-container'></div>
+
+        <div class='fui-footer'  style='visibility: hidden;'>
+            <div class="fui-list store-message">
+                <div class="fui-list-media">
+                    <img src="{php echo tomedia($cityexpress['logo'])}" />
+                </div>
+                <div class='fui-list-inner'>
+                    <div class='title'>{$cityexpress['name']}</div>
+                    {if !empty($cityexpress['address'])}
+                    <div class='text'>{$cityexpress['address']}</div>
+                    {/if}
+                </div>
+
+                <div class="fui-list-angle">
+                    {if empty($cityexpress['tel1']) || empty($cityexpress['tel2'])}
+                    {if !empty($cityexpress['tel1'])}
+                    <a href="tel:{$cityexpress['tel1']}" class='external '><i class=' icon icon-phone2' style='color:green'></i></a>
+                    {/if}
+                    {if !empty($cityexpress['tel2'])}
+                    <a href="tel:{$cityexpress['tel2']}" class='external '><i class=' icon icon-phone2' style='color:green'></i></a>
+                    {/if}
+                    {else}
+                    <i class=' icon icon-phone2 tel-detail' style='color:green'></i>
+                    {/if}
+                </div>
+
+            </div>
+
+            <!--电话列表-->
+            <div class="fui-list fui-list-tel">
+                {if !empty($cityexpress['tel1'])}
+                <div class="fui-tell" id="tel1"><a style="display: inline-block;height: 100%;width: 100%" href="tel:{$cityexpress['tel1']}">{$cityexpress['tel1']}</a></div>
+                {/if}
+                {if !empty($cityexpress['tel2'])}
+                <div class="fui-tell" id="tel2"><a style="display: inline-block;height: 100%;width: 100%" href="tel:{$cityexpress['tel2']}">{$cityexpress['tel2']}</a></div>
+                {/if}
+                <div class="fui-tell fui-tell-close">关闭</div>
+            </div>
+        </div>
+
+    </div>
+    <script language='javascript'>
+        require(['biz/shop/map'], function (modal) {
+            modal.init({cityexpress: {php echo json_encode($cityexpress)}, isios: "{php echo is_h5app()&&is_ios()?1:0}"});
+        });
+        //	电话
+        $('.tel-detail').click(function(){
+            $('.store-message').hide();
+            $('.fui-list-tel').show();
+            $('#js-map').height('76%');
+        })
+        $('.fui-tell-close').click(function(){
+            $('.store-message').show();
+            $('.fui-list-tel').hide();
+            $('#js-map').height('88%');
+        })
+    </script>
+</div>
+{template '_footer'}

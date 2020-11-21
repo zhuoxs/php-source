@@ -1,0 +1,1 @@
+a:15:{s:7:"website";s:0:"";s:7:"company";s:0:"";s:3:"tel";s:0:"";s:5:"wx_kf";s:0:"";s:11:"app_android";s:0:"";s:19:"app_android_version";s:0:"";s:7:"app_ios";s:0:"";s:15:"app_ios_version";s:0:"";s:5:"bfb_1";s:1:"3";s:5:"bfb_2";s:1:"2";s:5:"bfb_3";s:1:"1";s:6:"charge";s:1:"5";s:8:"zx_bfb_1";i:0;s:8:"zx_bfb_2";i:0;s:6:"fx_bfb";i:0;}

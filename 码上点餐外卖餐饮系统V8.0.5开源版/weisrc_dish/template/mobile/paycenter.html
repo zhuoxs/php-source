@@ -1,0 +1,347 @@
+{template 'common/header'}
+<style>
+	body{background:#EEE;}
+	.container-fill{padding:.5em;}
+	h4{margin:15px 0;}
+	h4:first-of-type{margin-top:10px;}
+	.panel{padding:.5em; margin-bottom:10px;}
+	.nav.nav-tabs{margin-bottom:.8em;}
+	.alert .form-group{margin-bottom:0;}
+	#wq_card label.form-group{display:block; font-weight:normal; overflow:hidden; border-top:1px #DDD solid; padding-top:10px;padding-bottom:0;margin-bottom:0 }
+	#wq_card label.form-group:first-child{border-top:0;}
+	#wq_card label.form-group .col-xs-2{margin-top:0; position:relative; height:50px;}
+	#wq_card label.form-group .col-xs-2 .fa{font-size:24px; color:#717171; position:absolute; top:50%; left:50%; -webkit-transform:translate(-50%, -50%); -moz-transform:translate(-50%, -50%); transform:translate(-50%, -50%);}
+	#wq_card label.form-group .col-xs-2 .fa.fa-check-circle{color:#5cb85c;}
+	#wq_card label.form-group .col-xs-10{padding-right:0;}
+	#wq_card label.form-group input[name="type"]{opacity:0; width:0;}
+	form .btn.btn-block{padding:10px 12px; margin-bottom:10px;}
+</style>
+<script>
+	require(['bootstrap'], function($){
+		$(function(){
+		});
+	});
+</script>
+<h4>订单信息</h4>
+<div class="panel">
+	<div class="clearfix" style="padding-top:10px;">
+		<!--<p>商品名称 :<span class="pull-right">{$params['title']}</span></p>-->
+		<p>订单编号 :<span class="pull-right">{$params['ordersn']}</span></p>
+		<p>商家名称 :<span class="pull-right">{$store['title']}</span></p>
+		<p>支付金额 :<span class="pull-right">￥{php echo sprintf('%.2f', $params['fee']);} 元</span></p>
+		<p id="order_card" style="display: none">商品优惠 :<span class="pull-right text-danger"></span></p>
+		{if !empty($mine)}
+			{loop $mine $mi}
+			<p>{$mi['name']} :<span class="pull-right">{$mi['value']}</span></p>
+			{/loop}
+		{/if}
+	</div>
+</div>
+<!--微信卡券-->
+{if $you == 1 && $_W['card_permission']}
+<h4>优惠券</h4>
+<div class="panel">
+	<div class="clearfix" style="padding:5px, 0" id="card">
+		<p>优惠：<span class="text-success pull-right">有可用的优惠券 <i class="fa fa-angle-right"> </i></span></p>
+	</div>
+	<div class="clearfix" style="padding:5px, 0;display:none" id="card-info">
+		<p>使用优惠券 :<span class="pull-right">{$card['title']}</span></p>
+		<p>原价 :<span class="pull-right">{php echo sprintf('%.2f', $params['fee']);}</span></p>
+		<p><span class="text-danger">优惠后价格 :</span><span class="pull-right text-danger">{php echo sprintf('%.2f', $card['fee']);}</span></p>
+	</div>
+</div>
+<script>
+	wx.ready(function(){
+		$('#card').click(function(){
+			wx.chooseCard({
+				shopId: '',
+				cardType: '',
+				cardId:'{$card_id}',
+				timestamp:'{$time}',
+				nonceStr:'{$randstr}',
+				signType:'SHA1',
+				cardSign:'{$signature}',
+				success: function(res) {
+					if(res.errMsg == 'chooseCard:ok') {
+						eval("var rs = " + res.cardList);
+						$('#card-info').show();
+						$('.pay-btn input[name="encrypt_code"]').val(rs[0].encrypt_code);
+					} else {
+						util.message('使用卡券失败', '', 'error');
+					}
+				}
+			});
+		});
+	});
+</script>
+{/if}
+<!--微擎卡券-->
+{if $pay['card']['switch'] == 3 && !empty($cards)}
+	<div id="coupon">
+		<h4>优惠券</h4>
+		<div class="panel">
+			<div class="clearfix" style="padding:5px, 0" id="card">
+				<p>优惠 <span class="label label-danger">{php echo count($cards);}张可用</span>：<span class="text-success pull-right" id="wq_card_info">未使用 <i class="fa fa-angle-right"></i></span></p>
+			</div>
+		</div>
+	</div>
+	{if !empty($cards)}
+		<div class="modal fade bs-example-modal-lg" id="wq_card" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-lg">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title" id="gridSystemModalLabel">使用优惠券</h4>
+					</div>
+					<div class="modal-body" style="max-height:400px;overflow-y:scroll">
+							{loop $cards $li}
+							<label class="form-group">
+								<div class="col-xs-2">
+									<i class="fa fa-circle-thin" data-id="{$li['couponid']}"></i>
+								</div>
+								<div class="col-xs-10">
+									{if $li['type'] == 1}
+									<span class="label label-danger">折扣券</span> {$li['title']} &nbsp;满{$li['condition']}打{php echo $li['discount'] * 10;}折
+									{else}
+									<span class="label label-success">代金券</span> {$li['title']} &nbsp;满{$li['condition']}减{$li['discount']}
+									{/if}
+									<div class="help-block">有效期至：{php echo date('Y-m-d', $li['endtime']);}</div>
+								</div>
+							</label>
+							{/loop}
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+						<button type="button" class="btn btn-primary">确定</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
+{/if}
+
+<h4>选择支付方式</h4>
+<ul class="nav nav-tabs" role="tablist" style="margin-bottom:0;">
+	<li class="active" data-id="direct"><a href="#direct" role="tab" data-toggle="tab" style="border-left:0;">直接到账</a></li>
+	{if $is_delivery==1}
+	{if $pay['delivery']['switch']}<li data-id="delivery" class="delivery"><a href="#collect" role="tab" data-toggle="tab">{$tip}</a></li>{/if}
+	{/if}
+	{if $pay['line']['switch']}<li data-id="line" class="line"><a href="#line" role="tab" data-toggle="tab">线下汇款</a></li>{/if}
+	<!--li><a href="#">微擎担保</a></li-->
+</ul>
+<div class="panel clearfix" style="border-top-left-radius:0; border-top-right-radius:0;">
+	<div class="tab-content">
+		<!-- 直接到账 -->
+		<div class="tab-pane animated active fadeInLeft" id="direct">
+			{if $is_wechat==1}
+			{if !empty($pay['wechat']['switch'])}
+			<div class="pay-btn" id="wechat-panel">
+				<form action="{php echo url('mc/cash/wechat');}" method="post">
+					<input type="hidden" name="params" value="{php echo base64_encode(json_encode($params));}" />
+					<input type="hidden" name="encrypt_code" value="" />
+					<input type="hidden" name="card_id" value="{php echo base64_encode($card_id);}" />
+					<input type="hidden" name="coupon_id" value="" />
+					<button class="btn btn-success btn-block col-sm-12" disabled="disabled" type="submit" id="wBtn" value="wechat">微信支付(必须使用微信内置浏览器)</button>
+				</form>
+			</div>
+			<script type="text/javascript">
+				document.addEventListener('WeixinJSBridgeReady', function onBridgeReady() {
+					$('#wBtn').removeAttr('disabled');
+					$('#wBtn').html('微信支付');
+				});
+			</script>
+			{/if}
+			{/if}
+			{if $is_alipay==1}
+			{if !empty($pay['alipay']['switch'])}
+			<div class="pay-btn" id="alipay-panel">
+				<form action="{php echo url('mc/cash/alipay');}" method="post">
+					<input type="hidden" name="params" value="{php echo base64_encode(json_encode($params));}" />
+					<input type="hidden" name="encrypt_code" value="" />
+					<input type="hidden" name="card_id" value="{php echo base64_encode($card_id);}" />
+					<input type="hidden" name="coupon_id" value="" />
+					<button class="btn btn-warning btn-block col-sm-12" type="submit" name="alipay">支付宝支付</button>
+				</form>
+			</div>
+			{/if}
+			{/if}
+
+			{if $pay['unionpay']['switch']}
+			<div class="pay-btn" id="unionpay-panel">
+				<form action="{php echo url('mc/cash/unionpay');}" method="post">
+					<input type="hidden" name="params" value="{php echo base64_encode(json_encode($params));}" />
+					<input type="hidden" name="encrypt_code" value="" />
+					<input type="hidden" name="card_id" value="{php echo base64_encode($card_id);}" />
+					<input type="hidden" name="coupon_id" value="" />
+					<button class="btn btn-default btn-block col-sm-12" type="submit" name="unionpay">银联支付</button>
+				</form>
+			</div>
+			{/if}
+			{if $store['is_jxkj_unipay'] == 1}
+			<li class="mui-table-view-cell">
+				<a class="mui-navigate-right mui-media" href="{$jxkj_pay_url}">
+					<img src="resource/images/wx-icon.png" alt="" class="mui-media-object mui-pull-left"/>
+					<span class="mui-media-body mui-block">
+						{if (!empty($store['jxkj_pay_name']))}
+						{$store['jxkj_pay_name']}
+						{else}
+						万融收银
+						{/if}
+						<span class="mui-block mui-text-muted mui-mt5">银行安全支付服务</span>
+					</span>
+				</a>
+			</li>
+			{/if}
+			{if $pay['baifubao']['switch']}
+			<div class="pay-btn" id="baifubao-panel">
+				<form action="{php echo url('mc/cash/baifubao');}" method="post">
+					<input type="hidden" name="params" value="{php echo base64_encode(json_encode($params));}" />
+					<input type="hidden" name="encrypt_code" value="" />
+					<input type="hidden" name="card_id" value="{php echo base64_encode($card_id);}" />
+					<input type="hidden" name="coupon_id" value="" />
+					<button class="btn btn-danger btn-block col-sm-12" type="submit" name="baifubao">百度钱包支付</button>
+				</form>
+			</div>
+			{/if}
+			{if $is_credit==1}
+			{if !empty($pay['credit']['switch'])}
+			<div class="pay-btn" id="credit-panel">
+				<form action="{php echo url('mc/cash/credit');}" method="post">
+					<input type="hidden" name="params" value="{php echo base64_encode(json_encode($params));}" />
+					<input type="hidden" name="encrypt_code" value="" />
+					<input type="hidden" name="card_id" value="{php echo base64_encode($card_id);}" />
+					<input type="hidden" name="coupon_id" value="" />
+					<button class="btn btn-primary btn-block col-sm-12" type="submit" value="credit">余额支付 （余额支付当前 {php echo sprintf('%.2f', $credtis[$setting['creditbehaviors']['currency']]);}元)</button>
+				</form>
+			</div>
+			{/if}
+			{/if}
+		</div>
+
+		<!-- 货到付款 -->
+		<div class="tab-pane animated" id="collect">
+			{if $is_delivery==1}
+			{if $pay['delivery']['switch']}
+			<div class="pay-btn" id="delivery-panel">
+				<form action="{php echo url('mc/cash/delivery');}" method="post">
+					<input type="hidden" name="params" value="{php echo base64_encode(json_encode($params));}" />
+					<input type="hidden" name="encrypt_code" value="" />
+					<input type="hidden" name="card_id" value="{php echo base64_encode($card_id);}" />
+					<input type="hidden" name="coupon_id" value="" />
+					<button class="btn btn-warning btn-block col-sm-12" type="submit" value="delivery">{$tip}</button>
+				</form>
+			</div>
+			{/if}
+			{/if}
+		</div>
+		<!-- 线下汇款 -->
+		<div class="tab-pane animated" id="line">
+			{if $pay['line']['switch']}
+			{php echo htmlspecialchars_decode($pay['line']['message'])}
+			{/if}
+		</div>
+		<div class="tab-pane animated" id="guarantee">
+			<div class="alert alert-info">
+				<div class="row text-center">
+					<div class="col-xs-4">
+						<span class="fa-stack fa-2x">
+							<i class="fa fa-adjust fa-stack-2x"></i>
+							<i class="fa fa-rotate-90 fa-adjust fa-stack-2x"></i>
+						</span>
+						<div class="help-block">付款给微擎</div>
+					</div>
+					<div class="col-xs-4">
+						<span class="fa-stack fa-2x">
+							<i class="fa fa-adjust fa-stack-2x"></i>
+						</span>
+						<div class="help-block">发货/您确认收货</div>
+					</div>
+					<div class="col-xs-4">
+						<span class="fa-stack fa-2x">
+							<i class="fa fa-circle-o fa-stack-2x"></i>
+						</span>
+						<div class="help-block">微擎付款给商家</div>
+					</div>
+				</div>
+			</div>
+			<div class="alert alert-info clearfix">
+				<label class="form-group">
+					<div class="col-xs-1">
+						<input type="radio" name="type" value="alipay" checked>
+					</div>
+					<div class="col-xs-11">
+						担保支付
+						<div class="help-block">还未支持</div>
+					</div>
+				</label>
+			</div>
+		</div>
+	</div>
+</div>
+<input type="hidden" name="token" value="{$_W['token']}" />
+<script type="text/javascript">
+	require(['bootstrap'], function($){
+		$('.nav li').click(function(){
+			if ($(this).attr('data-id') == 'delivery') {
+				$('#coupon').hide();
+				$('#order_card').hide();
+				$('#wq_card').find('.fa').removeClass('text-danger');
+				$('#wq_card .btn-primary').trigger('click');
+				$('.pay-btn input[name="coupon_id"]').val(0);
+			} else {
+				$('#coupon').show();
+			}
+		});
+
+		if ($('#direct .pay-btn').size() == 0) {
+			$('.nav-tabs a[href="#collect"]').trigger('click');
+			return false;
+		}
+
+		$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+			var from = $(e.relatedTarget).attr('href');
+			var to = $(e.delegateTarget).attr('href');
+			if($(to).index() < $(from).index()) {
+				$(to).removeClass('fadeInRight fadeInLeft').addClass('fadeInLeft');
+			} else {
+				$(to).removeClass('fadeInRight fadeInLeft').addClass('fadeInRight');
+			}
+		});
+
+		$('#card').click(function(){
+			$('.bs-example-modal-lg').modal('show');
+		});
+		var cards_str = '{$cards_str}';
+		if (cards_str) {
+			cards_str = $.parseJSON(cards_str);
+		} else {
+			cards_str = {};
+		}
+		$('#wq_card .form-group').click(function(){
+			var status = $(this).find('.fa').hasClass('fa-circle-thin');
+			$(this).siblings().find('.fa').removeClass('fa-check-circle').addClass("fa-circle-thin");
+			if(status) {
+				$(this).find('.fa').removeClass('fa-circle-thin');
+				$(this).find('.fa').addClass('fa-check-circle');
+			} else {
+				$(this).find('.fa').removeClass('fa-check-circle');
+				$(this).find('.fa').addClass('fa-circle-thin');
+			}
+		});
+
+		$('#wq_card .btn-primary').click(function(){
+			var checked_card = $('#wq_card .fa.fa-check-circle').attr('data-id');
+			if(checked_card && cards_str[checked_card]) {
+				$('#wq_card_info').html('已抵用'+cards_str[checked_card].discount_cn+'元');
+				$('#order_card span:first').html('-￥'+cards_str[checked_card].discount_cn+'元');
+				$('.pay-btn input[name="coupon_id"]').val(checked_card);
+				$('#order_card').show();
+			} else {
+				$('.pay-btn input[name="coupon_id"]').val(0);
+				$('#wq_card_info').html('未使用 <i class="fa fa-angle-right"></i>');
+				$('#order_card').hide();
+			}
+			$('.bs-example-modal-lg').modal('hide');
+		});
+	});
+</script>
+{template 'common/footer'}

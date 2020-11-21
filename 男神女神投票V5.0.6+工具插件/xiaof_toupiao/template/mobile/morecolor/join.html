@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>{$setting['title']}</title>
+    <meta content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+    <link rel="stylesheet" type="text/css" href="{MODULE_URL}template/mobile/morecolor/css/style.css"/>
+	<link rel="stylesheet" type="text/css" href="{MODULE_URL}resources/css/font-awesome.min.css"/>
+    <script type="text/javascript" src="{MODULE_URL}template/mobile/morecolor/js/jquery-2.1.0.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="{MODULE_URL}template/mobile/morecolor/css/swiper.min.css" media="all"/>
+	<script type="text/javascript" src="{MODULE_URL}template/mobile/morecolor/js/swiper.jquery.min.js"></script>
+	<script type="text/javascript" src="{MODULE_URL}template/mobile/morecolor/js/ajaxfileupload.js"></script>
+	{php echo register_jssdk(false);}
+	<script type="text/javascript">
+        window.sysinfo.sid = "{$_GPC['sid']}";
+        window.sysinfo.gifename = "{$setting['giftname']}";
+	</script>
+	<style>
+		.body-bg-color{ background:{$setting['bodycolor']}}
+		.button-bg-color{ background:{$setting['buttoncolor']}}
+		.box-bg-color{ background:{$setting['boxcolor']}}
+        .title-bg-color{ background:{$setting['titlecolor']};}
+		body,a{ color:{$setting['textcolor']}}
+		.bottom{ background:{$setting['bottomcolor']};}
+	</style>
+</head>
+<body class="body-bg-color">
+{template 'ad'}
+<input type="hidden" id="opensound" value="{$setting['opensound']}">
+<input type="hidden" id="mustsound" value="{$setting['mustsound']}">
+<input type="hidden" id="openvideo" value="{$setting['openvideo']}">
+<input type="hidden" id="mustvideo" value="{$setting['mustvideo']}">
+<div class="head">
+    <div class="head-banner">
+		{if is_array($setting['thumb'])}
+			{if count($setting['thumb']) <=1}
+				<a href="{php echo $this->getThumblink(0);}"><img src="{php echo tomedia(reset($setting['thumb']))}"></a>
+			{else}
+				<div class="swiper-container">
+				  <div class="swiper-wrapper">
+					{php $ti = 0;}
+					{loop $setting['thumb'] $thumbitem}
+					<div class="swiper-slide"><a href="{php echo $this->getThumblink($ti);}"><img src="{php echo tomedia($thumbitem);}"></a></div>
+					{php $ti++;}
+					{/loop}
+				  </div>
+				</div>
+				<script>
+				$(function(){
+					var mySwiper = new Swiper('.swiper-container', {
+						autoplay: {if $setting['thumbsecond']}{$setting['thumbsecond']}*1000{else}3000{/if}
+					})
+				});
+				</script>
+			{/if}
+		{else}
+        <img src="{php echo tomedia($setting['thumb'])}">
+		{/if}
+    </div>
+</div>
+
+<div class="wrapper">
+
+	<h3>报名参加</h3><br/>
+	<form id="join-form">
+	<input type="hidden" name="pid" value="{$item['id']}"/>
+	<table class="join-form" width="100%" style="table-layout:fixed;">
+		{if $setting['opengroups'] >= 1}
+		<tr>
+			<td style="width: 89px;"><span class="label">组别：</span></td>
+			<td>
+				<select name="groups" {if isset($item['id'])}disabled="disabled"{/if}>
+					{loop $setting['groups'] $groupid $groupitem}
+					<option {if $groupid == $item['groups']} selected{/if} value="{$groupid}">{$groupitem['name']}</option>
+					{/loop}
+				</select>
+			</td>
+		</tr>
+		{/if}
+		<tr>
+			<td style="width: 89px;"><span class="label">{if empty($setting['joinname'])}名称{else}{$setting['joinname']}{/if}：</span></td>
+			<td>
+				<input id="name" type="text" name="name" value="{$item['name']}" {if isset($item['id'])}disabled="disabled"{/if} placeholder="您的{if empty($setting['joinname'])}名称{else}{$setting['joinname']}{/if}"/>
+			</td>
+		</tr>
+		{if empty($setting['joinphone'])}
+		<tr>
+			<td><span class="label">联系电话：</span></td>
+			<td>
+				<input id="phone" type="tel" name="phone" value="{$item['phone']}" {if isset($item['id'])}disabled="disabled"{/if} placeholder="您的联系电话"/>
+			</td>
+		</tr>
+		{/if}
+		<tr>
+			<td><span class="label">照片：</span></td>
+			<td>
+				<div class="clearfix">
+					<span class="pic-container" id="pic-container">
+						{loop $lists $picitem}
+						<span class='picid' onclick="$(this).remove();"><div class='pic-close'>x</div><input type="hidden" name="pics[]" value="{$picitem['url']}"/><img src="{php echo tomedia($picitem['thumb']);}"/></span>
+						{/loop}
+					</span>
+					<span class="filepicker fn-left" id="filepicker"></span>
+					{if $setting['openwildcarddomain'] == 1}
+					<input class="xiaof-upload-file fn-left" type="file" id="imagefile" name="imagefile[]" accept="image/*" multiple="true" onchange="imagefileUpload(this.value)">
+					{/if}
+
+				</div>
+			</td>
+		</tr>
+		{if $setting['openvideo'] >= 1}
+		<tr>
+			<td><span class="label">视频：</span></td>
+			<td>
+				<div class="clearfix">
+					<span class="pic-container fn-left" id="video-container">
+								<input type='hidden' name='video' id="video-input" value='{$item['video']}'/>
+								{if !empty($item['video'])}
+								    <video width="62" height="62" class="picid" id="video-play" controls autobuffer poster="{$item['video']}?vframe/jpg/offset/0|imageView2/1/w/62">
+										<source src="{$item['video']}" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'></source>
+									</video>
+								{/if}
+					</span>
+					<span class="filepicker fn-left"></span>
+					<input class="xiaof-upload-file fn-left" type="file" value="" autocomplete="off" id="videofile" name="videofile" accept="video/*" onchange="videoChange(this.value)">
+					<span class="remove fn-left" id="video-remove-button"></span>
+					<span class="fn-left xiaof-form-tips" id="videofilename"></span>
+					<script>
+                        $(function(){
+                            $("#video-remove-button").click(function(){
+                                $("#video-input").val('');
+                                $("#video-play").remove();
+                            });
+                        });
+                        function videoChange(val) {
+                            var arr=val.split('\\');
+                            var fileName=arr[arr.length-1];
+                            document.getElementById("videofilename").innerHTML='已选视频文件: ' + fileName;
+                        }
+					</script>
+				</div>
+			</td>
+		</tr>
+		{/if}
+		{if $setting['opensound'] >= 1}
+		<style>
+			.xiaof-button{
+				position: relative;
+				display: block;
+				margin-left: auto;
+				margin-right: auto;
+				padding-left: 14px;
+				padding-right: 14px;
+				box-sizing: border-box;
+				font-size: 13px;
+				text-align: center;
+				text-decoration: none;
+				color: #FFFFFF;
+				line-height: 29px;
+				border-radius: 5px;
+				overflow: hidden;
+				background-color: #04BE02;
+				margin-top: 17px;
+			}
+			.sound-box{height:60px;}
+		</style>
+		<tr>
+			<td><span class="label">语音：</span></td>
+			<td>
+				<div class="clearfix sound-box">
+					<span class="pic-container fn-left" id="sound-container">
+						{if !empty($item['sound'])}
+						<input type='hidden' name='sound' id="sound" value="{$item['sound']}"/><span class='sound-play sound-play-1 off1'><i class='fa fa-volume-up'></i></span>
+						{/if}
+					</span>
+					<script>
+                        $(function(){
+                            var audio;
+                            $(".sound-play-1").click(function(){
+                                if($('#media').length <= 0){
+                                    var audioSrc = "{$item['sound']}";
+                                    $("body").append('<audio id="media" preload="auto" src="'+audioSrc+'" loop></audio>');
+                                    audio = $('#media');
+                                }
+                                if($(this).hasClass("off1")){
+                                    $(this).removeClass("off1");
+                                    audio[0].play();
+                                }else{
+                                    $(this).addClass("off1");
+                                    audio[0].pause();
+                                }
+                            });
+                            soundUpload();
+                        });
+					</script>
+					<span class="fn-left xiaof-button soundbuttons" id="sound">点击录制一分钟音频</span>
+				</div>
+			</td>
+		</tr>
+		{/if}
+		<tr>
+			<td><span class="label">{if empty($setting['joindescribe'])}介绍{else}{$setting['joindescribe']}{/if}：</span></td>
+			<td>
+				<textarea id="describe" name="describe" placeholder="您的{if empty($setting['joindescribe'])}介绍{else}{$setting['joindescribe']}{/if}">{$item['describe']}</textarea>
+			</td>
+		</tr>
+
+		{loop $setting['joinfield'] $joinfielditem}
+		<tr>
+			<td style="width: 89px;">
+                <span class="label">
+                    {$joinfielditem['name']}：
+                </span>
+            </td>
+			<td>
+				<input id="{$joinfielditem['sign']}" type="text" name="{$joinfielditem['sign']}" value="{$item['data'][$joinfielditem['sign']]}" placeholder="{if empty($joinfielditem['isnull'])}必填{/if}" />
+			</td>
+		</tr>
+		{/loop}
+	</table>
+	</form>
+	报名前请仔细阅读活动规则
+	<button class="join-button button-bg-color" id="form-submit">{if isset($item['id'])}确认修改{else}确认报名{/if}</button>
+	{if isset($item['id'])}<a href="{php echo self::appUrl('show','xiaof_toupiao','&id='.$item['id'].'');}" class="join-button button-bg-color">查看我的参赛页</a>{/if}
+	{if !empty($setting['joinfee']) && !empty($myid) && empty($item['entryfee'])}<a href="javascript:" onclick="feetips()" class="join-button button-bg-color">支付报名费用</a>{/if}
+</div>
+		<div class='soundshade'>
+			<div class="soundclose" onclick="$('.soundshade').hide();">
+				X
+			</div>
+			<div class="soundtips">
+				按住录音按钮开始录音，松开结束
+			</div>
+
+			<div class="soundconfirm">
+				<div class="clean-button">
+					<span class="clean-button-text">使用录音</span>
+				</div>
+			</div>
+
+			<div class="soundbutton" onselectstart="return false;">
+				<img src="{MODULE_URL}template/mobile/images/sound.png"/><br/>
+				按住录音
+			</div>
+		</div>
+{template $setting['template'].'footer'}
+
+<script type="text/javascript" src="{MODULE_URL}template/mobile/morecolor/js/main.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function(){
+        {if $setting['joinfollow'] == 1}
+        $.post(window.sysinfo.siteroot + "app/index.php?c=entry&do=join&m=xiaof_toupiao&isajax=yes&i=" + window.sysinfo.uniacid, '', function (data) {
+            var result = new Function('return' + data)();
+            if (result.errno == 0) {
+                xfdialog(result.message);
+                setTimeout(function () {
+                    window.location.href = "{self::appUrl('index', 'xiaof_toupiao')}";
+                }, 3000);
+            } else if (result.errno == 109) {
+                feetips();
+            } else {
+                xfdialog(result.message);
+                //tempPicUrls = picUrls;
+            }
+        });
+        {/if}
+    });
+
+    function feetips(){
+        xfdialog('资料上传成功，报名费¥{$setting['joinfee']}<br/>支付后提交报名<br/><div style="text-align: center"><a href="{php echo $this->payUrl('paycheck', $setting['joinfee'], array('action'=>2));}" class="complete-button complete button-bg-color">确定</a></div>', true);
+    }
+	{if !$setting}
+	xfdialog("没有找到该活动");
+	{elseif time() <= strtotime($setting['joinstart'])}
+	xfdialog("活动报名未开始，请开始后再参加，开始时间{$setting['joinstart']}");
+	{elseif time() >= strtotime($setting['joinend'])}
+	xfdialog("活动报名已结束，敬请期待下次活动");
+	{elseif $setting['openwapjoin'] == 1}
+	xfdialog('<p style="text-align:center;">已禁止网页报名！</p>');
+	{elseif $_W['container'] !== 'wechat'}
+    xfdialog("活动只允许在微信上报名参加，请在微信上打开本页面");
+	{elseif $setting['joinfollow'] == 1 && !$this->checkFollow()}
+		{if empty($setting['followtipstype'])}
+			xfdialog('{if !empty($setting['followjointext'])}<p style="text-align:center;">{$setting['followjointext']}</p>{/if}{$accountqrcode}');
+		{else}
+			xfdialog('{if !empty($setting['followjointext'])}<p style="text-align:center;">{$setting['followjointext']}</p>{/if}<div class="play-voice"><img class="voice-on" src="{MODULE_URL}template/mobile/xiaofweui/picture/ms.png"/><img class="voice-off" src="{MODULE_URL}template/mobile/xiaofweui/picture/mp.png"/></div>');
+			playVoice("{php echo tomedia($setting['followvoice']);}");
+		{/if}
+	{else}
+            var reloadurl = {if !empty($setting['joinjumplink'])}"{$setting['joinjumplink']}"{else}{if !empty($setting['joinjump'])}"{php echo self::appUrl($setting['joinjump'])}"{else}false{/if}{/if};
+		var limitpic = {if empty($setting['limitpic'])}5{else}{$setting['limitpic']}{/if};
+		var phonerequired = {if empty($setting['joinphone'])}true{else}false{/if};
+	{/if}
+    {if !empty($setting['joinfee']) && !empty($myid) && empty($item['entryfee'])}feetips();{/if}
+</script>
+
+
+{if $setting['openwildcarddomain'] == 1}
+	<script type="text/javascript" src="{MODULE_URL}template/mobile/morecolor/js/iupload.js"></script>
+{else}
+	<script type="text/javascript" src="{MODULE_URL}template/mobile/morecolor/js/upload.js"></script>
+{/if}
+
+
+<script type="text/javascript">
+        wx.ready(function () {
+            wx.onMenuShareAppMessage({
+                title: '{$setting['sharetitle']}',
+                desc: '{php echo trim($setting['sharecontent']);}',
+                link: '{php echo $this->shareUrl('join','xiaof_toupiao')}',
+                imgUrl: '{php echo tomedia($setting['sharethumb'])}',
+                success: function(){
+                },
+                cancel: function(){
+                }
+            });
+
+            wx.onMenuShareTimeline({
+                title: '{$setting['sharetitle']}',
+                link: '{php echo $this->shareUrl('join','xiaof_toupiao')}',
+                imgUrl: '{php echo tomedia($setting['sharethumb']);}',
+                success: function () {
+                },
+                cancel: function () {
+                }
+            });
+        });
+</script>
+</body>
+</html>

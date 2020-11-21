@@ -1,0 +1,136 @@
+<!--广告 管理 -->
+<title>广告管理</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>广告管理</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">广告管理</div>
+                <div class="layui-card-body">
+                    <table class="layui-hide" id="test-table-autowidth" lay-filter="test-table-autowidth"></table>
+                    <!--头部操作按钮-->
+                    <script type="text/html" id="test-table-toolbar-toolbarDemo">
+                        <div class="layui-btn-container">
+                            <button class="layui-btn layui-btn-sm" lay-event="addData">新增广告</button>
+                        </div>
+                    </script>
+                    <!--行内操作按钮-->
+                    <script type="text/html" id="test-table-autowidth-barDemo">
+                        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .layui-table-cell {
+        height:auto;
+    }
+</style>
+<script>
+
+    layui.use(['admin', 'table'], function(){
+        var table = layui.table;
+        var $ = layui.$
+                ,admin = layui.admin
+                ,element = layui.element
+                ,layer = layui.layer
+                ,form = layui.form;
+
+        table.render({
+            elem: '#test-table-autowidth'
+            ,url: config.url+'manage_base/ad/index'//数据接口
+            ,toolbar: '#test-table-toolbar-toolbarDemo'
+            ,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+            ,page:true
+            ,cols: [[
+                {field:'id', title: 'ID', sort: true}
+                ,{field:'type', title: '位置'
+                    ,templet: function(d){
+                        if(d.type==1){
+                            return '人脉圈-广告位';
+                        }
+
+                    }
+                }, //width 支持：数字、百分比和不填写。你还可以通过 minWidth 参数局部定义当前单元格的最小宽度，layui 2.2.1 新增
+                {field:'link_type', title: '跳转类型'
+                    ,templet: function(d){
+                    if(d.link_type==1){
+                        return '拨打电话';
+                    }
+                    if(d.link_type==2){
+                        return '跳转小程序';
+                    }
+                    if(d.link_type==3){
+                        return '跳转网页';
+                    }
+                }
+                },
+                {field:'link', title: '链接'},
+                {field:'path', title: '图片', width: 200
+                    ,style:'height:80px'
+                    ,templet: function(d){
+                    if(d.path.length<=0){
+                        return  '暂无图片';
+                    }else{
+                        return '<img src="'+ d.path[0]['path']+'"/>'
+                    }
+                }
+                },
+                {align:'center', width:250, toolbar: '#test-table-autowidth-barDemo'}
+            ]]
+        });
+
+        //头工具栏事件
+        table.on('toolbar(test-table-autowidth)', function(obj){
+            switch(obj.event){
+                case 'addData':
+                    //跳转到新增页面
+                    window.location.href =config.html_url+'manage_base/ad/edit';
+                    break;
+            };
+        });
+
+        //监听工具条
+        table.on('tool(test-table-autowidth)', function(obj){
+            var data = obj.data;
+            console.log(data);
+            if(obj.event === 'detail'){
+                layer.msg('ID：'+ data.id + ' 的查看操作');
+            } else if(obj.event === 'del'){
+                layer.confirm('真的删除行么', function(index){
+                    obj.del();
+                    layer.close(index);//关掉提示框
+                    //掉删除接口
+                    admin.req({
+                        type:'POST',
+                        url: config.url+'manage_base/ad/delete'//数据接口
+                        ,data:{"id":data.id},
+                        done:function(res){
+                            layer.msg('成功', {
+                                offset: '15px'
+                                ,icon: 1
+                                ,time: 1000
+                            }, function(){
+                                window.location.href =config.html_url+'manage_base/ad/';
+                            });
+                        }
+                    });
+                });
+            } else if(obj.event === 'edit'){
+                //layer.alert('编辑行：<br>'+ JSON.stringify(data))
+                //跳转到编辑页面
+                window.location.href =config.html_url+'manage_base/ad/edit/id='+data.id;
+            }
+        });
+    });
+</script>

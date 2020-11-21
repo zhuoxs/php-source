@@ -1,0 +1,15 @@
+$(function(){    
+    $(".change").click(function(){
+        if($(this).hasClass("down")){
+            $(this).removeClass("down").addClass("up");
+            $(".all").show();
+            $(".part").hide();
+            $(".up").text('收起详情'); 
+        }else{
+            $(this).removeClass("up").addClass("down");
+            $(".part").show();
+            $(".all").hide();
+            $(".down").text('展开详情'); 
+        }
+    });
+})

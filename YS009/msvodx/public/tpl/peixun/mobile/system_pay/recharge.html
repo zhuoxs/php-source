@@ -1,0 +1,176 @@
+﻿{include file="common/head"}
+<style>
+
+</style>
+
+        <div class="recharge">
+            <form method="post" action="{:url('SystemPay/createOrder')}">
+            <div class="switch">
+                <span data-for="vip" data-buytype="2" class="buyType active">VIP会员<i></i></span>
+                <span data-for="Gold" data-buytype="1" class="buyType">金币<i></i></span>
+            </div>
+            <div class="recharge-box">
+                <div class="vip">
+                    {volist name='rechargeList' id='item'}
+                    <div class="vip-cel packageid" data-packageid="{$item['id']}" data-price="{$item['price']}">
+                        <div class="vip-box">
+                            <span>{$item['name']}</span>
+                            <p>￥<var>{$item['price']}</var></p>
+                        </div>
+                        <div class="Month">
+                            <span>{if $item['permanent']==1}永久VIP{else/}VIP {$item['days']}天{/if}</span>
+                        </div>
+                    </div>
+                    {/volist}
+                </div>
+                <div class="Gold" style="display: none;">
+                    {if is_array($goldPackageList)}
+                    {volist name='goldPackageList' id='item'}
+                    <div class="vip-cel goldNum" data-price="{$item['price']}">
+                        <div class="vip-box">
+                            <span>{$item['name']}</span>
+                            <p><var>{$item['gold']}</var></p>
+                        </div>
+                        <div class="Month">
+                            <span>￥{$item['price']}</span>
+                        </div>
+                    </div>
+                    {/volist}
+                    {/if}
+                   <!-- <div class="vip-cel goldNum" onclick="$('#userInputGoldNum')[0].focus()">
+                        <div class="vip-box">
+                            <span>自定义</span>
+                        </div>
+                        <div class="Month">
+                            <p><input type="number" onblur="setGold()" id="userInputGoldNum" /></p>
+                        </div>
+                    </div>-->
+                    <div style="padding-left: 15px;clear: both;color:#c0a16b;font-size:12px;">
+                        <p style="line-height: 30px;"><i class="btn fn-wenxintishi" style="font-size: 13px;"></i>温馨提示：</p>
+                        1、 当前金币兑换比例：1元人民币可兑换{$gold_exchange_rate}个金币.<br>
+                        2、 您输入的金币将会自动调整为整数.
+                    </div>
+                </div>
+            </div>
+            <div class="pay-box">
+                <div class="pay-title"><span>支付方式</span></div>
+                <div class="tab">
+                    {volist name='paymentList' id='item'}
+                    <span class="payCode" data-paycode="{$item['payCode']}">
+                        <img src="{$item['payIcon']}" title="{$item['payName']}">
+                    </span>
+                    {/volist}
+                </div>
+            </div>
+            <div class="payment">
+                <span>支付</span>
+                <span>￥<var id="payPrice">0</var></span>
+                <button type="submit" class="credit">充值</button>
+            </div>
+
+                <input type="hidden" name="packageId" id="packageId" />
+                <input type="hidden" name="payCode" id="payCode" />
+                <input type="hidden" name="price" id="price" />
+                <input type="hidden" name="buyType" id="buyType" />
+            </form>
+        </div>
+    </div>
+
+
+<script>
+    $(function () {
+
+        //vip
+        $('.packageid').click(function () {
+            $('#packageId').val($(this).attr('data-packageid'));
+            $('#price').val($(this).attr('data-price'));
+            $('#payPrice').html($(this).attr('data-price'));
+        });
+
+        //chose payment
+        $('.payCode').click(function(){
+            $('#payCode').val($(this).attr('data-payCode'));
+        });
+
+        //chose buy vip or gold
+        $('.buyType').click(function () {
+            reset();
+            $('#buyType').val($(this).attr('data-buytype'));
+            if($(this).attr('data-buytype')==2){
+                $('.packageid').first().click().addClass('on');
+            }else if($(this).attr('data-buytype')==1){
+                $('.goldNum').first().click().addClass('on');
+            }
+        });
+
+        //gold
+        $('.vip-cel').click(function(){
+            $price=$(this).attr('data-price');
+            $('#payPrice').html($price);
+            $('#price').val($price);
+        });
+
+        $('.payCode').first().click().addClass('on');
+
+        if(1=={:request()->param('type/d',0)}){
+            setTimeout("$('.buyType:eq(1)').click()",1);
+        }else{
+            $('.buyType').first().click();
+        }
+
+        /*金币和VIP的点击切换*/
+        $(".switch span").click(function(){
+            var $self = $(this).attr("data-for");
+            $(".switch span").removeClass("active");
+            $(this).addClass("active");
+            $(".recharge-box").find("."+$self).show();
+            $(".recharge-box").find("."+$self).siblings().hide();
+        });
+        /* **选择  */
+        $(".vip .vip-cel").click(function(){
+            $(".vip .vip-cel").removeClass("on");
+            $(this).addClass("on");
+        });
+        $(".Gold .vip-cel").click(function(){
+            $(".Gold  .vip-cel").removeClass("on");
+            $(this).addClass("on");
+        });
+        /*支付方式*/
+        $(".recharge .tab span").click(function(){
+            $(".recharge .tab span").removeClass("on");
+            $(this).addClass("on");
+        });
+
+        var navTopTitle="{$navTopTitle|default='视频站'}";
+        $('#navTopTitle').html(navTopTitle);
+
+    });
+
+
+    function setGold(){
+        var gold=parseInt($('#userInputGoldNum').val());
+        var rate={$gold_exchange_rate};
+        if(gold<=0 || isNaN(gold)) gold=1;
+
+        var upPrice=Math.ceil(gold/rate);
+        var upGold=upPrice*rate;
+
+        $('#userInputGoldNum').val(upGold);
+        $('#price').val(upPrice);
+        $('#payPrice').html(upPrice);
+    }
+
+    function reset(){
+        $("#packageId").val('');
+        $("#price").val('');
+        $("#payPrice").html('');
+        $("#buyType").val('');
+        $('.packageid').removeClass('on');
+        $('.vip-cel').removeClass('on');
+    }
+
+</script>
+
+
+<!--
+{include file="common/footer"}-->

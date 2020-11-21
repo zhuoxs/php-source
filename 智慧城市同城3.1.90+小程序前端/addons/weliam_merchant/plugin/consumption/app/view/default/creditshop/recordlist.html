@@ -1,0 +1,129 @@
+{php include wl_template('common/header');}
+<style>
+.fighttip{color: orangered;font-size: 12px;margin-right: 2px;}
+.buttons-tab:after{height: 0;}
+.buttons-tab .button{font-size: .75rem;}
+.buttons-tab .button.active{color: #FE433F;border-color: #FE433F;}
+.list-block .item-link.list-button{color: #555;font-size: .75rem;}
+.avatar{width: 3.15rem;height: 3.15rem;background-color: #fff;position: absolute;top: .75rem;}
+.avatar img{width: 100%;height: 100%;display: block;object-fit: cover;-webkit-border-radius: 3px;border-radius: 3px;}
+.field .contentt{margin-left: 0;padding-left: 3.65rem;}
+.field{margin-top: .5rem;}
+.field-head{padding: 0 .75rem;}
+.field-head-status-light{color: #fe4d3d;font-size: .65rem;}
+.field .order-option-btn{font-size: .65rem;}
+.field .order-option-s2{color: #333;border: none;}
+.field-item{padding: .75rem;background-color: #f9f9f9;}
+.field-item:before{border-top: none;}
+.field-head-name{width: 65%;color: #333;font-size: .75rem;}
+.field-head-name i{color: #333;font-size: .85rem;vertical-align: -0.05rem;}
+.field .contentt .delivery_tip{height: 2.1rem;line-height: 1.05rem;color: #333;font-size: .7rem;overflow: hidden;text-overflow: ellipsis;white-space: normal;display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 2;}
+.field .contentt .order-time{height: 1.05rem;line-height: 1.05rem;color: #333;font-size: .7rem;visibility: hidden;}
+.field .contentt .price{height: 1.05rem;line-height: 1.05rem;font-size: .8rem;display: -webkit-flex;display: flex;justify-content: space-between;}
+.field .contentt .price span{overflow: hidden;text-overflow: ellipsis;white-space: nowrap;display: block;-webkit-flex-shrink: 1;flex-shrink: 1;}
+.field .contentt .price .order-time{font-size: .6rem;color: #999;overflow: hidden;-webkit-flex-shrink: 0;flex-shrink: 0;visibility: initial;}
+.field-console-btns{bottom: 2rem;}
+.field-foot{padding: 0 .75rem;}
+.field-foot:after{content: "";display: block;clear: both;}
+.field-foot a{width: 3.7rem;height: 1.2rem;line-height: 1.2rem;color: #333;font-size: .7rem;text-align: center;margin: .4rem 0;margin-left: .4rem;padding: .05rem 0;border: 1px solid #eee;-webkit-border-radius: 2rem;border-radius: 3.8rem;box-sizing: initial;overflow: hidden;display: inline-block;float: right;}
+.field-foot .field-f-pay{color: #df231c;border: 1px solid #df231c;}
+.field-head{height: 2.2rem;line-height: 2.2rem;}
+</style>
+<div class="page-group" >
+    <div class="page page-current" id="page-index">
+		<header class="bar bar-nav create-actions">
+			<a class="button button-link button-nav pull-left back" href="{php echo app_url('consumption/goods/goods_index')}"><span class="icon icon-left"></span>返回</a>
+			<h1 class="title">兑换记录</h1>
+		</header>
+		<div class="content infinite-scroll">
+			<div class="allorder">
+				<!--全部订单表-->
+			</div>
+			<div class="weui-loadmore loading_more" style="display: none;">
+	            <i class="weui-loading"></i>
+	            <span class="weui-loadmore__tips">正在加载</span>
+	        </div>
+	        <div class="weui-loadmore weui-loadmore_line" style="display: none;">
+	            <span class="weui-loadmore__tips" style="background-color: #EFEFF4;">暂无更多数据</span>
+	        </div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="orderlist">
+{{# for(var i = 0, len = d.length; i < len; i++){ }}
+<div class="field">
+	<div class="field-head">
+		<span class="field-head-name">{{# if(d[i].type == 'credit2'){ }}<i class="icon iconfont icon-refund"></i>兑换余额{{# }else{ }}<i class="icon iconfont icon-present"></i>兑换礼品 {{# } }} </span>
+  		<span class="field-head-status field-head-status-light">{{# if(d[i].status == 1){ }}待发货{{# } else if(d[i].status == 2){ }}待收货{{# } else if(d[i].status == 3){ }}已完成{{# } }}</span>
+	</div>
+    <a class="field-item" href="{{ d[i].url }}">
+     	<div class="avatar">
+      		<img src="{{ d[i].goodsimg }}" class="avatar-img">
+        </div>
+        <div class="contentt">
+	        <p class="delivery_tip">{{ d[i].goodsname }}</p>
+        	<p class="price"><span>{{ d[i].integral }}积分{{# if(d[i].money > 0){ }}(+￥{{d[i].money}}){{# } }}</span><span class="order-time">{{ d[i].createtime }}</span></p>
+        </div>
+        <i class="field-arrow icon-arrow-right"></i>
+    </a>
+    {{# if(d[i].status == 2){ }} 
+    <div class="field-foot">
+	    <a class="field-f-pay" onclick = collect("{{ d[i].id }}")  href="javascript:;">确认收货</a>
+	    <a class="field-f-pay" href="http://m.kuaidi100.com/index_all.html?type={{d[i].expressname}}&postid={{d[i].expresssn}}#input">查询物流</a>
+    </div>
+	{{# } }}
+</div>
+{{# } }}
+</script>
+<script>
+	
+$(function() {
+		$(document).on("pageInit", "#page-index", function(e, id, page) {
+			var loading = false,pagenum = 1,endmark = 0;
+			function addItems() {
+				$.post("{php echo app_url('consumption/goods/recordlist')}",{pindex:pagenum},function(d){
+					if (d.data.length > 0) {
+						var gettpl1 = document.getElementById('orderlist').innerHTML;
+						laytpl(gettpl1).render(d.data, function(html){
+						   $(".allorder").append(html);
+						});
+					}else{
+						$(".loading_more").hide();
+						$(".weui-loadmore_line").show();
+						endmark = 1;					}
+				}, 'json');
+			}
+			addItems();
+			$(page).on('infinite', function() {
+				if (endmark || loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+					loading = false;
+					pagenum ++;
+					addItems();
+					loading = false;
+					$.refreshScroller();
+				}, 500);
+			});
+		});
+		$.init();
+	});
+	
+	function collect(id){
+		$.confirm('是否确认收货？',
+	        function () {
+				$.post("{php echo app_url('consumption/goods/collect')}",{id:id},function(d){
+					if (!d.errno){
+						$.toast('收货成功');
+						location.reload();
+					}else{
+						$.toast('收货失败,请重试');
+					}
+				}, 'json');
+	        }
+	    );
+	}
+	
+</script>
+{php include wl_template('common/footer');}

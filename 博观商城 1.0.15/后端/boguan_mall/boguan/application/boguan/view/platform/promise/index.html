@@ -1,0 +1,238 @@
+{include file="common/header"}
+
+<!--main-body-->
+<!--main-body-->
+<section class="main-body">
+    <div class="main_content">
+        <!--second sidebar-->
+        {include file="platform/pub/setting-nav"}
+        <!--main body content-->
+        <div class="main_mbody">
+            <div class="col-xs-12">
+                <div class="main_mbody-title">
+                    <h5>服务承诺</h5>
+                </div>
+                <div class="main-con">
+                    <form action="">
+                        <ul class="set-sanji-box">
+                            <li>
+                                <div class="title"><h5>服务承诺功能</h5></div>
+                                <p>
+                                    1、服务承诺，即商家对客户承诺能做到的服务和服务质量。请商家根据实际情况开启相应的服务承诺。
+                                </p>
+                                <p>
+                                    2、服务承诺添加完成后，需要在商品编辑页选择对应的服务承诺才会显示。
+                                </p>
+                                <div class="promise_control middle_center">
+                                    <input type="checkbox" class="switch-main hide" onclick="alert('66')"/>
+                                </div>
+                            </li>
+                        </ul>
+                        <ul class="nav-contral clearit">
+                            <li><a href="{:url('boguan/platform.promise/add')}" class="btn"><i class="iconfont icon-jia"></i>添加服务承诺</a></li>
+                        </ul>
+                        <div class="main-table table-responsive">
+                            <table class="table table-hover table-condensed">
+                                <thead>
+                                <tr>
+                                    <th style="width: 10%;text-align: left;">服务名称</th>
+                                    <th style="width: 10%;">图标</th>
+                                    <th style="width: 40%;">承诺说明</th>
+                                    <th style="width: 10%;">开关</th>
+                                    <th style="width: 30%;text-align: right;">操作</th>
+                                </tr>
+                                </thead>
+                                <tbody>{volist name="promise" id="vo"}<tr class="del-{$vo.id}">
+                                    <td style="text-align: left;">
+                                        {$vo.name}
+                                    </td>
+                                    <td>
+                                        <div class="imgbox">
+                                            <img width="55px" src="{$vo.icon}" ondragstart="return false" alt="" title="">
+                                        </div>
+                                    </td>
+                                    <td>{$vo.content}</td>
+                                    <td>
+                                        <button type="button" class="state-pro" onclick="status({$vo.id},{$vo.status})">
+                                            {if $vo.status == 0}
+                                            <span class="label label-danger">已关闭</span>
+                                            {else}
+                                            <span class="label label-success">已开启</span>
+                                            {/if}
+                                        </button>
+                                    </td>
+                                    <td style="text-align: right">
+                                        <a href="{:url('boguan/platform.promise/edit',['id'=> $vo.id])}">修改</a>
+                                        <span class="split">|</span>
+                                        <a href="javascript:;" onclick="del('{$vo.id}', 'del-{$vo.id}')">删除</a>
+                                    </td>
+                                </tr>{/volist}</tbody>
+
+                            </table>
+                            {$page}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {include file="common/copyright"}
+        </div>
+    </div>
+</section>
+<!--翻页-->
+<script type="text/javascript" src="__PUBLIC__/js/pageNav.js"></script>
+<!--地图插件-->
+<script type="text/javascript" src="__PUBLIC__/js/MapType.js"></script>
+<script type="text/javascript" src="__PUBLIC__/js/MapGrid.js"></script>
+
+{include file="common/footer"}
+<!--开关-->
+<script src="__PUBLIC__/js/switch.js"></script>
+<script>
+
+    var switches = {};
+    var switchConfig = {
+        'switch-main': {
+            checked: {$platform.is_promise},
+            showText: true,
+            onText: '已开启',
+            offText: '已关闭',
+            size: 'large',
+            onChange: function (i) {
+                console.log(i)
+                $.ajax({
+                    type: "post",
+                    url: "{:url('boguan/platform/updateStatus')}",
+                    //dataType:"json",
+                    data:{
+                        "status": i,
+                        "type": 'pormise'
+                    },
+
+                     success: function(data) {
+                         console.log(data);
+                         if (data.errorCode == 1) {
+                             //alert(data.msg);
+                             layui.use(['layer','form'], function(){
+                                 var layer = layui.layer,form = layui.form;
+
+                                 layer.msg(data.msg, {icon: 1, time:1000}, function(){
+                                     //window.history.go(-1);location.reload();
+                                     //window.location=document.referrer;
+                                 });
+                             });
+
+                             //window.location.reload()
+                         } else {
+                             layui.use(['layer','form'], function(){
+                                 var layer = layui.layer,form = layui.form;;
+
+                                 layer.msg(data.msg, {icon: 2, time:1000});
+                             });
+                         }
+                     },
+                     error: function (data) {
+                         console.log(data.responseText);
+                         layui.use(['layer','form'], function(){
+                             var layer = layui.layer,form = layui.form;;
+
+                             layer.msg(data.msg, {icon: 2, time:1000});
+                         });
+                     }
+                });
+            }
+        },
+        'switch-state': {
+            size: 'small'
+        },
+        'switch-state-1': {
+            checked: true,
+            size: 'small'
+        }
+    };
+
+    Object.keys(switchConfig).forEach(function (key) {
+        switches[key] = new Switch(document.querySelector('.' + key),switchConfig[key]);
+    });
+
+    /*删除*/
+    function del(id,key){
+
+        layui.use(['layer','form'], function(){
+            var layer = layui.layer,form = layui.form;;
+
+            layer.confirm('确认删除吗？', {btn:['确认'], yes:function(index){
+                    //按钮【按钮一】的回调
+                    //此处请求后台程序，下方是成功后的前台处理……
+                    $.ajax({
+                        type: 'POST',
+                        url: '{:url("boguan/platform.promise/del")}',
+                        data:{'id':id},
+                        success: function(data) {
+                            console.log(data);
+                            if (data.errorCode == 1) {
+
+                                layer.msg(data.msg,{icon: 1})
+                                $('.'+key).remove();
+                            } else {
+                                layer.msg(data.msg,{icon: 2})
+                            }
+                        },
+                        error: function (data) {
+                            console.log(data.responseText);
+                            layer.msg(data.msg,{icon: 2})
+                        }
+                    });
+                    layer.close(index);
+                }});
+        })
+
+    }
+
+    //更新状态
+    function status(id,status) {
+        console.log(id);
+        console.log(status)
+        var text= '';
+        var updateStatus= 0;
+        if (status == 1){
+            updateStatus= 0;
+            text= '关闭';
+        }else {
+            updateStatus= 1;
+            text= '开启';
+        }
+        layui.use(['layer','form'], function(){
+            var layer = layui.layer,form = layui.form;;
+
+            layer.confirm('确认'+ text +'吗？', {btn:['确认'], yes:function(index){
+                    //按钮【按钮一】的回调
+                    //此处请求后台程序，下方是成功后的前台处理……
+                    $.ajax({
+                        type: 'POST',
+                        url: '{:url("boguan/platform.promise/updateStatus")}',
+                        data:{
+                            'id':id,
+                            'status': updateStatus,
+                        },
+                        success: function(data) {
+                            console.log(data);
+                            if (data.errorCode == 1) {
+
+                                layer.msg(data.msg,{icon: 1})
+                                window.location.reload()
+
+                            } else {
+                                layer.msg(data.msg,{icon: 2})
+                            }
+                        },
+                        error: function (data) {
+                            console.log(data.responseText);
+                            layer.msg(data.msg,{icon: 2})
+                        }
+                    });
+                    layer.close(index);
+                }});
+        })
+    }
+</script>
+

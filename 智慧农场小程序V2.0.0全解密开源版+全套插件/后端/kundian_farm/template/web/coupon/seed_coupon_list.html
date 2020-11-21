@@ -1,0 +1,117 @@
+{template 'web/common/common'}
+{template 'web/coupon/navbar'}
+<link rel="stylesheet" type="text/css" href="../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/layui.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/new-common.css" />
+<script src="../addons/kundian_farm/resource/layui.js" charset="utf-8"></script>
+<blockquote class="layui-elem-quote layui-text">
+  种子优惠券
+</blockquote>
+<div class="new-style">
+    <a class="layui-btn" href="{url 'site/entry/coupon',array('m'=>'kundian_farm','op'=>'seed_coupon_edit','version_id'=>$_GPC['version_id'],'cate_id'=>$_GPC['cate_id'])}">增加</a>
+    <div class="layui-form">
+      <table class="layui-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>优惠券名称</th>
+                <th>优惠券类型</th>
+                <th>最低消费金额(元)</th>
+                <th>优惠金额(元)</th>
+                <th>有效期</th>
+                <th>是否发放</th>
+                <th>数量</th>
+                <th>排序</th>
+                <th>更新时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {loop $list $index $item}
+            <tr>
+                <td><div class="type-parent">{$item['id']}</div></td>
+                <td><div class="type-parent">{$item['coupon_name']}</div></td>
+                <td><div class="type-parent">
+                    {if $item['coupon_type']==1}
+                    <span class="label label-info">满减券</span>
+                    {/if}
+                </div></td>
+                <td><div class="type-parent">{$item['low_cash_price']}</div></td>
+                <td><div class="type-parent">{$item['coupon_price']}</div></td>
+                <td><div class="type-parent">
+                    {if $item['expiry_date']==1}
+                    {$item['expiry_day']}天
+                    {else}
+                    <?php echo date("Y-m-d",$item['begin_time']);?>~<?php echo date("Y-m-d",$item['end_time']);?>
+                    {/if}
+                </div></td>
+                <td><div class="type-parent" style="width: 52px;height: 32px;">
+                    {if $item['status']==1}
+                    <span class="layui-badge layui-bg-green">已发放</span>
+                    {else}
+                    <span class="layui-badge layui-bg-gray">未发放</span>
+                    {/if}
+                </div></td>
+                <td><div class="type-parent">
+                    {if $item['count']==-1}
+                    总数：无限制  &nbsp;&nbsp;&nbsp;剩余：无限制
+                    {else}
+                        总数：<?php echo $item['count']+$item['use_count'];?> &nbsp;&nbsp;&nbsp;剩余：{$item['count']}
+                    {/if}
+                </div></td>
+                <td><div class="type-parent">{$item['rank']}</div></td>
+                <td><div class="type-parent"><?php echo date("Y-m-d H:i:s",$item['create_time']);?></div></td>
+                <td style="text-align:right;">
+                    <a href="{url 'site/entry/coupon',array('m'=>'kundian_farm','op'=>'seed_coupon_edit','id'=>$item['id'],'version_id'=>$_GPC['version_id'],'cate_id'=>$_GPC['cate_id'])}" class="layui-btn layui-btn-sm edit">修改</a>
+                    <a href="{url 'site/entry/coupon',array('m'=>'kundian_farm','op'=>'grant_coupon','id'=>$item['id'],'version_id'=>$_GPC['version_id'],'cate_id'=>$_GPC['cate_id'])}" class="layui-btn layui-btn-sm">发放</a>
+                    <a class="layui-btn layui-btn-sm layui-btn-danger delete" data-id="{$item['id']}">删除</a>
+                </td>
+            </tr>
+            {/loop}
+        </tbody>
+      </table>
+        <div style="text-align: right;">
+            {$pager}
+        </div>
+    </div>
+</div>
+<script>
+    require(["../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.js"],function(){
+        $(function(){
+            //改变状态
+
+            //删除
+            $(".delete").click(function(){
+                var that=$(this);
+                var id=$(this).attr('data-id');
+                swal({
+                    title: '确定删除吗?',
+                    text: "删除后用户领取的优惠券也将被删除！请谨慎操作！",
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: '删除',
+                    cancelButtonText: '取消',
+                }).then(function(isConfirm) {
+                    if (isConfirm) {
+                        $.ajax({
+                            type:"post",
+                            url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'shop_coupon_delete','version_id'=>$_GPC['version_id'])}",
+                            data:{id:id},
+                            dataType:'json',
+                            success:function(res){
+                                if(res.status==1){
+                                    swal('操作成功!', '操作成功!', 'success');
+                                    that.parent().parent().remove();
+                                }else{
+                                    swal('操作失败!', '操作失败!', 'error');
+                                }
+                            }
+                        })
+                    }
+                })
+            });
+        })
+    })
+</script>

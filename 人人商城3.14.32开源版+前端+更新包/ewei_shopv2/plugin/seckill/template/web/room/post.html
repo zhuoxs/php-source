@@ -1,0 +1,268 @@
+{template '_header'}
+
+<div class="page-heading"> 
+	<span class='pull-right'>
+		{ifp 'seckill.room.add'}
+			<a class="btn btn-primary btn-sm" href="{php echo webUrl('seckill/room/add')}">添加会场</a>
+		{/if}
+		<a class="btn btn-default  btn-sm" href="{php echo webUrl('seckill/room')}">返回列表</a>
+	</span>
+    <h2>{if !empty($item['id'])}编辑{else}添加{/if}会场
+        <small>{if !empty($item['id'])}修改【{$item['title']}】{/if}  {if !empty($task)}所属专题: [{$task['id']}]-{$task['title']}{/if}</small>
+    </h2>
+</div>
+
+<form {ife 'seckill.room' $item}action="" method="post"{/if} class="form-horizontal form-validate" enctype="multipart/form-data">
+<input type="hidden" name="id" value="{$item['id']}"/>
+<input type="hidden" name="taskid" value="{$_GPC['taskid']}"/>
+<div class="panel panel-default">
+    <div class="panel-heading">
+        会场信息
+    </div>
+    <div class="panel-body">
+        <div class="form-group">
+            <label class="col-sm-2 control-label must">会场名称</label>
+            <div class="col-sm-9 col-xs-12 ">
+                {ife 'seckill.room' $item}
+                <input type="text" name="title" class="form-control" value="{$item['title']}"
+                       data-rule-required="true" />
+                {else}
+                <div class='form-control-static'>{$item['title']}</div>
+                {/if}
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">标签</label>
+            <div class="col-sm-9 col-xs-12 ">
+                {ife 'seckill.room' $item}
+                <input type="text" name="tag" class="form-control" value="{$item['tag']}"/>
+                <span class="help-block">显示在首页橱窗头部，和商品详情页面，如果不填写默认为专题的标签</span>
+                {else}
+                <div class='form-control-static'>{$item['tag']}</div>
+                {/if}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="col-sm-2 control-label">过期抢购</label>
+            <div class="col-sm-9 col-xs-12">
+                {ife 'seckill.room' $item}
+                <label class='radio-inline'>
+                    <input type='radio' name='oldshow' value='0' {if $item['oldshow']==0}checked{/if} /> 不允许
+                </label>
+                <label class='radio-inline'>
+                    <input type='radio' name='oldshow' value='1' {if $item['oldshow']==1}checked{/if} /> 允许
+                </label>
+                <span class="help-block">是否允许已经过期的时间段继续抢购</span>
+                {else}
+                <div class='form-control-static'>{if empty($item['enabled'])}禁用{else}启用{/if}</div>
+                {/if}
+            </div>
+        </div>
+
+        {if $pages}
+        <div class="form-group">
+            <label class="col-sm-2 control-label">自定义页面</label>
+            <div class="col-sm-9 col-xs-12">
+                <select class="form-control" name="diypage">
+                <option value="">系统默认</option>
+                {loop $pages $p}
+                <option value="{$p['id']}" {if $item['diypage']==$p['id']}selected="selected"{/if}>{$p['name']}</option>
+                {/loop}
+                </select>
+                <span class="help-block">选择系统默认，系统会读取店铺装修中页面设置的“整点秒杀”设置</span>
+            </div>
+
+        </div>
+        {/if}
+
+        <div class="form-group">
+            <label class="col-sm-2 control-label">状态</label>
+            <div class="col-sm-9 col-xs-12">
+                {ife 'seckill.room' $item}
+                <label class='radio-inline'>
+                    <input type='radio' name='enabled' value=1' {if $item['enabled']==1}checked{/if} /> 启用
+                </label>
+                <label class='radio-inline'>
+                    <input type='radio' name='enabled' value=0' {if $item['enabled']==0}checked{/if} /> 禁用
+                </label>
+                <span class="help-block">设置禁用，不出现在秒杀专题中</span>
+                {else}
+                <div class='form-control-static'>{if empty($item['enabled'])}禁用{else}启用{/if}</div>
+                {/if}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+            <div class="pull-right" style="padding:0;margin:0;margin-top:-8px;">
+                <select class="form-control" id="select-times" style="display:inline-block;width:100px;">
+                    {loop $times $time}
+                    <option value="{$time['time']}">{$time['time']}点</option>
+                    {/loop}
+                </select>
+                <button type="button" class="btn btn-warning" id="btn-add-time" style="margin-top:-5px;">添加时间段</button>
+            </div>
+        时间段及商品 <small class="text text-danger" >选择时间段后设置商品</small>
+    </div>
+    <div class="panel-body">
+        <div id="times" class="panel panel-default" {if empty($roomtimes)}style="display: none"{/if}>
+            <div class="panel-body">
+                <div class="form-group" style="border-bottom:1px solid #f2f2f2;">
+                    <label class="col-sm-1 control-label" >时间</label>
+                    <div class="col-sm-9">
+                        <div class="form-control-static" ><b>商品信息</b>(拖动商品可排序)</div>
+                    </div>
+                    <div class="col-sm-2">
+                        <b>操作</b>
+                        </div>
+                 </div>
+
+                {loop $times $time}
+
+                   <input type="hidden" name="timeopen[{$time['time']}]" value="{if !in_array($time['time'], $roomtimes)}0{else}1{/if}" />
+                    <div class="form-group" style="border-bottom:1px solid #f2f2f2; {if !in_array($time['time'], $roomtimes)}display: none{/if}" id="time-{$time['time']}">
+                        <label class="col-sm-1 control-label">{$time['time']}点</label>
+                        <div class="col-sm-9">
+                            <?php echo tpl_selector_new('goodsid_'.$time['time'],array(
+                            'preview'=>true,
+                            'readonly'=>true,
+                            'selectorid'=>'time-'.$time['time'],
+                            'multi'=>1,
+                            'type'=>'product',
+                            'value'=>$package_goods['title'],
+                            'url'=>webUrl('seckill/room/querygoods'),
+                            'optionurl'=>'seckill.room.queryoption',
+                            'items'=>$time['goods'],
+                            'nokeywords'=>1,
+                            'autosearch'=>1,
+                            'buttontext'=>'选择商品',
+                            'placeholder'=>'请选择商品')
+                            )
+                            ?>
+                        </div>
+                        <div class="col-sm-2">
+                            <button type="button" class="btn btn-danger  btn-sm btn-delete-time" data-time="{$time['time']}" >删除</button>
+                        </div>
+                    </div>
+                {/loop}
+        </div>
+    </div>
+    </div>
+
+</div>
+
+
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        会场分享及标题设置
+    </div>
+    <div class="panel-body">
+        <div class="form-group">
+            <label class="col-sm-2 control-label">会场页面标题</label>
+            <div class="col-sm-9 col-xs-12 ">
+                {ife 'seckill.room' $item}
+                <input type="text" name="page_title" class="form-control" value="{$item['page_title']}"
+                       data-rule-required="true"/>
+                    <span class="help-block">会场的页面标题 ,默认为 会场名称</span>
+                {else}
+                <div class='form-control-static'>{$item['page_title']}</div>
+                {/if}
+            </div>
+        </div>
+
+
+        <div class="form-group">
+            <label class="col-sm-2 control-label">会场分享标题</label>
+            <div class="col-sm-9 col-xs-12">
+                {ife 'seckill.room' $item}
+                <input type="text" name="share_title" id="share_title" class="form-control" value="{$item['share_title']}" />
+                <span class='help-block'>如果不填写，默认为会场页面标题</span>
+                {else}
+                <div class='form-control-static'>{$item['share_title']}</div>
+                {/if}
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">会场分享图标</label>
+            <div class="col-sm-9 col-xs-12">
+                {ife 'seckill.room' $item}
+                {php echo tpl_form_field_image('share_icon', $item['share_icon'])}
+                {else}
+                {if !empty($item['share_icon'])}
+                <a href='{php echo tomedia($item['share_icon'])}' target='_blank'>
+                <img src="{php echo tomedia($item['share_icon'])}" style='width:100px;border:1px solid #ccc;padding:1px' />
+                </a>
+                {/if}
+                {/if}
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">会场分享描述</label>
+            <div class="col-sm-9 col-xs-12">
+                {ife 'seckill.room' $item}
+                <textarea name="share_desc" class="form-control" >{$item['share_desc']}</textarea>
+                {else}
+                <div class='form-control-static'>{$item['share_desc']}</div>
+                {/if}
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="col-sm-1 control-label"></label>
+    <div class="col-sm-9 col-xs-12">
+        {ife 'seckill.room' $item}
+        <input type="submit" value="提交" class="btn btn-primary"/>
+        {/if}
+        <input type="button" name="back" onclick='history.back()' {ifp 'seckill.room'}style='margin-left:10px;'{/if}value="返回列表" class="btn btn-default" />
+    </div>
+</div>
+
+</form>
+
+
+<script language='javascript'>
+
+    $(function(){
+        require(['jquery.ui'],function(){
+            $(".ui-sortable").sortable();
+        })
+         $('#btn-add-time').click(function(){
+
+             var time = $('#select-times').val();
+             $('#time-' + time).show();
+             $(':hidden[name="timeopen['+time+']"]').val(1);
+             $('#times').show();
+
+         });
+        $('.btn-delete-time').click(function(){
+            var time = $(this).data('time');
+            $('#time-' + time).hide();
+            $(':hidden[name="timeopen['+time+']"]').val(0);
+            var has = false;
+            for(var i=0;i<=23;i++){
+                if( $(':hidden[name="timeopen['+i+']"]').val()=='1'){
+                    has =true;
+                    break;
+                }
+            }
+            if(!has){
+                $('#times').hide();
+            }
+
+
+        })
+
+    })
+</script>
+
+{template '_footer'}
+<!--青岛易联互动网络科技有限公司-->

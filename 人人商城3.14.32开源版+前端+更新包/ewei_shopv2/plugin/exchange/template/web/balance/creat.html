@@ -1,0 +1,201 @@
+<div class="modal-dialog" style="width: 460px">
+    <div class="modal-content">
+        <div class="modal-body" style="width: 410px;margin-left: 25px">
+            <div class="row1">
+                <div class="col-sm-13">
+                    <h3 style="text-align: center">生成兑换券</h3>
+                    <br>
+                    <div {if $res['code_type'] != 3}style="display: none"{/if}>
+                    <div class="form-group">
+                        <label>请选择元素:</label><br>
+                        <input type="checkbox" id="shuzi" checked><label for="shuzi"> &nbsp;数字</label>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <input type="checkbox" id="daxie"><label for="daxie"> &nbsp;大写字母</label>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <input type="checkbox" id="xiaoxie"><label for="xiaoxie"> &nbsp;小写字母</label>
+                    </div>
+                    <br>
+                    <div class="form-group">
+                        <label>兑换码前缀:</label>&nbsp;&nbsp;
+                        <input type="radio" name="qian" id="qian0" value="0" checked onclick="$('#qianzhui').hide()">
+                        <label for="qian0"> &nbsp;不启用前缀</label>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <input type="radio" name="qian" id="qian1" value="1" onclick="$('#qianzhui').show()">
+                        <label for="qian1"> &nbsp;启用前缀</label>
+                        <br>
+                        <input type="text" id="qianzhui"
+                               class="form-control" placeholder="前缀只允许使用数字和大小写字母"
+                               onkeyup="value=value.replace(/[^\w\.\/]/ig,'')" style="display: none;">
+                    </div>
+                    <br>
+                    <div class="form-group">
+                        <label>请输入长度（8-20位字符）:</label>
+                        <br>
+                        <div class="input-group">
+                            <input type="text" id="length" class="form-control" value="18" onkeyup="value=value.replace(/\D+/g,'')">
+                            <span class="input-group-addon">位字符</span>
+                        </div>
+                    </div>
+                    <br>
+                </div>
+                    <div class="form-group">
+                        <label>兑换码有效期：</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control date" name="date" onkeyup="value=value.replace(/\D+/g,'')">
+                            <span class="input-group-addon">天</span>
+                        </div>
+                    </div>
+                    <br>
+                    <label>请输入兑换码生成数量：</label>
+                    <div class="input-group m-b">
+                        <input type="text" placeholder="生成数量为整数" class="form-control num" name="num" value="{$setting['title']}" onkeyup="value=value.replace(/\D+/g,'')"> <span class="input-group-addon">个</span>
+                    </div>
+                </div>
+                <br>
+                <span id="jindu" style="color: #ff445f"></span>
+                <br><br>
+                <button id="shengcheng" class="btn btn-primary" style="bottom:30px;right:100px;position:fixed;">
+                    确认生成
+                </button>
+                <button type="button" class="btn btn-primary btn-outline" style="bottom:30px;right:35px;position:fixed;" data-dismiss="modal">
+                    取消
+                </button>
+            </div>
+            <div class="row2" style="display: none;">
+                <center>
+                    <h1><i class="icon icon-check"></i> 兑换码生成成功</h1>
+                    <br>
+                    <span id="down"></span>
+                    <br><br>
+                    <h3>为了安全性 <br><br> 下载完成后点击删除按钮，删除服务器压缩包</h3>
+                    <span id="del"></span>
+                </center>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+
+
+<script type="text/javascript">
+    var md5 = '';
+    $(document).ready(function(){
+        $('#shengcheng').click(function () {
+            var num = parseInt($('.num').val());
+            if (!(num>=1)){
+                $('#jindu').html('* 生成数量设置不符合要求');
+                return;
+            }
+            if (num>1000){
+                $('#jindu').html('* 单次生成数量不要超过1000个');
+                return;
+            }
+            var date = parseInt($('.date').val());
+            if (!(date>0)){
+                $('#jindu').html('* 有效期设置不符合要求');
+                return;
+            }
+            var length = parseInt($('#length').val());
+            if (!(length>=8&&length<=20)){
+                $('#jindu').html('* 长度设置不符合要求');
+                return;
+            }
+            var dir_pre = '{php echo time();}';
+            $('#shengcheng').attr('disabled',true);
+            var qianzhui = '';
+            if ($('#qian1').is(':checked')){
+                qianzhui = $('#qianzhui').val();
+                if(!(qianzhui.length>0&&qianzhui.length<9)){
+                    $('#jindu').html('* 前缀为1-9个字符');
+                    return;
+                }
+            }
+            var loop = 1;
+            var a = 0;
+            var b = 0;
+            var interval = 1;
+            id = setInterval(function(){
+                var end = 0;
+                if(loop == num){
+                    end = 1;
+                }
+                res = create(num,date,loop,length,qianzhui,dir_pre,end);
+                add(res);
+                loop++;
+                if (loop > num){
+                    htmlobj=$.ajax({url:"{php echo webUrl('exchange/goods/code_type',array('id'=>$id),1);}",async:false});
+                    if (htmlobj.responseText == '3' || {if p('exchange')->noQrImg()}true{else}false{/if}){
+                        var downloadname = md5+'.xls';
+                        var href = '../addons/ewei_shopv2/data/qrcode/{$_W["uniacid"]}/exchange/'+md5+'.xls';
+                        $("#down").html('<a class="btn btn-success btn-sm" download="'+downloadname+'" href="'+href+'">下载生成的兑换码</a>');
+                        var delstr ='<br><a class="btn btn-danger" id="deltxt" value="'+md5+'" onclick="deltxt()">删除兑换码</a> <a class="btn btn-warning" data-dismiss="modal"> 关闭</a>';
+                        $("#del").html(delstr);
+                        $(".row1").hide();
+                        $(".row2").show();
+                    }else{
+                        var downloadname = md5+'.zip';
+                        var href = '../addons/ewei_shopv2/data/qrcode/{$_W["uniacid"]}/exchange/'+md5+'.zip';
+                        $("#down").html('<a class="btn btn-success btn-sm" download="'+downloadname+'" href="'+href+'">下载生成的二维码</a>');
+                        var delstr ='<br><a class="btn btn-danger" id="delzip" value="'+md5+'" onclick="delzip()">删除压缩包</a> <a class="btn btn-warning" data-dismiss="modal"> 关闭</a>';
+                        $("#del").html(delstr);
+                        $(".row1").hide();
+                        $(".row2").show();
+                    }
+                    clearInterval(id);
+                }
+            }, interval);
+
+        });
+    });
+    function create(num,date,loop,length,qianzhui,dir_pre,end) {
+        var base = "{php echo webUrl('exchange/balance/creat',array('id'=>$id,'ajax'=>1,'num'=>1),true);}";
+        var shuzi = 0;
+        var daxie = 0;
+        var xiaoxie = 0;
+
+        if ($('#shuzi').is(':checked')){
+            shuzi = 1;
+        }
+        if ($('#daxie').is(':checked')){
+            daxie = 1;
+        }
+        if ($('#xiaoxie').is(':checked')){
+            xiaoxie = 1;
+        }
+        if (shuzi==0&&daxie==0&&xiaoxie==0){
+            shuzi =1;
+        }
+
+        var parameter = '&date='+date+'&loop='+loop+'&qianzhui='+qianzhui+'&length='+length+'&shuzi='+shuzi+'&daxie='+daxie+'&xiaoxie='+xiaoxie+'&dir_pre='+dir_pre+'&end='+end;
+        var str = base + parameter;
+        htmlobj = $.ajax({
+            type:'GET',
+            url: str,
+            async: false,
+        });
+        var creating= htmlobj.responseText.split("&");
+        md5 = creating[1];
+        return '正在生成,请稍后：'+creating[0]+'/'+num;
+    }
+    function add(a) {
+        document.getElementById('jindu').innerHTML = a;
+        return 1;
+    }
+    function delzip() {
+        var dir_pre = $('#delzip').attr("value");
+        htmlobj=$.ajax({url:"{php echo webUrl('exchange/goods/delzip',array(),1);}&filename="+md5,async:false});
+        if (htmlobj.responseText == '1'){
+            $("#del").html('压缩包删除成功');
+        }
+    }
+    function deltxt() {
+        var dir_pre = $('#deltxt').attr("value");
+        htmlobj=$.ajax({url:"{php echo webUrl('exchange/goods/deltxt',array(),1);}&filename="+md5+'&title={$res['title']}',async:false});
+        if (htmlobj.responseText == '1'){
+            $("#del").html('兑换码删除成功');
+        }
+    }
+</script>
+
+<!--4000097827-->

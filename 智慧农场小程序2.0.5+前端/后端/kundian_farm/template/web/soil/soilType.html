@@ -1,0 +1,112 @@
+{template 'web/common/common'}
+{template 'web/soil/navbar'}
+<style>
+    .page-toolbar{width: 100%;line-height: 30px;}
+</style>
+<blockquote class="layui-elem-quote layui-text">
+  土地分类列表
+</blockquote>
+<div class="layui-card">
+    <form  method="get" class="form_table layui-form" role="form">
+        <div class="page-toolbar">
+            {if in_array('soil.soilTypeEdit',$perm)}
+            <div class="col-sm-1">
+                <a class="layui-btn layui-btn-sm editLandType" href="#"><i class="iconfont icon-add"></i>新增分类</a>
+            </div>
+            {/if}
+            <div class="input-group">
+                <input type="text" class="form-control " name="name" value="{$_GPC['name']}"  placeholder="请输入名称进行搜索">
+                <span class="input-group-btn">
+                    <button class="btn  btn-primary" type="button" lay-filter="formSubmit" lay-submit="">搜索</button>
+                </span>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="layui-card">
+    <table class="layui-table" lay-skin="line">
+        <thead>
+        <tr style="color: black">
+            <th style="width: 335px;">ID</th>
+            <th style="">名称</th>
+            <th style="">排序</th>
+            <th style="text-align: center;">操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        {loop $data['list'] $index $item}
+        <tr>
+            <td>{$item['id']}</td>
+            <td>{$item['name']}</td>
+            <td>{$item['rank']}</td>
+            <td style="overflow: visible; text-align: center;">
+                <div class="btn-group">
+                    {if in_array('soil.soilTypeEdit',$perm)}
+                    <a href="#" class="layui-btn layui-btn-xs editLandType" data-id="{$item['id']}">
+                        <i class="iconfont icon-modify"></i>编辑
+                    </a>
+                    {/if}
+                    {if in_array('soil.soilDel',$perm)}
+                    <a class="layui-btn layui-btn-danger layui-btn-xs delete" data-id="{$item['id']}" data-toggle="ajaxRemove" href="#">
+                        <i class="iconfont icon-el-icon-dev-delete"></i>删除
+                    </a>
+                    {/if}
+                </div>
+            </td>
+        </tr>
+        {/loop}
+        </tbody>
+    </table>
+    <div style="text-align: right;">
+        {$data['pager']}
+    </div>
+</div>
+{template 'common/footer'}
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form,layer = layui.layer;
+        $(".delete").click(function(){
+            var id=$(this).attr('data-id');
+            let url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'soilDel','action'=>'soil',type=>'soilType')}";
+            updateData(url,{id:id},'确认删除吗？');
+        });
+
+        /** 搜索查询*/
+        form.on('submit(formSubmit)',function (data) {
+            $("input[name='flag']").val('');
+
+            var formData = data.field;
+            let url = "{url 'site/entry/'.$_GPC['do'],array('m'=>'kundian_farm','op'=>'soilType','action'=>'soil')}";
+            if(formData['name']){
+                url+="&name="+formData['name'];
+            }
+            window.location.href=url;
+            return false;
+        })
+
+        //添加、编辑分类信息
+        $(".editLandType").click(function () {
+            var id=$(this).attr('data-id');
+            var url="{url 'site/entry/admin',array('m'=>$_GPC['m'],'op'=>'soilTypeEdit','action'=>'soil')}";
+            if(id){
+                url=url+"&id="+id;
+            }
+            layer.open({
+                type: 2,
+                area: ['700px', '400px'],
+                fix: false, //不固定
+                maxmin: true,
+                shadeClose: true,
+                shade:0.6,
+                title: '编辑土地分类',
+                content: url,
+                cancel:function(index, layero){
+                    layer.close(index)
+                    window.location.reload();
+
+                },
+            });
+        })
+    });
+</script>

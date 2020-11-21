@@ -1,0 +1,228 @@
+
+<title>升级付费提示设置</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>升级付费提示设置</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-header">升级付费提示设置</div>
+        <div class="layui-card-body" style="padding: 15px;">
+
+            <form class="layui-form" action="" onsubmit=" return  false;"  lay-filter="component-form-group-xcx">
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">提示开通</label>
+                    <div class="layui-upload">
+                        <button type="button" class="layui-btn" id="test-upload-more-create">上传图片</button>
+                        <blockquote style="margin-left: 110px" class="layui-elem-quote" style="margin-top: 10px;">
+                            请上传提示客户升级开通付费功能图, 尺寸 750 * 150
+                        </blockquote>
+                        <div class="layui-upload-list del-image"  id="test-upload-normal-intro-opening"><ul></ul></div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">快到期提示</label>
+                    <div class="layui-upload">
+                        <button type="button" class="layui-btn" id="test-upload-more-pay">上传图片</button>
+                        <blockquote style="margin-left: 110px" class="layui-elem-quote" style="margin-top: 10px;">
+                            请上传提示客户快要到期图, 尺寸 750 * 150
+                        </blockquote>
+                        <div class="layui-upload-list del-image"  id="test-upload-normal-intro-closeing"><ul></ul></div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">剩余天数</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="notice_days" required  lay-verify="required" placeholder="" autocomplete="off" class="layui-input">
+                        <blockquote class="layui-elem-quote">当企业开通的剩余天数小于或等于这里设置的天数, 个人中心就会显示开到期提示图片</blockquote>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="LAY-filter-demo-form-xcx">立即提交</button>
+                        <!--<button type="reset" class="layui-btn layui-btn-primary">重置</button>-->
+                    </div>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+<script>
+    layui.use(['layer', 'form'], function(){
+        //定义表单
+        var $ = layui.$
+            ,admin = layui.admin
+            ,element = layui.element
+            ,layer = layui.layer
+            ,form = layui.form;
+
+        layer.load();
+
+        layui.use('layedit', function(){
+            layedit = layui.layedit;
+            var url=config.url+'base_admin/upload?type=picture';//图片上传路径
+            index=layedit.build('demo',{
+                height:600,
+                uploadImage:{url: url, type: 'post'},
+            }); //建立编辑器
+        });
+        $('.del-image').on('click','.layui-icon', function () {
+            $(this).parents('dd').remove();
+        });
+
+        //查询配置
+        admin.req({
+            type:'POST',
+            url: config.url+'manage_base/config_card/index',//数据接口
+            done:function(res){
+                if(res.data){
+                    layer.closeAll();
+                    //预设元素
+                    form.val("component-form-group-xcx", {
+                        "create_btn_text": res.data.create_btn_text,// "name": "value"
+                        "notice_days": res.data.notice_days,// "name": "value"
+                    });
+
+
+                    //图片的回显
+                    if(res.data.opening_img){
+                        //循环
+                        var strs='';
+                        layui.each(res.data.opening_img, function(index, item){
+                            strs += '<dd><i class="layui-icon">&#x1007;</i> ' +
+                                '<img  width="100px" src="'+item.path+'"> ' +
+                                '<p id="test-upload-demoText"></p>' +
+                                '<input type="hidden" name="opening_img[]" value="'+item.id+'"></dd>';
+                        })
+                        $('#test-upload-normal-intro-opening ul').append(strs);
+                    }
+
+                    if(res.data.closeing_img){
+                        //循环
+                        var strs='';
+                        layui.each(res.data.closeing_img, function(index, item){
+                            strs += '<dd><i class="layui-icon">&#x1007;</i> ' +
+                                '<img  width="100px" src="'+item.path+'"> ' +
+                                '<p id="test-upload-demoText"></p>' +
+                                '<input type="hidden" name="closeing_img[]" value="'+item.id+'"></dd>';
+                        })
+                        $('#test-upload-normal-intro-closeing ul').append(strs);
+                    }
+
+
+
+                }else{//没有数据的时候默认值
+                    form.val("component-form-group-xcx", {
+                    });
+                }
+            }
+        });
+
+
+        /* 自定义验证规则 */
+        form.verify({
+            content: function(value) {//验证富文本编辑器
+                return layedit.sync(index);
+            },
+            lengthrequire:function(value) {//验证appid
+                if(value.length !=18){
+                    return '长度必须为18位';
+                }
+            },
+            lengthrequire2:function(value) {//验证appsecret
+                if(value.length !=32){
+                    return '长度必须为32位';
+                }
+            },
+            lengthrequire3:[/^\d{10}$/, '商户号需要必须是10为的数字']
+        });
+
+        //监听提交
+        form.on('submit', function(data){
+            //发送请求
+            layer.load();
+            admin.req({
+                type:'POST',
+                url: config.url+'manage_base/config_card/edit'//数据接口
+                ,data:data.field,
+                done:function(res){
+                    layer.closeAll();
+                    layer.msg('修改成功', {
+                        offset: '15px'
+                        ,icon: 1
+                        ,time: 1000
+                    }, function(){
+                        window.location.href =config.html_url+'manage_base/upgrade/index';
+                    });
+                }
+            });
+            return  false;
+        });
+    });
+
+    /*上传图片*/
+    layui.use(['admin', 'upload'], function(){
+        var $ = layui.jquery
+            ,upload = layui.upload;
+
+        var createSign = 0;
+
+        upload.render({
+            elem: '#test-upload-more-create'
+            ,url: config.url+'manage_base/base_admin/upload'//上传地址
+            // ,multiple: true
+            ,before: function(obj){
+                //预读本地文件示例，不支持ie8
+                layer.load(0, {
+                    offset: 'auto'
+                });
+            }
+            ,done: function(res){
+                //上传完毕
+                if (res.code > 0) {
+                    return layer.msg('上传失败');
+                }
+                $('#test-upload-normal-intro-opening ul').empty();
+                var str = '<dd><i class="layui-icon">&#x1007;</i> <img  width="100px" src="'+res.data.src+'"> <p id="test-upload-demoText"></p>' +
+                    '<input type="hidden" name="opening_img[]" value="'+res.data.id+'" id="person_imgs"></dd>';
+                $('#test-upload-normal-intro-opening ul').append(str);
+
+                layer.closeAll('loading');
+            }
+        });
+
+        upload.render({
+            elem: '#test-upload-more-pay'
+            ,url: config.url+'manage_base/base_admin/upload'//上传地址
+            // ,multiple: true
+            ,before: function(obj){
+                //预读本地文件示例，不支持ie8
+                layer.load(0, {
+                    offset: 'auto'
+                });
+            }
+            ,done: function(res){
+                //上传完毕
+                if (res.code > 0) {
+                    return layer.msg('上传失败');
+                }
+                $('#test-upload-normal-intro-closeing ul').empty();
+                var str = '<dd><i class="layui-icon">&#x1007;</i> <img  width="100px" src="'+res.data.src+'"> <p id="test-upload-demoText"></p>' +
+                    '<input type="hidden" name="closeing_img[]" value="'+res.data.id+'" id="person_imgs"></dd>';
+                $('#test-upload-normal-intro-closeing ul').append(str);
+
+                layer.closeAll('loading');
+            }
+        });
+
+    });
+</script>

@@ -1,0 +1,63 @@
+<a href="javascript:;" class="weui_btn weui_btn_default" id="cnotice">发送提醒消息</a>
+<style>
+.modal-inner{background-color: white!important;}
+.modal-button{background-color: white!important;}
+.modal-inner .list-block{margin: 0;}
+</style>
+<script type="text/javascript">
+	$(document).on('click','#cnotice',function () {
+		var html = '<div class="tabs">'+
+              '<div class="tab active" id="tab1" typeid="1"><div class="list-block media-list">'
+    	+'<ul>'
+    		{loop $_W['wlsetting']['notice']['sendmsg'] $v}
+    		+'<li>'
+    			+'<label class="label-checkbox item-content">'
+    			+'<input type="radio" name="my-radio" value="'+"{$v}"+'">'
+    			+'<div class="item-media"><i class="icon icon-form-checkbox"></i></div>'
+    			+'<div class="item-inner">'
+    				+'<div class="item-text">'+"{$v}"+'</div>'
+    			+'</div>'
+    			+'</label>'
+    		+'</li>'
+    		{/loop}
+    			+'</ul></div></div>'+
+              '<div class="tab" id="tab2" typeid="2"><div class="list-block"><ul><li class="align-top"><div class="item-content"><div class="item-inner"><div class="item-input"><textarea placeholder="请输入您想发送的内容" id="sendmsg"></textarea></div></div></div></li></ul></div></div>'+
+            '</div>';
+	    $.modal({
+	      	title:  '<div class="buttons-row">'+
+                '<a href="#tab1" class="button active tab-link">常用提醒</a>'+
+                '<a href="#tab2" class="button tab-link">自定义</a>'+
+              '</div>',
+	      	text: html,
+	      	buttons: [
+		        {
+		          	text: "发送",
+		          	onClick: function () {
+		          		var typeid = $('.tabs .active').attr('typeid');
+		          		var radioValue = $('input[name="my-radio"]:checked').val();
+		          		var sendmsg = $('#sendmsg').val();
+		          		if(typeid == 1 && !radioValue){
+		          			$.toast("请选择提醒模板");
+			 				return false;
+		          		}
+		          		if(typeid == 2 && !sendmsg){
+		          			$.toast("请输入发送内容");
+			 				return false;
+		          		}
+			          	$.post("{php echo app_url('home/cnotice/post',array('ncnum' => $_GPC['ncnum'],'salt' => $_GPC['salt']))}",{radioValue:radioValue,sendmsg:sendmsg,typeid:typeid},function(d){
+							if(d.result == 1){
+								$.alert('提醒车主成功，点击确定返回微信！', function () {
+							        wx.closeWindow();
+							    });
+							}else if(d.result == 2){
+								$.toast(d.msg);
+							}else{
+								$.toast("未知错误");
+							}
+			            },"json");
+		        	}
+		        }
+	      	]
+	    });
+	});
+</script>

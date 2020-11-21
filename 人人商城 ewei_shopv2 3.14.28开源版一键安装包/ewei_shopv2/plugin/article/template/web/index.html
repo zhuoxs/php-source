@@ -1,0 +1,141 @@
+{template '_header'}
+<div class="page-heading">
+	<span class="pull-right">
+	     {ifp 'article.add'}
+                 <a class='btn btn-primary btn-sm' href="{php echo webUrl('article/add')}"><i class="fa fa-plus"></i> 添加文章</a>
+	     {/if}
+	</span>
+	<h2>文章管理 <small>{if $articlenum}总数: <span class="text-danger">{$articlenum}</span>{/if}  排序数字越大越靠前</small></h2>
+</div>
+
+<form action="./index.php" method="get" class="form-horizontal" role="form">
+	<input type="hidden" name="c" value="site">
+	<input type="hidden" name="a" value="entry">
+	<input type="hidden" name="m" value="ewei_shopv2">
+	<input type="hidden" name="do" value="web">
+	<input type="hidden" name="r" value="article">
+	<div class="page-toolbar row m-b-sm m-t-sm">
+		<div class="col-sm-4">
+
+			<div class="input-group-btn">
+				<button class="btn btn-default btn-sm" type="button" data-toggle='refresh'><i class='fa fa-refresh'></i></button> 
+				{ifp 'article.edit'}
+					<button class="btn btn-default btn-sm" type="button" data-toggle='batch' data-href="{php echo webUrl('article/state',array('state'=>1))}"><i class='fa fa-circle'></i> 开启</button>
+					<button class="btn btn-default btn-sm" type="button" data-toggle='batch' data-href="{php echo webUrl('article/state',array('state'=>0))}"><i class='fa fa-circle-o'></i> 关闭</button> 
+				{/if} 
+				{ifp 'article.delete'}
+					<button class="btn btn-default btn-sm" type="button" data-toggle='batch-remove' data-confirm="确认要删除?" data-href="{php echo webUrl('article/delete')}"><i class='fa fa-trash'></i> 删除</button> 
+				{/if}
+
+			</div>
+		</div>
+
+		<div class="col-sm-6 pull-right">
+
+			<select name="category" class='form-control input-sm select-sm select2' style="width:150px;">
+				 <option value="" {if $_GPC['category'] == ''} selected{/if}>分类</option>
+					    {loop $categorys $category}
+					    	<option value="{$category['id']}" {if $_GPC['category']==$category['id']}selected="selected"{/if}>{$category['category_name']}</option>
+					    {/loop}
+				</select>
+			<div class="input-group">
+				<input type="text" class="input-sm form-control" name='keyword' value="{$_GPC['keyword']}" placeholder="请输入关键词"> <span class="input-group-btn">
+                                     <button class="btn btn-sm btn-primary" type="submit"> 搜索</button> </span>
+			</div>
+
+		</div>
+	</div>
+</form>
+
+<!-- 文章列表 -->
+{if count($articles)>0}
+	<table class="table table-hover table-responsive">
+		<thead>
+			<tr>
+				<th style="width:25px;"><input type='checkbox' /></th>
+				<th style="width:44px;">排序</th>
+				<th style="width:150px;">文章标题</th>
+	
+				<th style="width:60px;">关键字</th>
+				<th style="width:100px;">创建时间</th>
+				<th style="width:60px;">阅读量</th>
+				<th style="width:60px;">点赞量</th>
+	
+				<th style="width:60px;">状态</th>
+				<th>操作</th>
+			</tr>
+		</thead>
+		<tbody>
+	
+			{loop $articles $article}
+			<tr>
+				<td>
+					<input type='checkbox' value="{$article['id']}" />
+				</td>
+				<td>
+					{ifp 'article.edit'}
+						<a href='javascript:;' data-toggle='ajaxEdit' data-href="{php echo webUrl('article/displayorder',array('id'=>$article['id']))}">{$article['displayorder']}</a> 
+					{else} 
+						{$article['displayorder']} 
+					{/if}
+				</td>
+				<td>
+					{if !empty($article['category_name'])}
+						<label class="label label-primary">{$article['category_name']}</label><br/>
+					{/if}
+					<a href="{php echo mobileUrl('article',array('aid'=>$article['id'], 'preview'=>1), true)}" target="_blank" data-toggle="tooltip" title="点击预览">{$article['article_title']}</a>
+				</td>
+				<td>{$article['article_keyword2']}</td>
+				<td>{php echo date('Y-m-d', strtotime($article['article_date']))}<br/>{php echo date('H:i', strtotime($article['article_date']))}</td>
+				<td data-toggle='tooltip' title='{$article['article_readnum']}'>{$article['article_readnum']}</td>
+				<td data-toggle='tooltip' title='{$article['article_likenum']}'>{$article['article_likenum']}</td>
+	
+				<td>
+					<span class='label 
+						{if $article['article_state']==1}label-success{else}label-default{/if}' 
+						{ifp 'article.page.edit'} 
+							data-toggle="ajaxSwitch" 
+							data-confirm = "确认{if $article['article_state']==1}关闭{else}开启{/if}吗？"
+							data-switch-value="{$article[" article_state "]}" 
+							data-switch-value0="0|关闭|label label-default|{php echo webUrl('article/state',array('state'=>1,'id'=>$article['id']))}" 
+							data-switch-value1="1|开启|label label-success|{php echo webUrl('article/state',array('state'=>0,'id'=>$article['id']))}" 
+						{/if}>
+						
+						{if $article['article_state']==1}开启{else}关闭{/if}
+					</span>
+	
+				</td>
+				<td>
+	
+					{ifp 'article.record'}
+						<a class="btn btn-default btn-sm" href="{php echo webUrl('article/record', array('aid'=>$article['id']))}"><i class="fa fa-database"></i> 统计</a> 
+					{/if}
+					<a href="javascript:;" data-url="{php echo mobileUrl('article',array('aid'=>$article['id']), true)}" class="js-clip btn btn-default btn-sm">
+						<i class='fa fa-link'></i> 复制链接
+					</a>
+					<a href="javascript:void(0);" class="btn btn-default btn-sm" data-toggle="popover" data-trigger="hover" data-html="true"
+						  data-content="<img src='{$article['qrcode']}' width='130' alt='链接二维码'>" data-placement="auto right">
+						<i class="glyphicon glyphicon-qrcode"></i>
+					</a>
+					{ifp 'article.edit'}
+						<a class='btn btn-default btn-sm' href="{php echo webUrl('article/edit',array('aid'=>$article['id']))}"><i class="fa fa-edit"></i></a> 
+					{/if} 
+					{ifp 'article.delete'}
+						<a data-toggle="ajaxRemove" class='btn btn-default btn-sm' href="{php echo webUrl('article/delete',array('id'=>$article['id']))}" data-confirm="确认要删除此文章?"><i class="fa fa-trash"></i></a> 
+					{/if}
+				</td>
+			</tr>
+			{/loop}
+		</tbody>
+	</table>
+	{$pager} 
+{else}
+	<div class='panel panel-default'>
+		<div class='panel-body' style='text-align: center;padding:30px;'>
+			暂时没有任何文章!
+		</div>
+	</div>
+{/if}
+</form>
+
+{template '_footer'}

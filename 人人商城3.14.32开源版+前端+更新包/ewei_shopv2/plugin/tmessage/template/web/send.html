@@ -1,0 +1,199 @@
+{template '_header'}
+ <div class="page-heading"> 
+	
+	<span class='pull-right'>
+ 
+                
+		<a class="btn btn-default  btn-sm" href="{php echo webUrl('tmessage')}">返回列表</a>
+                
+                
+	</span>
+    <h2>会员群发 <small>{if !empty($send)}群发模板 {$send['title']}{/if}</small></h2> 
+</div>
+ 
+            <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+
+             
+                         <div class="alert alert-info">
+                             <p>根据选择的用户群体不同，发送时间会不相同，发送期间请耐心等待! </p>
+                             <p>模板消息群发有风险，请谨慎使用，大用户量建议使用公众平台推送!</p>
+                        </div>
+                        
+                
+                
+            <div class="form-group">
+                <label class="col-sm-2 control-label must">选择模板</label>
+                 <div class="col-sm-9 col-xs-12">
+                  <?php echo tpl_selector('id',array(
+                    'preview'=>false, 
+                    'required'=>true,
+                    'url'=>webUrl('tmessage/query'),
+                    'items'=>$send,
+                    'placeholder'=>'模板名称',
+                    'buttontext'=>"选择模板"))
+                    ?>
+                </div>
+            </div>
+                        <div class="form-group">
+                            <label class="col-xs-12 col-sm-3 col-md-2 control-label" >发送类型</label>
+                            <div class="col-sm-9 col-xs-12">
+                                <label class="radio-inline"><input type="radio" name="send1" value="1"  checked /> 按openid发送</label>
+                                <label class="radio-inline"><input type="radio" name="send1" value="2"    /> 按用户等级发送</label>
+                                <label class="radio-inline"><input type="radio" name="send1" value="3"  /> 按用户分组等级发送</label>
+                                {if p('commission')}
+                                <label class="radio-inline"><input type="radio" name="send1" value="5"  /> 按分销商等级发送</label>
+                                {/if}
+                                <label class="radio-inline"><input type="radio" name="send1" value="4" />全部发送</label>
+                            </div>
+                        </div>
+                         <div class="form-group choose choose_1">
+                            <label class="col-xs-12 col-sm-3 col-md-2 control-label" >会员openid</label>
+                            <div class="col-sm-9 col-xs-12">
+                                <textarea name="send_openid" class="form-control" style="height:250px;" placeholder="请用半角逗号隔开OPENID, 如 aaa,bbb" id="value_1"></textarea>
+                            </div>
+                        </div>
+           
+                        <div class="form-group choose choose_2" style='display: none' >
+                            <label class="col-xs-12 col-sm-3 col-md-2 control-label" >选择会员等级</label>
+                            <div class="col-sm-8 col-lg-9 col-xs-12">
+                                <select name="send_level" class="form-control" id="value_2" >
+                                            <option value="0">全部</option>
+                                            {loop $list $type}
+                                            <option value="{$type['id']}">{$type['levelname']}</option>
+                                            {/loop}
+                                    </select>
+                            </div>
+                        </div>
+                        <div class="form-group choose choose_3" style='display:none '>
+                            <label class="col-xs-12 col-sm-3 col-md-2 control-label" >选择会员分组</label>
+                            <div class="col-sm-8 col-lg-9 col-xs-12">
+                                    <select name="send_group" class="form-control"  id="value_3">
+                                            <option value="0">全部</option>
+                                            {loop $list2 $type2}
+                                            <option value="{$type2['id']}">{$type2['groupname']}</option>
+                                            {/loop}
+                                    </select>
+                            </div>
+                        </div>
+                          {if p('commission')}
+                         <div class="form-group choose choose_5" style='display:none '>
+                            <label class="col-xs-12 col-sm-3 col-md-2 control-label" >选择分销商等级</label>
+                            <div class="col-sm-8 col-lg-9 col-xs-12">
+                                    <select name="send_agentlevel" class="form-control"  id="value_5">
+                                            <option value="0">全部</option>
+                                            {loop $list3 $type3}
+                                            <option value="{$type3['id']}">{$type3['levelname']}</option>
+                                            {/loop}
+                                    </select>
+                            </div>
+                        </div>
+                          {/if}
+                        
+                        <div class="form-group">
+                            <label class="col-xs-12 col-sm-3 col-md-2 control-label" ></label>
+                            <div class="col-sm-9 col-xs-12">
+                                <div class="help-block">       
+                                    <input id='btn' type="button" name="button" value="立即发送" class="btn btn-primary"  onclick="send()"/>
+                                    </div>
+                            </div>
+                        </div>
+  
+           
+                    <script>
+                        $(function(){
+                            $(':radio[name=send1]').click(function(){
+                                var v = $(this).val();
+                                 $(".choose").hide();
+                                 $(".choose_"+v).show();
+                            })
+                        })
+                      
+                         var openids = [];
+                         function send(){
+                            var btn = $('input[type=button]');
+                            if(btn.attr('sending')=='1'){
+                                return;
+                            }
+                            if($('#id_text').val()==''){
+                                tip.msgbox.err('请选择群发模板!');
+                                return;
+                            }
+                            var c = $('input[name=send1]:checked').val();
+                            var v = $('#value_'+c).val();
+                            if(c==1 && v==''){
+                                tip.msgbox.err('请输入要群发的用户Openid!');
+                                return;
+                            }
+             
+                            btn.removeClass('btn-primary').val('正在获取发送的用户Openid...').attr('sending',1);
+                            $.ajax({
+                                url: "{php echo webUrl('tmessage/send/fetch')}",
+                                type:'post',
+                                dataType:'json',
+                                data: {class1:c,value1:v,id:"{$send['id']}"},
+                                success:function(data){
+
+                                    if(data.status==1){
+                                        openids = data.result.openids;
+                                        btn.val('共要发送给 ' + openids.length + " 个用户，准备发送!");
+                                        sendmessage();
+                                    } else{
+                                        btn.addClass('btn-primary').removeAttr('sending').val('立即发送');
+                                        tip.msgbox.err( data.result );
+                                    }
+                                }
+                            });
+                        }
+                        var current = 0;
+                        var failed = [];
+                        var failmsg = "";
+                        var succeed = 0;
+                        function sendmessage(){
+                           var btn = $('input[type=button]');
+                              
+                            if(current>openids.length-1){
+                                if(failed.length>0){
+                                    var msg = '发送成功 ' + succeed + ' 个用户，失败 ' + failed.length + " 个用户:\r\n";
+                                    msg+=failmsg;
+                                    msg+="\r\n 是否继续发送失败的用户? ";
+                                    tip.confirm(msg,function(){
+                                           current = 0 ;succeed=0;
+                                            openids = failed;
+                                            failed=[];
+                                            failmsg= "";
+                                            btn.val('共要发送给 ' + openids.length + " 个用户，准备发送!");
+                                            sendmessage();
+                                            return;
+                                    },function(){
+                                        location.reload();
+                                    })
+                                } else{
+                                    tip.msgbox.suc('发送成功 ' + succeed + ' 个用户!',"{php echo webUrl('tmessage')}" );
+                                }
+                                return;
+                            }
+                            var openid = openids[current];
+                            $.ajax({
+                                url: "{php echo webUrl('tmessage/send/sendmessage')}",
+                                type:'post',
+                                data: {'openid':openid, id:"{$send['id']}"},
+                                dataType:'json',
+                                success:function(result2){
+                                  if(result2.result=='1'){
+                                       succeed++;
+                                  }
+                                  else{
+                                      failmsg+= result2.openid + "\r\n(错误信息: " + result2.message + ")\r\n\r\n";
+                                      failed.push(result2.openid);
+                                  }
+                                  btn.val('已经发送 ' + current + " / " + openids.length + " 个用户...");
+                                  current++;
+                                  sendmessage();
+                              }
+                            });
+                        }
+                    </script>
+            </form>
+ 
+ 
+{template '_footer'}

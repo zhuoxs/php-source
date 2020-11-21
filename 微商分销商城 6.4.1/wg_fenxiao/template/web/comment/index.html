@@ -1,0 +1,83 @@
+{template 'common/header'}
+<ul class="nav nav-tabs">
+	<li class="active"><a href="">评论管理</a></li>
+</ul>
+<div class="main panel panel-default">
+	<div class="panel-body table-responsive">
+		<table class="table table-hover">
+			<thead class="navbar-inner">
+				<tr>
+					<th style="width:30px;">ID</th>
+					<th>商品</th>
+					<th>用户</th>
+					<th>评论内容</th>
+					<th>星星</th>
+					<th>图片</th>
+					<th>时间</th>
+					<th style="width: 100px;">操作</th>
+				</tr>
+			</thead>
+			<tbody>
+				{loop $list $value}
+				<tr>
+					<td>{$value['id']}</td>
+					<td style="width: 150px;"><a href="{$value['url']}">{$value['info']['title']}</a></td>
+					<td>{$value['user']['nickname']}</td>
+					<td>{$value['comment']}</td>
+					<td>
+						{$value['star']}
+					</td>
+					<td>
+						<?php $image = json_decode($value['images'],true);
+						foreach($image as $im){
+							echo "<img style='height: 60px;width:60px;' src='".$_W['attachurl'].$im."'>";
+						}?>
+					</td>
+					<td><?php echo date('Y-m-d H:i:s',$value['create_time']);?></td>
+					<td style="text-align:left;">
+						<?php if($value['status'] == 0){?>
+						<a class="btn btn-success comment-check btn-sm" data-id="{$value['id']}" href="javascript:void(0);" >通过</a>
+						<?php } ?>
+						<a href="javascript:void(0);" data-id="{$value['id']}"  class="comment-del btn btn-danger btn-sm" data-toggle="tooltip" data-placement="top" title="删除"><i class="fa fa-times"></i></a>
+					</td>
+				</tr>
+				{/loop}
+			</tbody>
+		</table>
+		{$pager}
+	</div>
+</div>
+<script>
+	require(['bootstrap','datetimepicker'],function($){
+	    var del_url = "{php echo $this->createWebUrl('comment', array('op' => 'delete'))}";
+		$('.comment-del').click(function () {
+		    if(!confirm('确定删除此条记录')) {
+		        return false;
+			}
+			var id = $(this).attr('data-id');
+			$.get(del_url,{
+			    id:id
+			},function (data) {
+				if(data.code!= 0){
+                    alert('删除失败');
+				}
+                location.reload();
+            },'JSON');
+        });
+
+        var check_url = "{php echo $this->createWebUrl('comment', array('op' => 'check'))}";
+        $('.comment-check').click(function () {
+
+            var id = $(this).attr('data-id');
+            $.get(check_url,{
+                id:id
+            },function (data) {
+                if(data.code!= 0){
+                    alert('审核失败');
+                }
+                location.reload();
+            },'JSON');
+        });
+	});
+</script>
+{template 'common/footer'}

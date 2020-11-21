@@ -1,0 +1,2 @@
+<?php
+ goto IHTUK; IHTUK: defined("\111\x4e\x5f\111\x41") or exit("\101\x63\143\145\x73\163\x20\x44\145\156\151\x65\144"); goto aMdiV; aMdiV: global $_W, $_GPC; goto KyIuE; KyIuE: include $this->template("\x76\x69\x64\x65\x6f");

@@ -1,0 +1,130 @@
+{template 'public/header'}
+
+<!--标题-->
+<div class="title">
+    <blockquote class="layui-elem-quote">商品列表</blockquote>
+</div>
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入商品名称..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="class_id" id="class_id" style="width: 200px;" class="select2 layui-form-select" lay-ignore></select>
+        </div>
+        <!-- <div class="layui-inline">
+            <select name="class_id" id="class_id" style="width: 200px;" class="select3 layui-form-select" lay-ignore></select>
+        </div> -->
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnAdd" class="layui-btn layui-btn-primary layui-btn-sm">新增</a>
+        <a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+    </div>
+</div>
+<!--数据表-->
+<div class="table-box">
+    <table class="layui-hide" id="laytable"></table>
+</div>
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnEdit">编辑</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnCopy">复制新增</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDelete">删除</a>
+</script>
+<script type="text/html" id="dataLevel">
+    {{# if(d.isappointment == 1){ }}
+        是
+    {{# }else{ }}
+        否
+    {{# } }}
+</script>
+<script type="text/javascript">
+    layui.use('table', function () {
+        var table = layui.table;
+//        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{php echo $this->createWebUrl('goods',array('op'=>query));}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'name', width:250, title: '商品名称',fixed:'left',sort:true},
+                {field:'code', width:180, title: '商品编号',sort:true},
+                {field:'barcode', width:200, title: '条形码',sort:true},
+                {field:'shopprice', width:100, title: '销售价',sort:true},
+                {field:'marketprice', width:100, title: '市场价',sort:true},
+                {field:'std', width:100, title: '规格',sort:true},
+                {field:'index', width:100, title: '排序',sort:true},
+                {field:'isappointment', width:100, title: '是否预约',sort:true,templet:'#dataLevel'},
+                {field:'root_name', width:200, title: '一级分类',sort:true},
+                {field:'class_name', width:200, title: '二级分类',sort:true},
+                {field:'o',fixed:'right',width:200, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true
+            ,height:'full-300'
+        });
+//        搜索
+        $('#btnSearch').unbind().click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    class_id: $('#class_id').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        class_id: $('#class_id').val(),
+                    }
+                });
+            }
+        })
+    })
+
+    require(['select2'], function () {
+        $('.select2').select2();
+        $.get("{php echo $this->createWebUrl('goodsclass',array('op'=>classselect));}", function (ret) {
+            ret = JSON.parse(ret);
+            ret.unshift({id: '', text: '请选择分类'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            })
+            $('#class_id').select2({
+                data: ret,
+            })
+        })
+    });
+    // require(['select3'], function () {
+    //     $('.select3').select3();
+    //     $.get("{php echo $this->createWebUrl('goodsclass',array('op'=>appointmentselect));}", function (ret) {
+    //         ret = JSON.parse(ret);
+    //         ret.unshift({id: '', text: '请选择是否为预约商品'});
+    //         ret.map(function (obj) {
+    //             obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+    //             return obj;
+    //         })
+    //         $('#appointment_id').select3({
+    //             data: ret,
+    //         })
+    //     })
+    // });
+</script>
+
+{template 'public/footer'}

@@ -1,0 +1,355 @@
+{php include wl_template('common/header');}
+<style>
+	.fighttip{color: orangered;font-size: 12px;margin-right: 2px;}
+</style>
+<div class="page-group" >
+    <div class="page page-current" id="page-index">
+		{php $menudata = Diy::getMenu($_W['agentset']['diypageset']['menu_index']);}
+		{php include wl_template('common/menu');}
+	    <div class="buttons-tab">
+	    	<a href="{php echo app_url('order/userorder/orderlist',array('status'=>'all'))}" class="button {if $status == 'all'}active{/if}">全部</a>
+			<a href="{php echo app_url('order/userorder/orderlist',array('status'=>0))}" class="button {if empty($status)}active{/if}">待付款</a>
+			<a href="{php echo app_url('order/userorder/orderlist',array('status'=>1))}" class="button {if $status == 1}active{/if}">待使用</a>
+			<a href="{php echo app_url('order/userorder/orderlist',array('status'=>2))}" class="button {if $status == 2}active{/if}">待评价</a>
+			<a href="javascript:;" class="button {if $status == 3 || $status == 5 || $status == 6 || $status == 7 || $status == 9}active{/if} open-popover" data-popover=".popover-order-status">{if $status == 3}已完成{elseif $status == 5}已取消{elseif $status == 6}待退款{elseif $status == 7 }已退款{elseif $status == 9 }已过期{else}更多{/if} <i class="iconfont icon-unfold"></i></a>
+		</div>
+		<div class="content infinite-scroll">
+			<div class="allorder">
+				<!--全部订单表-->
+			</div>
+			<div class="weui-loadmore loading_more" style="display: none;">
+	            <i class="weui-loading"></i>
+	            <span class="weui-loadmore__tips">正在加载</span>
+	        </div>
+	        <div class="weui-loadmore weui-loadmore_line" style="display: none;">
+	            <span class="weui-loadmore__tips" style="background-color: #EFEFF4;">暂无更多数据</span>
+	        </div>
+		</div>
+	</div>
+</div>
+<div class="popover popover-manage popover-order-status">
+	<div class="popover-angle"></div>
+	<div class="popover-inner">
+		<div class="list-block">
+			<ul>
+				<li><a href="{php echo app_url('order/userorder/orderlist',array('status'=>3))}" class="list-button item-link">已完成</a></li>
+				<li><a href="{php echo app_url('order/userorder/orderlist',array('status'=>9))}" class="list-button item-link">已过期</a></li>
+				<li><a href="{php echo app_url('order/userorder/orderlist',array('status'=>5))}" class="list-button item-link">已取消</a></li>
+				<li><a href="{php echo app_url('order/userorder/orderlist',array('status'=>6))}" class="list-button item-link">待退款</a></li>
+				<li><a href="{php echo app_url('order/userorder/orderlist',array('status'=>7))}" class="list-button item-link">已退款</a></li>
+				<li><a href="javascript:;" class="list-button item-link close-popover">关闭</a></li>
+			</ul>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="orderlist">
+{{# for(var i = 0, len = d.length; i < len; i++){ }}
+<div class="field">
+	<div class="field-head">
+		<span class="field-head-name"><i class="icon iconfont icon-shop"></i> {{ d[i].storename }}</span>
+		{{# if(d[i].fightstatus && d[i].statusName ){ }}
+  		<span class="field-head-status field-head-status-light"><span class="fighttip" style="margin-right: .5rem;"> {{# if(d[i].buystatus ){ }}{{d[i].buystatus}}{{# } }}</span>{{d[i].statusName}}</span>
+		{{# } else if (d[i].applyrefund == 1 && (d[i].status == 1 || d[i].status == 8) ){ }}
+  		<span class="field-head-status field-head-status-light">申请退款中</span>
+		{{# } else { }}
+  		<span class="field-head-status field-head-status-light">{{# if(d[i].status == 1){ }}待使用{{# } else if(d[i].status == 2){ }}待评价{{# } else if(d[i].status == 3){ }}已完成{{# } else if(d[i].status == 5){ }}已取消{{# } else if(d[i].status == 6){ }}待退款{{# } else if(d[i].status == 7){ }}已退款{{# } else if(d[i].status == 0){ }}待付款{{# } else if(d[i].status == 8){ }}待发货{{# } else if(d[i].status == 9){ }}已过期{{# } }}</span>
+    	{{# } }}
+	</div>
+    <a class="field-item" href="{{ d[i].url }}">
+     	<div class="avatar">
+      		<img src="{{ d[i].goodsimg }}" class="avatar-img">
+        </div>
+        <div class="contentt">
+	        <p class="delivery_tip">{{ d[i].goodsname }}</p>
+        	<p class="price"><span>￥{{ d[i].price }}</span><span class="order-time">{{ d[i].createtime }}</span></p>
+        </div>
+        <i class="field-arrow icon-arrow-right"></i>
+    </a>
+    
+    <div class="field-foot">
+	    {{# if(d[i].status == 0){ }}
+	        <a class="field-f-pay"  href="{{ d[i].zhifu }}">去支付</a>
+	        <a class="field-f-cancel" onclick = dele("{{ d[i].id }}","{{ d[i].plugin}}")  href="javascript:;">取消订单</a>
+	    {{# } }}
+	    {{# if(d[i].status == 1 && d[i].xiaofei && d[i].applyrefund != 1){ }}
+	        <a class="field-f-pay" href="{{ d[i].xiaofei }}">去使用</a>
+		{{# } else if (d[i].applyrefund == 1 && d[i].status == 1 ){ }}
+			<a class="field-f-cancel" onclick = delerefund("{{ d[i].id }}","{{ d[i].plugin}}")  href="javascript:;">取消退款</a>
+	    {{# } }}
+	    {{# if(d[i].status == 2){ }}
+	        <a class="field-f-pay" href="{{ d[i].comment }}">去评价</a>
+	    {{# } }}
+	    {{# if(d[i].expressid > 0 && d[i].status != 0 && d[i].status != 3 && d[i].applyrefund != 1 && d[i].status != 5 && d[i].status != 6 && d[i].status != 7){ }}
+	        <a class="field-f-pay" href="{{ d[i].receive }}">查看订单</a>
+		{{# } else if (d[i].applyrefund == 1 && d[i].expressid > 0){ }}
+			<a class="field-f-cancel" onclick = delerefund("{{ d[i].id }}","{{ d[i].plugin}}")  href="javascript:;">取消退款</a>
+	    {{# } }}
+		<!--过期拼团单查看-->
+		{{# if(d[i].fightstatus > 0 && d[i].status == 9){ }}
+		<a class="field-f-pay" href="{{ d[i].xiaofei }}">查看订单</a>
+		{{# } }}
+	    {{# if(d[i].paidprid >0 && d[i].applyrefund != 1){ }}
+	        <a class="field-f-pay"  href="{{ d[i].paidurl }}">支付有礼</a>
+	    {{# } }}
+	    {{# if(d[i].surerefund == 1 && d[i].applyrefund == 0 && d[i].price > 0 ){ }} 
+	        <a class="field-f-pay" onclick = refund("{{ d[i].id }}","{{ d[i].plugin}}")  href="javascript:;">申请退款</a>
+	    {{# } }}
+    </div>
+</div>
+{{# } }}
+</script>
+<script>
+	$(function() {
+		$(document).on("pageInit", "#page-index", function(e, id, page) {
+			var loading = false;
+			var pagenum = 1,
+			    pagesize = 8,
+			    endmark = 0;
+			function addItems() {
+				$.post("{php echo app_url('order/userorder/orderlist',array('status'=>$status))}",{},function(d){
+					console.log(d);
+					if (d.data.length > 0) {
+						var gettpl1 = document.getElementById('orderlist').innerHTML;
+						sessionStorage.setItem("demokey",JSON.stringify(d.data));
+						var contentdata = d.data.slice(0,pagesize);
+						laytpl(gettpl1).render(contentdata, function(html){
+						   $(".allorder").append(html);
+						});
+					}else{
+						$(".allorder").html('<div class="common-no-con"><img src="{URL_APP_IMAGE}order_no_con.png" alt=""><p>您还没有订单，赶紧去看看</p></div>');
+					}
+				}, 'json');
+			}
+			addItems();
+			$(page).on('infinite', function() {
+				if (endmark || loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+					loading = false;
+					var dt = JSON.parse(sessionStorage.getItem("demokey"));
+					var xxx = dt.slice(pagenum*pagesize ,pagenum*pagesize+pagesize);
+					addnew(xxx);
+					$.refreshScroller();
+				}, 500);
+			});
+			function addnew(cont){
+				if(cont.length){
+					$(".loading_more").hide();
+					var gettpl1 = document.getElementById('orderlist').innerHTML;
+					laytpl(gettpl1).render(cont, function(html){
+						$(".allorder").append(html);
+					});
+					pagenum++;loading = false;
+				}else{
+					$(".loading_more").hide();
+					$(".weui-loadmore_line").show();
+					endmark = 1;
+				}
+			}
+		});
+		$.init();
+	});
+	function dele(id,pl){
+		 $.confirm('确定取消订单?',
+            function() { //确定后操作。
+				$.post("{php echo app_url('order/userorder/cancelorder')}",{id:id,pl:pl},function(d){
+					if(d){
+						$.toast('取消成功');
+						location.reload();
+					}else{
+						$.toast('取消失败');
+					}
+				}, 'json');
+            },
+            function() { //取消后操作。
+        });
+	}
+
+	function delerefund(id,pl){
+		$.confirm('确定取消退款申请?',
+				function() { //确定后操作。
+					$.post("{php echo app_url('order/userorder/cancelrefundorder')}",{id:id,pl:pl},function(d){
+						if(d){
+							$.toast('取消成功');
+							location.reload();
+						}else{
+							$.toast('取消失败');
+						}
+					}, 'json');
+				},
+				function() { //取消后操作。
+				});
+	}
+
+	function refund(id,pl){
+		 $.confirm('确定申请退款?',
+            function() { //确定后操作。
+				$.post("{php echo app_url('order/userorder/refundorder')}",{id:id,pl:pl},function(d){
+					if(d){
+						$.alert('申请成功',function () {
+                            history.go(0);
+                        });
+					}else{
+						$.toast('申请失败');
+					}
+				}, 'json');
+            });
+	}
+</script>
+
+<style>
+.buttons-tab:after {
+	height: 0;
+}
+.infinite-scroll {
+	margin-top: 2rem;
+}
+.buttons-tab .button {
+	font-size: .75rem;
+}
+.buttons-tab .button.active {
+	color: #FE433F;
+	border-color: #FE433F;
+}
+.list-block .item-link.list-button {
+	color: #555;
+	font-size: .75rem;
+}
+.avatar {
+	width: 3.15rem;
+	height: 3.15rem;
+	background-color: #fff;
+	position: absolute;
+	top: .75rem;
+}
+.avatar img {
+	width: 100%;
+	height: 100%;
+	display: block;
+	object-fit: cover;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+}
+.field .contentt {
+	margin-left: 0;
+	padding-left: 3.65rem;
+}
+.field {
+	margin-top: .5rem;
+}
+.field-head {
+	padding: 0 .75rem;
+}
+.field-head-status-light {
+	color: #fe4d3d;
+	font-size: .65rem;
+}
+.field .order-option-btn {
+	font-size: .65rem;
+}
+.field .order-option-s2 {
+	color: #333;
+	border: none;
+}
+.field-item {
+	padding: .75rem;
+	background-color: #f9f9f9;
+}
+.field-item:before {
+	border-top: none;
+}
+.field-head-name {
+	width: 65%;
+	color: #333;
+	font-size: .75rem;
+}
+.field-head-name i {
+	color: #333;
+	font-size: .85rem;
+	vertical-align: -0.05rem;
+}
+.field .contentt .delivery_tip {
+	height: 2.1rem;
+	line-height: 1.05rem;
+	color: #333;
+	font-size: .7rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+    white-space: normal;
+	display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+.field .contentt .order-time {
+	height: 1.05rem;
+	line-height: 1.05rem;
+	color: #333;
+	font-size: .7rem;
+	visibility: hidden;
+}
+
+.field .contentt .price {
+	height: 1.05rem;
+	line-height: 1.05rem;
+	font-size: .8rem;
+	display: -webkit-flex;
+	display: flex;
+	justify-content: space-between;
+}
+.field .contentt .price span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	display: block;
+	-webkit-flex-shrink: 1;
+	flex-shrink: 1;
+}
+.field .contentt .price .order-time {
+	font-size: .6rem;
+	color: #999;
+	overflow: hidden;
+	-webkit-flex-shrink: 0;
+	flex-shrink: 0;
+	visibility: initial;
+}
+.field-console-btns {
+	bottom: 2rem;
+}
+.field-foot {
+	padding: 0 .75rem;
+}
+.field-foot:after {
+	content: "";
+	display: block;
+	clear: both;
+}
+.field-foot a {
+	width: 3.7rem;
+	height: 1.2rem;
+	line-height: 1.2rem;
+	color: #333;
+	font-size: .7rem;
+	text-align: center;
+	margin: .4rem 0;
+	margin-left: .4rem;
+	padding: .05rem 0;
+	border: 1px solid #eee;
+	-webkit-border-radius: 2rem;
+	border-radius: 3.8rem;
+	box-sizing: initial;
+	overflow: hidden;
+	display: inline-block;
+	float: right;
+}
+.field-foot .field-f-pay {
+	color: #df231c;
+	border: 1px solid #df231c;
+}
+.field-head {
+	height: 2.2rem;
+	line-height: 2.2rem;
+}
+</style>
+
+{php include wl_template('common/footer');}

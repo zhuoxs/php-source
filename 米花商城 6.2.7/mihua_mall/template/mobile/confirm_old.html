@@ -1,0 +1,330 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+     <meta charset="utf-8">
+    <title>订单确认</title>    
+    <meta name="viewport" content="initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="format-detection" content="telephone=no">
+	<link rel="stylesheet" href="{MODULE_URL}recouse/css/confirm.css?v=111" />
+	<link href="{MODULE_URL}recouse/css/xin_v3.s.min.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="{MODULE_URL}recouse/js/jquery-1.7.2.min.js"></script>
+     <script type="text/javascript" src="{MODULE_URL}/recouse/js/common.js"></script>
+
+<style>
+body{padding-bottom:55px}
+.payStyle li label {
+     display: inline-block;
+}
+.otherInfo li:first-child {
+    background: none;
+}
+button.btn.btn-danger {
+    float:right;
+    text-align: right;
+    padding: 3px 0;
+}
+</style>
+<script type="text/javascript">
+if (window.name != "tempname") {  
+           location.reload();  
+           window.name = "tempname";  
+       }  
+       else {  
+           window.name = "";  
+       }  
+
+</script>
+</head>
+<body>
+{if 	$shownotice == 1}
+  {template 'show_notice'}
+{/if}
+<section class="accounts">
+
+ 	
+<form id='formorder' name="input"   method="post">
+ <input type="hidden" name="goodstype" value="{$goodstype}" />
+<input type="hidden" name="address" value="{$row['id']}" />
+
+
+<div class="my-memvers">
+  <div class="member-browse">
+        <h2 class="member-browse-title"><span>订单详情</span></h2>
+        <ul class="member-browse-ul">
+        		{loop $allgoods $item}
+            <li class="member-browse-li">
+                <div class="row member-browse-summey">
+                    <a class="member-browse-summey-info" href="{php echo $this->createMobileUrl('detail',array('id'=>$item['id']))}" >                 
+                        <div class="member-browse-nt">                           
+                            <span class="member-browse-name"> {$item['title']}</span>
+                        </div>
+                    </a>                   
+                </div>
+               <span class='goodsprice' style="display:none;">{$item['totalprice']}</span>
+                <div class="member-browser-pro-list" >
+                    
+                    <a class="member-browser-pro-a" href="#"><span class="pro-img">
+                        <img src="{php echo $_W['attachurl'].$item['thumb']}"></span><p class="pro-info">
+                           <br/> <span class="pro-name">价格：{$item['total']}{if !empty($item['unit'])}{$item['unit']}{/if}</span>
+                        	 {if !empty($item['optionname'])}
+                        	<br/><span class="pro-price">规格：  {$item['optionname']}</span>{/if}</p>
+                    </a>
+                   <input type="hidden" id="deductible"class="deductible_hidden" name="deductible" value="{php echo $item['deductible'] * $item['total']}"/>
+ 
+                </div>
+            </li>
+				{/loop}
+        </ul>
+    </div>
+	    </div>
+        
+<div class="infobox" style="display:none">
+ <h2>收货信息</h2>
+   {if !empty($row)}
+ <p class="address_item">{$row['province']} {$row['city']} {$row['area']} {$row['address']} <br/> {$row['realname']}, {$row['mobile']}</p>
+<button type="button" class="btn btn-danger" onclick="location.href='{php echo $this->createMobileUrl('address',array('from'=>'confirm','returnurl'=>urlencode($returnurl)))}'">
+    <i class="icon-plus"></i>管理收货地址
+     <img src="{MODULE_URL}/recouse/images/arrow-right.png">
+    </button></p>
+    {else}
+  <p><button type="button" class="btn btn-danger" onclick="location.href='{php echo $this->createMobileUrl('address',array('from'=>'confirm','returnurl'=>urlencode($returnurl)))}'"  >
+      <i class="icon-plus"></i> 添加收货地址      
+     <img src="{MODULE_URL}/recouse/images/arrow-right.png">
+      </button></p>
+    {/if}
+</div>
+
+
+<div class="infobox" style="display:none">
+ <h2>配送方式</h2>
+ <ul class="payStyle">
+     
+  {loop $dispatch $d}
+ 
+           {if $d['enabled']==1}
+              <li>
+                  <label>
+                      <input name='dispatch' onchange='oncheckboxchange("paytype{$d['dispatchtype']}",
+              " {if $issendfree==1}0{elseif $isfull==1}0{else}{$d['price']}{/if}");' type="radio" id="paytype{$d['dispatchtype']}" value="{$d['id']}" 
+              />{$d['dispatchname']}
+              </label>  
+              <span style="color:red; padding-left:12px;" >      
+                   {if $issendfree==1}  包邮
+                  {elseif $isfull==1} 满{$fullShipping}包邮
+                  {else} 快递费：<span class"sendprice">{$d['price']}</span>元
+                  {/if}
+              </span>
+              </li>
+                                          
+                      {/if} 
+                        {/loop}
+
+           
+        
+</ul>
+</div>
+<ul>
+      <div class="deductible" style="display:none;">
+        
+                       <li><div class="goods_dedu">	<span class="text">购买此商品可使用</span>
+                       <span id="tip-number"></span>积分 &nbsp;<span  style="color:green">抵扣&yen;</span>
+                       <span id="dedu-money" style="color:green"></span>
+                       <div class="dedu_now"></div>
+                       </div>
+                       <span class="container">		
+                    <input type="checkbox" name="ded_money" id="checkbox-10-1" value="" />
+                    <label for="checkbox-10-1" id="checkded" ></label>
+			
+	            	</span>
+                       </li>
+          <input type="hidden"  name="count_deductible" id="count_deductible" value=""/>
+ 
+             </div>
+</ul>
+</div>
+<div class="infobox " style="display:none;">
+<ul id='infoul' class="otherInfo">
+	<li>备注信息：<textarea name="remark" onchange='oninputchange("detail");' style='width:100%;border: none;' type="text" value="" placeholder="亲，还有什么要交待的话，告诉我们吧！" ></textarea></li>
+</ul>
+</div>
+<div class="carFoot"><button type="submit"  id='submit'  name="submit" value="yes" 
+style="display: inline-block;float: right;padding: 0 33px;text-align: 
+center;height: 35px;line-height: 35px;margin-right: 10px;color: #fff;background: 
+#e4393c;font-size: 16px;border: none;border-radius: 5px;">提交订单</button>
+<p>合计：<i class="price">&yen;<span id='totalprice'>{$totalprice}</span><span id='totalprice2'></span></i></p></div>
+	<input type="hidden" name="token" value="{$_W['token']}" />
+</form>
+</section>
+	
+<script src="{MODULE_URL}/recouse/js/zepto.min.js" type="text/javascript"></script>
+<script type="text/javascript">
+$(function(){    
+  var i=1;
+  $('#qr_code2').click(function(){
+        var url = '{$qr_code}';
+         showBigImage(url,$('#qr_code2'));
+      
+    });
+     $("#checkded").click(function(){
+        var total=parseFloat( $("#totalprice").html());
+        var dis_price =parseFloat($("#checkbox-10-1").val());
+
+                if(i==1){                        
+                     dis_price =  parseFloat(total- dis_price ).toFixed(2) ;
+                     var ded= $("#tip-number").html();  
+                     $("#count_deductible").val(ded);                     
+                      i=2;
+                 }else if(i==2  ){
+                      dis_price =  parseFloat(total+ dis_price ).toFixed(2) ; 
+                      $("#count_deductible").val(0);
+                      i=1;
+                 }
+                  $("#totalprice").html(dis_price);  
+    });
+
+
+
+
+    var deductible=0;
+ $(".deductible_hidden").each(function(){   
+deductible +=parseFloat($(this).val());
+ });
+  var dedu_now = parseInt({$myheadimg['tag']['credit1']});
+  if(deductible>0 && dedu_now>0){
+$(".deductible").css('display','block');   
+$(".dedu_now").html("现有"+dedu_now+"积分");  
+if(dedu_now >= deductible){//现有积分大于或者等于商品可抵扣积分时，显示商品本身可抵扣的积分
+$("#tip-number").html(deductible);
+var money=parseFloat(deductible * {$deductible}).toFixed(2);
+}else{//显示用户最大可用积分
+ $("#tip-number").html(dedu_now);   
+ var money=parseFloat(dedu_now * {$deductible}).toFixed(2);
+
+}
+if(money>{$totalprice}){
+$(".deductible").css('display','none');
+$("#tip-number").html("");
+return;
+}
+$("#dedu-money").html(money); 
+$("#checkbox-10-1").val(money);
+
+  }
+
+});
+Zepto(function($){
+   var $nav = $('.global-nav'), $btnLogo = $('.global-nav__operate-wrap');
+   //点击箭头，显示隐藏导航
+   $btnLogo.on('click',function(){
+     if($btnLogo.parent().hasClass('global-nav--current')){
+       navHide();
+     }else{
+       navShow();
+     }
+   });
+   var navShow = function(){
+     $nav.addClass('global-nav--current');
+   }
+   var navHide = function(){
+     $nav.removeClass('global-nav--current');
+   }
+   
+   $(window).on("scroll", function() {
+		if($nav.hasClass('global-nav--current')){
+			navHide();
+		}
+	});
+})
+function get_search_box(){
+	try{
+		document.getElementById('get_search_box').click();
+	}catch(err){
+		document.getElementById('keywordfoot').focus();
+ 	}
+}
+			function changeAddress(){
+                location.href = '{php echo $this->createMobileUrl('address', array('from'=>'confirm','returnurl'=>urlencode($returnurl)))}'
+            }
+            function check(){
+                {if $shownotice == 1 && $qrcode_flag==1}
+                  var url = '{$qr_code}';
+                 showBigImage(url,$('body'));
+                  return false;  
+                {/if}
+               
+                var v=document.getElementsByName('dispatch');     
+                var j=0
+            for (var i=0;i<v.length;i++){
+            
+            if(v.item(i).checked){
+            j++
+            }
+            }
+            if(j!=1){           
+            alert("请您选择配送方式")
+            return false;   
+            }
+
+            //  if($("#paytype2").length>0){//如果存在自提，就要检查是不是选中状态              
+            //     if(document.getElementById('paytype2').checked){//如是选择自提                
+            //     return true
+            //     }else{//如果不选择自提则要检查地址
+                
+            //             if($(".address_item").length<=0){
+            //             alert("请添加收货地址!");
+            //             return false;
+            //         }   
+            //     }
+            //  }else{//如果不存在自提，就要检查有没有地址
+
+                if($(".address_item").length<=0){
+                    alert("请添加收货地址!");
+                    return false;
+                }   
+
+             
+            
+             
+            }
+          
+              
+            
+             function oncheckboxchange(paytype,dispatchpricestr){
+                var price = 0;
+                $(".goodsprice").each(function(){
+                     price+=parseFloat($(this).html());
+                    
+                });
+                
+                var dispatchprice = parseFloat(dispatchpricestr);
+                var dis_price =parseFloat($("#checkbox-10-1").val());//获得积分抵扣的金额
+                
+                if($("#count_deductible").val()>0 &&  parseFloat(dis_price)>0){  //获得积分抵扣的金额
+                
+                price=(parseFloat(price) - parseFloat(dis_price)).toFixed(2) ;
+                }
+                
+                if(dispatchprice>0){
+                    var count=(parseFloat(price)+parseFloat(dispatchprice)).toFixed(2) ;                    
+                   $("#totalprice").html(count);  
+                    $("#totalprice2").html(" 含运费&yen;"+dispatchprice );  
+                  $("#dispatchshow").css('display','block');
+                  
+                  $("#dispatchshow_price").html(dispatchprice);    
+                   $("#dispatchshow_name").html($("#dispatch").find("option:selected").attr("dispatchname"));    
+ 
+                }
+                else{
+                    $("#totalprice").html(price);  
+                    $("#totalprice2").html("" );   
+                    $("#dispatchshow").css('display','none');
+                }
+                
+            }
+ </script>
+
+{template 'jsweixin'}
+</body>
+</html>   

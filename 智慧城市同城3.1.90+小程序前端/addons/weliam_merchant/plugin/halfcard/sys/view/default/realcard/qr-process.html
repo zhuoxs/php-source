@@ -1,0 +1,58 @@
+{php include wl_template('common/header');}
+<div class="app-content">
+	<ul class="nav nav-tabs">
+		<li class="active"><a href="#">实体卡生成</a></li>
+	</ul>
+	<div class="panel" style="padding: 20px 20px 0 20px;">
+		<div class="alert alert-warning">
+			正在生成实体卡, 请不要关闭窗口.
+		</div>
+		<div class="form-horizontal ng-cloak" ng-controller="processor">
+			<dl class="dl-horizontal">
+				<dt>实体卡数量</dt>
+				<dd>{{pragress}}</dd>
+				<dt>整体进度条</dt>
+				<dd>
+					<div class="progress">
+						<div class="progress-bar progress-bar-success progress-bar-striped active" role="progressbar" aria-valuenow="{{file}}" aria-valuemin="0" aria-valuemax="100" style="width: {{file}}%">
+							<span class="sr-only">{{file}}% Complete (success)</span>
+						</div>
+					</div>
+				</dd>
+			</dl>
+		</div>
+		<script>
+            require(['angular'], function(angular){
+                angular.module('app', []).controller('processor', function($scope, $http){
+                    var total = {$allnum};
+                    var i = 0;
+                    var proc = function() {
+                        if(i == total && i != 0){
+                            layer.open({
+                                content: '恭喜您，实体卡生成完成！',
+                                yes: function(index, layero){
+                                    location.href = '{php echo web_url("halfcard/realcard/cardlist");}';
+                                    layer.close(index); //如果设定了yes回调，需进行手工关闭
+                                }
+                            });
+                            return;
+                        }
+                        $http.post('{php echo web_url("halfcard/realcard/get",array("days" => $days,"remark" => $_GPC["remark"],"levelid" => $levelid ));}').success(function(dat){
+                            if(dat.result == 1){
+                                i++;
+                                $scope.file = (i/total)*100;
+                                $scope.pragress = i + '/' + total;
+                            }
+                            proc();
+                        }).error(function(){
+                            proc();
+                        });
+                    }
+                    proc();
+                });
+                angular.bootstrap(document, ['app']);
+            });
+		</script>
+	</div>
+</div>
+{php include wl_template('common/footer');}

@@ -1,0 +1,207 @@
+{template 'header'}
+<link rel="stylesheet" href="{MODULE_URL}myui/css/peng.css">
+<style>
+	.mui-input-group .mui-input-row {
+		height: 62px;
+	}
+
+	.mui-input-row label {
+		margin-top: 11px;
+	}
+
+	.mui-input-row label~input {
+		margin-top: 11px;
+	}
+
+	.mui-input-row .mui-switch {
+		margin-top: 15px;
+	}
+	.pl15{padding-left:15px;}
+	.pr15{padding-right:15px;}
+	.fr{float:right;}
+	.b0{bottom:0 !important;}
+	.sctx{width:100px;height:100px;border-radius:50px;border:solid 1px #fff;}
+	.sendcode{position:absolute;right:40px;top:1em;padding-left:5px !important;padding-right:5px !important;}
+	.submenu{display: inline-block; line-height: 28px; border: 1px solid #dfdfdf; padding: 0px 10px; border-radius: 16px; margin-right: 6px;}
+	.s-action{background-color: #ccc; color: #fff; border:1px solid #ccc;}
+</style>
+
+
+<!--
+<header class="mui-bar mui-bar-nav">
+	<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left t-gra"></a>	
+	<a class="mui-icon mui-icon-contact mui-pull-right t-gra" href="{php echo $this->createMobileUrl('usercenter',array());}"></a>
+	<a class="mui-icon mui-icon-home mui-pull-right ml05 t-gra" style="margin-right:0px !important;" href="{php echo $this->createMobileUrl('index',array());}"></a>
+	<h1 class="mui-title">乡村旅游</h1>
+</header>
+-->
+<div class="mui-content">
+	<div style="height: 240px;">
+		<div id="slider" class="mui-slider" style="height:240px;">
+			<div class="mui-slider-group mui-slider-loop">
+				<!-- 额外增加的一个节点(循环轮播：第一个节点是最后一张轮播) -->
+				{php $last = count($slide)-1;}
+				<div class="mui-slider-item mui-slider-item-duplicate">
+					<a class="link" data-url="$slide[$last][url]">
+						<img src="{media $slide[$last][cover]}" style="height:240px; width: 100%;">
+					</a>
+				</div>
+				{loop $slide $value}
+				<div class="mui-slider-item">
+					<a class="link" data-url="{$value[url]}">
+						<img src="{media $value[cover]}" style="height:240px;width: 100%;">
+					</a>
+				</div>
+				{/loop}
+
+				<!-- 额外增加的一个节点(循环轮播：最后一个节点是第一张轮播) -->
+
+				<div class="mui-slider-item mui-slider-item-duplicate">
+					<a class="link" data-url="$slide[0][url]">
+						<img src="{media $slide[0][cover]}" style="height:240px;width: 100%;">
+					</a>
+				</div>
+			</div>
+			<div class="mui-slider-indicator">
+				{loop $slide $key $value}
+				<div class="mui-indicator {if $key==0}mui-active{/if}"></div>
+				{/loop}
+			</div>
+		</div>
+	</div>
+	{loop $service $value}
+	<div>
+		<div style="line-height: 40px;height: 40px; font-size: 13px; padding: 0px 10px; font-family:Microsoft YaHei;">
+			{$value[service_name]}
+		</div>
+		<div style="background-color: #fff;">
+			{loop $value[child] $val}
+			<div class="nav" style="width: 25%;  float:left; ">
+				<div style="text-align: center; border-bottom: 1px solid #efefef; border-right: 1px solid #efefef; padding: 15px 0px;">
+					<a class="link" data-url="{$val[url]}">
+					<img src="{media $val[icon]}" style="width: 36px;"><br><span style="font-size: 12px;color: #777;">{$val[service_name]}</span>
+					</a>
+				</div>
+			</div>
+			{/loop}
+			<div style="clear: both;"></div>
+		</div>
+	</div>
+	{/loop}
+
+
+
+
+
+
+
+	
+</div>
+
+</body>
+</html>
+
+
+<script>
+    var pg = 1;
+    var kw = '';
+    var classid = '{$cid}';
+    var pageend = false;
+    var loading = true;
+    mui.ready(function () {
+        moreitems(classid,pg,'');
+    });
+    mui('body').on('tap', '.link', function () {
+        var url = this.getAttribute('data-url');
+        window.location.href = url;
+        return false;
+    });
+    var slider = mui("#slider");
+    slider.slider({
+        interval: 3000
+    });
+
+    function moreitems(cid,page,keyword) {
+        loading = true;
+        var itemslist = document.getElementById('itemslist');
+        if (page == 1) {
+            itemslist.innerHTML = '';
+        }
+        mui.get("{php echo $this->createMobileUrl('city_article',array('act'=>'list_ajax'));}&cid="+cid+"&keyword="+keyword+"&page="+page, {}, function (html) {
+                if (html == '') {
+                    itemslist.innerHTML = itemslist.innerHTML + '<div style="text-align: center; line-height: 50px; font-size: 14px; color: #aaaaaa;">已全部加载</div>';
+                    pageend = true;
+                } else {
+                    itemslist.innerHTML = itemslist.innerHTML + html;
+                }
+                loading = false;
+            }, 'html'
+        );
+    }
+    $(function () {
+
+        $('body').on('click touchstart','.nav',function () {
+            mui.get('{php echo $this->createMobileUrl("city_article",array("act"=>"getmainclass"));}&cid='+$(this).attr('data-cid'), {}, function (html) {
+                    $('#mainmenu').html(html);
+                }, 'html'
+            );
+            mui.get('{php echo $this->createMobileUrl("city_article",array("act"=>"getsubsubclass"));}&cid='+$(this).attr('data-cid'), {}, function (html) {
+               		$('#submenu').html(html);
+                }, 'html'
+            );
+            pg = 1;
+            moreitems($(this).attr('data-cid'),pg,'');
+            return false;
+        });
+
+
+        $("#keyword").on('keypress', function(e) {    //#keyword为input文本框
+            var keycode = e.keyCode;
+            if(keycode == '13') {
+                document.activeElement.blur();
+                pg = 1;
+                moreitems(classid,pg,$(this).val());
+            }
+        });
+
+        $('.mui-content').on('click touchstart','.menu-item',function(){
+            $('.menu-item').attr('style','line-height: 42px; border-left: 1px solid #dfdfdf;border-bottom: 1px solid #dfdfdf;font-size: 16px;');
+            $('.menu-item').find('div').attr('style','line-height: 40px;');
+            $(this).attr('style','background-color: #fff; font-size: 16px; font-family:Microsoft YaHei; color: #fa6c17; height: 42px;border-left: 1px solid #dfdfdf;');
+            $(this).find('div').attr('style','line-height: 40px; border-bottom: 2px #fa6c17 solid;');
+            mui.get('{php echo $this->createMobileUrl("city_article",array("act"=>"getsubclass"));}&cid='+$(this).attr('data-value'), {}, function (html) {
+                    $('#submenu').html(html);
+                }, 'html'
+            );
+            pg = 1;
+            kw = '';
+            moreitems($(this).attr('data-value'),pg,'');
+            return false;
+        });
+        $('.mui-content').on('click touchstart','.submenu',function(){
+            $('.submenu').removeClass('s-action');
+            $(this).addClass('s-action');
+            pg = 1;
+            kw = '';
+            moreitems($(this).attr('data-value'),pg,'');
+            return false;
+        });
+        $(window).scroll(function(){
+            var scrollTop = $(this).scrollTop();    //滚动条距离顶部的高度
+            var scrollHeight = $(document).height();   //当前页面的总高度
+            var clientHeight = $(this).height();    //当前可视的页面高度
+            if(scrollTop + clientHeight >= scrollHeight - 50){   //距离顶部+当前高度 >=文档总高度 即代表滑动到底部 注：-50 上拉加载更灵敏
+                if(!pageend && !loading){
+                    pg = pg + 1;
+                    moreitems(classid,pg,kw);
+                }
+            }
+        });
+    });
+
+
+
+
+
+
+</script>

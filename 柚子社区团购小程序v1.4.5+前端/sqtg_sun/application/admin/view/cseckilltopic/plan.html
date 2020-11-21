@@ -1,0 +1,307 @@
+{extend name="common/index" /}
+{block name="search_box"}{/block}
+
+{block name="tool_template"}{/block}
+
+{block name="tool_box"}
+<div class="tool-box">
+    <select name="year" id="year" style="width: 100px;" class="select2" lay-ignore></select>
+    <select name="month" id="month" style="width: 100px;" class="select2" lay-ignore></select>
+</div>
+{if !$_SESSION['admin']['store_id']}
+    <div class="tool-box">
+        <div class="layui-btn-group">
+            <a href="javascript:;" id="btnBatchTopicChoose" class="layui-btn layui-btn-primary layui-btn-sm">批量选择</a>
+            <a href="javascript:;" id="btnBatchTopicDelete" class="layui-btn layui-btn-danger layui-btn-sm">清空</a>
+        </div>
+    </div>
+{/if}
+{/block}
+{block name="table_config"}
+
+<style>
+    body{
+        background-color: #fff!important;
+    }
+    .layui-table{
+        width: 700px;
+    }
+    .layui-table thead th{
+        text-align: center;
+        font-size: 20px;
+    }
+    .layui-table tbody tr{
+        height: 100px;
+    }
+    .layui-table tbody td{
+        padding: 0;
+    }
+    .day{
+        height: 90px;
+        padding-top: 30px;
+    }
+    .day span{
+        position: absolute;
+        right: 15px;
+        top: 10px;
+        font-size: 20px;
+    }
+    .day .btnTopicChoose{
+        display: block;
+        margin: 0 auto;
+        width: 80px;
+    }
+    .day .btnTopicDelete {
+        position: absolute;
+        right: 5px;
+        bottom: 5px;
+        display: none;
+    }
+    .day:hover .btnTopicChoose:not(.layui-btn-primary) + .btnTopicDelete{
+        display: block;
+    }
+    td.checked{
+        background-color: #222d32;
+    }
+
+</style>
+<table class="layui-table" id="table">
+    <thead>
+    <tr>
+        <th>日</th>
+        <th>一</th>
+        <th>二</th>
+        <th>三</th>
+        <th>四</th>
+        <th>五</th>
+        <th>六</th>
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+<script>
+    var today = new Date();
+    var year = today.getFullYear();
+    var month = today.getMonth()+1;
+
+    load();
+
+    //年月选择
+    require(['select2'], function () {
+        $('.select2').select2();
+        var ret = [];
+        for(var i = 0;i<= 5;i++){
+            ret.push({id:year+i,text:year+i+'年'});
+        }
+
+        $('#year').select2({
+            data: ret,
+        })
+
+        var ret = [];
+        for(var i = 1;i<= 12;i++){
+            ret.push({id:i,text:i+'月'});
+        }
+        ret.map(function (obj) {
+            if(obj.id == month){
+                obj.selected = true;
+            }
+            return obj;
+        });
+        $('#month').select2({
+            data: ret,
+        })
+    })
+    $("#year").on('change',function () {
+        year = $(this).val();
+        load();
+    })
+    $("#month").on('change',function () {
+        month = $(this).val();
+        load();
+    })
+
+    //重新加载日历控件
+    function load() {
+        var begin = new Date(year+'-'+month+'-1');
+        var days = new Date(year, month, 0).getDate();
+
+        $.get("{:adminurl('getplans')}&year="+year+"&month="+month, function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+
+            var trs = [];
+            var tds = [];
+            var len = begin.getDay();
+            for(var i = 0;i<42;i++){
+                if(i<len){
+                    tds.push('<td data-row="'+Math.floor(i/7+1)+'" data-col="'+(i%7+1)+'" ></td>');
+                }else if((i-len+1) <= days){
+                    var seckilltop = ret['d_'+(i-len+1)] || {};
+                    var seckilltop_name = seckilltop.name || false;
+                    {if !$_SESSION['admin']['store_id']}
+                        seckilltop_name = seckilltop_name || '选择专题';
+                    {/if}
+                    var button_class = 'layui-btn layui-btn-sm btnTopicChoose';
+                    if (!seckilltop.name){
+                        button_class += ' layui-btn-primary';
+                    }
+
+                    var div = '<div class="day">';
+                    div += '<span>'+(i-len+1)+'</span>';
+                    if(seckilltop_name){
+                        var url = 'javascript:;';
+                        {if $_SESSION['admin']['store_id']}
+                            url = '{:adminurl("index","Cseckillmeeting")}&seckilltopic_id='+seckilltop.id+'&seckilltopic_name='+seckilltop.name;
+                        {/if}
+                        div += '<a href="'+url+'" target="blank" data-day="'+(i-len+1)+'" class="'+button_class+'">'+seckilltop_name+'</a>';
+                    }
+                    {if !$_SESSION['admin']['store_id']}
+                        div += '<button class="layui-btn layui-btn-danger layui-btn-xs btnTopicDelete"><i class="layui-icon layui-icon-delete"></i></button>'
+                    {/if}
+                    div += '</div>';
+                    tds.push('<td data-row="'+Math.floor(i/7+1)+'" data-col="'+(i%7+1)+'" >'+div+'</td>');
+                }else{
+                    tds.push('<td data-row="'+Math.floor(i/7+1)+'" data-col="'+(i%7+1)+'" ></td>');
+                }
+                if (i%7==6){
+                    trs.push('<tr>'+tds.join('')+'</tr>');
+                    tds = [];
+                    if((i-len+1) >= days){
+                        break;
+                    }
+                }
+            }
+
+            $('#table tbody').html(trs.join(''));
+        })
+    }
+
+
+    {if !$_SESSION['admin']['store_id']}
+
+    //日，选择专题
+    $(document).on('click','.btnTopicChoose',function () {
+        var $this = $(this);
+        layer.open({
+            type: 2,
+            title: '选择专题',
+            shadeClose: true,
+            shade: false,
+            maxmin: true, //开启最大化最小化按钮
+            area: ['893px', '600px'],
+            content: "{:adminurl('choose')}&onlyone=1",
+            btn: ['确认', '取消'],
+            yes: function (index,layerObj) {
+                var win = $(layerObj).find("iframe")[0].contentWindow;
+                var checkData = win.layui.table.checkStatus('laytable');
+                $.post("{:adminurl('plansave')}",{year:year,month:month,days:$this.data('day'),seckilltopic_id:checkData.data[0].id},function(res){});
+                $this.html(checkData.data[0].name);
+                $this.removeClass('layui-btn-primary');
+                layer.close(index);
+            }
+        });
+        return false;
+    })
+    //日，移除选择
+    $(document).on('click','.btnTopicDelete',function () {
+        var $this = $(this).prev();
+        $.post("{:adminurl('plansave')}",{year:year,month:month,days:$this.data('day')},function(res){});
+        $this.html('选择专题');
+        $this.addClass('layui-btn-primary');
+    })
+
+    //拖拽选中
+    var begin_row = 0;
+    var begin_col = 0;
+    var begin_clientX = 0;
+    var begin_clientY = 0;
+    $(document).on('mousedown','#table td', function (e) {
+        begin_row = $(this).data('row');
+        begin_col = $(this).data('col');
+        begin_clientX = e.clientX;
+        begin_clientY = e.clientY;
+    })
+    $(document).on('mouseup','#table td', function (e) {
+        var end_row = $(this).data('row');
+        var end_col = $(this).data('col');
+        var end_clientX = e.clientX;
+        var end_clientY = e.clientY;
+
+        //          同一天，点击位置一样--说明是单击
+        if (end_row == begin_row && end_col == begin_col && end_clientX == begin_clientX && end_clientY == begin_clientY){
+            //              点击的是按钮/单选框/多选框/输入框
+            if ($(e.target).is('.layui-btn')){
+                return false;
+            }
+        }
+
+        if (window.getSelection){
+            window.getSelection().removeAllRanges();
+        }else{
+            document.selection.empty();
+        };
+
+        // 如果没按住 ctrl 则清空其他选中
+        if (!e.ctrlKey){
+            $('td.checked').removeClass('checked');
+        }
+
+        $('td').each(function (i, e) {
+            var $this = $(e);
+            if ($this.find('.day').length){
+                var row = $this.data('row');
+                var col = $this.data('col');
+                if (((row>= begin_row && row<= end_row) || (row<= begin_row && row>= end_row)) && ((col>= begin_col && col<= end_col) || (col<= begin_col && col>= end_col))){
+                    $this.addClass('checked');
+                }
+            }
+        })
+        return false;
+    })
+    //批量，选择专题
+    $(document).on('click','#btnBatchTopicChoose',function () {
+        var btns = $('td.checked .day>.btnTopicChoose');
+        var days = [];
+        btns.map(function (i,e) {
+            days.push($(e).data('day'));
+        });
+
+        var $this = $(this);
+        layer.open({
+            type: 2,
+            title: '选择专题',
+            shadeClose: true,
+            shade: false,
+            maxmin: true, //开启最大化最小化按钮
+            area: ['893px', '600px'],
+            content: "{:adminurl('choose')}&onlyone=1",
+            btn: ['确认', '取消'],
+            yes: function (index,layerObj) {
+                var win = $(layerObj).find("iframe")[0].contentWindow;
+                var checkData = win.layui.table.checkStatus('laytable');
+                $.post("{:adminurl('plansave')}",{year:year,month:month,days:days.join(','),seckilltopic_id:checkData.data[0].id},function(res){});
+                btns.html(checkData.data[0].name);
+                btns.removeClass('layui-btn-primary');
+                layer.close(index);
+            }
+        });
+    })
+    //批量，移除选择
+    $(document).on('click','#btnBatchTopicDelete',function () {
+        var btns = $('td.checked .day>.btnTopicChoose');
+        var days = [];
+        btns.map(function (i,e) {
+            days.push($(e).data('day'));
+        });
+
+        $.post("{:adminurl('plansave')}",{year:year,month:month,days:days.join(',')},function(res){});
+        btns.html('选择专题');
+        btns.addClass('layui-btn-primary');
+    })
+    {/if}
+</script>
+{/block}

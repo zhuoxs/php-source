@@ -1,0 +1,64 @@
+{include file="common/head"}
+
+
+        <div class="recharge">
+            <p class="method"><img src="{$payImgs['logo']}" /></p>
+            <div class="pay-mode">
+                {if isset($payerInfo['realPayPrice'])}
+                <p class="money">￥{$payerInfo['realPayPrice']}元<span class="no-pay"></span></p>
+                {else/}
+                <p class="money">￥{$payerInfo['price']}元<span class="no-pay"></span></p>
+                {/if}
+                <div class="ewmBox-bg">
+                    <a>
+                        <img src="{$payerInfo['qrcode']}"/>
+                        <div>
+                            <img class="pay-btn" src="{$payImgs['icon']}" />
+                        </div>
+                    </a>
+                </div>
+                {if isset($payerInfo['realPayPrice'])}<span class="recharge-font">请确认支付<b>{$payerInfo['realPayPrice']}</b>元，否则支付会失败</span>{/if}
+                {if isset($payerInfo['run_app_url'])}<p style="font-size:14px;margin:10px 5px;"><a href="{$payerInfo['run_app_url']}" style="color:#00a8f2!important;">唤醒[{$payerInfo['payName']}]直接支付</a></p>{/if}
+                <div class="pay-money">
+                    <div class="pay-explain">
+                        <i class="btn fn-saoyisao"></i>
+                        <div class="Explain">
+                            <span>请使用<var>{$payerInfo['payName']}</var>扫一扫</span>
+                            <span>扫描二维码完成支付</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+<script type="text/javascript">
+    $(function(){
+        var orderSn="{:request()->param('orderSn')}";
+        timer=setInterval("getStatus('"+orderSn+"')",2000);
+
+        var navTopTitle="{$navTopTitle|default='视频站'}";
+        console.log(navTopTitle);
+        $('#navTopTitle').html(navTopTitle);
+    });
+
+    function getStatus(orderSn){
+        $.post("{:url('api/getOrderStatus')}",{orderSn:orderSn},function (resp) {
+            if(resp.statusCode==0){
+                if(resp.data.orderStatus==1){
+                    clearInterval(timer);
+                    $("#payStatusDesc").html('支付完成');
+
+                    layer.open({skin:'msg',content:'恭喜您，支付成功！',time:2,end:function () {
+                        location.href="{:url('member/member')}";
+                    }});
+
+                }
+            }else{
+                layer.open({skin:'msg',content:'请求支付状态时发生错误！ error:'+resp.message,time:2});
+            }
+
+        },'JSON');
+    }
+</script>
+<!--{include file="common/footer"}-->

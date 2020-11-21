@@ -1,0 +1,101 @@
+{template 'public/header_win'}
+
+<!--标题-->
+<div class="title">
+    <blockquote class="layui-elem-quote">砍价列表</blockquote>
+</div>
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入砍价标题..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="class_id" id="class_id" style="width: 200px;" class="select2 layui-form-select" lay-ignore></select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+<!--数据表-->
+<div class="table-box">
+    <table class="layui-hide" id="laytable"></table>
+</div>
+
+<script type="text/javascript">
+    layui.use('table', function () {
+        var table = layui.table;
+//        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{php echo $this->createWebUrl('cutgoods',array('op'=>query));}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'title', width:250, title: '砍价标题',fixed:'left',sort:true},
+                {field:'name', width:250, title: '商品名称',sort:true},
+                {field:'price', width:100, title: '砍价价',sort:true},
+                {field:'shopprice', width:100, title: '商品原价',sort:true},
+                {field:'stock', width:100, title: '数量',sort:true},
+                {field:'begin_time', width:180, title: '开始时间',sort:true},
+                {field:'end_time', width:180, title: '结束时间',sort:true},
+            ]]
+            ,page: true
+        });
+//        搜索
+        $('#btnSearch').unbind().click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    class_id: $('#class_id').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        class_id: $('#class_id').val(),
+                    }
+                });
+            }
+        })
+//        排序
+        table.on('sort', function(obj){
+            table.reload('laytable', {
+                initSort: obj,
+                where: {
+                    orderfield: obj.field,
+                    ordertype:obj.type
+                },
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                },
+            });
+        });
+    })
+
+    require(['select2'], function () {
+        $('.select2').select2();
+        $.get("{php echo $this->createWebUrl('goodsclass',array('op'=>classselect));}", function (ret) {
+            ret = JSON.parse(ret);
+            ret.unshift({id: '', text: '请选择分类'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            })
+            $('#class_id').select2({
+                data: ret,
+            })
+        })
+    });
+</script>
+

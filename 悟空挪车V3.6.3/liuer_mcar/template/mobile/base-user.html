@@ -1,0 +1,158 @@
+{template 'header'}
+<style>
+    #qrcode img{
+        width: 100%;
+        max-width: 100%;
+    }
+    #qrcode canvas{
+        width: 100%;
+        max-width: 100%;
+    }
+    <?php if($config['member_jianju']): ?>
+    .yd-cell-box {
+        margin-bottom:<?php echo $config['member_jianju']; ?>;
+    }
+    <?php endif;?>
+</style>
+<?php
+$currentUser = pdo_get(Table::USER,['openid'=>$_W['openid'],'weid'=>$_W['uniacid']]);
+$config = get_module_info();
+$member_banner = $config['member_banner'] ? tomedia($config['member_banner']) : '';
+?>
+<body class="pageLog pageFooter">
+<div id="hook-app">
+    <div class="movelog-detail">
+        <yd-cell-group>
+            <yd-cell-item class="user-avatar">
+                <span slot="left">头像</span>
+                <span slot="right"><img src="{$_W['fans']['avatar']}" alt="" width="50" height="50"/></span>
+            </yd-cell-item>
+            <yd-cell-item>
+                <span slot="left">昵称</span> <span slot="right">{$_W['fans']['nickname']}</span>
+            </yd-cell-item>
+            <?php if($currentUser): ?>
+            <yd-cell-item>
+                <span slot="left">手机号</span>
+                <span slot="right">{$userInfo['mobile']}</span>
+            </yd-cell-item>
+            <yd-cell-item type="a" href="javascript:showQr();">
+                <span slot="left">我的挪车码</span>
+                <span slot="right"><i class="icon iconfont icon-nuochema"></i></span>
+            </yd-cell-item>
+            <?php endif; ?>
+        </yd-cell-group>
+
+        <yd-cell-group>
+            <yd-cell-item arrow type="a" href="{php echo $this->createMobileUrl('car')}">
+                <span slot="left">我的车辆</span>
+            </yd-cell-item>
+
+            <yd-cell-item arrow type="a" href="{php echo $this->createMobileUrl('movelog')}">
+                <span slot="left">挪车记录</span>
+                <!--<span slot="right"><yd-badge shape="square" type="primary">{$total}</yd-badge></span>-->
+                <span slot="right"></span>
+            </yd-cell-item>
+        </yd-cell-group>
+        <yd-cell-group>
+            <?php if($vipInfo['gid'] > 0): ?>
+            <yd-cell-item arrow type="a" href="{php echo $this->createMobileUrl('vip')}">
+                <span slot="left">{$group['name']}</span>
+                <span slot="right">{$expireTime}天后到期</span>
+            </yd-cell-item>
+            <?php else: ?>
+            <yd-cell-item arrow type="a" href="{php echo $this->createMobileUrl('vip')}">
+                <span slot="left">普通用户</span>
+                <span slot="right">开通会员</span>
+            </yd-cell-item>
+            <?php endif; ?>
+            <yd-cell-item arrow type="a" href="{php echo $this->createMobileUrl('order',['op'=>'list'])}"><span slot="left">我的订单</span></yd-cell-item>
+            <?php if($config['is_saorao'] == 1): ?>
+            <yd-cell-item arrow type="a" href="{php echo $this->createMobileUrl('shield')}"><span slot="left">免打扰设置</span></yd-cell-item>
+            <?php endif; ?>
+            <?php if($config['is_access'] == 1): ?>
+            <yd-cell-item type="label">
+                <div slot="left">开启隐私号码</div>
+                <yd-switch slot="right" v-model="is_private" true-value="1" false-value="0" :callback="setPrivate"></yd-switch>
+            </yd-cell-item>
+            <?php endif; ?>
+        </yd-cell-group>
+        <yd-cell-group>
+            <yd-cell-item arrow type="a" href="{php echo $this->createMobileUrl('help')}"><span slot="left">帮助中心</span></yd-cell-item>
+            <yd-cell-item arrow type="a" href="{php echo $this->createMobileUrl('message')}"><span slot="left">建议反馈</span></yd-cell-item>
+        </yd-cell-group>
+    </div>
+    {template 'footer'}
+    <yd-popup v-model="needShow" position="center" width="90%" class="guanzhu-modal" :close-on-masker="true">
+        <div style="background-color:#fff;">
+            <div class="qr_code" id="qrcode" style="padding: 15px;overflow: hidden;"></div>
+        </div>
+    </yd-popup>
+    <yd-actionsheet :items="mycar" v-model="show"></yd-actionsheet>
+</div>
+
+<script>
+    var checkUrl = "{php echo $this->createMobileUrl('vip',['op'=>'checkAccess'])}";
+    var is_private = parseInt("{$vipInfo['is_private']}");
+    $(function(){
+        /*setTimeout(function() {
+            jQuery('#qrcode').qrcode({
+                render: "canvas",
+                text: "<?php echo $qrcode ?>"
+            });
+        },200)*/
+    })
+
+    function showQr(){
+        app.show = 1;
+    }
+    var app = new Vue({
+        el: '#hook-app',
+        data: {
+            show: 0,
+            is_private: is_private,
+            needShow: 0,
+            mycar: [
+                <?php foreach($carArr as $car): ?>
+                {
+                    label: '<?php echo $car["chepaihao"]?>',
+                    callback: function(){
+                        var qrcode = "<?php echo $car['qrcode'] ?>";
+                        $('#qrcode').text('');
+                        $('#qrcode').qrcode({
+                            render: "canvas",
+                            text: qrcode
+                        });
+                        app.needShow  = 1;
+                    }
+                },
+                <?php endforeach;?>
+            ]
+        },
+        methods: {
+            setPrivate: function(val){
+                $.post(checkUrl,{
+                    is_private: this.is_private
+                },function(resp){
+                    if(resp.error == 0){
+                        app.message(resp.msg,'success');
+                    }else{
+                        app.message(resp.msg,'error');
+                    }
+                },'json');
+                console.log(val);
+            },
+            showQr: function(){
+                this.needShow = 1;
+            },
+            message:function(msg,icon){
+                this.$dialog.toast({
+                    mes: msg,
+                    icon:icon,
+                    timeout: 1500
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>

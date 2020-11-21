@@ -1,0 +1,20 @@
+var siteinfo = { 
+    "name":"longbing_card",
+    // "uniacid": "4",  
+    "uniacid": "12", 
+    // "uniacid": "156",  
+    // "uniacid": "2",  
+    "acid": "12",  
+    "multiid": "0", 
+    "version": "1.0",
+	//so313   "appid": "wx581f0c1732ae745f",
+	//longbing.xiaochengxucms   "appid": "wx87dcab8a855a9923",
+	//cap.gsbtech.cn   "appid": "wx477edc8a75d65908",
+    // "siteroot": "http://www.martinzzf.top/app/index.php",
+    "siteroot": "https://weixin.so313.com/app/index.php", 
+    // "siteroot": "https://weix.everhan.com/app/index.php",
+    // "siteroot": "https://card.juxinyan.com/app/index.php",
+    // "siteroot": "https://cap.gsbtech.cn/app/index.php",
+    // "siteroot": "https://longbing.xiaochengxucms.com/app/index.php",
+} 
+module.exports = siteinfo

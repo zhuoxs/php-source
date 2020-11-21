@@ -1,0 +1,133 @@
+{extend name="common/index" /}
+{block name="search_box"}
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="订单号或商品名称" autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="type" id="type" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+{/block}
+
+<!--数据表-操作列-->
+
+{block name="tool_template"}
+{/block}
+
+
+{block name="tool_box"}{/block}
+{block name="table_config"}
+<script type="text/html" id="dataOrderState">
+    {{# if(d.state == 1){ }}
+    待支付
+    {{# } }}
+    {{# if(d.state == 2){ }}
+    <span class="layui-badge">待配送</span>
+    {{# } }}
+    {{# if(d.state == 3){ }}
+    配送中
+    {{# } }}
+    {{# if(d.state == 4){ }}
+    待自提
+    {{# } }}
+    {{# if(d.state == 5){ }}
+    <span class="layui-badge layui-bg-blue">已完成</span>
+    {{# } }}
+    {{# if(d.state == 6){ }}
+    已取消
+    {{# } }}
+</script>
+<script type="text/html" id="dataShowIndex">
+    <input type="checkbox" name="show_index" value="{{d.id}}" lay-skin="switch" lay-text="是|否" lay-filter="show_index" {{ d.show_index == 1 ? 'checked' : '' }}>
+</script>
+
+<script>
+    layui.use(['table','form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_list')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {field:'order_no', width:200, title: '订单号',fixed:'left'},
+                {field:'amount', width:180, title: '订单金额'},
+                {field:'name', width:180, title: '姓名'},
+                {field:'goods_name', width:180,height:500, title: '商品名称'},
+                {field:'order_status_z', width:180, title: '订单状态',sort:false,templet:'#dataOrderState'},
+                {if $level>=1}
+                {field:'distribution_money', width:120, title: '总佣金'},
+                {field:'distribution0', width:120, title: '一级分销商'},
+                {field:'distribution_money0', width:120, title: '一级佣金'},
+                {/if}
+                {if $level>=2}
+                {field:'distribution1', width:120, title: '二级分销商'},
+                {field:'distribution_money1', width:120, title: '二级佣金'},
+                {/if}
+                {if $level>=3}
+                {field:'distribution2', width:120, title: '三级分销商'},
+                {field:'distribution_money2', width:120, title: '三级佣金'},
+                {/if}
+            ]]
+            ,page: true,
+            height:'full-300',
+            done(e){
+                console.log(e);
+            }
+        });
+        //        搜索
+        $('#btnSearch').unbind('click').click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    type: $('#type').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        type: $('#type').val(),
+                    }
+                });
+            }
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        var ret = [
+            {"id":0,"text":"全部订单"},
+            {"id":1,"text":"待支付"},
+            {"id":2,"text":"待配送"},
+            {"id":3,"text":"配送中"},
+            {"id":4,"text":"待自提"},
+            {"id":5,"text":"已完成"},
+            ];
+        ret.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            return obj;
+        });
+        $('#type').select2({
+            data: ret,
+        })
+
+    })
+</script>
+{/block}

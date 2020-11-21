@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+    <meta name="renderer" content="webkit" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>提现</title>
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <link rel="stylesheet" href="{$_W['siteroot']}addons/tiger_wxdaili/template/mobile/public/css/style.css" />
+</head>
+
+<body class="">
+    <div class="header  ">
+        <p></p>
+        <h3 class="tit">提现</h3>
+        <a href="" class="return"></a>
+        <div class="m-select">
+            <a href="javascript:void;" class="all">全部</a>
+            <div class="con">
+                <a href="">111</a>
+                <a href="">222</a>
+            </div>
+        </div>
+        <div class="m-calendar"></div>
+    </div>
+    <div class="m-cash">
+        <div class="top">
+            <img src="{php echo tomedia($cfg['logo'])}" alt="" class="pic" style="border-radius: 6px;width: 43px;height:43px;" />
+            <img src="{$_W['siteroot']}addons/tiger_wxdaili/template/mobile/public/images/ico12.png" alt="" class="pic2" />
+			{if $cfg['txtype']==2}
+				<img src="{$_W['siteroot']}addons/tiger_wxdaili/template/mobile/public/images/zfb.png" alt="" class="pic" />
+			{else}
+				<img src="{$_W['siteroot']}addons/tiger_wxdaili/template/mobile/public/images/wx.png" alt="" class="pic" />
+			{/if}
+        </div>
+            <div class="con">
+				{if $cfg['txtype']==2 || $cfg['txtype']==3}
+                <div class="desc">
+                    <span class="sp1">支付宝</span>
+                    <p class="p1">{$fans['zfbuid']}</p>
+                    <a href="{php echo $this->createMobileUrl('zfbedit')}" class="revise">修改</a>
+                </div>
+                <div class="desc">
+                    <span class="sp1">真实姓名</span>
+                    <p class="p1">{$fans['tname']}</p>
+                </div>
+				{/if}
+                <div class="desc">
+                	<span class="sp1">总金额</span>
+                	<span class="sp3" id="credit1">¥ {if $fans['credit2']}{$fans['credit2']}{else}0.00{/if}</span>
+                	<span class="sp4"></span>
+                </div>
+                <div class="desc">
+                    <span class="sp1">可提现金额</span>
+                    <span class="sp3" id="credit">¥ {if $fans['credit2']}{php echo intval($fans['credit2'])}{else}0.00{/if}</span>
+                    <span class="sp4">最低提现金额为{if $cfg['yjtype']}{$cfg['yjtype']}{else}1{/if}元</span>
+                </div>
+            </div>
+            <input type="submit" value="提现申请" id="txbtn" class="btn" />
+    </div>
+    <script src="{$_W['siteroot']}addons/tiger_wxdaili/template/mobile/public/js/jquery.min.js"></script>
+    <script src="{$_W['siteroot']}addons/tiger_wxdaili/template/mobile/public/js/lib.js"></script>
+	<script type="text/javascript" src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/js/layer_mobile/layer.js"></script>
+	<script>
+		
+		var txtype="{$cfg['txtype']}";
+		var zfbuid="{$fans['zfbuid']}";
+		if(txtype==2){
+			if(!zfbuid){
+				layer.open({
+					content: '请先绑定支付宝？'
+					,btn: ['绑定']
+					,yes: function(index){
+						window.location.href="{php echo $this->createMobileUrl('zfbedit')}";			 
+					}
+				});
+			}			
+		}
+		var txzt="";
+		var credit="{php echo intval($fans['credit2'])}";
+		var credit1="{php echo $fans['credit2']}";
+		var credit3=credit1-credit;
+		credit3=credit3.toFixed(2); 
+		$('#txbtn').on('click', function() {
+			//alert(111);			
+			var uid = "{$fans['id']}";//用户uid		
+			//alert(uid);	
+			if(credit<1){
+				layer.open({
+					content: "可提现金额不足"
+					,skin: 'msg'
+					,time: 6 //2秒后自动关闭
+				});
+				return false;
+			}
+			if(txzt=="ok"){
+				layer.open({
+					content: "不能重复提交申请"
+					,skin: 'msg'
+					,time: 6 //2秒后自动关闭
+				});
+				return false;
+			}
+			$("#txbtn").css("background","#777777");
+			$("#txbtn").val("申请提交中！");
+			
+			
+			$.ajax({
+				type: "post",
+				url: "{php echo $this->createMobileUrl('tixianpost')}",
+				dataType: "json",
+				data:{"uid":uid},
+				success: function (data) {
+					if (data.statusCode == "200") {		
+						credit=0;
+						txzt="ok";
+						$("#credit").html("¥ 0.00");
+						$("#credit1").html("¥ "+credit3);
+						$("#txbtn").css("background","#00b727");
+						$("#txbtn").val("提交成功！");						
+					}					
+					else {
+						layer.open({
+							content: data.message
+							,skin: 'msg'
+							,time: 6 //2秒后自动关闭
+						});
+					}
+				}
+			});
+
+						
+		});
+	</script>
+</body>
+
+</html>

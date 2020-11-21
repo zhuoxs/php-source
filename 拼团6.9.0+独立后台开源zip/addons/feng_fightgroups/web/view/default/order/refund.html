@@ -1,0 +1,131 @@
+{php include wl_template('common/header');}
+<div class="panel">
+	    <div class="panel-body">
+            <form action="" method="get" class="form-horizontal" role="form" id="form1">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="feng_fightgroups" />
+                <input type="hidden" name="do" value="order" />
+                <input type="hidden" name="ac" value="refund" />
+                <div class="form-group">
+                    <div class="col-md-2">
+                        <select name="timetype" class="form-control">
+                            <option value="">时间类型</option>
+                            <option value="1" {if $_GPC['timetype']==1}selected="selected"{/if}>下单时间</option>
+                            <option value="2" {if $_GPC['timetype']==2}selected="selected"{/if}>支付时间</option>
+                        </select>
+                    </div>
+                     <div class="col-md-4">
+                     	<div class="input-group">
+                            {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d H:i:s', $starttime),'endtime'=>date('Y-m-d H:i:s', $endtime)),true);}
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <select name="keywordtype" class="form-control">
+                        	<option value="">关键字类型</option>
+                            <option value="1" {if $_GPC['keywordtype']==1}selected="selected"{/if}>拼团订单号</option>
+                            <option value="2" {if $_GPC['keywordtype']==2}selected="selected"{/if}>微信订单号</option>
+                            <option value="3" {if $_GPC['keywordtype']==3}selected="selected"{/if}>商品ID</option>
+                            <option value="4" {if $_GPC['keywordtype']==4}selected="selected"{/if}>商家ID</option>
+                            <option value="5" {if $_GPC['keywordtype']==5}selected="selected"{/if}>收货人姓名</option>
+                            <option value="6" {if $_GPC['keywordtype']==6}selected="selected"{/if}>收货人电话</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+						<div class="input-group">
+							<input type="text" name="keyword" class="form-control" value="{$_GPC['keyword']}"  placeholder="请输入关键字"/>
+							<span class="input-group-addon" id="search">搜索</span>
+						</div>
+					</div>
+				</div>
+            </form>
+	    </div>
+	</div>
+	<script type="text/javascript">
+		$("#search").click(function(){
+			$('#form1')[0].submit();
+		});
+	</script>
+<div class="panel panel-default" ng-controller="advAPI">
+	<div class="table-responsive">
+		<table class="table table-hover">
+			<thead>
+			<tr>
+				<th style="width:40px;">
+					<input type="checkbox" name="checkall" value="" id="checkall" onclick="var ck = this.checked; $(':checkbox').each(function(){this.checked = ck});"/>
+				</th>
+				<th style="width:80px;">商品图</th>
+				<th style="width:300px;">商品名</th>
+				<th class="text-center" style="width:200px;">买家</th>
+				<th class="text-center" style="width:120px;">付款时间</th>
+				<th class="text-center" style="width:100px;">状态</th>
+				<th class="text-center" style="width:290px;">金额</th>
+			</tr>
+			</thead>
+			<tbody>
+			{loop $list $item}
+			<tr data-toggle="popover" data-trigger="hover" data-placement="left" class="js-goods-img">
+				<td><input type="checkbox" name="items[]" value="{$item['id']}" class="items" /></td>
+				<td><img class="scrollLoading" src="{$item['gimg']}"   onerror="this.src='{IMAGE_NOPIC_SMALL}'" height="50" width="50"/></td>
+				<td class="line-feed">
+					{php echo cutstr($item['gname'], 30, true);}<br />
+				</td>
+				<td class="text-center" style="width:100px;">
+					<p>{if $item['cname']}{$item['cname']}{else}{$item['addname']}{/if}</p>
+					<p>{if $item['tel']}{$item['tel']}{else}{$item['mobile']}{/if}</p>
+				</td>
+				<td class="text-center" style="width:110px;">{php echo date('H:i:s', $item['ptime'])}<br>{php echo date('Y-m-d', $item['ptime'])}</td>
+				<td class="text-center" style="width:120px;">
+					<span class="label label-{$item['statusCss']}">{$item['statusName']}</span>
+				</td>
+				<td class="text-center" style="width:130px;">总额：{if empty($item['price'])}0.00{else}{$item['price']}{/if}元<br>实付：{if empty($item['pay_price'])}{$item['price']}{else}{$item['pay_price']}{/if}元<br>（含运费：{$item['freight']}）</td>
+			</tr>
+			{/loop}
+			<tr>
+				<td><input type="checkbox" name="checkall" value="" id="checkall" onclick="var ck = this.checked; $(':checkbox').each(function(){this.checked = ck});" /></td>
+				<td colspan="8">
+					<a href="javascript:;" class="btn btn-default min-width js-batch js-refund">退款选中订单</a>
+					<a href="javascript:;" class="btn btn-default min-width js-batch js-refundall">退款所有订单</a>
+				</td>
+			</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
+{$pager}
+<script>
+	$(function(){
+		$(".js-refundall").click(function(e){
+			var num = {$total};
+			if(num==0){
+				util.tips('没有数据!', 2000);return false;
+			}
+			e.stopPropagation();
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				util.message('准备完毕，系统将开始退款所有待退款订单,请不要离开页面', "{php echo web_url('order/refund/initsync')}", 'success');
+			}, {html: "确认退款?"});
+			
+		});
+		$(".js-refund").click(function(e){
+			e.stopPropagation();
+			var order_ids = [];
+			var $checkboxes = $('.items:checkbox:checked');
+			$checkboxes.each(function() {
+				if (this.checked) {
+					order_ids.push(this.value);
+				};
+			});
+			if (order_ids.length == 0) {
+				util.tips('请选择要操作的订单!', 2000);
+				return false;
+			}
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				util.message('准备完毕，系统将开始退款所有待退款订单,请不要离开页面', "{php echo web_url('order/refund/initsync')}&order_ids="+order_ids, 'success');
+			}, {html: "确认退款?"});
+			
+		});
+	});
+</script>
+{php include wl_template('common/footer');}

@@ -1,0 +1,2 @@
+<?php
+ goto RcyAW; RcyAW: global $_GPC, $_W; goto yFskE; yFskE: $account_api = WeAccount::create(); goto S46QF; S46QF: $fans_info = $account_api->fansQueryInfo($_W["\146\x61\156\x73"]["\x6f\x70\145\x6e\x69\x64"]); goto DtDgQ; DtDgQ: echo json_encode($fans_info);

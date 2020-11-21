@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {template 'common/edithead'}
+    <!--微擎 -->
+    <!--这个放在最后一切平白安全-->
+    <script type="text/javascript" src="./resource/js/require.js?v=20170915"></script>
+    <style>
+        .sort_status{overflow: hidden;position: absolute;top:0;left: 100%;width: 62px;height: 32px;padding-left: 10px;text-align: left;}
+    </style>
+</head>
+<body class="nav-md" style="min-width: 800px">
+<div>
+    <div class="container xc_edit_from" >
+        <div class="main_container" style="overflow-x: hidden;min-height: 100vh;background-color: white;width: 100%;">
+            <div class="col-md-12 col-xs-12">
+                <div class="x_panel">
+                    {template 'mymanage/webconfig/nav'}
+                    <div class="x_content">
+                        <br/>
+                        <form class="form-horizontal form-label-left input_mask" method="post" action="{php echo $this->createWebUrl($do, array('op'=>'savereview'));}" id="xc_form">
+                            <input type="hidden" name="xkey" value="{$keyval}">
+                            <div class="form-group">
+                                <label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">过审功能</label>
+                                <div class="col-xs-12 col-sm-8" style="position: relative;">
+                                    <input type="checkbox" class="js-switch" value="1" name="xc[status]"
+                                           data-value="{$xc['status']}" data-field="status">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label col-md-2 col-sm-3 col-xs-12">版本号</label>
+                                <div class="col-md-10 col-sm-9 col-xs-12">
+                                    <input type="text" class="form-control" placeholder="版本号" name="xc[version]" value="{$xc[version]}">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label col-md-2 col-sm-3 col-xs-12">封面（750*360）</label>
+                                <div class="col-md-10 col-sm-9 col-xs-12">
+                                    {php echo tpl_form_field_image('xc[simg]',$xc[simg]);}
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label col-md-2 col-sm-3 col-xs-12">标题</label>
+                                <div class="col-md-10 col-sm-9 col-xs-12">
+                                    <input type="text" class="form-control" placeholder="标题" name="xc[title]" value="{$xc[title]}">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label col-md-2 col-sm-3 col-xs-12">价格</label>
+                                <div class="col-md-10 col-sm-9 col-xs-12">
+                                    <input type="text" class="form-control" placeholder="价格" name="xc[price]" value="{$xc[price]}">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">详情</label>
+                                <div class="col-sm-10">
+                                    {php echo tpl_ueditor('xc[content]',$xc['content']);}
+                                </div>
+                            </div>
+                            <div class="form-group xc_btn_row"  >
+                                <div class="col-md-9 col-sm-9 col-xs-12 col-md-offset-5 col-sm-offset-5  col-md-xs-5 ">
+                                    <button type="button" class="btn btn-primary" id="btsave">确认</button>
+                                    <a type="button" class="btn btn-default"  href="{php echo $this->createWebUrl($do, array('op'=>'edit','xtitleb'=> urlencode($xtitleb),'xtitlea'=>urlencode($xtitlea)));}" >返回</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{template 'common/editfoot'}
+<script>
+    //现在只在状态这里使用
+    var xvalidator =null;
+
+    $.validator.setDefaults({
+        highlight: function (e) {
+            $(e).closest(".col-xs-12").removeClass("has-success").addClass("has-error")
+        }, success: function (e) {
+            e.closest(".col-xs-12").removeClass("has-error").addClass("has-success")
+        }, errorClass: "help-block m-b-none", validClass: "help-block m-b-none"
+    }), $().ready(function () {
+        var e = "<i class='fa fa-times-circle'></i> ";
+        var vlidp = {
+            rules: {
+                "xc[name]": {required: !0}
+            },
+            messages: {
+                "xc[name]": {required: e + "请选择内容"}
+            },
+            submitHandler: function (form) {
+                //手动验证所以这里不需要执行
+                xajaxfrom(form);
+                return false;
+            }
+        }
+        xvalidator= $("#xc_form").validate(vlidp);
+    });
+    $("#btsave").click(function () {
+        //$brvalue= $("#xc_form").valid();
+        $brvalue=true;
+        if($brvalue){
+            xajaxfrom("#xc_form");
+        }
+        return false;
+    })
+
+    function message(data) {
+        $mesoption = {};
+        if (data["status"] === 1) {
+            if ($('[name="id"]').val() == ""||$('[name="id"]').val() == "0") {
+                xc_form.reset();
+                //
+                $(".container").find(".img-thumbnail").attr("src", "./resource/images/nopic.jpg");
+                if( urobj.length>0){
+                    for(var i=0;i<urobj.length;i++){
+                        urobj[i].setContent("");
+                    }
+                }
+            }
+            $mesoption["timer"] = 1000;
+            $mesoption["type"] = replyrdata[data["status"]];
+        }
+        if( typeof(data["title"])=="undefined" )
+        {
+            $mesoption["title"] = data["message"];
+        }
+        else {
+            $mesoption["title"]=data["title"];
+        }
+        $mesoption["text"] = data["message"];
+        swal($mesoption);
+    }
+    function xajaxfrom(form) {
+        $actfrom = $(form);
+        var  $postdate=$actfrom.serialize();
+        $('#form [type="checkbox"]:not(":checked")').each(function () {
+            $postdate=$postdate+"&"+$(this).attr("name")+"=-1";
+
+        })
+        xpagecss.xload();
+        $.ajax({
+            type: $(form).attr("method"),
+            url: $(form).attr("action"),
+            dataType: "json",
+            data: $postdate,
+            success: function (msg) {
+                message(msg)
+            }
+        });
+    }
+
+    $(function () {
+        $("#btnupdatesql").click(function () {
+            $postdate={};
+            $postdate["ptime"]=new Date();
+            $.ajax({
+                type:"post",
+                url: "{php echo $this->createWebUrl('upsql', array('op'=>'upsql'));}",
+                dataType: "json",
+                data: $postdate,
+                success: function (msg) {
+                    message(msg)
+                }
+            });
+        })
+
+    })
+
+</script>
+
+</body>
+</html>
+

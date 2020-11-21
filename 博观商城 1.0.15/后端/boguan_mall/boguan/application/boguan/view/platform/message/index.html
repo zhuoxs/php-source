@@ -1,0 +1,166 @@
+{include file="common/header"}
+
+<!--main-body-->
+<!--main-body-->
+<section class="main-body">
+    <div class="main_content">
+        <!--second sidebar-->
+        {include file="platform/pub/setting-nav"}
+        <!--main body content-->
+        <div class="main_mbody">
+            <div class="col-xs-12">
+                <div class="main_mbody-title">
+                    <h5>消息管理</h5>
+                </div>
+                <div class="main-con">
+                    <form action="">
+                        <ul class="nav-contral clearit nav nav-tabs" role="tablist">
+                            <li role="presentation" class="nav-tabs-li {if input('type') == ''}active{/if}"><a href="{:url('boguan/platform.message/index')}">全部</a></li>
+                            <li role="presentation" class="nav-tabs-li {if input('type') == '1'}active{/if}"><a href="{:url('boguan/platform.message/index',['type'=> 1])}">已读</a></li>
+                            <li role="presentation" class="nav-tabs-li {if input('type') == '2'}active{/if}"><a href="{:url('boguan/platform.message/index',['type'=> 2])}">未读</a></li>
+                        </ul>
+                        <div class="main-table table-responsive table-message">
+                            <table class="table table-hover table-condensed">
+                                <thead>
+                                <tr>
+                                    <th style="width: 10px; text-align: left;"><label><input class="selectAll" type="checkbox" name="ids"></label></th>
+                                    <th style="width: 40%;">详情</th>
+                                    <th style="width: 20%;">类型</th>
+                                    <th style="width: 10%;">状态</th>
+                                    <th style="width: 20%;">提交时间</th>
+                                    <th style="width: 30%;">操作</th>
+
+                                </tr>
+                                </thead>
+                                <tbody>{volist name='message' id="vo"}<tr class="readed del-{$vo.id}">
+                                    <td class="id"><label><input class="selct-checkbox" type="checkbox" name="id" value="{$vo.id}"></label></td>
+                                    <td class="title">{if $vo.type == 1}用户：{$vo.user.nickname} 支付了一个订单{elseif $vo.type == 2}用户：{$vo.user.nickname} 提交了一个售后订单{elseif $vo.type == 3}系统消息{else}其他消息{/if}</td>
+                                    <td>{if $vo.type == 1}支付订单{elseif $vo.type == 2}售后订单{elseif $vo.type == 3}系统消息{else}其他{/if}</td>
+                                    <td>{if $vo.is_read == 1}<span class="green">已读</span>{else}<span class="red">未读</span>{/if}</td>
+                                    <td>{$vo.create_time}</td>
+                                    <td>
+                                        {if $vo.type == 1}
+                                        <a href="{:url('boguan/platform.order/detail',['id'=> $vo.order_id])}">详情</a>
+                                        <span class="split">|</span>
+                                        {elseif $vo.type == 2}
+                                        <a href="{:url('boguan/platform.after/index')}?keyword={$vo.refund.order_no}&type=1&source=message">详情</a>
+                                        <span class="split">|</span>
+                                        {/if}
+                                        <a href="javascript:;" onclick="del('{$vo.id}', 'del-{$vo.id}')">删除</a>
+                                    </td>
+                                </tr>{/volist}</tbody>
+                                <tfoot>
+                                <tr>
+                                    <td class="id"><label><input class="selectAll" type="checkbox" name="ids" ></label></td>
+                                    <td colspan="9" style="text-align: left;">
+                                        <a href="javascript:;" class="bttn" onclick="batch('delete')"><i class="iconfont icon-shanchu"></i>批量删除</a>
+                                        <a href="javascript:;" class="bttn" onclick="batch('read')"><i class="glyphicon glyphicon-ok"></i>标记已读</a>
+
+                                    </td>
+                                </tr>
+                                </tfoot>
+
+                            </table>
+                            {$page}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {include file="common/copyright"}
+        </div>
+    </div>
+</section>
+<!--翻页-->
+<script type="text/javascript" src="__PUBLIC__/js/pageNav.js"></script>
+<!--地图插件-->
+<script type="text/javascript" src="__PUBLIC__/js/MapType.js"></script>
+<script type="text/javascript" src="__PUBLIC__/js/MapGrid.js"></script>
+
+{include file="common/footer"}
+<!--开关-->
+<script src="__PUBLIC__/js/switch.js"></script>
+<script>
+ function batch(type) {
+     var select = document.getElementsByName("id");
+     var str = [];
+     for(i=0;i<select.length;i++){
+         if(select[i].checked){
+             str.push(select[i].value);
+         }
+     }
+     var text= '';
+     if (type == 'delete'){
+         text = '批量删除';
+     } else {
+         text = '标记已读';
+     }
+
+     layui.use(['layer','form'], function(){
+         var layer = layui.layer,form = layui.form;;
+
+         layer.confirm('确认'+ text +'吗？', {btn:['确认'], yes:function(index){
+                 //按钮【按钮一】的回调
+                 //此处请求后台程序，下方是成功后的前台处理……
+                 $.ajax({
+                     type: 'POST',
+                     url: '{:url("boguan/platform.message/batch")}',
+                     data:{
+                         'ids': str,
+                         'type':type
+                     },
+                     success: function(data) {
+                         console.log(data);
+                         if (data.errorCode == 1) {
+
+                             layer.msg(data.msg,{icon: 1})
+                             window.location.reload();
+                         } else {
+                             layer.msg(data.msg,{icon: 2})
+                         }
+                     },
+                     error: function (data) {
+                         console.log(data.responseText);
+                         layer.msg(data.msg,{icon: 2})
+                     }
+                 });
+                 layer.close(index);
+             }});
+     })
+
+ }
+
+ /*删除*/
+ function del(id,key){
+
+     layui.use(['layer','form'], function(){
+         var layer = layui.layer,form = layui.form;;
+
+         layer.confirm('确认删除吗？', {btn:['确认'], yes:function(index){
+                 //按钮【按钮一】的回调
+                 //此处请求后台程序，下方是成功后的前台处理……
+                 $.ajax({
+                     type: 'POST',
+                     url: '{:url("boguan/platform.message/del")}',
+                     data:{'id':id},
+                     success: function(data) {
+                         console.log(data);
+                         if (data.errorCode == 1) {
+
+                             layer.msg(data.msg,{icon: 1})
+                             $('.'+key).remove();
+                         } else {
+                             layer.msg(data.msg,{icon: 2})
+                         }
+                     },
+                     error: function (data) {
+                         console.log(data.responseText);
+                         layer.msg(data.msg,{icon: 2})
+                     }
+                 });
+                 layer.close(index);
+             }});
+     })
+
+ }
+</script>
+

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{$_W['slwl']['lang']['sys_name']}</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="">
+    {template 'public/header'}
+
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+    {template 'public/top'}
+    {template 'public/left'}
+
+    <div class="layui-body">
+        <div class="layui-main">
+            <div class="layui-tab">
+                <ul class="layui-tab-title">
+                    <li {if $operation == 'display'} class="layui-this" {/if}>
+                        <a href="{php echo webUrl('user_list',array('op' =>'display'))}">客户统计</a>
+                    </li>
+                    {if ($one['id']) && $operation == 'post'}
+                    <li class="layui-this">
+                        <a href="{php echo webUrl('user_list',array('op' =>'post','id'=>$one['id']))}">编辑</a>
+                    </li>
+                    {/if}
+                    <li {if $operation == 'export'} class="layui-this" {/if}>
+                        <a href="{php echo webUrl('user_list', array('op' =>'export'))}">导出记录</a>
+                    </li>
+                </ul>
+            </div>
+
+        {if $operation == 'display'}
+            <div class="layui-form">
+                <div class="box-tools">
+                    <div class="box-search">
+                        <form action="{php echo webUrl('user_list')}" method="post">
+                            <div class="layui-input-inline">
+                                <input type="text" name="keyword" value="{$keyword}" class="layui-input" placeholder="昵称">
+                            </div>
+                            <div class="layui-input-inline">
+                                <button class="layui-btn" lay-submit="" lay-filter="table-search" id="table-search">搜索</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="box-list-img">
+                    <table id="sl-table" lay-filter="sl-table"></table>
+                </div>
+            </div>
+
+            <div class="script">
+                <script type="text/html" id="thumb">
+                    <div class="box-table-img">
+                        <img src="{{d.avatar_url}}" data-url="{{d.avatar_url}}"
+                            onerror="this.src='{MODULE_URL}template/public/images/nopic.png'">
+                    </div>
+                </script>
+                <script type="text/html" id="operation">
+                    <a href="javascript:;" class="layui-btn layui-btn-sm" lay-event="edit">编辑</a>
+                </script>
+                <script>
+                    layui.use(['laypage', 'layer', 'table', 'form'], function() {
+                        my_laypage = layui.laypage;
+                        my_layer = layui.layer;
+                        my_table = layui.table;
+                        my_form = layui.form;
+
+                        url_post = "{php echo webUrl('user_list', array('op' =>'post'))}";
+                        url_list = "{php echo webUrl('user_list', array('op' => 'display_table'))}";
+                        url_delete = "{php echo webUrl('user_list', array('op' => 'delete'))}";
+
+                        table_list = my_table.render({
+                            elem: '#sl-table'
+                            , toolbar: '#toolbar'
+                            , skin: 'nob'
+                            , even: true
+                            , url: url_list
+                            , cols: [[
+                                // type: 'numbers',
+                                // {type: 'checkbox'}
+                                {field: 'id', width: 60, title: 'ID', sort: true}
+                                , {field: 'thumb', title: '头像', templet: '#thumb'}
+                                , {field: 'gender_format', title: '性别', sort: true}
+                                , {field: 'nicename_format', title: '昵称', sort: true}
+                                , {field: 'mobile', title: '手机', sort: true}
+                                , {field: 'source_txt', title: '来源', sort: true}
+                                , {field: 'addtime', title: '添加时间', sort: true}
+                                , {field: 'mark', title: '备注', sort: true}
+                                , {title: '操作', templet: '#operation'}
+                            ]]
+                            , height: 'full-190'
+                            , page: {
+                                theme: '#1E9FFF'
+                                , layout: ['prev', 'page', 'next']
+                            }
+                        });
+                    });
+                </script>
+            </div>
+
+
+        {elseif $operation == 'post'}
+            <form class="layui-form" action="" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="id" value="{$one['id']}" />
+                <!-- 备注 -->
+                <div class="layui-form-item">
+                    <label class="layui-form-label">备注</label>
+                    <div class="layui-input-block">
+                        <textarea name="mark" placeholder="备注" class="layui-textarea">{$one['mark']}</textarea>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit="" lay-filter="setmark">提交</button>
+                        <input type="hidden" name="token" value="{$_W['token']}" />
+                    </div>
+                </div>
+            </form>
+
+            <script>
+                layui.use('form', function(){
+                    var form = layui.form;
+
+                    form.on('submit(setmark)', function(data){
+                        let url = "{php echo webUrl('user_list', array('op'=>'post'))}";
+                        var $obj = $(this);
+
+                        if (!$obj.hasClass('lock')) {
+                            $obj.addClass('lock'); // 不能再点击
+
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                dataType: 'json',
+                                data: data.field,
+                                success: function (rs) {
+                                    console.log(rs.message.errno);
+                                    if (rs.message.errno == '0') {
+                                        layer.msg('保存成功！' , {
+                                            time: 500
+                                        }, function () {
+                                            window.location.href = "{php echo webUrl('user_list')}";
+                                        });
+                                    } else {
+                                        layer.msg(rs.message.message, {
+                                            offset: '20%',
+                                        });
+                                    }
+                                    $obj.removeClass('lock');
+                                },
+                                error: function () {
+                                    layer.msg('提交过程发生错误，请与管理员联系', {
+                                        offset: '20%',
+                                    });
+                                    $obj.removeClass('lock');
+                                }
+                            });
+                        }
+
+                        return false;
+                    });
+                });
+            </script>
+
+
+        {elseif $operation == 'export'}
+            <form class="layui-form" method="post" action="{php echo webUrl('user_list', array('op'=>'export_post'))}">
+                <input type="hidden" name="id" value="{$one['id']}" />
+                <!-- 说明 -->
+                <div class="layui-form-item">
+                    <label class="layui-form-label">说明</label>
+                    <div class="layui-input-block">
+                        <div class="layui-form-mid layui-word-aux">导出操作比较耗服务器性能，尽量在非使用高峰期操作</div>
+                    </div>
+                </div>
+                <!-- 时间段 -->
+                <div class="layui-form-item">
+                    <label class="layui-form-label">时间段</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="timestart" placeholder="yyyy-MM-dd" class="layui-input" id="timestart" lay-verify="required">
+                    </div>
+                    <div class="layui-form-mid">-</div>
+                    <div class="layui-input-inline">
+                        <input type="text" name="timeend" placeholder="yyyy-MM-dd" class="layui-input" id="timeend" lay-verify="required">
+                    </div>
+                    <!-- <div class="layui-input-block">
+                        <input type="text" name="createtime" class="layui-input" id="timestart" placeholder="yyyy-MM-dd HH:mm:ss">
+                    </div> -->
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit="" lay-filter="booking">导出</button>
+                        <input type="hidden" name="token" value="{$_W['token']}" />
+                    </div>
+                </div>
+            </form>
+
+            <script>
+                layui.use('laydate', function(){
+                    var laydate = layui.laydate;
+
+                    laydate.render({
+                        elem: '#timestart'
+                        ,type: 'date'
+                        ,format: 'yyyy-MM-dd'
+                        ,value: "{php echo $timestart;}"
+                    });
+
+                    laydate.render({
+                        elem: '#timeend'
+                        ,type: 'date'
+                        ,format: 'yyyy-MM-dd'
+                        ,value: "{php echo $timeend;}"
+                    });
+                });
+            </script>
+
+
+        {/if}
+        </div>
+    </div>
+
+    {template 'public/copyright'}
+</div>
+
+    {if $operation == 'display'}
+        <div id="qrcode" class="box-code"><img src=""></div>
+    {/if}
+
+
+{template 'public/footer'}
+</body>
+</html>

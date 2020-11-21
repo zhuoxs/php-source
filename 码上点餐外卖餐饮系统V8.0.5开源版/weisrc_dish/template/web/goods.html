@@ -1,0 +1,291 @@
+{template 'public/header'}
+{template 'public/comhead'}
+
+{if $operation == 'display'}
+<div class="main" style="margin-top:0px;">
+    <ul class="nav nav-tabs" role="tablist">
+        <li {if $deleted == 0}class="active"{/if}>
+        <a href="{php echo $this->createWebUrl('goods', array('op' => 'display', 'storeid' => $storeid))}">商品管理</a>
+        </li>
+        <li {if $deleted == 1}class="active"{/if}>
+        <a href="{php echo $this->createWebUrl('goods', array('op' => 'display', 'storeid' => $storeid, 'deleted' => 1))}">商品回收站</a></li>
+        <li>
+            <a href="{php echo $this->createWebUrl('category', array('op' => 'display', 'storeid' => $storeid))}">商品分类</a>
+        </li>
+    </ul>
+    <div class="panel panel-default" id="uploaddata" style="display: none;">
+        <div class="panel-body">
+            <form action="" method="post" class="navbar-form navbar-left" enctype="multipart/form-data">
+                <input type="hidden" name="leadExcel" value="true">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="weisrc_dish" />
+                <input type="hidden" name="do" value="UploadExcel" />
+                <input type="hidden" name="ac" value="goods" />
+                <input type="hidden" name="storeid" value="{$storeid}" />
+                <span class="input-group">
+                    <input name="viewfile" id="viewfile" type="text" value="" class="form-control" style="width:300px;" readonly>
+			        <span class="input-group-btn">
+                        <a class="btn btn-default ms_br">
+                            <label for="unload" class="ms_mp" >选择...</label>
+                        </a>
+                        <input type="submit" style="border-radius: 0px;" class="btn btn-success" value="上传"
+                               onclick="if(document.getElementById('viewfile').value==''){alert('请先选择上传文件!');return false;}">
+                        <a class="btn btn-primary ms_mb" href="{$_W['siteroot']}addons/weisrc_dish/example/example_goods4.xls">下载导入模板
+                        </a>
+                    </span>
+                    <input type="file" name="inputExcel" id="unload" class="form-control" style="display: none;"
+                           onchange="document.getElementById('viewfile').value=this.value;this.style.display='none';">
+                </span>
+            </form>
+            <style>
+                .ms_br {
+                    border-radius: 0px;border-left-width: 0px;
+                }
+                .ms_mp {
+                    margin: 0px;padding:0px;
+                }
+                .ms_mb {
+                    border-top-left-radius:0px;border-bottom-left-radius:0px;
+                }
+            </style>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <a class="btn btn-success" href="{php echo $this->createWebUrl('goods', array('op' => 'post', 'storeid' => $storeid))}">添加商品</a>
+            <a class="btn btn-success" href="#" onclick="$('#uploaddata').slideToggle();">批量导入</a>
+            <!--<a class="btn btn-primary"-->
+               <!--href="{php echo $this->createWebUrl('goods', array('op' => 'opengoods', 'storeid' => $storeid))}" >-->
+                <!--一键上架</a>-->
+            <!--<a class="btn btn-danger" href="{php echo $this->createWebUrl('goods', array('op' => 'closegoods', 'storeid' => $storeid))}" >-->
+                <!--一键下架</a>-->
+        </div>
+        <div class="panel-body">
+            <form action="" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="weisrc_dish" />
+                <input type="hidden" name="do" value="goods" />
+                <input type="hidden" name="storeid" value="{$storeid}" />
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width: 100px;">关键字</label>
+                    <div class="col-sm-2 col-lg-2">
+                        <input class="form-control" name="keyword" id="" type="text" value="{$_GPC['keyword']}">
+                    </div>
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label" style="width: 100px;">商品分类</label>
+                    <div class="col-sm-2 col-lg-2">
+                        <select style="margin-right:15px;" name="category_id" class="form-control">
+                            <option value="0">请选择商品分类</option>
+                            {loop $category $row}
+                            <option value="{$row['id']}" {if $row['id'] == $_GPC['category_id']} selected="selected"{/if}>{$row['name']}</option>
+                            {/loop}
+                        </select>
+                    </div>
+                    <div class="col-sm-2 col-lg-2">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="table-responsive panel-body">
+            <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+                <input type="hidden" name="storeid" value="{$storeid}" />
+                <table class="table table-hover">
+                    <thead class="navbar-inner">
+                    <tr>
+                        {if $deleted != 1}
+                        <th class='with-checkbox' style="width:2%;"><input type="checkbox" class="check_all" /></th>
+                        <th style="width:8%;">顺序</th>
+                        {/if}
+                        <th style="width:6%;">编号</th>
+                        <th style="width:12%">商品名称</th>
+                        <th style="width:10%;">分类</th>
+                        <th style="width:10%;">价格</th>
+                        {if $deleted != 1}
+                        <th style="width:8%;">打包费</th>
+                        <th style="width:8%;">赠送积分</th>
+                        <th style="width:8%;">每日库存</th>
+                        <th style="width:8%;">剩余库存</th>
+                        <th style="width:7%;">总销量</th>
+                        {/if}
+                        <th style="width:10%;">是否上架</th>
+                        <th style="width:10%;text-align:right;">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {loop $list $item}
+                    <tr>
+                        {if $deleted != 1}
+                        <td class="with-checkbox"><input type="checkbox" name="check" value="{$item['id']}"></td>
+                        <td><input type="text" class="form-control" name="displayorder[{$item['id']}]" value="{$item['displayorder']}"></td>
+                        {/if}
+                        <td>{$item['id']}</td>
+                        <td>
+                            <img src="{php echo tomedia($item['thumb']);}" width="50"  style="border-radius: 3px;" /><br/>
+                            {$item['title']}
+                            {if $item['isoptions']==1}
+                            <br>
+                            <span class="label label-info">多规格</span>
+                            {/if}
+                        </td>
+                        <!--onerror="this.src='./resource/images/nopic.jpg';"-->
+                        <td>
+                            {if !empty($category[$item['pcate']])}{$category[$item['pcate']]['name']}{/if}
+                            {if !empty($label[$item['labelid']])}<br/><span class="label label-info">标签:{$label[$item['labelid']]['title']}</span>{/if}
+                        </td>
+                        <td>
+                            {$item['marketprice']}元
+                            {if !empty($item['memberprice'])}
+                            <br/>
+                            <span class="label label-info">会员:{$item['memberprice']}元</span>
+                            {/if}
+                        </td>
+                        {if $deleted != 1}
+                        <td>
+                            {$item['packvalue']}
+                        </td>
+                        <td>
+                            {$item['credit']}
+                        </td>
+                        <td>
+                            {if $item['counts']==-1}
+                            <span class="label label-default">未启用</span>
+                            {else}
+                            {$item['counts']}
+                            {/if}
+                        </td>
+                        <td>
+                            {if $item['counts']==-1}
+                            <span class="label label-default">未启用</span>
+                            {else}
+                            {php echo $item['counts']-$item['today_counts']}
+                            {/if}
+                        </td>
+                        <td>
+                            {$item['sales']}
+                        </td>
+                        {/if}
+                        <td>{if $item['status']}<span class="label label-success">已上架</span>{else}<span class="label label-danger">已下架</span>{/if}</td>
+                        <td style="text-align:right;">
+                            <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('goods', array('id' => $item['id'], 'op' => 'post', 'storeid' => $storeid))}" title="编辑">改</a>
+                            {if $deleted == 0}
+                            <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('goods', array('id' => $item['id'], 'op' => 'delete', 'storeid' => $storeid))}" onclick="return confirm('此操作不可恢复，确认删除？');return false;" title="删除">删</a>
+                            {/if}
+                            {if $item['deleted']==1 && $deleted == 1}
+                            <a class="btn btn-default btn-sm" onclick="return confirm('确认删除吗？');return false;"
+                               href="{php echo $this->createWebUrl('goods', array('id' => $item['id'], 'storeid' =>  $storeid, 'op' => 'deletetrue'))}" title="删除">删除</a>
+                            <a class="btn btn-warning btn-sm" href="{php echo $this->createWebUrl('goods', array('id' =>  $item['id'], 'op' => 'restore', 'storeid' => $storeid))}" data-toggle="tooltip" title="还原" data-content="还原" >还原</a>
+                            {/if}
+                        </td>
+                    </tr>
+                    {/loop}
+                    </tbody>
+                    {if $deleted != 1}
+                    <tr>
+                        <td colspan="10">
+                            <input name="token" type="hidden" value="{$_W['token']}" />
+                            <input type="submit" class="btn btn-warning" name="submit" value="批量排序" />
+                            <input type="button" class="btn btn-warning" name="btndeleteall" value="批量删除" />
+                            <input type="button" class="btn btn-warning" name="btnupall" value="批量上架" />
+                            <input type="button" class="btn btn-warning" name="btndownall" value="批量下架" />
+                        </td>
+                    </tr>
+                    {/if}
+                </table>
+                {$pager}
+            </form>
+			<div style="color: red !important;">&#22823;&#37327;&#28304;&#30721;&#65292;&#25345;&#32493;&#26356;&#26032;&#65306;&#119;&#119;&#119;&#46;&#108;&#97;&#110;&#114;&#101;&#110;&#122;&#104;&#105;&#106;&#105;&#97;&#46;&#99;&#111;&#109;</div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    <!--
+    var category = {php echo json_encode($children)};
+    //-->
+    $(function(){
+        $(".check_all").click(function(){
+            var checked = $(this).get(0).checked;
+            $("input[type=checkbox]").attr("checked",checked);
+        });
+
+        $("input[name=btndeleteall]").click(function(){
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if(check.length < 1){
+                alert('请选择要删除的商品!');
+                return false;
+            }
+            if(confirm("确认要删除选择的商品?")){
+                var id = new Array();
+                check.each(function(i){
+                    id[i] = $(this).val();
+                });
+                var url = "{php echo $this->createWebUrl('goods', array('op' => 'deleteall', 'storeid' => $storeid))}";
+                $.post(
+                        url,
+                        {idArr:id},
+                        function(data){
+                            alert(data.error);
+                            location.reload();
+                        },'json'
+                );
+            }
+        });
+
+        $("input[name=btnupall]").click(function(){
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if(check.length < 1){
+                alert('请选择要上架的商品!');
+                return false;
+            }
+            if(confirm("确认要上架选择的商品?")){
+                var id = new Array();
+                check.each(function(i){
+                    id[i] = $(this).val();
+                });
+                var url = "{php echo $this->createWebUrl('goods', array('op' => 'upall', 'storeid' => $storeid))}";
+                $.post(
+                        url,
+                        {idArr:id},
+                        function(data){
+                            alert(data.error);
+                            location.reload();
+                        },'json'
+                );
+            }
+        });
+
+        $("input[name=btndownall]").click(function(){
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if(check.length < 1){
+                alert('请选择要下架的商品!');
+                return false;
+            }
+            if(confirm("确认要下架选择的商品?")){
+                var id = new Array();
+                check.each(function(i){
+                    id[i] = $(this).val();
+                });
+                var url = "{php echo $this->createWebUrl('goods', array('op' => 'downall', 'storeid' => $storeid))}";
+                $.post(
+                        url,
+                        {idArr:id},
+                        function(data){
+                            alert(data.error);
+                            location.reload();
+                        },'json'
+                );
+            }
+        });
+    });
+</script>
+{elseif $operation == 'post'}
+{php include $this->template('web/goods_detail');}
+{/if}
+{if $_W['isfounder']}
+{template 'common/footer'}
+{else}
+{template 'public/footer'}
+{/if}

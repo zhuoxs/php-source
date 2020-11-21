@@ -1,0 +1,120 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+    <li class="active"><a href="javascript:;">模板分类</a></li>
+</ul>
+<div class="app-content">
+    <div class="app-filter">
+        <div class="filter-action">
+            <a href="javascript:;" id="addCate" class="btn btn-primary">新建分类</a>
+        </div>
+        <div class="filter-list">
+            <form class="form-horizontal" action="" method="post">
+                <div class="form-group">
+                    <div class="col-sm-2 control-label">页面名称</div>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" name="keyword" value="{$_GPC['keyword']}" placeholder="请输入页面名称">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-2 control-label"></div>
+                    <div class="col-sm-6">
+                        <div class="input-group">
+                            <button class="btn btn-primary" type="submit" >搜索</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="app-table-list">
+        <div class="panel panel-default">
+            {if empty($list)}
+            <div class="panel-body empty-data">未查询到相关分类!</div>
+            {else}
+            <table class="table table-hover table-responsive table-bordered">
+                <thead class="navbar-inner">
+                <tr>
+                    <th width="20" class="text-center">序号</th>
+                    <th width="80" class="text-center">分类名称(点击编辑)</th>
+                    <th width="20" class="text-center">操作</th>
+                </tr>
+                </thead>
+                <tbody>
+                {loop $list $index $item}
+                <tr class="text-center">
+                    <td>{php echo $index+1}</td>
+                    <td>
+                        <a href='javascript:;' data-toggle='ajaxEdit' data-href="{php echo web_url('diy/diy/editCate',array('id'=>$item['id']))}">
+                            {$item['name']}
+                        </a>
+                    </td>
+                    <td>
+                        <a class="btn btn-sm btn-danger" data-toggle="ajaxRemove" href="{php echo web_url('diy/diy/delCate', array('id'=>$item['id']))}" data-confirm="删除后该分类下模版将转入未分类，确定要删除该分类吗？">删除</a>
+                    </td>
+                </tr>
+                {/loop}
+                </tbody>
+            </table>
+            {/if}
+        </div>
+    </div>
+    {$pager}
+    <!--新建分类弹出内容-->
+    <div class="modal fade" id="addCateModal" aria-hidden="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button data-dismiss="modal" class="close" type="button">×</button>
+                    <h4 class="modal-title">新建分类</h4>
+                </div>
+                <div class="modal-body form-horizontal">
+                    <div class="form-group">
+                        <div class="col-sm-2 control-label must">分类名称</div>
+                        <div class="col-sm-10">
+                            <input class="form-control input-sm" placeholder="请输入分类名称" id="saveTempName" value="" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="btn btn-primary" id="saveCate" cateClass="{$pageClass}">保存</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    $("#addCate").unbind('click').click(function () {
+        $("#addCateModal").modal();
+        $("#saveCate").unbind('click').click(function () {
+            var status = $(this).data('status');
+            if(status) {
+                tip.msgbox.err("正在保存，请稍候。");
+                return;
+            }
+            var name = $.trim($("#saveTempName").val());
+            var cateClass = $(this).attr("cateClass");
+            if(!name) {
+                tip.msgbox.err("请填写分类名称！");
+                $("#saveTempName").focus();
+                return;
+            }
+            $(this).data('status',1).text('保存中');
+            var posturl = biz.url("diy/diy/saveCate", null, 0);
+            $.post(posturl, {
+                name: name,
+                cateClass:cateClass
+            }, function (ret) {
+                if(ret.status==0){
+                    tip.msgbox.err(ret.result.message);
+                }else{
+                    tip.msgbox.suc("保存成功！");
+                }
+                $("#addCateModal .close").trigger('click');
+                setTimeout(function () {
+                    location.reload();
+                }, 500);
+            }, 'json');
+        });
+    });
+</script>
+{php include wl_template('common/footer');}

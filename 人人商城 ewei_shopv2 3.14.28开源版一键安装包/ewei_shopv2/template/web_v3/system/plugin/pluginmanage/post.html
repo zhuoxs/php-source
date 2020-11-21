@@ -1,0 +1,165 @@
+{template '_header'}
+<style type="text/css">
+    .multi-img-details .multi-item img{height:100px;}
+    .input-group-date{padding:5px 0;}
+    .input-group-remove{cursor: pointer;}
+</style>
+<div class="page-header">
+    当前位置：<span class="text-primary">{if !empty($item['id'])}编辑{else}添加{/if}应用 <small>{if !empty($item['id'])}修改【{$item['title']}】{/if}</small></span>
+</div>
+
+<div class="page-content">
+    <div class="page-sub-toolbar">
+        <a class='btn btn-primary btn-sm' href="{php echo webUrl('system/plugin/pluginmanage/add')}"><i class='fa fa-plus'></i> 添加应用</a>
+    </div>
+    <form action="" method="post" class="form-horizontal form-validate" enctype="multipart/form-data">
+        <input type="hidden" name="id" value="{$item['id']}" />
+            <div class="tab-content ">
+                <div class="tab-pane active">
+                    <div class="panel-body">
+
+                        <div class="form-group">
+                            <label class="col-lg control-label">排序</label>
+                            <div class="col-sm-9 col-xs-12">
+                                <input type='text' class='form-control' name='displayorder' value="{$item['displayorder']}" />
+                                <span class="help-block">数字越大，排名越靠前,如果为空，默认排序方式为创建时间</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-lg control-label">应用类型</label>
+                            <div class="col-xs-12 col-sm-9">
+                                <div class="input-group">
+                                    <label class="radio radio-inline">
+                                        <input type="radio" name="plugintype" value="0" {if intval($item['plugintype']) ==0}checked="checked"{/if}> 系统应用
+                                    </label>
+                                    <label class="radio radio-inline">
+                                        <input type="radio" name="plugintype" value="1" {if intval($item['plugintype']) ==1 }checked="checked"{/if}> 自定义应用
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-lg control-label must">标题</label>
+                            <div class="col-sm-9 col-xs-12">
+                                <input type='text' class='form-control' name='name' value="{$item['name']}" data-rule-required='true' data-msg-required='请设置标题' />
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="product" {if intval($item['plugintype']) ==1 }style="display:none;"{/if}>
+                            <label class="col-lg control-label">选择应用</label>
+                            <div class="col-sm-9 col-xs-12">
+                                <?php echo tpl_selector('pluginid',
+                array('value'=>$item['title'],
+                                'type'=>'text',
+                                'placeholder'=>'指定应用名称',
+                                'buttontext'=>'选择应用',
+                                'items'=>$plugin,
+                                'nokeywords'=>1,
+                                'autosearch'=>0,
+                                'url'=>webUrl('system/plugin/pluginmanage/query')))?>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-lg control-label">应用缩略图</label>
+                            <div class="col-sm-9 col-xs-12">
+                                {php echo tpl_form_field_image2('thumb', $item['thumb'])}
+                                <span class='help-block'>建议尺寸:180*180 , 请将所有幻灯片图片尺寸保持一致</span>
+                            </div>
+                        </div>
+                        <div class="form-group cgt cgt-2">
+                            <label class="col-lg control-label">设置价格</label>
+                            <div class="col-sm-9 col-xs-12">
+                                <div class="group-date-all">
+                                    {if !empty($item) && !empty($pluginData)}
+                                        {loop $pluginData $index $row}
+                                            <div class="input-group fixmore-input-group input-group-date input-group-date{$index}">
+                                                <span class="input-group-addon">使用时长</span>
+                                                <input type="number" class="form-control form-contro{$index}" name="date[]" value="{$row['date']}">
+                                                <span class="input-group-addon">个月，价格</span>
+                                                <input type="number" class="form-control form-contro{$index}" name="price[]" value="{$row['price']}">
+                                                <span class="input-group-addon">元</span>
+                                                {if $index>0}
+                                                <span class="input-group-addon input-group-remove"  onclick="removeDate({$index})"><i class="fa fa-remove"></i></span>
+                                                {else}
+
+                                                {/if}
+                                            </div>
+                                        {/loop}
+                                    {else}
+                                    <div class="input-group fixmore-input-group input-group-date">
+                                        <span class="input-group-addon">使用时长</span>
+                                        <input type="number" class="form-control" name="date[]" value="{$item['grant1']}">
+                                        <span class="input-group-addon">个月，价格</span>
+                                        <input type="number" class="form-control" name="price[]" value="{$item['grant1']}">
+                                        <span class="input-group-addon">元</span>
+                                    </div>
+                                    {/if}
+                                </div>
+                                <a class="btn btn-default" href="javascript:;" onclick="addDate()"><span class="fa fa-plus"></span> 新增价格</a>
+                                <div class="alert alert-warning" style="margin-top:10px;margin-bottom:0px;">注意：使用时长设置为0，期限为永久。</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-lg control-label">应用详情</label>
+                            <div class="col-sm-9 col-xs-12">
+                                {php echo tpl_ueditor('content',$item['content'], array('height'=>'200'))}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-lg control-label">状态</label>
+                            <div class="col-xs-12 col-sm-8">
+                                <div class="input-group">
+                                    <label class="radio radio-inline">
+                                        <input type="radio" name="state" value="1" {if intval($item['state']) ==1 }checked="checked"{/if}> 开启
+                                    </label>
+                                    <label class="radio radio-inline">
+                                        <input type="radio" name="state" value="0" {if intval($item['state']) ==0}checked="checked"{/if}> 关闭
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+    <div class="form-group">
+        <label class="col-lg control-label"></label>
+        <div class="col-sm-9 col-xs-12">
+            <input type="submit"  value="提交" class="btn btn-primary" />
+        </div>
+    </div>
+
+    </form>
+</div>
+<script type="text/javascript">
+    $(function () {
+        $("input[name='plugintype']").click(function () {
+            var plugintype = this.value;
+            if(plugintype==1){
+                $("#product").hide();
+            }else{
+                $("#product").show();
+            }
+        })
+    })
+    function addDate() {
+        var group = $(".input-group-date").length;
+        var groupStr = '<div class="input-group fixmore-input-group input-group-date input-group-date'+group+'">' +
+            '<span class="input-group-addon">使用时长</span>' +
+            '<input type="number" class="form-control form-contro'+group+'" name="date[]" value="">' +
+            '<span class="input-group-addon">个月，价格</span>' +
+            '<input type="number" class="form-control form-contro'+group+'" name="price[]" value="">' +
+            '<span class="input-group-addon">元</span>' +
+            '<span class="input-group-addon input-group-remove"  onclick="removeDate('+group+')"><i class="fa fa-remove"></i></span>' +
+            '</div>';
+        $(".group-date-all").append(groupStr);
+    }
+    function removeDate(index) {
+        $(".input-group-date"+index+"").remove()
+    }
+</script>
+
+{template '_footer'}

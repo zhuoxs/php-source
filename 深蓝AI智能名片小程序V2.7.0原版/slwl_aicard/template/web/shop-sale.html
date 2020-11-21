@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{$_W['sys_name']}</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="">
+    {template 'public/header'}
+
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+    {template 'public/top'}
+    {template 'public/left'}
+
+    <div class="layui-body">
+        <div class="layui-main">
+            <div class="layui-tab">
+                <ul class="layui-tab-title">
+                    <li {if $operation == 'display'} class="layui-this" {/if}><a href="{php echo $this->createWebUrl('shop_sale',array('op' =>'display'))}">优惠券</a></li>
+                    <li {if empty($sale['id']) && $operation == 'post'} class="layui-this" {/if}><a href="{php echo $this->createWebUrl('shop_sale',array('op' =>'post'))}">添加</a></li>
+                    {if !empty($sale['id']) && $operation == 'post'}<li class="layui-this"><a href="{php echo $this->createWebUrl('shop_sale',array('op' =>'post','id'=>$sale['id']))}">编辑</a></li>{/if}
+                </ul>
+            </div>
+
+        {if $operation == 'display'}
+            <div class="layui-form">
+                <table class="layui-table" lay-even="" lay-skin="nob">
+                    <colgroup>
+                        <col width="50">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>排序</th>
+                            <th>标题</th>
+                            <th>发放总数</th>
+                            <th>领取数</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {php $this_statuses = array('0'=>'禁用','1'=>'启用'); }
+                        {loop $list $item}
+                        <tr>
+                            <td>{$item['id']}</td>
+                            <td>{$item['displayorder']}</td>
+                            <td>{$item['name']}</td>
+                            <td>{$item['total']}</td>
+                            <td>{$item['receive']}</td>
+                            <td>{$this_statuses[$item['enabled']]}</td>
+                            <td style="text-align:left;">
+                                <a href="{php echo $this->createWebUrl('shop_sale', array('op' => 'post', 'id' => $item['id']))}" class="layui-btn layui-btn-normal" title="编辑">编辑</a>
+                                <a href="javascript:;" class="layui-btn layui-btn-danger btn-del" data-id="{$item['id']}" title="删除">删除</a>
+                            </td>
+                        </tr>
+                        {/loop}
+                    </tbody>
+                </table>
+                <div class="pager">
+                    {$pager}
+                </div>
+            </div>
+
+            <script>
+                // 分页
+                layui.use('laypage', function(){
+                    var laypage = layui.laypage;
+
+                    laypage.render({
+                        elem: $('.pager')
+                        ,limit: '{php echo $psize; }'
+                        ,count: '{php echo $total; }'
+                        ,theme: '#1E9FFF'
+                        ,curr:  '{php echo $pindex; }'
+                        ,hash: '{php echo $pindex; }'
+                        ,jump: function (obj, first) {
+                            if (first != true) {
+                                var currentPage = obj.curr;
+                                window.location.href = "{php echo $this->createWebUrl('shop_sale')}&page=" + currentPage;
+                            }
+                        }
+                    });
+                });
+                $(function () {
+                    $('.pager').show();
+                });
+            </script>
+            <script>
+                // 删除
+                layui.use('layer', function(){
+                    var layer = layui.layer;
+
+                    $('.btn-del').click(function () {
+                        $obj = $(this);
+                        $del_id = $obj.data('id');
+                        layer.confirm('确定要删除吗？', {
+                            offset: '30%',
+                            btn: ['再想想', '删除'],
+                            scrollbar: false,
+                            closeBtn: 0,
+                        }, function (i) {
+                            layer.close(i);
+                        }, function (i) {
+                            let $url = "{php echo $this->createWebUrl('shop_sale', array('op'=>'delete'))}";
+
+                            $.ajax({
+                                type: "POST",
+                                url: $url,
+                                dataType: 'json',
+                                data: {
+                                    id: $del_id
+                                },
+                                success: function (rs) {
+                                    console.log(rs);
+                                    if (rs.message.errno == '0') {
+                                        layer.msg('删除成功！', {
+                                            time: 500
+                                        },
+                                        function () {
+                                            $obj.closest('tr').fadeOut(200, function () {
+                                                $obj.remove();
+                                            });
+                                        });
+                                    } else {
+                                        layer.alert(rs.message.message);
+                                        $obj.removeClass('lock');
+                                    }
+                                },
+                                error: function () {
+                                    layer.alert('提交过程发生错误，请与管理员联系！');
+                                    $obj.removeClass('lock');
+                                }
+                            });
+                        });
+                    });
+                });
+            </script>
+
+        {elseif $operation == 'post'}
+            <style type="text/css">
+                .input-group-addon .layui-form-radio { margin-top: 4px; }
+            </style>
+            <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+                {if empty($sale['id']) && $operation == 'post'}
+                    <legend>添加</legend>
+                {else}
+                    <legend>编辑</legend>
+                {/if}
+            </fieldset>
+            <form class="layui-form" action="" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="id" value="{$sale['id']}" />
+                <div class="layui-form-item">
+                    <label class="layui-form-label">排序</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="displayorder" value="{$sale['displayorder']}" class="layui-input" placeholder="数字越大，排名越靠前" />
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">标题</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="name" lay-verify="required" value="{$sale['name']}" class="layui-input" />
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">使用条件</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="enough" value="{$sale['enough']}" class="layui-input" />
+                        <div class="layui-form-mid layui-word-aux">消费满多少可用, 空或 0 不限制</div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">商品价格</label>
+                    <div class="layui-input-block">
+                        <div class="input-group form-group">
+                            <span class="input-group-addon">
+                                <input type="radio" name="timelimit" value="0" title="获得后" {if $adv['timelimit']==0}checked{/if}>
+                            </span>
+                            <input type="text" name="timedays1" class="form-control" value="{$sale['timedays1']}" />
+                            <span class="input-group-addon pad-trim-10">天内有效(0 为不限时间使用)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label"></label>
+                    <div class="layui-input-block">
+                        <div class="input-group form-group">
+                            <span class="input-group-addon">
+                                <input type="radio" name="timelimit" value="1" title="在日期" {if $adv['timelimit']==1}checked{/if}>
+                            </span>
+                            <input type="text" name="time" class="layui-input" id="test6" placeholder="年月日 - 年月日">
+                            <span class="input-group-addon pad-trim-10">内有效</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">优惠方式</label>
+                    <div class="layui-input-block">
+                        <input type="radio" name="backtype" lay-filter="backtype" value="0" title="立减" {if $sale['backtype']==0}checked{/if}>
+                        <input type="radio" name="backtype" lay-filter="backtype" value="1" title="打折" {if $sale['backtype']==1}checked{/if}>
+                        <!-- <input type="radio" name="backtype" value="2" title="返利" {if $sale['backtype']==2}checked{/if}> -->
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label"></label>
+                    <div class="layui-input-block bkt-one bkt-one-1">
+                        <div class="input-group form-group">
+                            <span class="input-group-addon pad-trim-10">立减</span>
+                            <input type="text" name="backmoney" class="form-control" value="{$sale['backmoney']}" />
+                            <span class="input-group-addon pad-trim-10">元</span>
+                        </div>
+                    </div>
+                    <div class="layui-input-block bkt-one bkt-one-2 none">
+                        <div class="input-group form-group">
+                            <span class="input-group-addon pad-trim-10">打</span>
+                            <input type="text" name="discount" class="form-control" value="{$sale['discount']}" />
+                            <span class="input-group-addon pad-trim-10">折</span>
+                        </div>
+                    </div>
+                    <div class="layui-input-block bkt-one bkt-one-3 none">
+                        <div class="input-group form-group">
+                            <span class="input-group-addon pad-trim-10">返</span>
+                            <input type="text" name="flbackmoney" class="form-control" value="{$sale['flbackmoney']}" />
+                            <span class="input-group-addon pad-trim-10">余额</span>
+                        </div>
+                        <div class="layui-form-mid layui-word-aux">带%为返消费金额的百分比: 如10% ，消费200元，返20元</div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">发放总数</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="total" value="{$sale['total']}" class="layui-input" />
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">状态</label>
+                    <div class="layui-input-block">
+                        <input type="radio" name="enabled" value="1" title="启用" {if $sale['enabled']==1}checked{/if}>
+                        <input type="radio" name="enabled" value="0" title="禁用" {if $sale['enabled']==0}checked{/if}>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit="" lay-filter="sale">提交</button>
+                        <input type="hidden" name="token" value="{$_W['token']}" />
+                    </div>
+                </div>
+            </form>
+
+            <script>
+                layui.use('laydate', function(){
+                    var laydate = layui.laydate;
+
+                    //日期范围
+                    laydate.render({
+                        elem: '#test6',
+                        range: '至',
+                        value: "{php echo date('Y-m-d',$sale['timestart']?$sale['timestart']:time()); } 至 {php echo date('Y-m-d',$sale['timeend']?$sale['timeend']:time()); }"
+                    });
+                });
+
+                layui.use('form', function(){
+                    var form = layui.form;
+
+                    form.on('radio(backtype)', function(data){
+                        // console.log(data.elem); //得到radio原始DOM对象
+                        // console.log(data.value); //被点击的radio的value值
+
+                        if (data.value == 0) {
+                            $('.bkt-one').addClass('none');
+                            $('.bkt-one-1').removeClass('none');
+                        } else if (data.value == 1) {
+                            $('.bkt-one').addClass('none');
+                            $('.bkt-one-2').removeClass('none');
+                        } else {
+                            $('.bkt-one').addClass('none');
+                            $('.bkt-one-3').removeClass('none');
+                        }
+                    });
+                });
+
+                layui.use('form', function(){
+                    var form = layui.form;
+
+                    form.on('submit(sale)', function(data){
+                        let url = "{php echo $this->createWebUrl('shop_sale', array('op'=>'post'))}";
+                        var $obj = $(this);
+
+                        if (!$obj.hasClass('lock')) {
+                            $obj.addClass('lock'); // 不能再点击
+
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                dataType: 'json',
+                                data: data.field,
+                                success: function (rs) {
+                                    console.log(rs.message.errno);
+                                    if (rs.message.errno == '0') {
+                                        layer.msg('保存成功！' , {
+                                            time: 500
+                                        }, function () {
+                                            window.location.href = "{php echo $this->createWebUrl('shop_sale')}";
+                                        });
+                                    } else {
+                                        layer.alert(rs.message.message);
+                                    }
+                                    $obj.removeClass('lock');
+                                },
+                                error: function () {
+                                    layer.alert('提交过程发生错误，请与管理员联系！');
+                                    $obj.removeClass('lock');
+                                }
+                            });
+                        }
+                        return false;
+                    });
+                });
+            </script>
+        {/if}
+        </div>
+    </div>
+
+    {template 'public/copyright'}
+</div>
+
+{template 'public/footer'}
+</body>
+</html>

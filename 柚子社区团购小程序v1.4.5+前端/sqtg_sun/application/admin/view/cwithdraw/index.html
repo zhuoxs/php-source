@@ -1,0 +1,279 @@
+{extend name="common/index" /}
+{block name="search_box"}
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入商家..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="type" id="type" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+{/block}
+
+<!--数据表-操作列-->
+
+{block name="tool_template"}
+<!--
+<script type="text/html" id="dataTool">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnEdit">详情</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDelete">发货</a>
+</script>-->
+{/block}
+
+
+{block name="tool_box"}
+<!--工具栏-->
+<!--<div class="tool-box">
+    <!-- <div class="layui-btn-group">
+        <a href="javascript:;" id="btnAdd" class="layui-btn layui-btn-primary layui-btn-sm">新增</a>
+        <a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchEnable" class="layui-btn layui-btn-primary layui-btn-sm">启用</a>
+        <a href="javascript:;" id="btnBatchUnEnable" class="layui-btn layui-btn-primary layui-btn-sm">禁用</a>
+    </div>
+
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchHot" class="layui-btn layui-btn-primary layui-btn-sm">推荐</a>
+        <a href="javascript:;" id="btnBatchUnHot" class="layui-btn layui-btn-primary layui-btn-sm">取消推荐</a>
+    </div>
+
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnShowIndexenable" class="layui-btn layui-btn-primary layui-btn-sm">首页推荐</a>
+        <a href="javascript:;" id="btnShowIndexdisable" class="layui-btn layui-btn-primary layui-btn-sm">取消推荐</a>
+    </div>
+</div>
+{/block}-->
+{block name="table_config"}
+<script type="text/html" id="dataShowIndex">
+    <input type="checkbox" name="show_index" value="{{d.id}}" lay-skin="switch" lay-text="是|否" lay-filter="show_index" {{ d.show_index == 1 ? 'checked' : '' }}>
+</script>
+
+<script type="text/html" id="dataTools">
+{{# if(d.is_state ==1&&d.state==0 ){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnPass">审核通过</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnNopass">审核拒绝</a>
+{{# } }}
+    {{# if(d.order_status ==1 ){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnFahuo">发货</a>
+    {{# } }}
+
+    {{# if(d.order_status ==5&&(d.review_status==0||d.refund_status==2)&&d.refund_status!=1 ){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnRefund">退款</a>
+    {{# } }}
+</script>
+
+<script>
+    layui.use(['table','form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_list')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'store_name', width:180, title: '提现商家',fixed:'left',sort:true},
+                {field:'add_time', width:180, title: '申请时间',sort:false},
+                {field:'wd_type', width:180, title: '提现方式',sort:true},
+                {field:'wd_name', width:180, title: '姓名',sort:true},
+                {field:'wd_phone', width:180, title: '电话',sort:true},
+                {field:'money', width:200, title: '提现金额',sort:true},
+                {field:'paycommission', width:250, title: '平台提成',sort:false},
+                {field:'ratesmoney', width:180,height:500, title: '转账手续费',sort:false},
+                {field:'realmoney', width:180, title: '实际金额',sort:false},
+                {field:'tx_status_z', width:180, title: '提现状态',sort:false},
+                {field:'err_code_des', width:180, title: '失败原因',sort:false},
+                {field:'refund_status_z', width:180, title: '退款状态',sort:false},
+                {field:'o',fixed:'right',width:200, title: '操作',templet: '#dataTools'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+        //        搜索
+        $('#btnSearch').unbind('click').click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    type: $('#type').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        parent_id: $('#parent_id').val(),
+                    }
+                });
+            }
+        })
+        //监听启用状态切换操作
+        form.on('switch(show_index)', function(obj){
+            if (obj.elem.checked){
+                var url = "{:adminurl('showindexenable')}";
+                var msg = "是";
+            }else{
+                var url = "{:adminurl('showindexdisable')}";
+                var msg = "否";
+            }
+            $.post(url, {ids:obj.value}, function(data){
+                if (typeof data == 'string'){
+                    data = $.parseJSON(data);
+                }
+                if (data.code == 0) {
+                    layer.msg(msg+'成功',{icon: 6,anim: 6});
+                    // table.reload('laytable',{});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        });
+        //首页推荐
+        $('#btnShowIndexenable').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                var url = "{:adminurl('showindexenable')}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('启用成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+
+        // 审核通过
+        $(document).on('click','.btnPass',function(e){
+            var id = $(this).data('id')
+            layer.confirm('确认审核通过', {
+                btn: ['确定','取消'] //按钮
+            }, function(){
+                var url = "{:adminurl('pass')}";
+                $.post(url, {ids:id}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('审核成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            });
+            return false;
+        })
+
+        // 审核拒绝
+        $(document).on('click','.btnNopass',function(e){
+            var id = $(this).data('id')
+            layer.confirm('确认审核拒绝', {
+                btn: ['确定','取消'] //按钮
+            }, function(){
+                var url = "{:adminurl('nopass')}";
+                $.post(url, {ids:id}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('审核拒接成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            });
+            return false;
+        })
+
+
+
+        //取消推荐
+        $('#btnShowIndexdisable').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                var url = "{:adminurl('showindexdisable')}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('禁用成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+    /*    $.get("{:adminurl('select_root')}", function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: '', text: '请选择上级分类'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#parent_id').select2({
+                data: ret,
+            })
+        })*/
+        var ret = [
+            {"id":0,"text":"全部提现列表"},
+            {"id":1,"text":"待审核"},
+            {"id":2,"text":"已提现"},
+            {"id":3,"text":"已拒绝"},
+            {"id":4,"text":"提现失败"},
+            ];
+       // ret.unshift({id: '', text: '请选择类型'});
+        ret.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            return obj;
+        });
+        $('#type').select2({
+            data: ret,
+        })
+
+    })
+</script>
+{/block}

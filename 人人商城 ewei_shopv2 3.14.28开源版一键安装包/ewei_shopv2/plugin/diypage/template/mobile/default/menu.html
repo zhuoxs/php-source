@@ -1,0 +1,151 @@
+<link href="../addons/ewei_shopv2/plugin/diypage/static/css/foxui.diy.css?v=201705261600"rel="stylesheet"type="text/css"/>
+<style type="text/css">
+    .diymenu .item .inner {background: {$diymenu['style']['bgcolor']};}
+    .diymenu .item .inner:before,
+    .diymenu .item .inner:after {border-color: {$diymenu['style']['bordercolor']};}
+    .diymenu .item .inner .text {color: {$diymenu['style']['textcolor']};}
+    .diymenu .item .inner .icon {color: {$diymenu['style']['iconcolor']} !important;}
+    .diymenu .item.on .inner {background: {$diymenu['style']['bgcoloron']};}
+    .diymenu .item.on .inner .text {color: {$diymenu['style']['textcoloron']};}
+    .diymenu .item.on .inner .icon {color: {$diymenu['style']['iconcoloron']}!important;}
+    .diymenu .item .child {border-color: {$diymenu['style']['childbordercolor']}; background-color: {$diymenu['style']['childbgcolor']};}
+    .diymenu .item .child a {color: {$diymenu['style']['childtextcolor']};}
+    .diymenu .item .child a:after {border-color: {$diymenu['style']['childbordercolor']}; color: {$diymenu['style']['childtextcolor']};}
+    .diymenu .item .child .arrow:before {background: {$diymenu['style']['childbordercolor']};}
+    .diymenu .item .child .arrow:after {background: {$diymenu['style']['childbgcolor']};}
+    .diymenu .item .inner .badge {background: {$diymenu['style']['cartbgcolor']};}
+    /*.diymenu{box-shadow:none;}*/
+</style>
+<?php
+    function menuon($url){
+        global $_GPC;
+        if(strexists($url, 'http://') || strexists($url, 'https://') || empty($url)){
+            return;
+        }
+        $r = trim($_GPC['r']);
+        if($r=='diypage') {
+            $id = strstr($url,"id=");
+            $id = str_replace('id=', '', $id);
+            if(intval($_GPC['id'])==$id) {
+                return 'on';
+            }
+        } else {
+            $r = strstr($url,"r=");
+            $r = str_replace('r=', '', $r);
+
+            if ($_GPC['r'] == 'quick') {
+                if (isset($_GPC['id']) && !empty($_GPC['id'])) {
+                    if(($_GPC['r'] .'&id=' . $_GPC['id']) == $r) {
+                        return 'on';
+                    }
+                }
+            }
+           
+            if(trim($_GPC['r'])==$r){
+                return 'on';
+            }
+        }
+        return;
+    }
+?>
+<div class="diymenu" style="{if !is_mobile()} position: absolute;max-width: 750px;{else}position: fixed;{/if}">
+    {loop $diymenu['data'] $item}
+        <div class="item item-col-{php echo count($diymenu['data'])} {if count($item['child'])==0 && $diymenu['params']['navstyle']==0}{php echo menuon($item['linkurl'])}{/if}" {if count($item['child'])>0 && $diymenu['params']['navstyle']==0}onclick="showSubMenu(this)"{else}{if strpos($item['linkurl'],'tel') === false} onclick="location.href = '{$item['linkurl']}&v={php echo substr(time(),0,6)}'"{else}onclick="location.href = '{$item['linkurl']}'"{/if}{/if} {if strstr($item['linkurl'], 'r=member.cart')}id="menucart"{/if}>
+            <div class="inner {if $diymenu['params']['navstyle']==1}image{/if} {$diymenu['params']['navfloat']}">
+                {if strstr($item['linkurl'], 'r=member.cart') && $cartcount>0 && $diymenu['params']['cartnum']==1}
+                    <span class="badge">{$cartcount}</span>
+                {/if}
+                {if $diymenu['params']['navstyle']==0}
+
+                    {if !empty($item['iconclass'])}
+                        <span class="icon {$item['iconclass']} {$diymenu['params']['navfloat']}"></span>
+                    {/if}
+                    <span class="text {$diymenu['params']['navfloat']}" {if empty($item['iconclass'])} style="margin-top: 10px; font-size: 15px;"{/if}>{$item['text']}</span>
+                {elseif $diymenu['params']['navstyle']==1}
+                    <img src="{php echo tomedia($item['imgurl'])}" />
+                {/if}
+            </div>
+            {if count($item['child'])>0 && $diymenu['params']['navstyle']==0}
+                <div class="child">
+                    {loop $item['child'] $child}
+                        {if !empty($child['text'])}
+                            <a href="{$child['linkurl']}" class="external">{$child['text']}</a>
+                        {/if}
+                    {/loop}
+                    <span class="arrow"></span>
+                </div>
+            {/if}
+        </div>
+    {/loop}
+</div>
+{if $diymenu['params']['navstyle']==0}
+    <script>
+        function showSubMenu(obj) {
+            $(obj).toggleClass('on').siblings().removeClass('on');
+            $(obj).find('.child').toggleClass('in');
+            $(obj).siblings().find('.child').removeClass('in')
+        }
+        $(function () {
+
+            var len = $(".diymenu .child").length;
+            setTimeout(function () {
+                $(".diymenu .child").each(function (i) {
+                    var width = $(this).outerWidth();
+                    var margin = -(width / 2);
+                    var left = '50%';
+                    var pleft = $(this).position().left - width / 2;
+                    console.log($(this).position().left)
+                    if(i==0 && pleft<2){
+                        left = 2;
+                        margin = 0;
+                        var pwidth = $(this).closest('.item').width();
+                        console.log(pwidth)
+                        var arrowleft = pwidth / 2;
+                        console.log(arrowleft)
+                        var oldleft = parseFloat( $(this).find('.arrow').css('left').replace('px','') );
+                        console.log(oldleft)
+                        $(this).find('.arrow').css({'left': arrowleft-10, 'margin-left': 0});
+                    }
+                    if(i+1  ==len) {
+                        var thisleft = parseFloat( $(this).offset().left.toString().replace('px',''));
+                        console.log(thisleft)
+                        if((thisleft+width)>$(document).width()){
+                            var pleft = $(this).closest('.item').offset().left;
+                            console.log(thisleft)
+                            left =  $(document).width() - width - 2 - pleft;
+                            console.log(left)
+                            margin = 0;
+                            var pwidth = $(this).closest('.item').width();
+                            console.log(pwidth)
+                            var itemleft = (pwidth / 2) + pleft;
+                            console.log(itemleft)
+                            var childleft = $(document).width() - width - 2;
+                            console.log(childleft)
+                            var arrowleft = itemleft - childleft;
+                            console.log(arrowleft)
+                            $(this).find('.arrow').css({'left': arrowleft-10, 'margin-left': 0});
+                        }
+                    }
+                    $(this).css({'position': 'absolute', 'left': left, 'margin-left': margin, 'z-index': 0});
+                })
+            }, 800);
+        })
+    </script>
+{/if}
+
+{if is_mobile()}
+    <div id="blank" style="display:none;background:#fff;height:1.52rem;width:100%;position: fixed;bottom: 0;left:0;right:0;z-index: 1;"></div>
+    <script>
+        function isIphoneX(){
+            return /iphone/gi.test(navigator.userAgent) && (screen.height == 812 && screen.width == 375)
+        }
+        $(function(){
+            if( isIphoneX() ) {
+                $('.diymenu').css('bottom', '1.52rem');
+                $( '#blank' ).css( 'display','block' );
+                $('.fui-content').css('bottom', '4.02rem');
+            }
+        });
+
+    </script>
+{/if}

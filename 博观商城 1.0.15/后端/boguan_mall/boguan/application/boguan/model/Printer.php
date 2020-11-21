@@ -1,0 +1,2 @@
+<?php
+ namespace app\boguan\model; class Printer extends BaseModel { public function getSettingAttr($value) { goto Hyszy; uNJY5: return json_decode($value, true); goto OoVaF; Hyszy: if (!empty($value)) { goto QWyCS; } goto Szmgv; A3NEV: QWyCS: goto uNJY5; Szmgv: return null; goto A3NEV; OoVaF: } public function getCateIdAttr($value) { goto mNvAQ; gqssa: Vp17v: goto Bh4Bo; Bh4Bo: return json_decode($value, true); goto Lc7UX; mNvAQ: if (!empty($value)) { goto Vp17v; } goto qx6Vs; qx6Vs: return null; goto gqssa; Lc7UX: } }

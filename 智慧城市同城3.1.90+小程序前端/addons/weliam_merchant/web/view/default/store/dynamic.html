@@ -1,0 +1,208 @@
+{php include wl_template('common/header');}
+<style>
+	.maxbo{max-width: 500px;white-space: normal; overflow: auto;text-overflow: initial;display: block;}
+</style>
+<ul class="nav nav-tabs">
+	<li class="active"><a href="javascript:;">商户动态</a></li>
+</ul>
+<div class="app-content">
+    <div class="app-filter">
+        <div class="filter-list">
+            <form action="" method="get" class="form-horizontal" role="form"  id="form2">
+                <input type="hidden" name="p" value="store" />
+                <input type="hidden" name="ac" value="comment" />
+                <input type="hidden" name="do" value="dynamic" />
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">时间类型</label>
+                    <div class="col-sm-9">
+                        <select name="timetype" class="form-control">
+                            <option value="1">发布时间</option>
+                            <option value="2">审核时间</option>
+                            <option value="3">推送时间</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">时间段</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d H:i:s', $starttime),'endtime'=>date('Y-m-d H:i:s', $endtime)),true);}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">动态状态</label>
+                    <div class="col-sm-9">
+                        <select id="type" name="type" class="form-control">
+                            <option value="">状态</option>
+                            <option value="4" {if $_GPC['type']==4}selected="selected"{/if}>待审核</option>
+                            <option value="1" {if $_GPC['type']==1}selected="selected"{/if}>待推送</option>
+                            <option value="2" {if $_GPC['type']==2}selected="selected"{/if}>已推送</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">商家ID</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="keyword" class="form-control" value="{$_GPC['keyword']}"  placeholder="商家ID"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label"></label>
+                    <div class="col-md-9">
+                        <span class="btn btn-primary" id="search">搜索</span>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="app-table-list">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th width="5%"><input type="checkbox" name="checkall" value="" id="checkall" class="checkboxall" onclick="var ck = this.checked; $(':checkbox').each(function(){this.checked = ck});"/></th>
+                        <th width="15%">商家</th>
+                        <th width="15%">发布者</th>
+                        <th width="15%">发布时间</th>
+                        <th width="30%">动态内容</th>
+                        <th width="10%">审核状态</th>
+                        <th width="10%">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {loop $lists $li}
+                    <tr id="{$li['uid']}" class="text-center">
+                        <td>
+                            <center><input type="checkbox" name="items[]" value="{$li['id']}" class="checkbox" /></center>
+                        </td>
+                        <td class="text-left">
+                            <label class="label label-primary">ID:{$li['sid']}</label>{$li['sName']}<br>
+                        </td>
+                        <td class="text-left">
+                            <img class="scrollLoading" src="{IMAGE_PIXEL}" data-url="{$li['headimg']}" onerror="this.src='{IMAGE_NOPIC_SMALL}'" height="40" width="40"/>{$li['nickname']}
+                        </td>
+                        <td class="text-left">
+                            {php echo date('Y-m-d',$li['createtime']);}
+                        </td>
+                        <td class="text-left">
+                           <span class="maxbo">{$li['content']}</span> 
+                        </td>
+                        <td>
+                            {if     $li['status']==0}<label class="label label-warning">审核中</label><br>
+                            {elseif $li['status']==1}<label class="label label-success">待推送</label><br>
+                            {elseif $li['status']==2}<label class="label label-success">已推送:{$li['successnum']}人</label><br>
+                            {elseif $li['status']==3}<label class="label label-default">已驳回</label><br>
+                            {/if}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" style="width:100px;">
+                                <a class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false" href="javascript:;">操作
+                                    <span class="caret"></span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-left" role="menu" style="z-index: 9999;min-width: 100px;">
+                                    <li><a href="{php echo web_url('store/comment/checkdyn',array('id'=>$li['id']))}" title="详情"><i class="fa fa-list"></i> &nbsp;详情</a></li>
+                                    {if $li['status'] == 0}
+                                    <li><a data-toggle="ajaxRemove" data-confirm="确定要通过这条动态吗？" href="{php echo web_url('store/comment/passdyn',array('id'=>$li['id'],'type'=>'pass'))}" title="通过"><i class="fa fa-edit"></i> &nbsp;通过</a></li>
+                                    <li><a data-toggle="ajaxRemove" data-confirm="确定要驳回这条动态吗？" href="{php echo web_url('store/comment/passdyn',array('id'=>$li['id'],'type'=>'reject'))}" title="驳回"><i class="fa fa-credit-card"></i> &nbsp;驳回</a></li>
+                                    {/if}
+                                    {if $li['status'] == 1}
+                                    <li><a href="{php echo web_url('store/comment/senddyn',array('id'=>$li['id']))}" title="推送"><i class="fa fa-credit-card"></i> &nbsp;推送</a></li>
+                                    {/if}
+                                    <li><a data-toggle="ajaxRemove" data-confirm="确定要删除这条动态吗？" href="{php echo web_url('store/comment/deletedyn',array('id'=>$li['id']))}" title="删除"><i class="fa fa-money"></i> &nbsp;删除</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {/loop}
+                </tbody>
+            </table>
+        </div>
+        <div class="app-table-foot clearfix">
+            <div class="pull-left">
+                <button class="btn btn-default btn-sm" type="button" onclick="location.reload();"><i class="fa fa-refresh"></i></button>
+                <div class="btn-group btn-group-sm">
+                    <button  class="btn btn-default" disabled="disabled" id="checkYse" onclick="checkOrDelete(1,1);">审核通过</button>
+                    <button  class="btn btn-default" disabled="disabled" id="checkNo" onclick="checkOrDelete(3,1);">审核不通过</button>
+                </div>
+                <button class="btn btn-default btn-sm" type="button" disabled="disabled" id="delete" onclick="checkOrDelete(1,2);"><i class="fa fa-trash"></i> 删除</button>
+            </div>
+            <div class="pull-right">
+                {$pager}
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    $("#search").click(function(){
+        $('#form2')[0].submit();
+    })
+</script>
+<script>
+	$(function(){
+		$('.checkbox,.checkboxall').click(function(){
+			var $checks=$('.checkbox:checkbox:checked');
+			$('#check').attr('disabled','');
+			if($checks.length>0) {
+				$('#checkYse').attr('disabled',false);
+				$('#checkNo').attr('disabled',false);
+				$('#delete').attr('disabled',false);
+			}else{
+				$('#checkYse').attr('disabled',true);
+				$('#checkNo').attr('disabled',true);
+				$('#delete').attr('disabled',true);
+			}
+		});
+		
+	})
+	//通过申请
+	function checkOrDelete(check,type){
+		var content = '';
+		if(check==1 && type==2) content = '确认删除？';
+		if(check==1 && type==1) content = '确认审核通过？';
+		if(check==3 && type==1) content = '确认审核不通过？';
+		layer.open({
+		  	title: [
+		    	'',
+		    	'background-color:#23c6c8; color:#fff;'
+		  	]
+		  	,anim: 'up'
+		  	,content: content
+		  	,btn: ['确认', '取消']
+		  	,yes:function(index){
+		  		var ids = [];
+				var $checks=$('.checkbox:checkbox:checked');
+				$checks.each(function() {
+					if (this.checked) {
+						ids.push(this.value);
+					};
+				});
+				if(type==1){
+					location.href = "{php echo web_url('store/comment/dyncheck')}&ids="+ids+"&check="+check;
+				}else if(type==2){
+					location.href = "{php echo web_url('store/comment/dyndelete')}&ids="+ids;
+				}
+		  	}
+		});
+	}
+	$('#de1').delegate('.js-delete','click',function(e){
+			e.stopPropagation();
+			var order_ids = [];
+			var $checks=$('.checkbox:checkbox:checked');
+			$checks.each(function() {
+				if (this.checked) {
+					order_ids.push(this.value);
+				};
+			});
+				var $this = $(this);
+				var ids = order_ids;
+				util.nailConfirm(this, function(state) {
+				if(!state) return;
+					$.post("{php echo web_url('order/order/delete')}", { ids : ids }, function(data){
+						if(!data.errno){
+						util.tips("删除成功！");
+						location.reload();
+						};
+					}, 'json');
+				}, {html: '确认删除?'});
+			});
+</script>
+{php include wl_template('common/footer');}

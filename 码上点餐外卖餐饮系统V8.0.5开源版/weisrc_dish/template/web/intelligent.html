@@ -1,0 +1,147 @@
+{template 'public/header'}
+{template 'public/comhead'}
+<style>
+    .checkbox-dishmain {
+        background: #368ee0;
+        /*background: #5ac5d4;*/
+        border-radius: 3px;
+        height: 50px;
+        margin:  10px 5px 5px 5px;
+        padding: 10px 5px 0px 5px;
+        display: inline-block;
+        max-width: 100%;
+    }
+
+    .checkbox-dish {
+        height: 40px;
+    }
+</style>
+{if $operation == 'post'}
+<div class="main">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <a class="btn btn-warning" href="{php echo $this->createWebUrl('intelligent', array('op' => 'display', 'storeid' => $storeid))}">返回活动推荐管理
+            </a>
+        </div>
+    </div>
+    <form action="" method="post"  class="form-horizontal form" enctype="multipart/form-data">
+	<input type="hidden" name="parentid" value="{$parent['id']}" />
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                活动推荐编辑
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">活动名称</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="title" class="form-control" value="{$intelligent['title']}" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">顶部图片</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_image('thumb', $intelligent['thumb'])}
+                        <span class="help-block" style="color: #f00;">建议尺寸:300*100</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商品选择</label>
+                    <div class="col-sm-9">
+                        {loop $categorys $category}
+                        <b>{$category['name']}</b>
+                        <br/>
+                        {loop $goods_arr[$category['id']] $item}
+                        <div class="checkbox-dishmain">
+                        <label class="checkbox-dish">
+                            <input type="checkbox" name="goodsids[id][{$item['id']}]" value="{$item['id']}" {if in_array($item['id'], $goodsids)}checked{/if}> <span class="label">{$item['title']}</span>
+                        </label>
+                        <label class="checkbox-dish">
+                        <input type="text" name="goodsids[count][{$item['id']}]" class="form-control"
+
+                               value="{if $goodscount[$item['id']]>0}{$goodscount[$item['id']]}{else}1{/if}"
+                               style="width: 50px;"/>
+                        </label>
+                        </div>
+                        {/loop}
+                        <br>
+                        {/loop}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">显示顺序</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="displayorder" class="form-control" value="{$intelligent['displayorder']}" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group col-sm-12">
+            <input type="submit" name="submit" value="保存设置" class="btn btn-primary col-lg-3" />
+            <input type="hidden" name="token" value="{$_W['token']}" />
+        </div>
+	</form>
+</div>
+{elseif $operation == 'display'}
+<div class="main">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <a class="btn btn-default" href="{php echo $this->createWebUrl('intelligent', array('op' => 'post', 'storeid' => $storeid))}"><i class="fa fa-plus"></i> 添加活动</a>
+            <a class="btn btn-default" href="{php echo $this->createWebUrl('goods', array('op' => 'display', 'storeid' => $storeid))}"><i class="fa fa-list"></i> 商品管理</a>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <form action="" method="post" class="form-horizontal form" >
+        <div class="table-responsive panel-body">
+        <table class="table table-hover">
+            <thead class="navbar-inner">
+            <tr>
+                <th style="width:10%;">显示顺序</th>
+                <th style="width:15%;">活动名称</th>
+                <th style="width:60%;text-align: left;">商品</th>
+                <th style="width:10%;text-align:right;">操作</th>
+            </tr>
+            </thead>
+            <tbody id="level-list">
+            {loop $intelligents $row}
+            <tr>
+                <td><input type="text" class="form-control" name="displayorder[{$row['id']}]" value="{$row['displayorder']}"></td>
+                <td >{$row['title']}</td>
+                <td style="white-space:normal;">
+                    {php //$goodsids = explode(',', $row['content']);}
+                    {php $goodsstrs = iunserializer($row['content']);}
+                    {php $goodsids = array();}
+                    {loop $goodsstrs $value}
+                    {php $goodsids[] = $value['id'];}
+                    {/loop}
+                    {loop $goodsids $goodsid}
+                    <label class="checkbox-dishmain"><span class="label" >{$goods_arr[$goodsid]}</span></label>
+                    {/loop}
+                </td>
+                <td style="text-align:right;"><a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('intelligent', array('op' => 'post', 'id' => $row['id'], 'storeid' => $storeid))}" title="编辑">改</a>&nbsp;&nbsp;<a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('intelligent', array('op' => 'delete', 'id' => $row['id'], 'storeid' => $storeid))}" onclick="return confirm('确认删除此分类吗？');return false;" title="删除">删</a></td>
+            </tr>
+            <tr>
+                <td colspan="4">
+                    {php echo $_W['siteroot'] . 'app/index.php?i=' . $weid . '&c=entry&storeid=' . $storeid . '&do=waplist&m=weisrc_dish&mode=2&intelligentid=' . $row['id']}
+                </td>
+            </tr>
+            {/loop}
+
+            <tr>
+                <td colspan="4">
+                    <input name="submit" type="submit" class="btn btn-primary" value="批量更新排序">
+                    <input type="hidden" name="token" value="{$_W['token']}" />
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        </div>
+        </form>
+    </div>
+    {$pager}
+</div>
+{/if}
+{if $_W['isfounder']}
+{template 'common/footer'}
+{else}
+{template 'public/footer'}
+{/if}

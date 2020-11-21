@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>{$setting['title']}-{$contestantitem['uid']}号-{$contestantitem['name']}</title>
+<meta name="format-detection" content="telephone=no, address=no">
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-touch-fullscreen" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link href="{MODULE_URL}template/mobile/xiaofweui/css/xiaofmoblieui.css" rel="stylesheet">
+<link href="{MODULE_URL}resources/css/font-awesome.min.css" rel="stylesheet">
+<link href="{MODULE_URL}template/mobile/xiaofweui/css/xiaoftoupiao.css" rel="stylesheet">
+{php echo register_jssdk(false);}
+<script src="{$_W['siteroot']}app/resource/js/require.js"></script>
+{if !empty($setting['verifycode'])}
+    <script src="{MODULE_URL}template/mobile/js/gt.js"></script>
+<script type="text/javascript">
+var verifycode = true;
+</script>
+{else}
+<script type="text/javascript">
+var verifycode = false;
+</script>
+{/if}
+<style>
+.order .cur,.group .cur,.bottom-tabbar .cur span,.grid-item .pic-box .vote, .xiaof-input-radio .fa-check{ color:{$setting['buttoncolor']};}
+.grid-item .pic-box .vote{ border: 1px solid {$setting['buttoncolor']};}
+.xiaof-button,.xiaof-button-small{ background:{$setting['buttoncolor']};}
+</style>
+<script type="text/javascript">
+    window.sysinfo.sid = "{$_GPC['sid']}";
+    window.sysinfo.gifename = "{$setting['giftname']}";
+require.config({
+	baseUrl: '{MODULE_URL}template/mobile/xiaofweui/js',
+	//urlArgs: "v={php echo time();}",
+	paths: {
+		'css': '{$_W['siteroot']}web/resource/js/lib/css.min',
+		'jquery': 'jquery-2.2.3.min',
+		'swiper': 'swiper.jquery.min',
+		'imagesloaded': 'imagesloaded.min',
+		'masonry': 'masonry.pkgd.min',
+		'xiaof': 'xiaofmoblieui',
+		'main': 'main'
+	},
+	shim:{
+		'swiper': {
+			exports: 'swiper',
+			deps: ['jquery', 'css!{MODULE_URL}template/mobile/xiaofweui/css/swiper.min.css']
+		},
+		'imagesloaded': {
+			exports: 'imagesloaded',
+			deps: ['jquery']
+		},
+		'xiaof': {
+			exports: 'xiaof',
+			deps: ['jquery']
+		}
+	},
+	waitSeconds: 10
+});
+</script>
+</head>
+<body>
+{template 'ad'}
+{if !empty($setting['noticetitle'])}
+<a href="{php echo self::appUrl('detail');}">
+	<div class="xiaof-box xiaof-notice">
+		公告<i class="fa fa-volume-up"></i>：<span class="xiaof-box-item"><marquee direction=left>{$setting['noticetitle']}</marquee></span>
+	</div>
+</a>
+{/if}
+<div class="head">
+    <div class="head-banner">
+		{if is_array($setting['thumb'])}
+			{if count($setting['thumb']) <=1}
+				<a href="{php echo trim($setting['thumblinkarr'][0]);}"><img src="{php echo tomedia(reset($setting['thumb']))}"></a>
+			{else}
+				<div class="swiper-container" id="banner-container">
+				  <div class="swiper-wrapper">
+					{php $ti = 0;}
+					{loop $setting['thumb'] $thumbitem}
+					<div class="swiper-slide"><a href="{php echo trim($setting['thumblinkarr'][$ti]);}"><img src="{php echo tomedia($thumbitem);}"></a></div>
+					{php $ti++;}
+					{/loop}
+				  </div>
+				</div>
+				<script>
+					require(['swiper'], function(Swiper){
+						new Swiper('#banner-container', {
+							autoplay: {if $setting['thumbsecond']}{$setting['thumbsecond']}*1000{else}3000{/if}
+						})
+					});
+				</script>
+			{/if}
+		{else}
+        <img src="{php echo tomedia($setting['thumb'])}">
+		{/if}
+    </div>
+
+    <div class="head-count xiaof-box">
+		<span class="xiaof-box-item">
+			得{$setting['xiaofvotekey']}数<br>
+			<span class="good">{$contestantitem['good']}</span>
+		</span>
+		<span class="xiaof-box-item">
+			转发量<br/>
+			<span class="share">{$contestantitem['share']}</span>
+		</span>
+		<span class="xiaof-box-item">
+			浏览量<br/>
+			{$contestantitem['click']}
+		</span>
+		{if !empty($setting['opengiving']) && in_array('usercount', $setting['givingshow'])}
+		<span class="xiaof-box-item">
+			{$setting['giftname']}数<br/>
+			{$givingvotes}
+		</span>
+		{/if}
+    </div>
+	<div class="head-info">
+		<div class="head-box" >
+			<div class="wrapper clearfix">
+				<div class="fn-left">
+					<i class="fa fa-heart head-box-end"></i>
+				</div>
+				<div class="fn-left head-box-describe">
+				{if $contestantitem['describe']==''}{$setting['describe']}{else}{$contestantitem['describe']}{/if}
+				</div>
+			</div>
+		</div>
+		<div class="head-box-hr"></div>
+		<div class="head-box">
+			<div class="wrapper">
+				<i class="fa fa-cubes i-m8"></i>{$contestantitem['uid']}号-{$contestantitem['name']}。当前第{$tops}名
+			</div>
+		</div>
+		<div class="head-box-hr"></div>
+		<div class="head-box">
+			<div class="wrapper">
+				<i class="fa fa-eye i-m8"></i>距前一名差{$former}{$setting['xiaofvotekey']}，后一名差{$after}{$setting['xiaofvotekey']}
+			</div>
+		</div>
+		<div class="head-box-hr"></div>
+		{if intval($setting['double']) >= 2}
+		<div class="head-box">
+			<div class="wrapper">
+				<i class="fa fa-clock-o i-m8"></i>{php echo $this->n2c($setting['double']);}倍时间：{php echo date("m-d H:i",strtotime($setting['doublestart']));}  至  {php echo date("m-d H:i",strtotime($setting['doubleend']));}
+			</div>
+		</div>
+		<div class="head-box-hr"></div>
+		{elseif $contestantitem['double_at'] > time()}
+		<div class="head-box">
+			<div class="wrapper">
+				<i class="fa fa-clock-o i-m8"></i>{php echo $this->n2c($contestantitem['double_num']);}倍{$setting['xiaofvotekeys']}时间至：{php echo date("Y-m-d H:i", $contestantitem['double_at'])}结束
+			</div>
+		</div>
+		<div class="head-box-hr"></div>
+		{/if}
+	</div>
+</div>
+
+<div class="wrapper">
+    {if empty($setting['picishidden'])}
+	<div id="show-container" class="swiper-container">
+			{if $setting['opensound'] >= 1 && !empty($contestantitem['sound'])}
+			<div class="show-sound">
+				<img class="sound-on" src="{MODULE_URL}template/mobile/xiaofweui/picture/ms.png"/>
+				<img class="sound-off" src="{MODULE_URL}template/mobile/xiaofweui/picture/mp.png"/>
+			</div>
+			{/if}
+		<ul class="show-lists swiper-wrapper"{if !empty($setting['piclisttype'])} style="display: block;"{/if}>
+			{loop $lists $items}
+			<li  class="swiper-slide"><img class="slide-img" src="{php echo tomedia($items['thumb']);}"/></li>
+			{/loop}
+		</ul>
+		<div class="swiper-pagination swiper-pagination-clickable swiper-pagination-bullets">
+		</div>
+	</div>
+    {/if}
+
+	{if !empty($contestantitem['video'])}
+	<div style="margin-top: 8px; overflow: hidden;">
+		<div id="video-show1">
+			<video x5-video-player-type="h5" playsinline="true" id="video-show" style="width: 100%;height:100%;" controls autobuffer preload="metadata" x-webkit-airplay poster="{if $contestantitem['video_poster']}{php echo tomedia($contestantitem['video_poster'])}{else}{$contestantitem['video']}?vframe/jpg/offset/0|imageView2/1/w/496/h/280{/if}">
+				<source src="{$contestantitem['video']}" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'></source>
+			</video>
+		</div>
+		<script language="javascript">
+            require(['jquery'], function($){
+                var pwidth = $(document).width();
+                if(pwidth >= 1024){
+                    $("#video-show1").height(parseInt($(document).width()/2.13));
+                }else if(pwidth >= 720){
+                    $("#video-show1").height(parseInt($(document).width()/1.60));
+                }else if(pwidth <= 480){
+                    $("#video-show1").height(parseInt($(document).width()/1.33));
+                }
+            });
+		</script>
+	</div>
+	{/if}
+
+	{if count($videodata) >= 1}
+	<script language="javascript" src="https://qzs.qq.com/tencentvideo_v1/js/tvp/tvp.player.js" charset="utf-8"></script>
+	{loop $videodata $videodataitem}
+	<div style="margin-top: 8px;">
+		{if !empty($videodataitem['data'])}
+		<iframe frameborder="0" width="100%" height="100%" src="https://v.qq.com/iframe/player.html?vid={$videodataitem['vid']}&tiny=0&auto=0&height=180" allowfullscreen></iframe>
+		<!--<div class="detail-con">
+			<div id="mod_player_wrap" class="mod_player_wrap">
+				<div class="mod_inner">
+					<div id="mod_inner" class="mod_player_section center mod_independent">
+						<div>
+							<div id="mod_player" class="mod_player">
+								<div id="mod_player_skin">&nbsp;</div>
+								<script language="javascript">
+                                    var video = new tvp.VideoInfo();
+                                    video.setVid("{$videodataitem['vid']}");
+                                    var player = new tvp.Player("100%", "100%");
+                                    player.setCurVideo(video);
+                                    player.addParam("autoplay","0");
+                                    player.addParam("wmode","transparent");
+                                    player.addParam("pic","https://puui.qpic.cn/qqvideo_ori/0/{$videodataitem['vid']}_496_280/0");
+                                    player.write("mod_player_skin");
+								</script>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>-->
+		{/if}
+	</div>
+	{/loop}
+	{/if}
+
+	<div class="show-field">
+	{loop $fielddata $fielddataitem}
+		<p style="">
+			{$fielddataitem['name']}：{$fielddataitem['data']}
+		</p>
+		<div class="head-box-hr"></div>
+	{/loop}
+	</div>
+
+	{if !empty($contestantitem['detail'])}
+		<div style="margin-top: 8px;">
+			{php echo htmlspecialchars_decode($contestantitem['detail']);}
+		</div>
+	{/if}
+
+	{if $setting['openvoteuser'] == 1}
+		<div class="voteusers clearfix">
+		<span class="voteusers-label">
+			<i class="voteusers-label-like fa fa-weixin" style="font-size:32px;"></i><span class="voteusers-label-text">支持:</span>
+		</span>
+		{loop $voteusers $voteuseritem}
+			<span class="voteusers-list"><img src="{$voteuseritem['avatar']}"/></span>
+		{/loop}
+		</div>
+	{/if}
+
+	<div class="show-button-group">
+		{if empty($setting['notfollowvote']) or $this->checkFollow()}
+		<span style="display: {if empty($setting['openfloatvote'])}none{else}block{/if}" class="xiaof-button vote" id="votes" data-id="{$contestantitem['id']}">喜欢Ta
+            {if empty($setting['votetogood'])}
+            投一票
+            {else}
+            点个赞
+            {/if}</span>
+		{/if}
+
+		<span style="display: {if empty($setting['opengiving'])}none{else}block{/if}" class="xiaof-button giving" id="givingbutton" data-class="giving-hidden">赠送{$setting['giftname']}{$setting['xiaofvotekeys']}</span>
+
+		{if intval($setting['openproperty']) == 1}
+		<span class="xiaof-button giving" data-class="property-hidden">使用多倍道具</span>
+		{/if}
+		{loop $buttondata $buttondataitem}
+		<a class="xiaof-button" href="{$buttondataitem['data']}">{$buttondataitem['name']}</a>
+		{/loop}
+		{if intval($setting['showshare']) == 1 && $setting['globalsetting']['enableshare'] == 1}
+		<span class="xiaof-button" onclick="shareLayer();">喊亲友来加油{$setting['xiaofvotekeys']}</span>
+		{/if}
+        {if intval($setting['shareswitch']) == 1}
+        <span class="xiaof-button" onclick="shareFriends();">分享朋友圈帮忙{$setting['xiaofvotekeys']}</span>
+        {/if}
+		{if intval($setting['openotherqrcode']) == 1}
+		<span class="xiaof-button getotherqrcode" id="getotherqrcode">
+            {if empty($setting['votetogood'])}
+            投多票秘籍
+            {else}
+            赞多次秘籍
+            {/if}
+        </span>
+		{/if}
+		{if intval($setting['openposter']) == 1}
+		<!--<a class="xiaof-button" href="{php echo tomedia($contestantitem['poster']);}">宣传海报</a>-->
+        {if empty($setting['style_poster'])}
+        <a class="xiaof-button" onclick="poster({$contestantitem['id']})">宣传海报</a>
+        {else}
+        <input type="hidden" name="item_poster" value="{$setting['bgimg']}"/>
+        <a href="#" class="alert_share_poster xiaof-button" data-poster-uid="{$contestantitem['uid']}" data-member-default-avatar="{$ret['abs_path']}"  data-poster-name="{$contestantitem['name']}" data-poster-img="{$palyerimg}" data-poster-qrcode="{$ret['url']}" data-poster-url="{php echo self::appUrl('show', 'xiaof_toupiao', '&id=' . $contestantitem['id'].'&screen_width='. $screen_width . '&screen_height='. $screen_height . '')}" data-no-cache="true" data-item-unit="{$product['unit']}">
+            分享海报</a>
+        {/if}
+		{/if}
+		{if empty($setting['openwapjoin']) && !empty($contestantitem['verify'])}
+			{if self::checkjoin()}
+				{if $contestantitem['id'] == $myid}
+                    <!--报名成功后删除修改入口-->
+					<!--<a class="xiaof-button" href="{php echo self::appUrl('join');}">编辑我的报名</a>-->
+				{else}
+					<a class="xiaof-button" href="{php echo self::appUrl('show');}">我的报名</a>
+				{/if}
+			{else}
+				<a class="xiaof-button" href="{php echo self::appUrl('join');}">我也来参加</a>
+			{/if}
+		{/if}
+	</div>
+
+    <!--礼物道具赠送信息开始-->
+	{if intval($setting['opengiving']) == 1 && in_array('userlog', $setting['givingshow']) && !empty($givinglog) && (intval($setting['giftrecordshow']) == 0 || (intval($setting['giftrecordshow']) == 2 && self::checkjoin() && $contestantitem['id'] == $myid))}
+        <div class="article-title" >
+            <h3>
+            {$setting['giftname']}道具
+            </h3>
+        </div>
+        <div class="article-content">
+        {loop $givinglog $givingitem}
+        <p class="article-content-givinglog clearfix">
+        {if !empty($givingitem['avatar'])}<img src="{$givingitem['avatar']}"/>{/if}
+        <span class="givinglog-nickname">{$givingitem['nickname']}</span>{if $givingitem['type'] == 1}赠送{else}使用{/if}
+        <span class="giving-name">{$givingitem['giving_name']}</span> {if $givingitem['type'] == 1}{$setting['xiaofvotekey']}+{$givingitem['num']}{else}{$givingitem['data']}分钟{/if}
+        <span class="giving-time fn-right">{php echo date("m-d H:i", $givingitem['use_at'])}</span>
+        </p>
+        <div class="head-box-hr"></div>
+        {/loop}
+
+        <a class="givinglog-more" href="{php echo self::appUrl('givinglog','xiaof_toupiao','&pid=' . $contestantitem['id']);}">&gt;&gt;更多记录</a>
+        </div>
+	{/if}
+    <!--礼物道具赠送信息结束-->
+</div>
+
+{if $setting['opengiving'] == 1  && empty($setting['openfloatvote'])}
+<div class="float-vote">
+	<div class="xiaof-button-left">
+		<span class="xiaof-button vote" id="votes" data-id="{$contestantitem['id']}">给Ta{$setting['xiaofvotekeys']}</span>
+	</div>
+	<div class="float-vote-button" onclick="document.getElementById('givingbutton').click()">
+		<img src="{MODULE_URL}/resources/image/gift.png" ><br/>
+		送{$setting['giftname']}
+	</div>
+	<div class="xiaof-button-right">
+		{if intval($setting['openotherqrcode']) == 1}
+		<span class="xiaof-button" onclick="document.getElementById('getotherqrcode').click()">
+            {if empty($setting['votetogood'])}
+            再投一票
+            {else}
+            再点个赞
+            {/if}
+        </span>
+		{elseif empty($setting['openwapjoin'])}
+			{if self::checkjoin()}
+				<a class="xiaof-button" href="{php echo self::appUrl('show');}">我的报名</a>
+			{else}
+				<a class="xiaof-button" href="{php echo self::appUrl('join');}">我要报名</a>
+			{/if}
+		{/if}
+	</div>
+</div>
+{/if}
+
+{template $setting['template'].'footer'}
+
+<div class="giving-hidden" style="display:none">
+	{php $g = 0;}
+	{loop $setting['giving'] $key $givingitem}
+		{if $g % 3 == 0}
+		<div class="xiaof-box">
+		{/if}
+			<div class="xiaof-box-item">
+			<div class="giving-box" data-id="{$key}" data-type="1" data-name="{$givingitem['name']}" data-buycredit="{$givingitem['buycredit']}">
+				<span class="giving-adding">{if empty($setting['closegivingcredit'])}{$givingitem['mygiving']}个{else}+{$givingitem['adding']}{$setting['xiaofvotekey']}{/if}</span>
+				<img src="{php echo tomedia($givingitem['pic']);}" />
+				<p class="giving-name">{$givingitem['name']}<p/>
+				<p class="buycredit-credit">{if empty($setting['closegivingcredit'])}<i class="fa fa-database"></i>{else}<i class="fa fa-rmb"></i>{/if} {$givingitem['buycredit']}<p/>
+			</div>
+			</div>
+		{if ($g+1) % 3 == 0}
+		</div>
+		{/if}
+		{php $g++;}
+	{/loop}
+	{if $setting['givingselectnum'] >=1}
+	数量：<select name="givingnum" id="givingnum">
+		<option value="1" selected="selected">1</option>
+		<option value="2">2</option>
+		<option value="3">3</option>
+		<option value="4">4</option>
+		<option value="5">5</option>
+		<option value="6">6</option>
+		<option value="7">7</option>
+		<option value="8">8</option>
+		<option value="9">9</option>
+		<option value="10">10</option>
+		<option value="20">20</option>
+		<option value="50">50</option>
+		<option value="100">100</option>
+	</select>
+	{/if}
+</div>
+
+<div class="property-hidden" style="display:none">
+	{php $g = 0;}
+	{loop $setting['property'] $key $propertyitem}
+		{if $g % 3 == 0}
+		<div class="xiaof-box">
+		{/if}
+			<div class="xiaof-box-item">
+			<div class="giving-box" data-id="{$key}" data-type="2" data-name="{$propertyitem['name']}" data-buycredit="{$propertyitem['buycredit']}">
+				<span class="giving-adding">{if empty($setting['closegivingcredit'])}{$propertyitem['myproperty']}个{else}{php echo $this->Xiaof->funcMinute2hour($propertyitem['effectivetime']);}{/if}</span>
+				<img src="{php echo tomedia($propertyitem['pic']);}" />
+				<p class="giving-name">{$propertyitem['name']}<p/>
+				<p class="buycredit-credit">{if empty($setting['closegivingcredit'])}<i class="fa fa-database"></i>{else}<i class="fa fa-rmb"></i>{/if} {$propertyitem['buycredit']}<p/>
+			</div>
+			</div>
+		{if ($g+1) % 3 == 0}
+		</div>
+		{/if}
+		{php $g++;}
+	{/loop}
+</div>
+
+</body>
+<script type="text/javascript">
+    function poster(){
+        if($(".loadtips").length > 0){
+            $(".loadtips").css("display",'block');
+            setInterval("loadicon()",10);
+        }
+        var screen_width = window.screen.width ;
+        var screen_height = window.screen.height ;
+        window.location.href = "{php echo self::appUrl('poster','xiaof_toupiao','&id='.$contestantitem[id].'&screen_height="+screen_height+"&screen_width="+screen_width+"')}";
+    }
+	function shareLayer(){
+		$("body").append("<div class='share-layer' onclick='$(this).remove();'><img src='{MODULE_URL}template/mobile/xiaofweui/picture/4.png'/></div>");
+	}
+    function shareFriends(){
+        $("body").append("<div class='share-layer' onclick='$(this).remove();'><img src='{MODULE_URL}template/mobile/xiaofweui/picture/5.png'/></div>");
+    }
+	require(['jquery', 'main', 'swiper', 'xiaof'], function($, xiaoftoupiao, Swiper){
+        var pheight = window.screen.height;
+        $('.xiaof-dialog-content').css({
+            'max-height':pheight*0.7+'px',
+            'overflow':'auto',
+        });
+		$.get("{php echo self::appUrl('statistics','xiaof_toupiao','&id='.$contestantitem[id].'&type=click')}");
+        {if empty($setting['piclisttype'])}xiaoftoupiao.showSwiper(Swiper);{/if}
+		xiaoftoupiao.registerVote($(".good"), Swiper);
+		xiaoftoupiao.showSound("{$contestantitem['sound']}");
+
+		{if !empty($givingmsg)}
+		$.xiaof.alert(tips, '{$givingmsg}');
+		{/if}
+
+        $(".getotherqrcode").click(function(){
+            $.get("{php echo self::appUrl('getotherqrcode')}",{'pid':{$contestantitem['id']}},function(data){
+                var result = $.parseJSON(data);
+                $.xiaof.alert(tips, result.message);
+                if (result.message.indexOf("acid-lists")) {
+                    new Swiper('.acid-lists', {
+                        scrollbar: '.swiper-scrollbar',
+                        autoplay: 3000,
+                        scrollbarHide: true,
+                        slidesPerView: 1
+                    });
+                }
+            });
+        });
+
+		$(".giving").click(function(){
+		    $("#xiaof-dialog-arlet").hide();
+			$.xiaof.confirm('赠送{$setting['giftname']}道具', $("."+$(this).attr("data-class")).html(), function(status, obj){
+
+				if(status == 'success'){
+					var givingcur = $(".giving-box.giving-cur");
+                    var gid = givingcur.attr("data-id");
+                    var type = givingcur.attr("data-type");
+                    var givingnum = 1;
+
+                    if(obj.find("#givingnum").length > 0){
+                        givingnum = obj.find("#givingnum").val();
+                    }
+
+                    if(gid == null){
+                        $.xiaof.alert(tips, "没有选择要赠送的{$setting['giftname']}或道具");
+                        return ;
+                    }
+                    {if empty($setting['closegivingcredit'])}
+					$.get("{php echo self::appUrl('givegiving')}",{'gid':gid,'type':type,'num':givingnum,'pid':{$contestantitem['id']}},function(data){
+						var result = $.parseJSON(data);
+						if (result.errno == 0) {
+							$.xiaof.alert(tips, result.message);
+							setTimeout(function(){
+								location.reload();
+							},2000);
+							return ;
+						}
+                        if (result.errno == 998) {
+                            $.xiaof.confirm(tips, result.message, function (status, obj) {
+                                if (status == 'success') {
+                                    location.href = "{php echo self::appUrl('giving')}";
+                                }
+                            });
+                            return ;
+                        }
+                        $.xiaof.alert(tips, result.message);
+					});
+					{else}
+                    /*if($(".loadtips").length > 0){
+                        $(".loadtips").css("display",'block');
+                        setInterval("loadicon()",10);
+                    }
+                    var url = window.sysinfo.siteroot + "app/index.php?c=entry&do=paygiving&m=xiaof_toupiao&i="+window.sysinfo.uniacid+"&sid={$setting['id']}&gid="+gid+"&type="+type+"&num="+givingnum+"&pid={$contestantitem['id']}&wxref=mp.weixin.qq.com#wechat_redirect";
+                    var data = '';
+                    $.ajax({
+                        type: 'post',
+                        url: url,
+                        data: data,
+                        dataType: 'json',
+                        success: function(resp){
+                            if (resp.errno == 0) {
+                                $(".wechat-pay").attr("disabled",false);
+                                $('.wechat-pay').removeClass('weui-btn_disabled');
+                                $('.wechat-pay').addClass('weui-btn_primary');
+
+                                if($(".loadtips").length > 0){
+                                    $(".loadtips").css("display",'none');
+                                    window.clearInterval("loadicon()");
+                                }
+                                WeixinJSBridge.invoke('getBrandWCPayRequest', {
+                                    "appId": resp.data.appId, //公众号名称，由商户传入
+                                    "timeStamp": resp.data.timeStamp, //时间戳，自1970 年以来的秒数
+                                    "nonceStr": resp.data.nonceStr, //随机串
+                                    "package": resp.data.package,
+                                    "signType": resp.data.signType, //微信签名方式:
+                                    "paySign": resp.data.paySign //微信签名
+                                }, function (res) {
+                                    if (res.err_msg == "get_brand_wcpay_request:ok") {
+                                        location.href = resp.data.redirect_url;
+                                    } else {
+                                        if(res.err_msg == 'get_brand_wcpay_request:cancel') {
+                                            $.xiaof.alert(tips, '您取消了本次支付！');
+                                        } else {
+                                            $.xiaof.alert(tips, '启动微信支付失败, 请检查你的支付参数. 详细错误为: ' + res.err_msg);
+                                        }
+                                    }
+                                });
+                            } else {
+                                $(".wechat-pay").attr("disabled",false);
+                                $('.wechat-pay').removeClass('weui-btn_disabled');
+                                $('.wechat-pay').addClass('weui-btn_primary');
+                                $.xiaof.alert(tips, resp.errmsg);
+                            }
+                        }
+                    });*/
+                    location.href = window.sysinfo.siteroot + "app/index.php?c=entry&do=paygiving&m=xiaof_toupiao&i="+window.sysinfo.uniacid+"&sid={$setting['id']}&gid="+gid+"&type="+type+"&num="+givingnum+"&pid={$contestantitem['id']}&wxref=mp.weixin.qq.com#wechat_redirect";
+					{/if}
+				}
+			});
+			$(document).on("click", ".giving-box", function() {
+				$(".giving-box").removeClass("giving-cur");
+				$(this).addClass("giving-cur");
+			});
+		});
+
+
+		//$.xiaof.parseForm();
+		wx.ready(function () {
+			wx.onMenuShareAppMessage({
+				title: '{$mysharetitle}',
+				desc: '{if $contestantitem['describe']==''}{$setting['describe']}{else}{php echo trim($contestantitem['describe'])}{/if}',
+				link: '{php echo $this->shareUrl('show','xiaof_toupiao','&id='.$contestantitem['id'].'')}',
+				imgUrl: '{php echo tomedia($contestantitem['pic'])}',
+				success: function(){
+					var This = $(".share");
+					This.html(parseInt(This.html())+1);
+					$.get("{php echo self::appUrl('statistics','xiaof_toupiao','&id='.$contestantitem[id].'&type=share')}");
+				},
+				cancel: function(){}
+			});
+			wx.onMenuShareTimeline({
+				title: '{$mysharetitle}',
+				link: '{php echo $this->shareUrl('show','xiaof_toupiao','&id='.$contestantitem['id'].'')}',
+				imgUrl: '{php echo tomedia($contestantitem['pic']);}',
+				success: function () {
+                    setTimeout(function(){
+                        var This = $(".share");
+                        This.html(parseInt(This.html())+1);
+                        $.ajax({
+                            url: "{php echo self::appUrl('statistics','xiaof_toupiao','&id='.$contestantitem[id].'&uid='.$contestantitem[uid].'&sign='.$sign.'&t='.$params['t'].'&type=share')}",
+                            type: "get",
+                            dataType: "text",
+                            success: function (votes) {
+                                if(votes != '' && votes != 'xiaoftoupiao'){
+                                    var good = $(".good").text();
+                                    $(".good").text(parseInt(good)+parseInt(votes));
+                                }
+                            }
+                        });
+                    }, 100);
+				},
+				cancel: function () {}
+			});
+
+        });
+        //选手海报
+        $('.alert_share_poster').click(function () {
+            var item_poster = $('input[name=item_poster]').val();
+            var poster_url = $(this).attr('data-poster-url');
+            var item_poster_open = $(this).attr('data-item-poster-open');
+            //选手照片
+            var player_img = $(this).attr('data-poster-img');
+            //选手编号
+            var player_uid = $(this).attr('data-poster-uid');
+            //选手名称
+            var player_name = $(this).attr('data-poster-name');
+            //二维码图片
+            var poster_qrcode = $(this).attr('data-poster-qrcode');
+            //文字描述
+            poster_font = '截屏保存分享给你的朋友';
+            var html = '';
+            html += '<div class="member_introduce">';
+            html += '<div style="clear:both"></div>';
+            html += '</div>';
+            html += '<div class="commodity_picture" style="text-align: center; max-height: 280px; overflow: hidden;">';
+            html += '<img src="'+player_img+'" alt="" style="width: 100%;">';html += '</div>';
+            html += '<div class="commodity">';
+            html += '<div class="qrcode col-20" style="width: 55%; float: left;"><img width="100%" src="'+poster_qrcode+'"></div>';
+            html += '<div class="col-80" style="width: 45%; float: left; margin-top: 30px; font-size: 16px; text-align: left;">';
+            html += '<div class="commodity_name font7" style="word-break:break-all">编号：'+player_uid+'</div>';
+            html += '<div class="text-left commodity_price font7" style="word-break:break-all; margin-top: 15px;">姓名：'+player_name+'</div>';
+            html += '</div>';
+            html += '<div style="clear:both"></div>';
+            html += '</div>';
+            html += '<div class="text-center prompt_content font5" style="text-align: center;">'+poster_font+'</div>';
+            $.xiaof.alert('', html);
+            var modal_marginTop = $('.modal').css('marginTop');
+            var modal_Top = Math.abs(parseInt(modal_marginTop));
+            $('.modal').css('marginTop','-200px');
+            if (modal_Top >= 229) {
+                $('.modal').css('marginTop','-200px');
+            }
+            $('.modal .modal-inner').addClass('inner').css('background','#fff');
+            $('.modal .modal-buttons').addClass('buttons');
+            $('.modal .modal-button').css('border-radius','0 !important').html('关闭').addClass('icon iconfont');
+
+        });
+	});
+</script>
+</html>

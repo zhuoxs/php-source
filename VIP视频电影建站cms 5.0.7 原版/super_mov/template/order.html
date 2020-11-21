@@ -1,0 +1,104 @@
+{template 'common/header'}
+<style>
+.table td span{display:inline-block;margin-top:4px;}
+.table td input{margin-bottom:0;}
+.account-stat{overflow:hidden; color:#666;}
+.account-stat .account-stat-btn{width:100%; overflow:hidden;}
+.account-stat .account-stat-btn > div{text-align:center; margin-bottom:5px;margin-right:2%; float:left;width:23%; height:80px; padding-top:10px;font-size:16px; border-left:1px #DDD solid;position: relative}
+.account-stat .account-stat-btn > div.col-3{width: 31%}
+.account-stat .account-stat-btn > div:first-child{border-left:0;}
+.account-stat .account-stat-btn > div span{display:block; font-size:30px; font-weight:bold}
+.account-stat .account-stat-btn > div.col-12{width: 12.2%;}
+.account-stat .account-stat-btn > div.col-6{width: 48%;}
+.account-stat .account-stat-btn > div a{font-size: 15px; position: absolute; right: 0; bottom: 10px}
+</style>
+<div class="panel panel-default">
+    <div class="panel-heading">
+        关键指标
+    </div>
+    <div class="account-stat">
+        <div class="account-stat-btn">
+            <div>总收入<span>{$total_amount}元</span></div> 
+        </div>
+    </div>
+</div>
+<div class="main">
+	<div class="panel panel-info">
+	<div class="panel-heading">筛选</div>
+	<div class="panel-body">
+		<form action="./index.php" method="get" class="form-horizontal" role="form">
+			<input type="hidden" name="c" value="{$_GPC['c']}">
+			<input type="hidden" name="a" value="{$_GPC['a']}">
+			<input type="hidden" name="do" value="{$_GPC['do']}">
+			<input type="hidden" name="m" value="{$_GPC['m']}">
+			<input type="hidden" name="id" value="{$_GPC['id']}">
+			<div class="form-group">				
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">订单时间</label>
+                <div class="col-xs-5" >
+                    {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d', $starttime),'endtime'=>date('Y-m-d', $endtime)));}
+                </div>
+			</div>			
+			<div class="form-group">				
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">支付状态</label>
+				<div class="col-xs-2">
+					<select name="status" class="form-control">
+						<option value="0" {if intval($_GPC['status']) == 0}selected="selected"{/if}>全部</option>
+						<option value="1" {if intval($_GPC['status']) == 1}selected="selected"{/if}>已支付</option>
+						<option value="2" {if intval($_GPC['status']) == 2}selected="selected"{/if}>未支付</option>
+					</select>
+				</div>				
+			</div>
+			<div style="color: red !important;">&#22823;&#37327;&#28304;&#30721;&#65292;&#25345;&#32493;&#26356;&#26032;&#65306;&#119;&#119;&#119;&#46;&#108;&#97;&#110;&#114;&#101;&#110;&#122;&#104;&#105;&#106;&#105;&#97;&#46;&#99;&#111;&#109;</div>
+			<div class="form-group">				
+				<div class="col-xs-12 col-sm-8 col-md-8 col-lg-8" >
+					<button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>	
+					<a href="{php echo $this->createWebUrl('order', array('op'=>'qingli'));}" class="btn btn-default" >一键清理未支付</a>  				
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+	<div class="panel panel-default">		
+		<div class="panel-heading">订单列表</div> 	
+				<table class="table table-hover table-bordered table-responsive">
+					
+					<thead class="navbar-inner">
+						<tr>
+							<th style="width: 350px">订单编号</th>							
+							<th>会员</th>							
+							<th>金额</th>							
+							<th>支付方式</th>							
+							<th>天数</th>							
+							<th>支付状态</th>
+							<th>支付时间</th>
+						</tr>
+					</thead>
+					<tbody>
+						{loop $list $data}						
+						{php $uniontid = pdo_get('core_paylog',array('tid'=>$data['tid']),array())}						
+						{php $member =  member($data['openid'])}
+						<tr>
+							<td>{if $data['desc']}{$data['desc']}{else}{if $uniontid['uniontid']}{$uniontid['uniontid']}{else}{$data['tid']}{/if}{/if}</td>  							
+							<td>{$member['nickname']}</td>  							
+													
+							<td>{$data['fee']}</td>							
+							<td>{$uniontid['type']}</td>							
+							<td>{$data['day']}</td>							
+							
+							<td>{if $data['status'] == 1}<span class="btn btn-success">已支付{else}<span class="btn btn-danger">未支付{/if}</span></td>
+							<td>{php echo date('Y-m-d H:i:s',$data['time'])}</td>	
+						</tr>
+						{/loop}
+						{if empty($list)}
+						<tr>
+							<td colspan="8">
+								尚未添加
+							</td>
+						</tr>
+						{/if}
+					</tbody>
+				</table>
+				{$pager}
+	</div>
+</div>
+{template 'common/footer'}

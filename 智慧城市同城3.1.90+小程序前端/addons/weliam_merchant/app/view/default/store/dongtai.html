@@ -1,0 +1,64 @@
+<!--列表详情部分-->
+<ol id="FL_detail">
+	<ul class="Tz_box" id="section-linemove" data-total-pages="0" data-page="0" data-s="0">
+
+	</ul>
+	<div class="infinite-scroll-preloader">
+		<div  class="weui-loadmore">
+	        <i class="weui-loading"></i>
+	        <span class="weui-loadmore__tips">正在加载</span>
+	    </div>
+	</div>
+</ol>
+<script>
+	var page = 1,
+	    pagesize = 8,
+	    endmark = 1,
+	    loading = 0;
+	asd();
+	function asd(){
+		$('.infinite-scroll-preloader').show();
+		$.post("{php echo app_url('store/merchant/dynamiclist', array('storeid' => $id, 'dod' => $_GPC['do']))}",{},function(d){
+			$('.infinite-scroll-preloader').hide();
+			if(d.length){
+				sessionStorage.setItem("demokey",JSON.stringify(d));
+				var contentdata = d.slice(0,pagesize);
+				addItems(contentdata);
+			}else{
+				
+			}
+		}, 'json');
+	}
+	
+	function addItems(cont){
+		if(cont.length){
+			$('.infinite-scroll-preloader').hide();
+			var gettpl1 = document.getElementById('pocketlist_tpl').innerHTML;
+			laytpl(gettpl1).render(cont, function(html){
+				$(".Tz_box").append(html);
+			});
+			page++;loading = 1;
+		}else{
+			$('.infinite-scroll-preloader').hide();
+			var nothing_html = "<li><div style='padding-top:1px'>" +
+			'<div class="weui-loadmore weui-loadmore_line"><span style="background-color: #FFFFFF;" class="weui-loadmore__tips">暂无更多信息</span></div></div></li>';
+			$(".Tz_box").append(nothing_html);
+			endmark = 0;
+		}
+	}
+	
+	$('.content').scroll(function(){
+		var scr = $('.content').scrollTop();
+		var height = $('.Tz_box').height();
+		if((height-scr)<100){
+			if(endmark && loading){
+			loading = 0;	
+			$('.infinite-scroll-preloader').show();
+			setTimeout(function() {
+				var dt = JSON.parse(sessionStorage.getItem("demokey"));
+				var xxx = dt.slice((page-1)*pagesize ,(page-1)*pagesize+pagesize);
+				addItems(xxx);
+			}, 800);}
+		}
+	});
+</script>

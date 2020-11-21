@@ -1,0 +1,277 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs" id="myTab">
+	<li class="active"><a href="javascript:;">分销商列表</a></li>
+</ul>
+
+<div class="app-content">
+	{if $todo == 'dislist'}
+	<div class="app-filter">
+		<div class="filter-action">
+			<a href="{php echo web_url('distribution/dissysbase/distributorlist',array('todo'=>'adddis'));}" class="btn btn-primary">添加分销商</a>
+		</div>
+		<div class="filter-list">
+			<form action="" method="get" class="form-horizontal" role="form" id="form">
+				<input type="hidden" name="c" value="site" />
+				<input type="hidden" name="a" value="entry" />
+				<input type="hidden" name="m" value="weliam_merchant" />
+				<input type="hidden" name="p" value="distribution" />
+				<input type="hidden" name="ac" value="dissysbase" />
+				<input type="hidden" name="do" value="distributorlist" />
+				<input type="hidden" name="levelid" value="{$_GPC['levelid']}" />
+
+				{if count($dislevels)>1}
+				<div class="form-group">
+					<label class="col-sm-2 control-label">分销商等级</label>
+					<div class="col-sm-9">
+						<div class="btn-group">
+							<a href="{php echo wl_filter_url('levelid:0');}" class="btn {if intval($_GPC['levelid']) == 0}btn-primary{else}btn-default{/if}">不限</a>
+							{loop $dislevels $level}
+							<a href="{php echo wl_filter_url('wlf:0');}&levelid={$level['id']}" class="btn {if intval($_GPC['levelid']) == $level['id']}btn-primary{else}btn-default{/if}">{$level['name']}</a>
+							{/loop}
+						</div>
+					</div>
+				</div>
+				{/if}
+				<div class="form-group form-inline">
+					<label class="col-md-2 control-label">关键字</label>
+					<div class="col-md-9">
+						<select name="type" class="form-control">
+							<option value="2" {if $_GPC['type'] == 2}selected{/if}>手机号</option>
+							<option value="4" {if $_GPC['type'] == 4}selected{/if}>真实姓名</option>
+							<option value="3" {if $_GPC['type'] == 3}selected{/if}>昵称</option>
+							<option value="5" {if $_GPC['type'] == 5}selected{/if}>MID</option>
+						</select>
+						<input type="text" class="form-control" name="keyword" id="keyword" value="{$_GPC['keyword']}" />
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">创建时间</label>
+					<div class="col-md-2">
+						<select name="timetype" class="form-control">
+							<option value="">关闭</option>
+							<option value="1">开启</option>
+						</select>
+                    </div>
+					<div class="col-md-2">
+						{php echo tpl_form_field_daterange('time_limit', array('starttime' => date('Y-m-d',$starttime), 'endtime' => date('Y-m-d', $endtime)));}
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label"></label>
+					<div class="col-md-9">
+						<button class="btn btn-primary"><i class="fa fa-search"></i> 搜索</button>
+						<button class="btn btn-default" name="export" type="submit" value="export"><i class="fa fa-download"></i> 导出</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+	<div class="app-table-list">
+		<div class="table-responsive order-list">
+			<table class="table table-hover">
+				<thead>
+				<tr>
+					<th style="width:50px;">头像</th>
+					<th style="width:50px;">昵称</th>
+					<th class="text-center" style="width:50px;">姓名<br/>电话</th>
+					<th class="text-center" style="width:100px;">创建时间</th>
+					<th class="text-center" style="width:100px;">邀请码</th>
+					<th class="text-center" style="width:120px;">累计佣金<br/>余额</th>
+					{if $base['mode']}
+					<th class="text-center" style="width:100px;">团队信息</th>
+					{else}
+					<th class="text-center" style="width:100px;">上级</th>
+					<th class="text-center" style="width:40px;">下级数量</th>
+					{/if}
+					<th class="text-center" style="width:80px;">分销商等级</th>
+					<th class="text-center" style="width:150px;">操作</th>
+				</tr>
+				</thead>
+				<tbody>
+				{loop $list $mem}
+				<tr data-toggle="popover" data-trigger="hover" data-placement="left" class="js-goods-img">
+					<td><img class="scrollLoading" src="{php echo tomedia($mem['avatar'])}" data-url="{php echo tomedia($mem['avatar'])}" onerror="this.src='{IMAGE_NOPIC_SMALL}'" height="50" width="50"/></td>
+					<td class="line-feed">
+						{$mem['nickname']}<br>
+						MID:{$mem['mid']}
+					</td>
+					<td class="text-center">
+						<span class="">{$mem['realname']}</span><br />
+						<span class="">{$mem['mobile']}</span>
+					</td>
+					<td class="text-center">
+						{php echo date('Y-m-d H:i:s',$mem['createtime'])}
+					</td>
+					<td class="text-center" style="position: relative;">
+						<a href="javascript:;" data-url="{php echo app_url('distribution/disappbase/index',array('invitid'=>$mem['mid']))}" class="js-clip">复制分销链接</a>
+						<br/><a href="javascript:void(0);" onclick="javascript:layer.open({type: 2,title: '微信二维码',shadeClose: true,shade: 0.8,area: ['440px', '475px'],content: '{$mem['qrcode']}'});">微信关注二维码</a>
+					</td>
+					<td class="text-center" style="line-height:25px;">
+						<span class="label label-success">￥{php echo number_format($mem['dismoney'], 2)}</span><br>
+						<span class="label label-info">￥{php echo number_format($mem['nowmoney'], 2)}</span>
+					</td>
+					{if $base['mode']}
+					<td class="text-center">
+						<a href="{php echo web_url('distribution/dissysbase/adddistributor',array('todo'=>'lowpeople','memid'=>$mem['mid']))}"><span>客户:{$mem['lownum']}人</span></a> <br />
+						{if $mem['leadid']>0}
+						<a href="{php echo web_url('distribution/dissysbase/distributordetail',array('todo'=>'base','memid'=>$mem['leadid']))}">
+							<span>一级:{$mem['topname']}</span>
+						</a>
+						{else}
+						<a href="{php echo web_url('distribution/dissysbase/adddistributor',array('todo'=>'lowpeople','memid'=>$mem['mid'],'disflag'=>1))}">
+							<span>团队:{$mem['lowdisnum']}人</span>
+						</a>
+						{/if}
+					</td>
+					{else}
+					<td class="text-center">
+						{if $mem['leadid']>0}
+						<span class="label label-success">{$mem['topname']}</span>
+						{else if $mem['leadid'] == -1}
+						<span class="label label-danger">系统直属</span>
+						{else}
+						<span class="label label-default">暂无上级</span>
+						{/if}
+					</td>
+					<td class="text-center">
+						<span>{$mem['lownum']}(分销商{$mem['lowdisnum']}人)</span>
+					</td>
+					{/if}
+					<td class="text-center">
+						<span class="label label-success">{$mem['rankname']}</span>
+						{if $mem['disflag'] == -1}<br /><br /><span class="label label-danger">已过期</span>{/if}
+					</td>
+					<td  style="position:relative;text-align: center;">
+						<a href="{php echo web_url('distribution/dissysbase/editdistributor',array('id'=>$mem['id']))}" onclick="setTimeout(de,1500);" data-toggle="ajaxModal">编辑  </a> -
+						<a href="{php echo web_url('distribution/dissysbase/distributordetail',array('todo'=>'base','memid'=>$mem['mid']))}" class="">详情</a> -
+						<a href="javascript:;" class="canceldis" disid = "{$mem['id']}">删除</a>
+					</td>
+				</tr>
+				{/loop}
+				</tbody>
+			</table>
+		</div>
+		<div class="app-table-foot clearfix">
+			<div class="pull-left">
+				
+			</div>
+			<div class="pull-right">
+				{$pager}
+			</div>
+		</div>
+	</div>
+	{/if}
+	{if $todo == 'adddis'}
+		<div class="app-form">
+			<form action="" method="post" class="form-horizontal form" id="form">
+				<div class="panel panel-default">
+					<div class="panel-heading">添加分销商</div>
+					<div class="panel-body">
+						<div class="form-group">
+							<label class="col-xs-12 col-sm-3 col-md-2 control-label"><span style='color:red'>*</span>选择用户</label>
+							<div class="col-sm-9 col-xs-12">
+								<input type='hidden' id='memberid' name='memberid' value="" />
+								<div class='input-group'>
+									<input type="text" name="messagesaler" maxlength="30" value="{if !empty($messagesaler)}{$messagesaler['nickname']}{/if}" id="messagesaler" class="form-control" readonly />
+									<div class='input-group-btn'>
+										<button class="btn btn-default" type="button" onclick="popwin = $('#modal-module-menus2').modal();">选择用户</button>
+									</div>
+								</div>
+								<div class="input-group " style="margin-top:.5em;">
+									<input type="hidden" value="{$merchant['id']}" name="goods[merchantid]" id="sidmerchant">
+									<img src="{if empty($messagesaler['avatar'])}../web/resource/images/nopic-107.jpg{else}{php echo tomedia($messagesaler['avatar'])}{/if}" class="img-responsive img-thumbnail" width="150" id="imgmerchant" />
+									<em class="close" style="position:absolute; top: 0px; right: -14px;" title="删除" onclick="remove_merchant(this)">×</em>
+								</div>
+								<div id="modal-module-menus2"  class="modal fade" tabindex="-1">
+									<div class="modal-dialog" style='width: 920px;'>
+										<div class="modal-content">
+											<div class="modal-header"><button aria-hidden="true" data-dismiss="modal" class="close two" type="button">×</button><h3>选择用户</h3></div>
+											<div class="modal-body" >
+												<div class="row">
+													<div class="input-group">
+														<input type="text" class="form-control" name="keyword" value="" id="search-kwd2" placeholder="请输入粉丝昵称/uid/openid" />
+														<span class='input-group-btn'><button type="button" class="btn btn-default" onclick="search_members();">搜索</button></span>
+													</div>
+												</div>
+												<div id="module-menus2" style="padding-top:5px;"></div>
+											</div>
+											<div class="modal-footer"><a href="#" class="btn btn-default" data-dismiss="modal" aria-hidden="true" id="c2">关闭</a></div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">上级分销商</label>
+							<div class="col-md-7">
+								<select name="leadid" class="form-control select2 col-sm-7 col-xs-6" style="width: 100%;">
+									<option value="-1" selected="selected">{if $_W['wlsetting']['distribution']['mode']}一级分销商{else}代理直属{/if}</option>
+									{loop $leadlists $gift}
+									<option value="{$gift['mid']}">{$gift['nickname']}</option>
+									{/loop}
+								</select>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label"></label>
+					<div class="col-sm-9">
+						<input type="submit" name="submit" value="提交" class="btn btn-primary min-width" />
+						<input type="hidden" name="token" value="{$_W['token']}" />
+					</div>
+				</div>
+			</form>
+		</div>
+	{/if}
+</div>
+
+<script>
+	$('.order-list').delegate('.canceldis', 'click', function(e){
+		e.stopPropagation();
+		var $this = $(this);
+		var id = $this.attr('disid');
+		util.nailConfirm(this, function(state) {
+			if(!state) return;
+			$.post("{php echo web_url('distribution/dissysbase/canceldis')}", { id : id }, function(data){
+				if(!data.errno){
+					$this.parent().parent().remove();
+					util.tips("取消资格成功！");
+				};
+			}, 'json');
+		}, {html: "删除分销商，<span style='color:red;'>该分销商所有分销资料将会被清除，所有下线将会成为无上线状态</span>，确认?"});
+	});
+	
+	function search_members(){
+		if( $.trim($('#search-kwd2').val())==''){
+        	Tip.focus('#search-kwd2','请输入关键词');
+        	return;
+     	}
+		$("#module-menus2").html("正在搜索....")
+		$.get("{php echo web_url('distribution/dissysbase/searchmember')}", {
+			keyword: $.trim($('#search-kwd2').val())
+		}, function(dat){
+			$('#module-menus2').html(dat);
+		});
+	}
+	
+	function select_member(o,type) {
+		$("#memberid").val(o.id);
+		$("#messagesaler").val(o.nickname);
+		$("#imgmerchant").attr('src', o.avatar);
+		$(".two").click();
+	}
+	
+	function remove_merchant(obj){
+        $('#messageopenid').val('');
+        $('#messagesaler').val('');
+        $('#imgmerchant').attr("src",'');
+    }
+	
+	function de(){
+		myrequire(['select2'], function() {
+			$('.select2').select2();
+		});
+	}
+</script>
+{php include wl_template('common/footer');}

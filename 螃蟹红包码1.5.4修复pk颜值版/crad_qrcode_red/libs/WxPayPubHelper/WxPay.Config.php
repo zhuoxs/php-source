@@ -1,0 +1,2 @@
+<?php
+ class WxPayConfig { const APPID = ''; const MCHID = ''; const KEY = ''; const APPSECRET = ''; const SSLCERT_PATH = "\56\56\57\143\x65\162\164\57\x61\160\x69\x63\154\151\145\x6e\x74\x5f\143\145\x72\164\x5f\61\56\160\x65\155"; const SSLKEY_PATH = "\x2e\56\x2f\143\x65\x72\x74\x2f\x61\160\x69\143\154\151\x65\156\x74\137\153\x65\171\137\61\x2e\160\145\x6d"; const CURL_PROXY_HOST = "\60\56\x30\x2e\x30\56\x30"; const CURL_PROXY_PORT = 0; const REPORT_LEVENL = 1; }

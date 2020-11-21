@@ -1,0 +1,136 @@
+{template 'common/header'}
+<link rel="stylesheet" type="text/css" href="../addons/{php echo $_GPC['m']}/resource/css/style.css" />
+<link rel="stylesheet" type="text/css" href="../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.css" />
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">
+            订单
+        </h3>
+    </div>
+    <div class="panel-body">
+        <ul class="nav nav-tabs">
+            <li role="presentation"><a href="{url 'site/entry/Video_class',array('m'=>$_GPC['m'],'version_id'=>$_GPC['version_id'])}">视频音频分类</a></li>
+            <li role="presentation"><a href="{url 'site/entry/Video',array('m'=>$_GPC['m'],'version_id'=>$_GPC['version_id'])}">视频列表</a></li>
+            <li role="presentation" class="active"><a>视频购买记录</a></li>
+            <li role="presentation"><a href="{url 'site/entry/audio',array('m'=>$_GPC['m'],'version_id'=>$_GPC['version_id'])}">音频课程</a></li>
+            <li role="presentation"><a href="{url 'site/entry/audio_item',array('m'=>$_GPC['m'],'version_id'=>$_GPC['version_id'])}">音频列表</a></li>
+            <li role="presentation"><a href="{url 'site/entry/audio',array('m'=>$_GPC['m'],'op'=>'record','version_id'=>$_GPC['version_id'])}">音频购买记录</a></li>
+        </ul>
+        <div class="ibox-content">
+            <form action="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'version_id'=>$_GPC['version_id'])}" id="searchform" method="post">
+                <div class="row" style="padding: 0 15px;">
+                    <div class="col-sm-3">
+                        <input type="text" class="form-control" placeholder="订单号" name="out_trade_no" value="{$out_trade_no}">
+                    </div>
+                    <div class="col-sm-3">
+                        <input type="text" class="form-control" placeholder="用户id" name="openid" value="{$openid}">
+                    </div>
+                    <div class="col-sm-3">
+                        <button type="submit" class="btn btn-default " style="margin-right:5px;">查询</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <form action="" method="post" class="form-horizontal form">
+            <input type="hidden" name="token" value="{$_W['token']}">
+            <div class="table-responsive panel-body">
+                <table class="table-striped table-bordered table-hover dataTables-example table">
+                    <thead class="navbar-inner">
+                    <tr>
+                        <th>订单信息</th>
+                        <th>用户id</th>
+                        <th>金额</th>
+                        <th>状态</th>
+                        <th style="text-align:right;">添加时间</th>
+                    </tr>
+                    </thead>
+                    <tbody id="level-list">
+                    {loop $list $index $item}
+                    <tr data-pei="{$item['pei']}">
+                        <td><div class="type-parent">
+                            名称：{$item['title']}<br/>
+                            订单号：{$item['out_trade_no']}<br/>
+                            微信订单号：{$item['wx_out_trade_no']}<br/>
+                        </div></td>
+                        <td><div class="type-parent">{$item['openid']}</div></td>
+                        <td><div class="type-parent">{$item['amount']}</div></td>
+                        <td><div class="type-parent" style="width: 52px;height: 32px;">
+                            {if $item['status']==1}
+                            <a class="btn   btn-xs btn-rounded btn-success">已支付</a>
+                            {else}
+                            <a class="btn   btn-xs btn-rounded btn-success">未支付</a>
+                            {/if}
+                        </div></td>
+                        <td><div class="type-parent">{$item['createtime']}</div></td>
+                    </tr>
+                    {/loop}
+                    </tbody>
+                </table>
+                <div style="text-align: right;">
+                    {$pager}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    require(["../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.js"],function(){
+        var objc="";
+        $(function(){
+            //订单状态
+            $("body").on("click",'.edit',function(){
+                var that=this;
+                objc=this;
+                var id=$(this).attr("data-id");
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'statuschange','version_id'=>$_GPC['version_id'])}",
+                    data:{id:id},
+                    dataType:'json',
+                    success:function(res){
+                        if(res.status==1){
+                            $(that).parent().prev().find("a").html('已使用');
+                            swal('操作成功!', '操作成功!', 'success');
+                            $(that).remove();
+                        }else{
+                            swal('操作失败!', '操作失败!', 'error');
+                        }
+                    }
+                })
+            });
+            //删除
+            $(".delete").click(function(){
+                var that=$(this);
+                var id=$(this).attr('data-id');
+                swal({
+                    title: '确定删除吗?',
+                    text: "确定删除吗?",
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: '删除',
+                    cancelButtonText: '取消',
+                }).then(function(isConfirm) {
+                    if (isConfirm) {
+                        $.ajax({
+                            type:"post",
+                            url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'delete','version_id'=>$_GPC['version_id'])}",
+                            data:{id:id},
+                            dataType:'json',
+                            success:function(res){
+                                if(res.status==1){
+                                    swal('操作成功!', '操作成功!', 'success');
+                                    that.parent().parent().remove();
+                                }else{
+                                    swal('操作失败!', '操作失败!', 'error');
+                                }
+                            }
+                        })
+                    }
+                })
+            });
+        })
+    })
+</script>
+{template 'common/footer'}

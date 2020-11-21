@@ -1,0 +1,343 @@
+{template 'common/header'}
+<script src="../addons/crad_qrcode_red/template/mobile/js/MagicZoom.js"></script>
+<style>
+    .file-box{width:100%; margin-top: 30px; margin-bottom: 30px;}
+    .form-group
+    {
+        margin-bottom: 20px !important;
+    }
+    .we7-modal-dialog, .modal-dialog
+    {
+        top: 15% !important;
+    }
+    .txt{ height:35px; border:1px solid #EEEEEE; width:90%; padding-left:10px ; background: white;}
+    .btn_one{ background-color:#FFF; border:1px solid #EEEEEE;height:35px; width:100%; border-left:none ;}
+    .file{ position:absolute; top:0; left:0; height:35px; filter:alpha(opacity:0);opacity: 0;width:100%; }
+</style>
+<div class='container' style='padding: 0 5px 10px; margin: 0; width: 100%'>
+    <ul class="nav nav-tabs">
+        <li class="active"><a href="{php echo $this->createWebUrl('shop');}">商家列表</a></li>
+
+        <li><a href="{php echo $this->createWebUrl('shop_add',array('op'=>'add'));}">添加商家</a></li>
+    </ul>
+
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="crad_qrcode_red" />
+                <input type="hidden" name="do" value="shop" />
+                  <div class="form-group" >
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">所属联盟</label>
+                        <div class="col-sm-6 col-xs-12">
+                            <select  name="circleid" id="circleid">
+                              <option value="0" {if empty($circleid)}selected{/if}>未开启联盟模式
+	              		{loop $circle $circle_val}
+	              			<option value="{$circle_val['id']}" {if $circle_val['id']==$circleid}selected{/if}>{$circle_val['name']}
+	              		{/loop}
+                                </select>
+                            <span class="help-block"></span></div>
+                    </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">关键字</label>
+                    <div class="col-sm-8 col-lg-3">
+                        <input class="form-control" name="keyword" id="" placeholder="输入商家名称、电话" type="text" value="{$_GPC['keyword']}">
+                    </div>
+                    <div class=" col-xs-12 col-sm-2 col-lg-2">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+
+    </div>
+    <div style="padding:15px;">
+        <table class="table table-hover">
+            <thead class="navbar-inner">
+                <tr style="width:100%">
+                    <th width="2%" style="text-align:center">ID</th>	
+                    <th width="25%" style="text-align:center">商家信息</th>
+                    <th width="15%" style="text-align:center">商家联系</th>
+                    <th width="15%" style="text-align:center">卡券中心</th>
+                    <th width="15%" style="text-align:center">资金统计</th>
+                    <th width="35%" style="text-align:center">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {loop $list $row}
+                <tr>
+                    <td style="text-align:center">{$row['id']}</td>
+                    <td style="text-align:center">{$row['name']}{if $row['circle_name']}</br><span class="label label-success">{$row['circle_name']}</span>{/if}{if $row['qrcode_band_count']}</br>已绑定{$row['qrcode_band_count']}个预印码{/if}{if $row['time_open']==1}</br>{php echo date('Y-m-d', $row['begintime']);}到{php echo date('Y-m-d', $row['endtime']);}{else}</br>永久有效{/if}</td>
+                    <td style="text-align:center">{$row['tel']}</br>{$row['address']}</td>
+                    <td><a href="{php echo $this->createWebUrl('qr', array('raw' => base64_encode($row['my_url'])))}" class="MagicThumb" target="_blank"><img src="{php echo $this->createWebUrl('qr', array('raw' => base64_encode($row['my_url'])))}" width="100" height="100"></a></td>
+                    <td style="text-align:center">充值：{$row['sum_money']}元</br>冻结：{$row['freeze_money']}元</br>消费：{$row['use_money']}元</td>
+                    <td style="text-align:center">
+                         <div class="btn-group btn-group-sm">
+                                    <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false" href="javascript:;">商家后台 <span class="caret"></span></a>
+                                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                        <li>
+                                            <a href="{$row['a_url']}" target="_blank"><i class="fa fa-external-link fa-fw"></i> 直接访问</a>
+                                        </li>
+                                        <li role="presentation">
+                                            <a href="javascript:;" onclick="displayUrl('{$row['a_url']}');"><i class="fa fa-link fa-fw"></i> 查看链接</a>
+                                        </li>
+                                        <li role="presentation">
+                                            <a href="javascript:;" onclick="displayQr('{php echo $this->createWebUrl('qr', array('raw' => base64_encode($row['a_url'])))}');"><i class="fa fa-qrcode fa-fw"></i> 查看二维码</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                        <div class="btn-group btn-group-sm">
+                                    <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false" href="javascript:;">预印码 <span class="caret"></span></a>
+                                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                        <li>
+                                            <a class="btn btn-default create_qrcode" title="绑定预印码"  data-id="{$row['id']}">绑定预印码</a>
+                                        </li>
+                                        {if $row['unband']==1}
+                                        <li>
+                                         <a class="btn btn-default unband_qrcode" title="解绑未使用二维码"  data-id="{$row['id']}">解绑未使用二维码</a>
+                                        </li>
+                                        {/if}
+                                         <li>
+                                            <a class="btn btn-default" title="二维码管理"  href="{php echo $this->createWebUrl('qrcode',array('sid'=>$row['id']))}">二维码管理</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                          </br>
+                        <a class="btn  btn-default" title="编辑" href="{php echo $this->createWebUrl('shop_add',array('op'=>'edit','id'=>$row['id']))}" ><i class="fa fa-edit"></i></a>
+                        <a class="btn  btn-danger" href="{php echo $this->createWebUrl('shop_add', array('op' => 'del','id' => $row['id']))}" onclick="return confirm('该操作将会删除本条数据，且该商家下的所有领券数据将会失效，是否确认操作？');return false;" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="删除"><i class="fa fa-times"></i></a>
+         </br>
+        
+                        <a class="btn  btn-default" title="卡券管理" href="{php echo $this->createWebUrl('shop_coupon',array('shopid'=>$row['id']))}" >卡券管理</a>
+                        <a class="btn  btn-default" title="资金管理" href="{php echo $this->createWebUrl('capital',array('shopid'=>$row['id']))}" >资金管理</a>
+                                     </td>
+                </tr>
+                {/loop}
+            </tbody>
+        </table>
+        {$pager}
+    </div>
+<div class="modal" id="qrcode-add" style="display:none">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" onclick="$('#qrcode-add').hide();"><span aria-hidden="true">&times;</span></button>
+                <h3 class="modal-title">绑定预印码</h3>
+            </div>
+            <div class="modal-body we7-form">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">预印码</label>
+                    <div class="col-sm-10">
+                         <select  name="bid" id="bid">
+                                {loop $beforehand_list $beforehand_item}
+                                <option value="{$beforehand_item['id']}">{$beforehand_item['name']}</option>
+                                {/loop}
+                            </select>
+                        <span class="help-block" id="not_band_str"></span>
+                    </div>
+                </div>
+                <div class="form-group type_beforehand">
+                    <label class="col-sm-2 control-label">起止编号</label>
+                    <div class="col-sm-10">
+                         <div class="input-group">
+                                <input type="text" class="form-control" placeholder="开始编号" name="start_code" id="start_code" value="">
+                                <div class="input-group-addon"></div>
+                                <input type="text" class="form-control" placeholder="结束编号" name="end_code" id="end_code" value="">
+                            </div>
+                        <span class="help-block">不填则从最小编号开始绑定</span>
+                    </div>
+                </div>
+                <div class="form-group type_beforehand">
+                    <label class="col-sm-2 control-label">绑定个数</label>
+                    <div class="col-sm-10">
+                        <input id="band_num" type="text" class="form-control" value="">
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <input id="qrcode_aid" type="hidden" value=''>
+                <button type="button" class="btn btn-primary" id="save_create_qrcode">确认</button>
+                <button type="button" class="btn btn-default" onclick="$('#qrcode-add').hide();">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+    
+    <div class="modal" id="qrcode-unband" style="display:none">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" onclick="$('#qrcode-unband').hide();"><span aria-hidden="true">&times;</span></button>
+                <h3 class="modal-title">解绑未使用二维码</h3>
+            </div>
+            <div class="modal-body we7-form">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">预印码</label>
+                    <div class="col-sm-10">
+                         <select name="bid_band" id="bid_band">
+                         </select>
+                        <span class="help-block" id="band_str"></span>
+                    </div>
+                </div>
+                <div class="form-group code_beforehand" style="display:none">
+                    <label class="col-sm-2 control-label">起止编号</label>
+                    <div class="col-sm-10">
+                         <div class="input-group">
+                                <input type="text" class="form-control" placeholder="开始编号" name="start_code_band" id="start_code_band" value="">
+                                <div class="input-group-addon"></div>
+                                <input type="text" class="form-control" placeholder="结束编号" name="end_code_band" id="end_code_band" value="">
+                            </div>
+                        <span class="help-block">不填则从最小编号开始解绑，编号和个数只填一个</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">解绑个数</label>
+                    <div class="col-sm-10">
+                        <input id="band_num_band" type="text" class="form-control" value="">
+                        <span class="help-block">不填解绑该该商家所有二维码</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="save_unband_qrcode">确认</button>
+                <button type="button" class="btn btn-default" onclick="$('##qrcode-unband').hide();">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<script>
+    
+      $("#bid_band").change(function () {
+                  if($(this).val()>0){
+                    var URL = "{php echo $this->createWebUrl('beforehand', array('op'=>'get_band'));}";
+                    $.get(URL + "&id=" + $(this).val()+ "&sid=" + $("#qrcode_aid").val(), function (ret) {
+                       $("#band_str").html(ret.band);
+                    }, 'json');
+                    $(".code_beforehand").show();
+                }else{
+                    $("#band_str").html('');
+                    $(".code_beforehand").hide();
+                }
+ 
+            });
+            
+              $('.unband_qrcode').on('click', function () {
+                     var id = $(this).data("id");
+                    var URL = "{php echo $this->createWebUrl('beforehand', array('op'=>'get_band_beforehand'));}";
+                    $.get(URL + "&sid=" + id, function (json) {
+                        if(json.sta==1){
+                            var optionString = "<option value='0'>解绑所有</option>";
+                            for (var i = 0; i < json.data.length; i++) {
+                                optionString += "<option value='" + json.data[i].bid + "'";
+                                optionString += ">" + json.data[i].name + "</option>";
+                            }
+                            $("#bid_band").html(optionString);
+                     $('#qrcode-unband').show();
+                    $('#qrcode_aid').val(id);  
+                        }else{
+                             util.message("无可解绑二维码");
+                        }
+                    }, 'json');
+                      
+            });
+            
+            
+                $('#save_unband_qrcode').on('click', function () {
+                    var url = "{php echo $this->createWebUrl('shop_add',array('op'=>'unband_qrcode'))}";
+                    var id = $('#qrcode_aid').val();
+                    $('#qrcode-unband').hide();
+                    var bid = $('#bid_band').val();
+                    var start_code = 0;
+                    var end_code = 0;
+                    if(bid>0){
+                   start_code = $('#start_code_band').val();
+                   end_code = $('#end_code_band').val();
+                }
+                    var band_num = $('#band_num_band').val();
+                         $.post(url, {id: id,start_code: start_code,bid: bid,end_code: end_code,band_num: band_num, token:"{$_W['token']}"}, function (ret) {
+                    if (ret.sta == 1) {
+                            util.message("成功解绑"+ret.count+"个二维码");
+                            setTimeout("window.location.reload()", 2000);
+                    } else {
+                            util.message(ret.error, "", "error");
+                    }
+
+                    }, "json");
+                   
+            });
+            
+    
+    
+        $("#bid").change(function () {
+  
+                    var URL = "{php echo $this->createWebUrl('beforehand', array('op'=>'get_not_band'));}";
+                    $.get(URL + "&id=" + $(this).val(), function (ret) {
+                       $("#not_band_str").html(ret.not_band);
+                    }, 'json');
+ 
+            });
+      $('.create_qrcode').on('click', function () {
+                     var id = $(this).data("id");
+                  
+                    $.get("{php echo $this->createWebUrl('beforehand', array('op'=>'get_not_band'));}" + "&id=" + $("#bid").val(), function (ret) {
+                       $("#not_band_str").html(ret.not_band);
+                    }, 'json');
+            $('#qrcode-add').show();
+                    $('#qrcode_aid').val(id);
+          
+            });
+                    $('#save_create_qrcode').on('click', function () {
+                    var page = 1;
+                    var url = "{php echo $this->createWebUrl('shop_add',array('op'=>'band_qrcode'))}";
+                    var id = $('#qrcode_aid').val();
+                         var start_code = $('#start_code').val();
+                    var bid = $('#bid').val();
+                    var end_code = $('#end_code').val();
+                    var band_num = $('#band_num').val();
+                         $.post(url, {page: page, id: id,start_code: start_code,bid: bid,end_code: end_code,band_num: band_num, token:"{$_W['token']}"}, function (ret) {
+                    if (ret.sta == 1) {
+                                           $('#qrcode-add').hide();
+
+                             util.message("成功绑定" + ret.count + "个预印码");
+                        setTimeout("window.location.reload()", 2000);
+                    } else {
+                            util.message(ret.error, "", "error");
+                    }
+
+                    }, "json");
+                    
+            });
+    function displayUrl(lurl) {
+        require(['jquery', 'util'], function($, u) {
+        var content = '<p class="form-control-static" style="word-break:break-all">商家后台链接: <br>' + lurl + '</p>';
+        var footer ='';
+        var diaobj = u.dialog('查看URL', content, footer);
+        diaobj.find('.btn-default').click(function() {
+        diaobj.modal('hide');
+        });
+        diaobj.on('shown.bs.modal', function(){
+        u.clip(diaobj.find('.btn-primary')[0], lurl);
+        });
+        diaobj.modal('show');
+        });
+        }
+        function displayQr(url) {
+        require(['jquery', 'util'], function($, u) {
+        var content = '<div class="panel panel-default text-center"><img src="' + url + '" alt="商家后台地址二维码" class="img-rounded"></div>';
+        var footer =
+                '<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>';
+        var diaobj = u.dialog('查看URL二维码', content, footer);
+        diaobj.find('.btn-default').click(function() {
+        diaobj.modal('hide');
+        });
+        diaobj.modal('show');
+        });
+        }
+    
+</script>
+
+{template 'common/footer'}

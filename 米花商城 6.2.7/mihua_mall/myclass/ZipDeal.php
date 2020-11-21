@@ -1,0 +1,2 @@
+<?php
+ class ZipDeal { public static function unzip($src, $path) { goto uyawi; dSa5S: $zip->close(); goto X3v0o; Ld0a9: DgTEU: goto sByLR; Vqefv: $result = $zip->open($src); goto TwAZ_; sByLR: $zip->close(); goto Q1yij; uyawi: $zip = new ZipArchive(); goto Vqefv; Q1yij: return false; goto MTcDc; X3v0o: return true; goto UvmqS; pxEck: if (!$zip->extractTo($path)) { goto IyWcv; } goto dSa5S; TwAZ_: if (!$result) { goto DgTEU; } goto pxEck; UvmqS: IyWcv: goto Ld0a9; MTcDc: } }

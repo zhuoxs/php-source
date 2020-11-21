@@ -1,0 +1,157 @@
+{template 'public/header'}
+
+<!--标题-->
+<div class="title">
+    <blockquote class="layui-elem-quote">盘点表</blockquote>
+</div>
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入商品名称..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="store_id" id="store_id" style="width: 200px;" class="select2 layui-form-select" lay-ignore></select>
+        </div>
+        <div class="layui-inline">
+            <input type="text" class="layui-input" id="begin_time" readonly="readonly" name="begin_time" placeholder="yyyy-MM-dd HH:mm:ss">
+        </div>
+        <div class="layui-inline">
+            <input type="text" class="layui-input" id="end_time" readonly="readonly" name="end_time" placeholder="yyyy-MM-dd HH:mm:ss">
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+        <button class="layui-btn layui-btn-primary" id="btnCSV">导出</button>
+    </div>
+</div>
+<!--数据表-->
+<div class="table-box">
+    <table class="layui-hide" id="laytable"></table>
+</div>
+
+<script type="text/javascript">
+    layui.use(['laydate','table'], function () {
+        var laydate = layui.laydate,table = layui.table;
+//        日期
+        laydate.render({
+            elem: '#begin_time'
+            ,type: 'datetime'
+            ,format: 'yyyy-MM-dd HH:mm:ss'
+        });
+        laydate.render({
+            elem: '#end_time'
+            ,type: 'datetime'
+            ,format: 'yyyy-MM-dd HH:mm:ss'
+        });
+
+//        表格初始化
+        table.render({
+            elem: '#laytable',
+            url:"{php echo $this->createWebUrl('report',array('op'=>query));}",
+            cols: [[
+                {type:'numbers',fixed:'left'},
+                // {type:'checkbox',fixed:'left'},
+                {field:'store_name', width:180, title: '门店名称',sort:true},
+                {field:'goods_name', width:180, title: '商品名称',sort:true},
+                {field:'num', width:180, title: '销售数量',sort:true},
+                {field:'amount', width:100, title: '总金额',sort:true},
+            ]],
+            page: true,
+            foot:true,
+            height:'full-300',
+        });
+        //        导出
+        $('#btnCSV').unbind().click(function () {
+            var url = "{php echo $this->createWebUrl('report',array('op'=>csv));}";
+            url += "&key="+$('#key').val();
+            url += "&store_id="+$('#store_id').val();
+            url += "&begin_time="+$('#begin_time').val();
+            url += "&end_time="+$('#end_time').val();
+            window.open(url);
+        });
+//        搜索
+        $('#btnSearch').unbind().click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    store_id: $('#store_id').val(),
+                    begin_time:$('#begin_time').val(),
+                    end_time:$('#end_time').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        store_id: $('#store_id').val(),
+                        begin_time:$('#begin_time').val(),
+                        end_time:$('#end_time').val(),
+                    }
+                });
+            }
+        })
+
+        $('#btnBatchSend').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                var url = "{php echo $this->createWebUrl('order',array('op'=>batchsend));}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    var data = $.parseJSON(data);
+                    if (data.code == 0) {
+                        layer.msg('发货成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+        $(document).on('click','.btnSend',function(e){
+            var id = $(this).data('id')
+            var url = "{php echo $this->createWebUrl('order',array('op'=>send));}";;
+            $.post(url, {id:id}, function(data){
+                var data = $.parseJSON(data);
+                if (data.code == 0) {
+                    layer.msg('发货成功',{icon: 6,anim: 6});
+                    table.reload('laytable',{});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        $.get("{php echo $this->createWebUrl('store',array('op'=>select));}", function (ret) {
+            console.log(ret);
+            ret = JSON.parse(ret);
+            ret.unshift({id: '', text: '请选择门店'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#store_id').select2({
+                data: ret,
+            })
+        })
+    });
+</script>
+
+{template 'public/footer'}

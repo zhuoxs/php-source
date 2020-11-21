@@ -1,0 +1,190 @@
+{template 'header'}
+{template 'header1'}
+<style type="text/css">
+	.control-item{
+		line-height: 1.88rem;
+	    font-size: .6rem;
+	    margin-left: 0.7rem;
+	    color: #666666!important;
+	    border-bottom: 1px solid rgba(0,0,0,0)!important;
+	    padding: 0!important;
+	    border: 0;
+		display: inline-block;
+    	width: auto;
+	}
+	.mui-active{
+		color: #666!important;
+    	border-bottom: 2px solid #FF7B33!important;
+	}
+</style>
+<div class="mui-content">
+<div id="slider" class="mui-slider" style="height:100%">   
+    <div class="mui-slider-group" style="height:100%">
+        <div id="item1mobile" class="mui-slider-item mui-control-content mui-active">
+            <div class="mui-scroll-wrapper-ext">
+                <div class="mui-scroll-ext">
+                    <div class="list-content"></div>
+                </div>
+             </div> 
+        </div>
+    </div>
+</div>
+</div>
+<script>
+//屏蔽slider选项卡弹出遮罩
+$('.control-item').on("tap",function(e) {
+	$("body").addClass('mui-backdrop-none');
+	setTimeout(function() {
+		$("body").find('.mui-backdrop').remove();
+		$("body").removeClass('mui-backdrop-none');
+	});
+});
+
+//上拉加载活动列表
+var loadItem=function(id,sn){
+	var thispage = 1,pagesize = 10;
+	var counter=0;//计数器
+    $(id).find('.mui-scroll-ext').dropload({
+        scrollArea : $(id).find('.mui-scroll-wrapper-ext'),
+		threshold : 2 * htmlFont,
+        loadDownFn : function(me){
+            $.ajax({
+                type: 'GET',
+                url: "{php echo $this->createMobileUrl('self',array('op'=>'ajax_coolection'));}",
+				data: {page:thispage,pagesize:pagesize},
+                dataType: 'json',
+                success: function(data){
+					var stime = new Date(),result='',status=0;
+					if (thispage > data.tpage || data.tpage == 0){
+						me.lock();// 锁定
+						me.noData();// 无数据
+					}
+					if (data.tpage == 0){
+						result = '<div class="no-orders-at-all">'
+						+'<div class="head-block">'
+						+'    <div class="blank-icon mui-ext-icon mui-icon-mhuodong"></div>'
+						+'    <p class="hint">当前没有任何信息</p>'
+						+'    <p class="recommend-hint"></p>'
+						+'</div></div>';
+						$(id).find('.list-content').append(result);
+						me.resetload();
+						return false;
+					}
+                    for(var i = 0; i < data.list.length; i++){
+						status = parseInt(data.list[i].status);
+						is_join = data.list[i].is_join;
+						detail_url = "{php echo $this->createMobileUrl('activity_detail');}&id="+data.list[i].id;
+						sToend2 = data.list[i].new_c_time+"~"+data.list[i].new_e_time;//活动开始时间段
+						btns = '<a href="'+detail_url+'" class="mui-btn mui-btn-warning">查看详情</a>';
+						var statusmsg='';
+						switch(status){
+						case 1:statusmsg = '未开始';break;
+						case 2:statusmsg = '进行中';break;
+						case 3:statusmsg = '已结束';break;
+						default:break;
+						}
+						price = '免费票';
+						
+						result+= '<div class="field">'
+						+'    <div class="field-head">'
+						+'        <span class="field-head-name"><i class="icon iconfont icon-shop"></i>活动状态</span>'
+						+'        <span class="field-head-status field-head-status-light">'+statusmsg+'</span>'
+						+'    </div>'
+						+'    <a class="field-item" href="javascript:;">'
+						+'    <div class="avatar" style="background-image:url('+data.list[i].img+')"></div>'
+						+'    <div class="contentt">'
+						+'        <p class="delivery_tip">'+data.list[i].title+'</p>'
+						+'        <p class="order-time">'+sToend2+'</p>'
+						+'        <p class="pp_time mui-small" id="pp_'+sn+'_'+thispage+'_'+i+'"></p>'
+						+'    </div>'
+						+'    <i class="field-arrow icon-arrow-right"></i></a>'
+						+'    <div class="field-console">'
+						+'        <div class="field-console-btns">'
+						+'            '+btns
+						+'        </div>'
+						+'    </div>'
+						+'</div>'
+						+'<script>FreshTime("#pp_'+sn+'_'+thispage+'_'+i+'","'+data.list[i].c_time+'","'+data.list[i].e_time+'");var sh;sh=setInterval(function(){FreshTime("#pp_'+sn+'_'+thispage+'_'+i+'","'+data.list[i].c_time+'","'+data.list[i].e_time+'")},1000);<\/script>';
+                    }
+					thispage++;
+					$(id).find('.list-content').append(result);
+					// 每次数据加载完，必须重置
+					me.resetload();
+                },
+                error: function(xhr, type){
+                    // alert('加载失败，请刷新下重试!');
+                    // 即使加载出错，也得重置
+                    me.resetload();
+                }
+            });
+        }
+    });
+}
+$(function() {
+	var item_index = parseInt('');
+	if (item_index){
+		mui('#slider').slider().gotoItem(item_index);
+		$('#item1mobile').find('.list-content').append('<div class="mui-loading"><div class="mui-spinner"></div></div>');
+	}else{
+		loadItem('#item1mobile',0);
+	}	
+});
+
+
+//格式化日期
+Date.prototype.format = function(format) {
+    var o = {
+        "M+": this.getMonth() + 1,
+        "d+": this.getDate(),
+        "h+": this.getHours(),
+        "m+": this.getMinutes(),
+        "s+": this.getSeconds(),
+        "q+": Math.floor((this.getMonth() + 3) / 3),
+        "S": this.getMilliseconds()
+    }
+    if (/(y+)/.test(format)) {
+        format = format.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+    }
+    for (var k in o) {
+        if (new RegExp("(" + k + ")").test(format)) {
+            format = format.replace(RegExp.$1, RegExp.$1.length == 1 ? o[k] : ("00" + o[k]).substr(("" + o[k]).length));
+        }
+    }
+    return format;
+}
+
+//计时
+function FreshTime(id,starttime,endtime){
+	var st = starttime,//开始时间
+	    et = endtime;//结束时间
+		//console.log(st);
+	var nowtime = new Date(),//当前时间
+		start_time = parseInt(st)*1000,
+		end_time = parseInt(et)*1000,
+		now_time = parseInt(nowtime.getTime()),
+		lefttime = 0;
+
+	if (start_time > now_time){
+		lefttime = parseInt((start_time - now_time)/1000);
+	}else if(end_time > now_time){
+		lefttime = parseInt((end_time - now_time)/1000);
+	}
+	//var bar_width =  (1-(lefttime/3600))*100+"%"; //计算进度条百分比
+	if (lefttime > 0) {
+		dd=parseInt((lefttime/86400));
+		hh=parseInt((lefttime/3600))-dd*24;
+		mm=parseInt((lefttime/60)%60);
+		ss=parseInt(lefttime%60);
+		if (start_time > now_time){
+			$(id).html('<span id="ti_time_day">'+dd+'</span>天<span id="ti_time_hour">'+hh+'</span>:<span id="ti_time_min">'+mm+'</span>:<span id="ti_time_sec">'+ss+'</span>开始');
+		}else if(end_time > now_time){
+			$(id).html('<span id="ti_time_day">'+dd+'</span>天<span id="ti_time_hour">'+hh+'</span>:<span id="ti_time_min">'+mm+'</span>:<span id="ti_time_sec">'+ss+'</span>结束');
+		}
+		//$('#progressbar').css("width",bar_width);
+	}else{
+		$(id).html('<font color="#FF0000">活动结束</font>');
+	}
+}
+</script>
+<script>;</script></body>
+</html>

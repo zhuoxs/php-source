@@ -1,0 +1,234 @@
+{php include wl_template('common/header');}
+<div class="page-group">
+	<div class="page page-current" id="page-index">
+		{if $_GPC['iscommon'] != 'yes'}
+			{php include wl_template('common/followbar');}
+			{php include wl_template('common/menu');}
+    	{/if}
+		<div class="content native-scroll infinite-scroll-bottom infinite-scroll newindex">
+            {if !$storeSet['search'] || $storeSet['search'] == 0}{php include wl_template('dashboard/search');}{/if}
+			{if $_GPC['iscommon'] != 'yes'}
+			<section class="banner-header">
+				<div class="swiper-container" id="banner_header">
+					<div class="swiper-wrapper">
+						{loop $advs $adv}
+						<div class="swiper-slide">
+							<div class="banner-img">
+								<a href="{$adv['link']}"><img style="width: 100%;" src="{php echo tomedia($adv['thumb'])}"/></a>
+							</div>
+						</div>
+						{/loop}
+					</div>
+					<div class="swiper-pagination" id="banner_header_page"></div>
+				</div>
+			</section>
+			<section class="banner-tab">
+    			{php include wl_template('dashboard/nav');}
+			</section>
+			<section class="join-in main">
+				<div id="fengmian_notice">
+					<p class="ellipsis">
+						<span><i>最新</i><i>入驻</i></span>
+					</p>
+						<div class="fengmian_notice_p">
+							<ul class="fengmian_notice_p_style rollGallerylist">
+								{loop $top $ti}
+								<li class="fengmian_notice_p_1">
+									<a href="{$ti['a']}"><span style="color:#FE433F;">{$ti['storename']}</span> 成功入驻 [{$ti['time']}]</a>
+								</li>
+								{/loop}
+							</ul>
+				   		</div>
+					<a href="{php echo app_url('store/storeManage/enter')}">
+						我要入驻
+					</a>
+				</div>
+			</section>
+			{/if}
+			<section class="change-tab">
+				<div class="buttons-main" {if $_GPC['iscommon'] == 'yes'}style="margin-top: 0;"{/if}>
+					<div class="buttons-tab no-after">
+						{loop $tablink $key $tab}
+						<a href="javascript:;"  near = "{$tab['near']}" class="tab-link button {if $key == 0}active hit{/if}">
+							<text>{$tab['name']}</text>
+							<span></span>
+						</a>
+						{/loop}
+					</div>
+					<div class="tabs" style="background-color: #EFEFF4;padding: 0;">
+				    	<div class="content-block list-block media-list" style="padding: 0;margin-top: 0;">
+						<div id="recommend" class="tab active">
+
+						</div>
+						<div class="infinite-scroll-preloader">
+							<div class="weui-loadmore">
+								<i class="weui-loading"></i>
+								<span class="weui-loadmore__tips">正在加载</span>
+							</div>
+						</div>
+						</div>
+					</div>
+				</div>
+			</section>
+		</div>
+	</div>
+</div>
+{php include wl_template('htmltpl/storelist');}
+<script>
+var swiper = new Swiper('#banner_header', {
+	loop: true,
+	speed:500,
+    autoplay: 3000,
+    autoplayDisableOnInteraction : false,
+    setWrapperSize:true,
+    pagination: '#banner_header_page',
+    paginationClickable: true
+});
+
+var latitude, longitude;
+
+var pagesize = 20,page = 1,endmark = 1,nothing = false,loading = false,near = 3,addflag=1;
+
+//修改page, near
+var hisDataIs = 0;
+{if !empty($_W['aid'])}
+if(sessionStorage.hisData){
+	var hisData = JSON.parse(sessionStorage.hisData);
+	console.log(hisData);
+	hisData.forEach(function(item, index){
+		if(item.hisUrl == encodeURI(window.location.href+"&aid={$_W['aid']}")){
+			hisDataIs = 1;
+			$('#recommend').html(item.data);
+			$('.content').scrollTop(item.scrollTop);
+			page = item.page;
+			near = item.tag;
+			$('.change-tab .buttons-tab .button').removeClass('active');
+			$('.change-tab .buttons-tab .button').removeClass('hit');
+			$('.change-tab .buttons-tab .button').each(function(){
+				if($(this).attr('near') == item.tag){
+					$(this).addClass('active');
+					$(this).addClass('hit');
+				}
+			});
+		}
+	});
+}
+{/if}
+
+$('.button').click(function(){
+	page = 1;endmark = 1;nothing = false;loading = true;
+	$('.infinite-scroll-preloader').show();
+	$('#recommend').html("");
+	$('.button').each(function(){
+		$(this).removeClass('active');
+		$(this).removeClass('hit');
+	});
+	$(this).addClass('active');
+	$(this).addClass('hit');
+	addItems();
+});
+
+common.Geolocation(function(data){
+	latitude = data.lat; // 纬度，浮点数，范围为90 ~ -90
+    longitude = data.lng; // 经度，浮点数，范围为180 ~ -180。
+    if(hisDataIs == 0){
+		addItems();
+	}else{
+		addItems(1);
+	}
+},function(){
+	$.toast('获取地理位置失败，请刷新！');
+	if(hisDataIs == 0){
+		addItems();
+	}
+});
+
+function showmore(asd){
+	var id = $(asd).attr('did');
+	var flag = $(asd).attr('flagg');
+	if(flag != 'show'){
+		$('#lue_'+id).show();
+		$('#xiang_'+id).hide();
+		$(asd).attr('flagg','show');
+		$('#icon_'+id).removeClass('icon-fold')
+		$('#icon_'+id).addClass('icon-unfold')
+	}else{
+		$('#lue_'+id).hide();
+		$('#xiang_'+id).show();
+		$(asd).attr('flagg','no');
+		$('#icon_'+id).removeClass('icon-unfold')
+		$('#icon_'+id).addClass('icon-fold')
+	}
+}
+
+function addItems(his){
+	addflag = 0;
+	near = $('.hit').attr('near');
+	$('.infinite-scroll-preloader').show();
+	if($('#recommend').next().attr("class") == 'loadmore-lms'){
+		$('#recommend').next().remove();
+	}
+	$.post("{php echo app_url('store/merchant/getstore', array('iscommon' => $_GPC['iscommon']))}" + "&lng="+ longitude +"&lat="+ latitude+"&near="+near,function(data){
+		sessionStorage.setItem("demokey",JSON.stringify(data));
+		var contentdata = data.slice(0,pagesize);
+		if(!his){
+			page = 1;endmark = 1;nothing = false;loading = true;
+			apphtml(contentdata);
+		}
+	}, 'json');
+}
+
+setInterval(function(){
+	if(addflag){
+		addItems();
+	}else{
+		clearInterval();
+	};
+},4000);
+
+function apphtml(contentdata){
+
+	var gettpl = document.getElementById('storelist_tpl').innerHTML;
+	laytpl(gettpl).render(contentdata, function(html){
+		$('#recommend').append(html);
+	});
+	if(contentdata.length == 0) {
+		if(!nothing) {
+			var nothing_html = "<div class='loadmore-lms' style='background-color: #efeff4;'>" +
+				'<div class="weui-loadmore weui-loadmore_line"><span style="background-color: #efeff4;"  class="weui-loadmore__tips">暂无更多数据</span></div></div>';
+			$('#recommend').after(nothing_html);
+			endmark = 0;
+			nothing = true;
+		}
+	}
+	$('.infinite-scroll-preloader').hide();
+	loading = false;
+}
+
+$(document).on('infinite', '.infinite-scroll-bottom', function() {
+	if(loading) return;
+	loading = true;
+	if(endmark){
+		page++;
+		$('.infinite-scroll-preloader').show();
+		setTimeout(function() {
+			var dt = JSON.parse(sessionStorage.getItem("demokey"));
+			var xxx = dt.slice((page-1)*pagesize ,(page-1)*pagesize+pagesize);
+			apphtml(xxx);
+		}, 800);
+	}
+});
+
+$.init();
+window.onunload = function(){
+	var hisDataItem = {};
+	hisDataItem.hisUrl = encodeURI(window.location.href+"&aid={$_W['aid']}");
+	hisDataItem.data = $('#recommend').html();
+	hisDataItem.scrollTop = $('.content').scrollTop();
+	hisDataItem.page = page;
+	hisDataItem.tag = near;
+	common.History_pag(hisDataItem);
+}
+</script>
+
+{php include wl_template('common/footer');}

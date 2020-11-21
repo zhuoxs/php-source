@@ -1,0 +1,1323 @@
+<?php
+/**
+ * 微商城公告模块微站定义
+ *
+ * @author 微擎团队
+ * @url 
+ */
+defined('IN_IA') or exit('Access Denied');
+global $_W;
+include IA_ROOT."/addons/".$_W['current_module']['name']."/func/func.php";
+
+class mzhk_sun_plugin_redpacketModuleSite extends WeModuleSite {
+	public function __construct(){
+		global $_W;
+		$the = creatmdcode('aulelethclass');
+		$thecode = creatmdcode('auleletheclasscode');
+        $the::$thecode();
+    }
+
+	public function doWebsetting()
+    {
+        global $_GPC, $_W;
+        $settype = intval($_GPC["settype"]);
+        $urlarray = array();
+        $urlarray["settype"] = $settype;
+	    if($settype==3){
+		   if (checksubmit()) {
+			   $data = array();
+			   $data_first = $_GPC["indata"];
+			   $code = $data_first["code"];
+			   if(empty($code)){
+				   message('请输入激活码进行激活!', $this->createWebUrl('setting',$urlarray), 'error');
+			   }
+			   $ip_arr = gethostbynamel($_SERVER['HTTP_HOST']);
+			   $ip = $ip_arr?$ip_arr[0]:0;
+			   $toactive = encryptcode("35bcr/gGmbqRZmM3gx9efUySl+Z0XHe+7qtHS412VSPG9dGuTbxFC4IcCo4KjVQt", 'D','',0) . '/toactive.php?c=1&p=33&k='.$code.'&i='.$ip.'&u=' . $_SERVER['HTTP_HOST'];
+			   $toactive = tocurl($toactive,10);
+			   $toactive = trim($toactive, "\xEF\xBB\xBF");//去除bom头
+			   $json_toactive = json_decode($toactive,true);
+
+			   if($json_toactive["code"]===0){
+				   $input_data = array();
+				   $input_data["we7.cc"] = md5("we7_key");
+				   $input_data["keyid"] = $json_toactive["data"]["id"];
+				   $input_data["domain"] = $json_toactive["data"]["domain"];
+				   $input_data["ip"] = $json_toactive["data"]["ip"];
+				   $input_data["loca_ip"] = "127.0.0.1";
+				   $input_data["pid"] = $json_toactive["data"]["pid"];
+				   $input_data["time"] = time();
+				   $input_data_s = serialize($input_data);
+				   $input_data_s = encryptcode($input_data_s, 'E','',0);
+				   $res = pdo_update('mzhk_sun_acode', array("code"=>$input_data_s), array('id' =>7));
+				   if(!$res){
+					   $res = pdo_insert('mzhk_sun_acode', array("code"=>$input_data_s,"id"=>7,"time"=>time()));
+				   }
+				   message('激活成功!', $this->createWebUrl('permission'), '');
+			   }else{
+				   message('激活失败!', $this->createWebUrl('setting'), 'error');
+			   }
+		   }
+	    }
+		include $this->template('web/setting');
+    }
+
+	//基础设置
+	public function doWebredpacket_set() {
+		global $_GPC, $_W;
+		
+		$info = pdo_get('mzhk_sun_redpacket_set', array('uniacid' => $_W['uniacid']));
+
+		if(checksubmit()){
+			$data = array();
+			$data = $_GPC["indata"];
+
+			$data['explain1']=html_entity_decode($_GPC['explain1']);
+			$data['explain2']=html_entity_decode($_GPC['explain2']);
+			
+			$urlarr = array();
+			if (empty($_GPC['id'])) {
+				$data["uniacid"] = $_W['uniacid'];
+				$res = pdo_insert('mzhk_sun_redpacket_set', $data);
+			}else{
+				$res = pdo_update('mzhk_sun_redpacket_set', $data, array('uniacid' => $_W['uniacid']));
+			}
+			if($res){
+				message('成功!', $this->createWebUrl('redpacket_set',$urlarr), 'success');
+			}else{
+				message('失败!', $this->createWebUrl('redpacket_set',$urlarr), 'error');
+			}
+		}
+		
+		include $this->template('web/redpacket_set');
+	}
+
+	//拉新红包列表
+	public function doWebredpacket1() {
+		global $_GPC, $_W;
+		
+		$pageindex = max(1, intval($_GPC['page']));
+		$pagesize=10;
+
+		$where = " where uniacid=".$_W['uniacid']." and type=1";
+		
+		$sql = "select * from ".tablename('mzhk_sun_redpacket_goods')." ".$where;
+
+		$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_redpacket_goods')." ".$where);
+		
+		$select_sql =$sql." order by sort asc, id desc LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+		
+		$list=pdo_fetchall($select_sql);
+
+		$pager = pagination($total, $pageindex, $pagesize);
+		
+		
+		include $this->template('web/redpacket_list1');
+	}
+
+	//添加拉新红包
+	public function doWebredpacketadd1() {
+		global $_GPC, $_W;
+		
+		//获取拉新红包信息
+		$info = pdo_get('mzhk_sun_redpacket_goods', array('uniacid' => $_W['uniacid'],'id'=>$_GPC["id"]));
+
+		if(checksubmit()){
+
+			$data["uniacid"] = $_W['uniacid'];
+			$data['rname'] = $_GPC['rname'];
+			$data['rmoney'] = $_GPC['rmoney'];
+			$data['snum'] = $_GPC['snum'];
+			$data['gnum'] = $_GPC['gnum'];
+			$data['rec'] = $_GPC['rec'];
+			$data['state'] = $_GPC['state'];
+			$data['rday'] = $_GPC['rday'];
+			$data['application'] = $_GPC['application'];
+			$data['sort'] = $_GPC['sort'];
+			$data['allowmoney'] = $_GPC['allowmoney'];
+			$data['addtime'] = time();
+			$data['type'] = 1; //1拉新红包 2每日红包 3返利红包
+
+			if($data['rname']==null) {
+				message('请您填写红包名称', '', 'error');
+			}elseif($data['rmoney']==null){
+				message('请您填写红包金额','','error');
+			}elseif($data['snum']==null){
+				message('请您填写拉新人数','','error');
+			}
+
+			//判断是否当前使用
+			$infos = pdo_getall('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'type'=>1));
+			if(count($infos)<1){
+				$data['rec'] = 1;
+			}else{
+				if($_GPC['rec']==0){
+					$data['rec'] = $_GPC['rec'];
+				}else{
+					foreach($infos as $k=>$v){
+						pdo_update('mzhk_sun_redpacket_goods', array('rec'=>0), array('uniacid'=>$_W['uniacid'],'id' => $v['id']));
+					}
+					$data['rec'] = $_GPC['rec'];
+				}
+			}
+
+			if (empty($_GPC['id'])) {
+				$res = pdo_insert('mzhk_sun_redpacket_goods', $data);
+			}else{
+				$res = pdo_update('mzhk_sun_redpacket_goods', $data, array('uniacid' => $_W['uniacid'],'id'=>$_GPC['id']));
+			}
+			if($res){
+				message('成功!', $this->createWebUrl('redpacket1',$urlarr), 'success');
+			}else{
+				message('失败!', $this->createWebUrl('redpacket1',$urlarr), 'error');
+			}
+		}
+		
+		include $this->template('web/redpacket_add1');
+	}
+
+	//删除拉新红包
+	public function doWebDeleteData1(){
+    	global $_GPC, $_W;
+    	$id = intval($_GPC["id"]);
+
+    	$delres=pdo_delete('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'id'=>$id));
+		
+    	if($delres){
+    		message('删除成功!', $this->createWebUrl('redpacket1'), 'success');
+    	}else{
+    		message('删除失败!', $this->createWebUrl('redpacket1'), 'error');
+    	}
+    }
+
+	//每日红包列表
+	public function doWebredpacket2() {
+		global $_GPC, $_W;
+		
+		$pageindex = max(1, intval($_GPC['page']));
+		$pagesize=10;
+
+		$where = " where uniacid=".$_W['uniacid']." and type=2";
+		
+		$sql = "select * from ".tablename('mzhk_sun_redpacket_goods')." ".$where;
+
+		$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_redpacket_goods')." ".$where);
+		
+		$select_sql =$sql." order by sort asc, id desc LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+		
+		$list=pdo_fetchall($select_sql);
+
+		$pager = pagination($total, $pageindex, $pagesize);
+		
+		
+		include $this->template('web/redpacket_list2');
+	}
+
+	//添加每日红包
+	public function doWebredpacketadd2() {
+		global $_GPC, $_W;
+		
+		//获取每日红包信息
+		$info = pdo_get('mzhk_sun_redpacket_goods', array('uniacid' => $_W['uniacid'],'id'=>$_GPC["id"]));
+
+		if(checksubmit()){
+
+			$data["uniacid"] = $_W['uniacid'];
+			$data['rname'] = $_GPC['rname'];
+			$data['rmoney'] = $_GPC['rmoney'];
+			$data['snum'] = 0;
+			$data['gnum'] = 1;
+			$data['rec'] = $_GPC['rec'];
+			$data['state'] = $_GPC['state'];
+			$data['rday'] = $_GPC['rday'];
+			$data['application'] = $_GPC['application'];
+			$data['sort'] = $_GPC['sort'];
+			$data['allowmoney'] = $_GPC['allowmoney'];
+			$data['addtime'] = time();
+			$data['type'] = 2; //1拉新红包 2每日红包 3返利红包
+
+			if($data['rname']==null) {
+				message('请您填写红包名称', '', 'error');
+			}elseif($data['rmoney']==null){
+				message('请您填写红包金额','','error');
+			}
+
+			//判断是否当前使用
+			$infos = pdo_getall('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'type'=>2));
+			if(count($infos)<1){
+				$data['rec'] = 1;
+			}else{
+				if($_GPC['rec']==0){
+					$data['rec'] = $_GPC['rec'];
+				}else{
+					foreach($infos as $k=>$v){
+						pdo_update('mzhk_sun_redpacket_goods', array('rec'=>0), array('uniacid'=>$_W['uniacid'],'id' => $v['id']));
+					}
+					$data['rec'] = $_GPC['rec'];
+				}
+			}
+
+			if (empty($_GPC['id'])) {
+				$res = pdo_insert('mzhk_sun_redpacket_goods', $data);
+			}else{
+				$res = pdo_update('mzhk_sun_redpacket_goods', $data, array('uniacid' => $_W['uniacid'],'id'=>$_GPC['id']));
+			}
+			if($res){
+				message('成功!', $this->createWebUrl('redpacket2',$urlarr), 'success');
+			}else{
+				message('失败!', $this->createWebUrl('redpacket2',$urlarr), 'error');
+			}
+		}
+		
+		include $this->template('web/redpacket_add2');
+	}
+
+	//删除每日红包
+	public function doWebDeleteData2(){
+    	global $_GPC, $_W;
+    	$id = intval($_GPC["id"]);
+
+    	$delres=pdo_delete('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'id'=>$id));
+		
+    	if($delres){
+    		message('删除成功!', $this->createWebUrl('redpacket2'), 'success');
+    	}else{
+    		message('删除失败!', $this->createWebUrl('redpacket2'), 'error');
+    	}
+    }
+
+	//返利红包列表
+	public function doWebredpacket3() {
+		global $_GPC, $_W;
+		
+		$pageindex = max(1, intval($_GPC['page']));
+		$pagesize=10;
+
+		$where = " where uniacid=".$_W['uniacid']." and type=3";
+		
+		$sql = "select * from ".tablename('mzhk_sun_redpacket_goods')." ".$where;
+
+		$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_redpacket_goods')." ".$where);
+		
+		$select_sql =$sql." order by sort asc, id desc LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+		
+		$list=pdo_fetchall($select_sql);
+
+		$pager = pagination($total, $pageindex, $pagesize);
+		
+		
+		include $this->template('web/redpacket_list3');
+	}
+
+	//添加返利红包
+	public function doWebredpacketadd3() {
+		global $_GPC, $_W;
+		
+		//获取返利红包信息
+		$info = pdo_get('mzhk_sun_redpacket_goods', array('uniacid' => $_W['uniacid'],'id'=>$_GPC["id"]));
+
+		if(checksubmit()){
+
+			$data["uniacid"] = $_W['uniacid'];
+			$data['rname'] = $_GPC['rname'];
+			$data['rmoney'] = $_GPC['rmoney'];
+			$data['snum'] = 0;
+			$data['gnum'] = 1;
+			$data['rec'] = $_GPC['rec'];
+			$data['state'] = $_GPC['state'];
+			$data['rday'] = $_GPC['rday'];
+			$data['application'] = $_GPC['application'];
+			$data['goodsapplication'] = $_GPC['goodsapplication'];
+			$data['sort'] = $_GPC['sort'];
+			$data['allowmoney'] = $_GPC['allowmoney'];
+			$data['sharenum'] = $_GPC['sharenum'];
+			$data['addtime'] = time();
+			$data['type'] = 3; //1拉新红包 2每日红包 3返利红包
+
+			if($data['rname']==null) {
+				message('请您填写红包名称', '', 'error');
+			}elseif($data['rmoney']==null){
+				message('请您填写红包金额','','error');
+			}
+
+			//判断是否当前使用
+			$infos = pdo_getall('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'type'=>3));
+			if(count($infos)<1){
+				$data['rec'] = 1;
+			}else{
+				if($_GPC['rec']==0){
+					$data['rec'] = $_GPC['rec'];
+				}else{
+					foreach($infos as $k=>$v){
+						pdo_update('mzhk_sun_redpacket_goods', array('rec'=>0), array('uniacid'=>$_W['uniacid'],'id' => $v['id']));
+					}
+					$data['rec'] = $_GPC['rec'];
+				}
+			}
+
+			if (empty($_GPC['id'])) {
+				$res = pdo_insert('mzhk_sun_redpacket_goods', $data);
+			}else{
+				$res = pdo_update('mzhk_sun_redpacket_goods', $data, array('uniacid' => $_W['uniacid'],'id'=>$_GPC['id']));
+			}
+			if($res){
+				message('成功!', $this->createWebUrl('redpacket3',$urlarr), 'success');
+			}else{
+				message('失败!', $this->createWebUrl('redpacket3',$urlarr), 'error');
+			}
+		}
+		
+		include $this->template('web/redpacket_add3');
+	}
+
+	//删除返利红包
+	public function doWebDeleteData3(){
+    	global $_GPC, $_W;
+    	$id = intval($_GPC["id"]);
+
+    	$delres=pdo_delete('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'id'=>$id));
+		
+    	if($delres){
+    		message('删除成功!', $this->createWebUrl('redpacket3'), 'success');
+    	}else{
+    		message('删除失败!', $this->createWebUrl('redpacket3'), 'error');
+    	}
+    }
+
+
+	//联盟红包列表
+	/*public function doWebredpacket4() {
+		global $_GPC, $_W;
+		
+		$pageindex = max(1, intval($_GPC['page']));
+		$pagesize=10;
+
+		$where = " where uniacid=".$_W['uniacid']." and type=4";
+		
+		$sql = "select * from ".tablename('mzhk_sun_redpacket_goods')." ".$where;
+
+		$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_redpacket_goods')." ".$where);
+		
+		$select_sql =$sql." order by sort asc, id desc LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+		
+		$list=pdo_fetchall($select_sql);
+
+		$pager = pagination($total, $pageindex, $pagesize);
+		
+		
+		include $this->template('web/redpacket_list4');
+	}*/
+
+	//添加联盟红包
+	/*public function doWebredpacketadd4() {
+		global $_GPC, $_W;
+		
+		//$rebatetypes = array("","%","元");
+		
+		//获取联盟红包信息
+		$info = pdo_get('mzhk_sun_redpacket_goods', array('uniacid' => $_W['uniacid'],'id'=>$_GPC["id"]));
+
+		if(checksubmit()){
+
+			$data["uniacid"] = $_W['uniacid'];
+			$data['rname'] = $_GPC['rname'];
+			$data['rmoney'] = $_GPC['rmoney'];
+			$data['umoneytype'] = $_GPC['umoneytype'];
+			$data['unionmoney'] = $_GPC['unionmoney'];
+			$data['rec'] = $_GPC['rec'];
+			$data['state'] = $_GPC['state'];
+			$data['rday'] = $_GPC['rday'];
+			$data['application'] = $_GPC['application'];
+			$data['sort'] = $_GPC['sort'];
+			$data['allowmoney'] = $_GPC['allowmoney'];
+			$data['addtime'] = time();
+			$data['type'] = 4; //1拉新红包 2每日红包 3返利红包 4联盟红包
+
+			if($data['rname']==null) {
+				message('请您填写红包名称', '', 'error');
+			}elseif($data['rmoney']==null){
+				message('请您填写红包金额','','error');
+			}
+
+			//判断是否当前使用
+			$infos = pdo_getall('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'type'=>4));
+			if(count($infos)<1){
+				$data['rec'] = 1;
+			}else{
+				if($_GPC['rec']==0){
+					$data['rec'] = $_GPC['rec'];
+				}else{
+					foreach($infos as $k=>$v){
+						pdo_update('mzhk_sun_redpacket_goods', array('rec'=>0), array('uniacid'=>$_W['uniacid'],'id' => $v['id']));
+					}
+					$data['rec'] = $_GPC['rec'];
+				}
+			}
+
+			if (empty($_GPC['id'])) {
+				$res = pdo_insert('mzhk_sun_redpacket_goods', $data);
+			}else{
+				$res = pdo_update('mzhk_sun_redpacket_goods', $data, array('uniacid' => $_W['uniacid'],'id'=>$_GPC['id']));
+			}
+			if($res){
+				message('成功!', $this->createWebUrl('redpacket4',$urlarr), 'success');
+			}else{
+				message('失败!', $this->createWebUrl('redpacket4',$urlarr), 'error');
+			}
+		}
+		
+		include $this->template('web/redpacket_add4');
+	}*/
+
+	//删除联盟红包
+	/*public function doWebDeleteData4(){
+    	global $_GPC, $_W;
+    	$id = intval($_GPC["id"]);
+
+    	$delres=pdo_delete('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'id'=>$id));
+		
+    	if($delres){
+    		message('删除成功!', $this->createWebUrl('redpacket4'), 'success');
+    	}else{
+    		message('删除失败!', $this->createWebUrl('redpacket4'), 'error');
+    	}
+    }*/
+
+
+
+	//联盟红包列表
+	public function doWebredpacket5() {
+		global $_GPC, $_W;
+		
+		$pageindex = max(1, intval($_GPC['page']));
+		$pagesize=10;
+
+		$where = " where uniacid=".$_W['uniacid']." and type=4";
+		
+		$sql = "select * from ".tablename('mzhk_sun_redpacket_goods')." ".$where;
+
+		$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_redpacket_goods')." ".$where);
+		
+		$select_sql =$sql." order by sort asc, id desc LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+		
+		$list=pdo_fetchall($select_sql);
+
+		$pager = pagination($total, $pageindex, $pagesize);
+
+		if($list){
+			foreach($list as $k=>$v){
+				$brand = pdo_get('mzhk_sun_brand', array('uniacid' => $_W['uniacid'],'bid'=>$v["bid"]));
+				$list[$k]['bname'] = $brand['bname'];
+			}
+		}
+		
+		
+		include $this->template('web/redpacket_list5');
+	}
+
+	
+	//添加联盟红包
+	public function doWebredpacketadd5() {
+		global $_GPC, $_W;
+		
+		$rebatetypes = array("","%","元");
+		
+		//获取联盟红包信息
+		$info = pdo_get('mzhk_sun_redpacket_goods', array('uniacid' => $_W['uniacid'],'id'=>$_GPC["id"]));
+
+		//获取所有商家
+		$brands = pdo_getall('mzhk_sun_brand', array('uniacid' => $_W['uniacid'],'status'=>2),array('bid','bname'));
+
+
+		if(checksubmit()){
+
+			$data["uniacid"] = $_W['uniacid'];
+			$data['rname'] = $_GPC['rname'];
+			$data['rmoney'] = $_GPC['rmoney'];
+			$data['umoneytype'] = $_GPC['umoneytype'];
+			$data['unionmoney'] = $_GPC['unionmoney'];
+			$data['rec'] = $_GPC['rec'];
+			$data['state'] = $_GPC['state'];
+			$data['rday'] = $_GPC['rday'];
+			$data['sort'] = $_GPC['sort'];
+			$data['allowmoney'] = $_GPC['allowmoney'];
+			$data['application'] = $_GPC['application'];
+			$data['bid'] = $_GPC['bid'];
+			$data['addtime'] = time();
+			$data['type'] = 4; //1拉新红包 2每日红包 3返利红包 4联盟红包
+
+			if($data['rname']==null) {
+				message('请您填写红包名称', '', 'error');
+			}elseif($data['rmoney']==null){
+				message('请您填写红包金额','','error');
+			}
+
+			if (empty($_GPC['id'])) {
+				$res = pdo_insert('mzhk_sun_redpacket_goods', $data);
+			}else{
+				$res = pdo_update('mzhk_sun_redpacket_goods', $data, array('uniacid' => $_W['uniacid'],'id'=>$_GPC['id']));
+			}
+			if($res){
+				message('成功!', $this->createWebUrl('redpacket5',$urlarr), 'success');
+			}else{
+				message('失败!', $this->createWebUrl('redpacket5',$urlarr), 'error');
+			}
+		}
+		
+		include $this->template('web/redpacket_add5');
+	}
+
+	//删除联盟红包
+	public function doWebDeleteData5(){
+    	global $_GPC, $_W;
+    	$id = intval($_GPC["id"]);
+
+    	$delres=pdo_delete('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'id'=>$id));
+		
+    	if($delres){
+    		message('删除成功!', $this->createWebUrl('redpacket5'), 'success');
+    	}else{
+    		message('删除失败!', $this->createWebUrl('redpacket5'), 'error');
+    	}
+    }
+
+
+
+
+	//联盟商家列表
+	public function doWebredpacket6() {
+		
+		global $_GPC, $_W;
+		
+		$pageindex = max(1, intval($_GPC['page']));
+		$pagesize=10;
+
+		$where = " where uniacid=".$_W['uniacid']." ";
+		
+		$sql = "select * from ".tablename('mzhk_sun_redpacket_union')." ".$where;
+
+		$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_redpacket_union')." ".$where);
+		
+		$select_sql =$sql." order by sort asc, id desc LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+		
+		$list=pdo_fetchall($select_sql);
+
+		$pager = pagination($total, $pageindex, $pagesize);
+
+		
+		
+		include $this->template('web/redpacket_list6');
+	}
+
+	//添加联盟商家
+	public function doWebredpacketadd6() {
+		global $_GPC, $_W;
+		
+		
+		//获取联盟红包信息
+		$info = pdo_get('mzhk_sun_redpacket_union', array('uniacid' => $_W['uniacid'],'id'=>$_GPC["id"]));
+
+
+		if(checksubmit()){
+
+			$data["uniacid"] = $_W['uniacid'];
+			$data['uname'] = $_GPC['uname'];
+			$data['ustime'] = $_GPC['ustime'];
+			$data['uetime'] = $_GPC['uetime'];
+			$data['status'] = $_GPC['status'];
+			$data['sort'] = $_GPC['sort'];
+
+			if($data['uname']==null) {
+				message('请您填写联盟名称', '', 'error');
+			}
+
+			if (empty($_GPC['id'])) {
+				$res = pdo_insert('mzhk_sun_redpacket_union', $data);
+			}else{
+				$res = pdo_update('mzhk_sun_redpacket_union', $data, array('uniacid' => $_W['uniacid'],'id'=>$_GPC['id']));
+			}
+			if($res){
+				message('成功!', $this->createWebUrl('redpacket6',$urlarr), 'success');
+			}else{
+				message('失败!', $this->createWebUrl('redpacket6',$urlarr), 'error');
+			}
+		}
+		
+		include $this->template('web/redpacket_add6');
+	}
+
+	//删除联盟红包
+	public function doWebDeleteData6(){
+    	global $_GPC, $_W;
+    	$id = intval($_GPC["id"]);
+
+    	$delres=pdo_delete('mzhk_sun_redpacket_union',array('uniacid'=>$_W['uniacid'],'id'=>$id));
+		
+    	if($delres){
+    		message('删除成功!', $this->createWebUrl('redpacket6'), 'success');
+    	}else{
+    		message('删除失败!', $this->createWebUrl('redpacket6'), 'error');
+    	}
+    }
+
+	
+	
+	//删除关联红包
+	public function doWebDeleteRelation(){
+    	global $_GPC, $_W;
+    	$id = intval($_GPC["id"]);
+		$application = $_GPC['application'];
+		$rid = $_GPC['rid'];
+		$bid = $_GPC['bid'];
+		
+		$delres=pdo_delete('mzhk_sun_redpacket_relation',array('id'=>$id));
+    	
+		if($delres){
+    		message('删除成功!', $this->createWebUrl('relation1',array('rid'=>$rid,'application'=>$application,'bid'=>$bid)), 'success');
+    	}else{
+    		message('删除失败!', $this->createWebUrl('relation1',array('rid'=>$rid,'application'=>$application,'bid'=>$bid)), 'error');
+    	}
+    }
+
+	//关联商品列表
+	public function doWebrelation1() {
+		global $_GPC, $_W;
+		$application = $_GPC['application'];
+		$bid = $_GPC['bid'];
+		$rid = $_GPC['rid'];
+		$lid = $_GPC['lid'];
+
+		if($application==2 || $application==4){//部分商品
+			$pageindex = max(1, intval($_GPC['page']));
+			$pagesize=10;
+
+			$goodstype = array('','普通商品','砍价商品','拼团商品','','抢购商品','','','','','','','次卡商品');
+
+			$where = " where r.uniacid=".$_W['uniacid']." and g.uniacid=".$_W['uniacid']." and b.uniacid=".$_W['uniacid']." and rid=".$rid." and application=".$application." ";
+			
+			//判断是否有次卡插件
+			$system=pdo_get('mzhk_sun_subcard_set',array('uniacid'=>$_W['uniacid']));
+			if($system['opensubcard']==1){//安装次卡
+                
+				$sql1 = "select r.id,g.gname,g.lid,b.bname from ".tablename('mzhk_sun_redpacket_relation')." as r left join ".tablename('mzhk_sun_goods')." as g on g.gid=r.gid left join ".tablename('mzhk_sun_brand')." as b on b.bid=g.bid ".$where." ";
+				
+				$total1="select count(*) as count from ".tablename('mzhk_sun_redpacket_relation')." as r left join ".tablename('mzhk_sun_goods')." as g on g.gid=r.gid left join ".tablename('mzhk_sun_brand')." as b on b.bid=g.bid ".$where." ";
+
+				$sql2 = "select r.id,g.gname,g.lid,b.bname from ".tablename('mzhk_sun_redpacket_relation')." as r left join ".tablename('mzhk_sun_subcard_goods')." as g on g.id=r.gid left join ".tablename('mzhk_sun_brand')." as b on b.bid=g.bid ".$where." ";
+				
+				$total2="select count(*) as count from ".tablename('mzhk_sun_redpacket_relation')." as r left join ".tablename('mzhk_sun_subcard_goods')." as g on g.id=r.gid left join ".tablename('mzhk_sun_brand')." as b on b.bid=g.bid ".$where." ";
+
+
+				$sql = "select * from (".$sql1." union all ".$sql2." ) as a ";
+
+				$tsql = "select sum(count) as count from (".$total1." union all ".$total2." ) as a ";
+				$select_sql =$sql." LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+				$list=pdo_fetchall($select_sql,$data);
+				$total = pdo_fetchcolumn($tsql);
+				$pager = pagination($total, $pageindex, $pagesize);					
+            }else{
+				//未安装次卡
+				$sql = "select r.id,g.gname,g.lid,b.bname from ".tablename('mzhk_sun_redpacket_relation')." as r left join ".tablename('mzhk_sun_goods')." as g on g.gid=r.gid left join ".tablename('mzhk_sun_brand')." as b on b.bid=g.bid ".$where." order by r.id asc ";
+				$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_redpacket_relation')." as r left join ".tablename('mzhk_sun_goods')." as g on g.gid=r.gid left join ".tablename('mzhk_sun_brand')." as b on b.bid=g.bid ".$where." order by r.id asc ",$data);
+				$select_sql =$sql." LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+				$list=pdo_fetchall($select_sql,$data);
+				$pager = pagination($total, $pageindex, $pagesize);
+			}
+			
+		}elseif($application==3 || $application==4){//部分商家
+			$pageindex = max(1, intval($_GPC['page']));
+			$pagesize=10;
+
+			$where = " where r.uniacid=".$_W['uniacid']." and rid=".$rid." and application=".$application." ";
+			
+			$sql = "select r.id,b.bname from ".tablename('mzhk_sun_redpacket_relation')." as r left join ".tablename('mzhk_sun_brand')." as b on r.gid=b.bid ".$where." order by r.id asc ";
+
+			$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_redpacket_relation')." as r left join ".tablename('mzhk_sun_brand')." as b on r.gid=b.bid ".$where." order by r.id asc ",$data);
+			
+			$select_sql =$sql." LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+			$list=pdo_fetchall($select_sql,$data);
+
+			$pager = pagination($total, $pageindex, $pagesize);
+		}else{//通用
+			$typename=array('','普通商品','砍价商品','拼团商品','抢购商品','次卡商品');
+			$list = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'rid'=>$rid,'application'=>$application));
+		}
+		
+		include $this->template('web/relation_list1');
+	}
+
+	//添加关联商品页面
+	public function doWebrelationadd1() {
+		global $_GPC, $_W;
+		$application = $_GPC['application'];
+		$bid = $_GPC['bid'];
+		$rid = $_GPC['rid'];
+			
+		if($application==2 || $application==4){//部分商品
+			$goodstype = array('','普通商品','砍价商品','拼团商品','','抢购商品','','','','','','','次卡商品');
+			$pageindex = max(1, intval($_GPC['page']));
+			$pagesize=10;
+
+			$where = " where g.uniacid=".$_W['uniacid']." ";
+
+			if(!empty($_GPC['nametype'])){
+				$nametype = $_GPC['nametype'];
+				$where.=" and g.lid=".$nametype." ";        
+			}
+
+			if(!empty($_GPC['keywords'])){
+				$keywords=$_GPC['keywords'];
+				$where.=" and g.gname LIKE '%".$keywords."%' ";        
+			}
+
+			//判断是否有次卡插件
+			$system=pdo_get('mzhk_sun_subcard_set',array('uniacid'=>$_W['uniacid']));
+			if($system['opensubcard']==1){ // 安装次卡
+				$subcard=1;
+
+				if($application==4 && $bid>0){
+					$sql1 = "select g.gid,g.gname,g.lid,b.bname from ".tablename('mzhk_sun_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." and (g.lid!=4 and g.lid!=6) and g.bid = ".$bid." ";
+					$total1="select count(*) as count from ".tablename('mzhk_sun_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." and (g.lid!=4 and g.lid!=6) and g.bid = ".$bid." ";
+
+					$sql2 = "select g.id as gid,g.gname,g.lid,b.bname from ".tablename('mzhk_sun_subcard_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." and g.bid= ".$bid." ";
+					$total2="select count(id) as count from ".tablename('mzhk_sun_subcard_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." and g.bid= ".$bid." ";
+				}else{
+					$sql1 = "select g.gid,g.gname,g.lid,b.bname from ".tablename('mzhk_sun_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." and (g.lid!=4 and g.lid!=6) ";
+					$total1="select count(*) as count from ".tablename('mzhk_sun_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." and (g.lid!=4 and g.lid!=6) ";
+					$sql2 = "select g.id as gid,g.gname,g.lid,b.bname from ".tablename('mzhk_sun_subcard_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." ";
+					$total2="select count(id) as count from ".tablename('mzhk_sun_subcard_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." ";
+				}
+
+				$sql = "select * from (".$sql1." union all ".$sql2." ) as a ";
+				$totals = "select sum(count) as count from (".$total1." union all ".$total2." ) as a ";
+				$select_sql =$sql." LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+				$list=pdo_fetchall($select_sql,$data);
+				$total = pdo_fetchcolumn($totals);
+				$pager = pagination($total, $pageindex, $pagesize);
+            }else{
+				//未安装次卡
+				if($application==4 && $bid>0){
+					$sql = "select g.gid,g.gname,g.lid,b.bname from ".tablename('mzhk_sun_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." and (g.lid!=4 and g.lid!=6) and g.bid = ".$bid." order by g.gid desc ";
+
+					$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." and (g.lid!=4 and g.lid!=6) and g.bid = ".$bid." order by g.gid desc ",$data);
+				}else{
+					$sql = "select g.gid,g.gname,g.lid,b.bname from ".tablename('mzhk_sun_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." and (g.lid!=4 and g.lid!=6) order by g.gid desc ";
+
+					$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." and (g.lid!=4 and g.lid!=6) order by g.gid desc ",$data);
+				}
+
+				$select_sql =$sql." LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+				$list=pdo_fetchall($select_sql,$data);
+				$pager = pagination($total, $pageindex, $pagesize);
+			}
+
+		}elseif($application==3 || $application==4){//部分商家
+			$pageindex = max(1, intval($_GPC['page']));
+			$pagesize=10;
+
+			$where = " where uniacid=".$_W['uniacid']." ";
+
+			if(!empty($_GPC['bkeywords'])){
+				$bkeywords=$_GPC['bkeywords'];
+				$where.=" and bname LIKE '%".$bkeywords."%' ";        
+			}
+
+			$sql = "select bid,bname from ".tablename('mzhk_sun_brand')." ".$where." order by bid desc ";
+
+			$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_brand')." ".$where." order by bid desc ",$data);
+			
+			$select_sql =$sql." LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+			$list=pdo_fetchall($select_sql,$data);
+
+			$pager = pagination($total, $pageindex, $pagesize);
+		}else{//通用
+			$list = array(
+				1=>'普通商品',
+				2=>'砍价商品',
+				3=>'拼团商品',
+				4=>'抢购商品'
+			);
+			//次卡判断
+			if(pdo_tableexists("mzhk_sun_subcard_set")){
+                $system=pdo_get('mzhk_sun_subcard_set',array('uniacid'=>$_W['uniacid']));
+                if($system['opensubcard']==1){
+                    $list[5] = '次卡商品';
+                }
+            }
+		}
+				
+		include $this->template('web/relation_add1');
+	}
+
+	//添加关联商品
+	public function doWebrelationadd_goods() {
+		global $_GPC, $_W;
+		
+		$data["uniacid"] = $_W['uniacid'];
+		$data["application"] = intval($_GPC['application']);
+		$data["rid"] = intval($_GPC['rid']);
+		$data["gid"] = intval($_GPC['gid']);
+		if($_GPC['application']==1){
+			if($_GPC['gid']==5){
+				$data["lid"] = 12;
+			}else{
+				$data["lid"] = 0;
+			}
+		}
+
+		if($_GPC['application']==2 || $_GPC['application']==4){
+			if($_GPC['lid']==12){
+				$data["lid"] = 12;
+			}else{
+				$data["lid"] = 0;
+			}
+		}
+		
+		$res = pdo_get('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'rid'=>$_GPC['rid'],'gid'=>$_GPC['gid'],'application'=>$_GPC['application'],'lid'=>$data["lid"]));
+		
+		if($res){
+			message('已有相同商品', '','error');
+		}else{
+			$res2 = pdo_insert('mzhk_sun_redpacket_relation',$data);
+			if($res2){
+				message('添加成功!', $this->createWebUrl('relation1',array('rid'=>$_GPC['rid'],'application'=>$_GPC['application'],'bid'=>$_GPC['bid'],'lid'=>$data['lid'])), 'success');
+			}else{
+				message('添加失败!', $this->createWebUrl('relationadd1'), 'error');
+			}
+		}
+	}
+
+	//红包订单
+	public function doWebredorder() {
+		global $_GPC, $_W;
+
+		//红包类型
+		$redtype = array('','拉新红包','每日红包','裂变红包');
+		
+		$pageindex = max(1, intval($_GPC['page']));
+		$pagesize=10;
+
+		$where = " where o.uniacid=".$_W['uniacid'];
+
+		if(!empty($_GPC['nametype'])){
+			$nametype = $_GPC['nametype'];
+			$keywords=$_GPC['keywords'];
+			if($nametype=='key_fname'){
+				$where.=" and o.rname LIKE '%$keywords%'";
+			}elseif($nametype=='key_uname'){
+				$where.=" and u.name LIKE '%$keywords%'";        
+			}
+		}
+
+		if(!empty($_GPC['timetype'])){
+			$timetype = $_GPC["timetype"];
+			$time_start_end = $_GPC["time_start_end"];
+			if($time_start_end){
+				$time_start_end_arr = explode(" - ",$time_start_end);
+				if($time_start_end_arr){
+					$starttime = strtotime($time_start_end_arr[0]);
+					$endtime = strtotime($time_start_end_arr[1]);
+					if($timetype=="key_addtime"){
+						$where.=" and o.addtime >= {$starttime} and o.addtime <= {$endtime} ";
+					}elseif($timetype=="key_paytime"){
+						$where.=" and o.overtime >= {$starttime} and o.overtime <= {$endtime} ";
+					}elseif($timetype=="key_finishtime"){
+						$where.=" and o.usetime >= {$starttime} and o.usetime <= {$endtime} ";
+					}
+				}
+			}
+		}
+		
+		$sql = "select o.*,u.name from ".tablename('mzhk_sun_redpacket_user')." as o left join ".tablename('mzhk_sun_user')." as u on o.uid=u.id ".$where." order by o.id desc ";
+
+		$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_redpacket_user')." as o left join ".tablename('mzhk_sun_user')." as u on o.uid=u.id ".$where." order by o.id desc ",$data);
+		
+		$select_sql =$sql." LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+		$list=pdo_fetchall($select_sql,$data);
+
+		if($list){
+			foreach($list as $k=>$v){
+				if($v['lid']==1){
+					$oid = pdo_get('mzhk_sun_order',array('uniacid'=>$_W['uniacid'],'oid'=>$v['orid']),array('orderNum'));
+					$list[$k]['orderNum'] = $oid['orderNum'];
+				}
+				if($v['lid']==2){
+					$oid = pdo_get('mzhk_sun_kjorder',array('uniacid'=>$_W['uniacid'],'oid'=>$v['orid']),array('orderNum'));
+					$list[$k]['orderNum'] = $oid['orderNum'];
+				}
+				if($v['lid']==3){
+					$oid = pdo_get('mzhk_sun_ptgroups',array('uniacid'=>$_W['uniacid'],'id'=>$v['orid']),array('groupordernum'));
+					$list[$k]['orderNum'] = $oid['orderNum'];
+				}
+				if($v['lid']==5){
+					$oid = pdo_get('mzhk_sun_qgorder',array('uniacid'=>$_W['uniacid'],'oid'=>$v['orid']),array('orderNum'));
+					$list[$k]['orderNum'] = $oid['orderNum'];
+				}
+
+				if($v['lid']==12){
+					$oid = pdo_get('mzhk_sun_subcard_order',array('uniacid'=>$_W['uniacid'],'id'=>$v['orid']),array('ordernum'));
+					$list[$k]['orderNum'] = $oid['ordernum'];
+				}
+			}
+		}
+
+		$pager = pagination($total, $pageindex, $pagesize);
+		
+		include $this->template('web/redpacket_order');
+	}
+
+	//删除订单
+    public function doWebDeleteOrder(){
+    	global $_GPC, $_W;
+    	$id = intval($_GPC["id"]);
+
+    	$delres=pdo_delete('mzhk_sun_redpacket_user',array('uniacid'=>$_W['uniacid'],'id'=>$id));
+    	if($delres){
+    		message('删除成功!', $this->createWebUrl('redorder'), 'success');
+    	}else{
+    		message('删除失败!', $this->createWebUrl('redorder'), 'error');
+    	}
+    }
+
+	//修改红包状态——是否可用
+    public function doWebSetOrderStatus(){
+        global $_GPC, $_W;
+        $id = intval($_GPC["id"]);
+        
+		$res = pdo_get('mzhk_sun_redpacket_user',array('uniacid'=>$_W['uniacid'],'id'=>$id));
+		
+        if($res['status']==1){
+			pdo_update('mzhk_sun_redpacket_user', array('status'=>0), array('uniacid'=>$_W['uniacid'],'id'=>$id));
+			message('成功!', $this->createWebUrl('redorder'), 'success');
+		}else{
+			pdo_update('mzhk_sun_redpacket_user', array('status'=>1), array('uniacid'=>$_W['uniacid'],'id'=>$id));
+			message('成功!', $this->createWebUrl('redorder'), 'success');
+		}
+    }
+
+	//返利设置
+    public function doWebRebate(){
+        global $_GPC, $_W;
+
+		$rebatetypes = array("","%","元");
+
+		$info=pdo_get('mzhk_sun_system',array('uniacid'=>$_W['uniacid']));
+
+
+		if(checksubmit('submit')){
+			
+			$data['uniacid']=trim($_W['uniacid']);
+			$data["firstorder_open"] = $_GPC["firstorder_open"];
+			$data["firstorder"] = $_GPC["firstorder"];
+			$data["firstmoney"] = $_GPC["firstmoney"];
+			$data["rebate_open"] = $_GPC["rebate_open"];
+			$data["rebatetype"] = $_GPC["rebatetype"];
+			$data["rebatemoney"] = $_GPC["rebatemoney"];
+			$data["ordernum"] = $_GPC["ordernum"];
+			$data["grebate_open"] = $_GPC["grebate_open"];
+
+			$goods = pdo_getall('mzhk_sun_goods',array('uniacid'=>$_W['uniacid']),array('gid','isjoin'));
+
+			if($data["grebate_open"]==1){//全部商品参与，全部商品默认参与
+				foreach($goods as $k=>$v){
+					pdo_update('mzhk_sun_goods',array('isjoin'=>1),array('gid'=>$v['gid']));
+				}
+			}else{//部分参与，全部商品默认不参与
+				foreach($goods as $k=>$v){
+					pdo_update('mzhk_sun_goods',array('isjoin'=>0),array('gid'=>$v['gid']));
+				}
+			}
+
+			if($_GPC['id']==''){                
+				$res=pdo_insert('mzhk_sun_system',$data,array('uniacid'=>$_W['uniacid']));
+				if($res){
+					message('添加成功',$this->createWebUrl('rebate',array()),'success');
+				}else{
+					message('添加失败','','error');
+				}
+			}else{
+				$res = pdo_update('mzhk_sun_system', $data, array('id' => $_GPC['id'],'uniacid'=>$_W['uniacid']));
+				if($res){
+					message('编辑成功',$this->createWebUrl('rebate',array()),'success');
+				}else{
+					message('编辑失败','','error');
+				}
+			}
+		}
+		include $this->template('web/rebate');
+    }
+
+	//关联裂变商品列表
+	public function doWebrelation2() {
+		global $_GPC, $_W;
+		$goodsapplication = $_GPC['goodsapplication'];
+		$rid = $_GPC['rid'];
+
+		if($goodsapplication==1){//部分商品
+			$pageindex = max(1, intval($_GPC['page']));
+			$pagesize=10;
+
+			$goodstype = array('','普通商品','砍价商品','拼团商品','','抢购商品','','','','','','','次卡商品');
+
+			$where = " where r.uniacid=".$_W['uniacid']." and g.uniacid=".$_W['uniacid']." and b.uniacid=".$_W['uniacid']." and rid=".$rid." and goodsapplication=".$goodsapplication." ";
+			
+			
+			//判断是否有次卡插件
+			$system=pdo_get('mzhk_sun_subcard_set',array('uniacid'=>$_W['uniacid']));
+			if($system['opensubcard']==1){//安装次卡
+                
+				$sql1 = "select r.id,g.gname,g.lid,b.bname from ".tablename('mzhk_sun_redpacket_relation2')." as r left join ".tablename('mzhk_sun_goods')." as g on g.gid=r.gid left join ".tablename('mzhk_sun_brand')." as b on b.bid=g.bid ".$where." ";
+				
+				$total1="select count(*) as count from ".tablename('mzhk_sun_redpacket_relation2')." as r left join ".tablename('mzhk_sun_goods')." as g on g.gid=r.gid left join ".tablename('mzhk_sun_brand')." as b on b.bid=g.bid ".$where." ";
+
+				$sql2 = "select r.id,g.gname,g.lid,b.bname from ".tablename('mzhk_sun_redpacket_relation2')." as r left join ".tablename('mzhk_sun_subcard_goods')." as g on g.id=r.gid left join ".tablename('mzhk_sun_brand')." as b on b.bid=g.bid ".$where." ";
+				
+				$total2="select count(*) as count from ".tablename('mzhk_sun_redpacket_relation2')." as r left join ".tablename('mzhk_sun_subcard_goods')." as g on g.id=r.gid left join ".tablename('mzhk_sun_brand')." as b on b.bid=g.bid ".$where." ";
+
+				$sql = "select * from (".$sql1." union all ".$sql2." ) as a ";
+				$tsql = "select sum(count) as count from (".$total1." union all ".$total2." ) as a ";
+				$select_sql =$sql." LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+				$list=pdo_fetchall($select_sql,$data);
+				$total = pdo_fetchcolumn($tsql);
+				$pager = pagination($total, $pageindex, $pagesize);					
+            }else{
+				//未安装次卡
+				$sql = "select r.id,g.gname,g.lid,b.bname from ".tablename('mzhk_sun_redpacket_relation2')." as r left join ".tablename('mzhk_sun_goods')." as g on g.gid=r.gid left join ".tablename('mzhk_sun_brand')." as b on b.bid=g.bid ".$where." order by r.id asc ";
+				$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_redpacket_relation2')." as r left join ".tablename('mzhk_sun_goods')." as g on g.gid=r.gid left join ".tablename('mzhk_sun_brand')." as b on b.bid=g.bid ".$where." order by r.id asc ",$data);
+				$select_sql =$sql." LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+				$list=pdo_fetchall($select_sql,$data);
+				$pager = pagination($total, $pageindex, $pagesize);
+			}
+		}
+		
+		include $this->template('web/relation_list2');
+	}
+
+	//添加关联裂变商品页面
+	public function doWebrelationadd2() {
+		global $_GPC, $_W;
+		$goodsapplication = $_GPC['goodsapplication'];
+		$rid = $_GPC['rid'];
+			
+		if($goodsapplication==1){//部分商品
+			$goodstype = array('','普通商品','砍价商品','拼团商品','','抢购商品','','','','','','','次卡商品');
+			$pageindex = max(1, intval($_GPC['page']));
+			$pagesize=10;
+
+			$where = " where g.uniacid=".$_W['uniacid']." ";
+
+			if(!empty($_GPC['nametype'])){
+				$nametype = $_GPC['nametype'];
+				$where.=" and g.lid=".$nametype." ";        
+			}
+
+			if(!empty($_GPC['keywords'])){
+				$keywords=$_GPC['keywords'];
+				$where.=" and g.gname LIKE '%".$keywords."%' ";        
+			}
+
+			//判断是否有次卡插件
+			$system=pdo_get('mzhk_sun_subcard_set',array('uniacid'=>$_W['uniacid']));
+			if($system['opensubcard']==1){ // 安装次卡
+				$subcard=1;
+
+				$sql1 = "select g.gid,g.gname,g.lid,b.bname from ".tablename('mzhk_sun_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." and (g.lid!=4 and g.lid!=6) ";
+				$total1="select count(*) as count from ".tablename('mzhk_sun_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." and (g.lid!=4 and g.lid!=6) ";
+				
+				$sql2 = "select g.id as gid,g.gname,g.lid,b.bname from ".tablename('mzhk_sun_subcard_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." ";
+				$total2="select count(*) as count from ".tablename('mzhk_sun_subcard_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." ";
+
+				$sql = "select * from (".$sql1." union all ".$sql2." ) as a ";
+				$totals = "select sum(count) as count from (".$total1." union all ".$total2." ) as a ";
+				$select_sql =$sql." LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+				$list=pdo_fetchall($select_sql,$data);
+				$total = pdo_fetchcolumn($totals);
+				$pager = pagination($total, $pageindex, $pagesize);
+			}else{ //未安装次卡
+				$sql = "select g.gid,g.gname,g.lid,b.bname from ".tablename('mzhk_sun_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." and (g.lid!=4 and g.lid!=6) order by g.gid desc ";
+				$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on g.bid=b.bid ".$where." and (g.lid!=4 and g.lid!=6) order by g.gid desc ",$data);
+				$select_sql =$sql." LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+				$list=pdo_fetchall($select_sql,$data);
+				$pager = pagination($total, $pageindex, $pagesize);
+			}
+
+			
+		}
+				
+		include $this->template('web/relation_add2');
+	}
+
+	//删除关联裂变商品
+	public function doWebDeleteRelation2(){
+    	global $_GPC, $_W;
+    	$id = intval($_GPC["id"]);
+		$goodsapplication = $_GPC['goodsapplication'];
+		$rid = $_GPC['rid'];
+		
+		$delres=pdo_delete('mzhk_sun_redpacket_relation2',array('id'=>$id));
+    	
+		if($delres){
+    		message('删除成功!', $this->createWebUrl('relation2',array('rid'=>$rid,'goodsapplication'=>$goodsapplication)), 'success');
+    	}else{
+    		message('删除失败!', $this->createWebUrl('relation2',array('rid'=>$rid,'goodsapplication'=>$goodsapplication)), 'error');
+    	}
+    }
+
+	//添加关联裂变商品
+	public function doWebrelationadd_goods2() {
+		global $_GPC, $_W;
+		
+		$data["uniacid"] = $_W['uniacid'];
+		$data["goodsapplication"] = intval($_GPC['goodsapplication']);
+		$data["rid"] = intval($_GPC['rid']);
+		$data["gid"] = intval($_GPC['gid']);
+		if($_GPC['lid']==12){
+			$data["lid"] = 12;
+		}else{
+			$data["lid"] = 0;
+		}
+		
+		$res = pdo_get('mzhk_sun_redpacket_relation2',array('uniacid'=>$_W['uniacid'],'rid'=>$_GPC['rid'],'gid'=>$_GPC['gid'],'goodsapplication'=>$_GPC['goodsapplication'],'lid'=>$data['lid']));
+		
+		if($res){
+			message('已有相同商品', '','error');
+		}else{
+			$res2 = pdo_insert('mzhk_sun_redpacket_relation2',$data);
+			if($res2){
+				message('添加成功!', $this->createWebUrl('relation2',array('rid'=>$_GPC['rid'],'goodsapplication'=>$_GPC['goodsapplication'])), 'success');
+			}else{
+				message('添加失败!', $this->createWebUrl('relationadd2'), 'error');
+			}
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	//关联裂变商品列表
+	public function doWebrelation3() {
+		global $_GPC, $_W;
+
+		$uid = $_GPC['uid'];
+
+		$pageindex = max(1, intval($_GPC['page']));
+		$pagesize=10;
+
+		$where = " where r.uniacid=".$_W['uniacid']." and uid=".$uid." ";
+		
+		$sql = "select r.id,g.rname,b.bname from ".tablename('mzhk_sun_redpacket_relation3')." as r left join ".tablename('mzhk_sun_brand')." as b on r.bid=b.bid left join ".tablename('mzhk_sun_redpacket_goods')." as g on r.rid=g.id ".$where." order by r.id asc ";
+
+		$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_redpacket_relation3')." as r left join ".tablename('mzhk_sun_brand')." as b on r.bid=b.bid left join ".tablename('mzhk_sun_redpacket_goods')." as g on r.rid=g.id ".$where." order by r.id asc ",$data);
+		
+		$select_sql =$sql." LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+		$list=pdo_fetchall($select_sql,$data);
+
+		$pager = pagination($total, $pageindex, $pagesize);
+		
+		include $this->template('web/relation_list3');
+	}
+
+	//添加关联裂变商品页面
+	public function doWebrelationadd3() {
+		global $_GPC, $_W;
+		$uid = $_GPC['uid'];
+
+		$rid = $_GPC['rid'];
+			
+		$pageindex = max(1, intval($_GPC['page']));
+		$pagesize=10;
+
+		$where = " where g.uniacid=".$_W['uniacid']." and g.type=4 and g.rec=1 ";
+
+		if(!empty($_GPC['nametype']) && !empty($_GPC['keywords'])){
+			$nametype = $_GPC['nametype'];
+			$keywords=$_GPC['keywords'];
+			if($nametype==2){//商家
+				$where.=" and b.bname LIKE '%".$keywords."%' "; 
+			}else{//商品
+				$where.=" and g.rname LIKE '%".$keywords."%' ";   
+			}
+		}
+		
+		//获取所有参与的联盟红包
+		$sql = "select g.id,g.bid,g.rname,b.bname from ".tablename('mzhk_sun_redpacket_goods')." as g left join ".tablename('mzhk_sun_brand')." as b on b.bid=g.bid ".$where." order by g.id desc ";
+
+		$total=pdo_fetchcolumn("select count(*) as wname from ".tablename('mzhk_sun_redpacket_goods')." as g left jion ".tablename('mzhk_sun_brand')." as b on b.bid=g.bid ".$where." order by g.id desc ",$data);
+		
+		$select_sql =$sql." LIMIT " .($pageindex - 1) * $pagesize.",".$pagesize;
+		$list=pdo_fetchall($select_sql,$data);
+
+		$pager = pagination($total, $pageindex, $pagesize);
+				
+		include $this->template('web/relation_add3');
+	}
+
+	//删除关联裂变商品
+	public function doWebDeleteRelation3(){
+    	global $_GPC, $_W;
+		$uid = $_GPC['uid'];
+		
+		$id = $_GPC['id'];
+		
+		$delres=pdo_delete('mzhk_sun_redpacket_relation3',array('id'=>$id));
+    	
+		if($delres){
+    		message('删除成功!', $this->createWebUrl('relation3',array('uid'=>$uid)), 'success');
+    	}else{
+    		message('删除失败!', $this->createWebUrl('relation3',array('uid'=>$uid)), 'error');
+    	}
+    }
+
+	//添加关联裂变商品
+	public function doWebrelationadd_goods3() {
+		global $_GPC, $_W;
+		
+		$data["uniacid"] = $_W['uniacid'];
+		$data["rid"] = intval($_GPC['rid']);
+		$data["bid"] = intval($_GPC['bid']);
+		$data["uid"] = intval($_GPC['uid']);
+		
+		$now = date('Y-m-d H:i:s',time());
+		$sql="select r.* from ".tablename("mzhk_sun_redpacket_relation3")." as r left join ".tablename("mzhk_sun_redpacket_union")." as u on r.uid=u.id where r.uniacid=".$_W['uniacid']." and r.bid=".$_GPC['bid']." and u.uetime>='".$now."' ";
+		$res = pdo_fetch($sql);
+
+		$ress = pdo_get('mzhk_sun_redpacket_relation3',array('uniacid'=>$_W['uniacid'],'bid'=>$_GPC['bid'],'uid'=>$_GPC['uid']));
+		
+		if($res || $ress){
+			message('一个商家只能加入一个有效联盟', '','error');
+		}else{
+			$res2 = pdo_insert('mzhk_sun_redpacket_relation3',$data);
+			if($res2){
+				message('添加成功!', $this->createWebUrl('relation3',array('uid'=>$_GPC['uid'])), 'success');
+			}else{
+				message('添加失败!', $this->createWebUrl('relationadd3'), 'error');
+			}
+		}
+	}
+
+	//搜索商家
+	public function doWebsearchbrand() {
+		global $_GPC, $_W;
+		
+		$name=$_GPC['name'];
+		$where=" WHERE uniacid=".$_W['uniacid'];
+		$sql="select bid,bname from " . tablename("mzhk_sun_brand") ." ".$where." and bname like'%".$name."%' ";
+		$list=pdo_fetchall($sql);
+		echo json_encode($list);
+		exit();
+	}
+	
+
+}

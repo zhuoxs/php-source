@@ -1,0 +1,651 @@
+{template 'public/header'}
+
+{template 'public/comhead'}
+
+<link rel="stylesheet" type="text/css" href="../addons/mzhk_sun/template/public/ygcss.css">
+<style type="text/css">
+    .layui-tab-card{border: 0px;box-shadow: 0 0px 0px 0 rgba(0,0,0,.1);}
+    .layui-tab-card>.layui-tab-title{background-color: #fff;}
+    .layui-tab-card>.layui-tab-title .layui-this{border-top: 3px solid #444444;margin-top: -3px;margin-left: 0;}
+    .layui-tab-content{box-shadow: 0 2px 5px 0 rgba(0,0,0,.1);border:#e6e6e6 1px solid;border-top: 0px;}
+</style>
+<script charset="utf-8" src="https://map.qq.com/api/js?v=2.exp&key={$key}"></script>
+<script>
+var geocoder,map,defaultmarker = null,marker = null,clickmarker = null;
+var txmap = function() {
+    var coordinates = "{$info['coordinates']}";
+    var isdefault = false;
+    if(coordinates!=''){
+        var lat = "{$info['latitude']}"; //纬度
+        var lng = "{$info['longitude']}";//经度
+    }else{
+        coordinates = "39.916527,116.397128";
+        var lat = "39.916527"; //纬度
+        var lng = "116.397128";//经度
+        isdefault = true;
+        //获取城市列表接口设置中心点 IP
+        citylocation = new qq.maps.CityService({
+            complete : function(result){
+                map.setCenter(result.detail.latLng);
+                //console.log(result.detail);
+                $("#coordinates").val(result.detail.latLng);
+                $("#address").val(result.detail.name);
+                //设置marker标记
+                defaultmarker = new qq.maps.Marker({
+                    map : map,
+                    position : result.detail.latLng
+                });
+            }
+        });
+    }
+    var center = new qq.maps.LatLng(lat,lng);
+    map = new qq.maps.Map(document.getElementById('container'),{
+        center: center,
+        zoom: 15,
+    });
+    //设置marker标记
+    defaultmarker = new qq.maps.Marker({
+        map : map,
+        position : center
+    });
+    if(isdefault){
+        //调用searchLocalCity();方法    根据用户IP查询城市信息。
+        citylocation.searchLocalCity();
+    }
+    
+    //调用地址解析类
+    geocoder = new qq.maps.Geocoder({
+        complete : function(result){
+            $("#coordinates").val(result.detail.location);
+            $("#address").val(result.detail.address);
+            map.setCenter(result.detail.location);
+            if(defaultmarker){
+                defaultmarker.setMap(null);
+            }
+            if(clickmarker){
+                clickmarker.setMap(null);
+            }
+            if(marker){
+                marker.setMap(null);
+            }
+            marker = new qq.maps.Marker({
+                map:map,
+                position: result.detail.location
+            });
+
+        }
+    });
+
+    //添加监听事件   获取鼠标单击事件
+    qq.maps.event.addListener(map, 'click', function(event) {
+        //设置点击标记
+        clickmarker=new qq.maps.Marker({
+            position:event.latLng, 
+            map:map
+        });    
+        qq.maps.event.addListener(map, 'click', function(event) {
+            if(clickmarker){
+                clickmarker.setMap(null);
+            }
+            if(marker){
+                marker.setMap(null);
+            }    
+        });
+        //通过经纬度获取地址名称
+        getClickAddress(event.latLng);
+    });
+}
+
+function codeAddress() {
+    var address = document.getElementById("address").value;
+    //通过getLocation();方法获取位置信息值
+    geocoder.getLocation(address);
+}
+
+function getClickAddress(latLng){
+    geocoder.getAddress(latLng);
+}
+
+
+</script>
+<style type="text/css">
+    #weixininput{font-size: 14px;height: 33px;border-radius: 4px;border:1px solid #e7e7eb;padding-left: 10px;}
+    .searchname{font-size: 14px;color: #666;width: 220px;}
+    .searchname>a>p{color: #666;}
+</style>
+<ul class="nav nav-tabs">    
+    <span class="ygxian"></span>
+    <div class="ygdangq">当前位置:</div>
+    <li class="active"><a href="javascript:void(0);">商家信息</a></li>
+    <li><a href="{php echo $this->createWebUrl('brand');}"><i class="fa fa-refresh"></i>返回商家列表审核</a></li>
+</ul>
+<div class="main ygmain">
+    <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+        <div class="layui-tab layui-tab-card">
+          <ul class="layui-tab-title">
+            <li class="layui-this">基本信息</li>
+            <li>微信绑定</li>
+            <li>商家特色</li>
+            <li>商家详情</li>
+            <li>打印配置</li>
+            <li>配送配置</li>
+			{if $open_rebate==1}
+			<li>商家返利</li>
+			{/if}
+			{if $is_counp==1}
+			<li>优惠券设置</li>
+			{/if}
+          </ul>
+          <!-- 基本信息 -->
+          <div class="layui-tab-content" style="min-height: 100px;">
+            <div class="layui-tab-item layui-show">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家名称</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="bname" class="form-control" value="{$info['bname']}" />
+                    </div>
+                </div>
+
+                <div class="form-group" style="{if $is_server!=1}display: none{/if}">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家子账号（服务商开启之后使用）</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="sub_mch_id" class="form-control" value="{$info['sub_mch_id']}" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家分类</label>
+                    <div class="col-sm-9">
+                        <select name="store_id">
+                            <option value="">选择商家分类</option>
+                            {loop $sclist $key $item}
+                                <option value="{$item['id']}$$${$item['store_name']}" {if $item['id']==$info['store_id']}selected="selected"{/if}>{$item['store_name']}</option>
+                            {/loop}
+                        </select>
+                    </div>
+                </div>
+
+				<div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">所属商圈</label>
+                    <div class="col-sm-9">
+                        <select name="aid">
+                            <option value="">选择商圈</option>
+                            {loop $arealist $key $item}
+                                <option value="{$item['id']}" {if $item['id']==$info['aid']}selected="selected"{/if}>{$item['name']}</option>
+                            {/loop}
+                        </select>
+                    </div>
+                </div>
+
+				<div class="form-group">
+                    <label for="lastname" class="col-sm-2 control-label">是否关闭商家</label>
+                    <div class="col-sm-10">
+                         <label class="radio-inline">
+                            <input type="radio" id="brand_open" name="brand_open" value="1" {if $info['brand_open']==1 || empty($info['brand_open'])}checked{/if} />
+                            <label for="brand_open">是</label>
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="brand_open" name="brand_open" value="0" {if $info['brand_open']==0}checked{/if} />
+                            <label for="brand_open">否</label>
+                        </label>
+						<div class="help-block">*如果开启，用户不能购买该商家商品</div>
+                    </div>
+                </div>
+
+				
+				{if $open_payment==1}
+				<div class="form-group">
+                    <label for="lastname" class="col-sm-2 control-label">是否开启线下付</label>
+                    <div class="col-sm-10">
+                        <label class="radio-inline">
+                            <input type="radio" id="open_payment" name="open_payment" value="0" {if $info['open_payment']==0}checked{/if} />
+                            <label for="open_payment">关闭</label>
+                        </label>
+						<label class="radio-inline">
+                            <input type="radio" id="open_payment" name="open_payment" value="1" {if $info['open_payment']==1 || $info['open_payment']==null}checked{/if} />
+                            <label for="open_payment">开启</label>
+                        </label>
+                    </div>
+                </div>
+				{/if}
+
+				<div class="form-group">
+                    <label for="lastname" class="col-sm-2 control-label">是否营业时间内经营</label>
+                    <div class="col-sm-10">
+                         <label class="radio-inline">
+                            <input type="radio" id="time_open" name="time_open" value="1" {if $info['time_open']==1 || empty($info['time_open'])}checked{/if} />
+                            <label for="time_open">是</label>
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="time_open" name="time_open" value="0" {if $info['time_open']==0}checked{/if} />
+                            <label for="time_open">否</label>
+                        </label>
+						<div class="help-block">*如果开启，营业时间外将不能购买该商家商品</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">联系人</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="uname" class="form-control" value="{$info['uname']}" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">联系号码</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="phone" class="form-control" value="{$info['phone']}" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">平台抽成比率</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="commission" class="form-control" value="{$info['commission']}" />%
+                        <div class="help-block">*平台抽成比率，填0 默认按全平台抽成比率抽成；例如：10%，填 10</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">会员折扣</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="memdiscount" class="form-control" value="{$info['memdiscount']}" />
+                        <div class="help-block">*线下付款场景使用，0不打折；例如：8.5折，填 8.5</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">排序</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="sort" class="form-control" value="{if $info['sort']}{$info['sort']}{else}255{/if}" />
+                        <div class="help-block">*越小排越前，0~255，默认255</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家地址</label>
+                    <div class="col-sm-9">
+                        <input id="address" name="address" type="textbox" value="{$info['address']}" style="height: 35px;line-height: 35px;width: 300px;">
+                        <a href="javascript:void(0);" id="searchmap" style="display: inline-block;padding: 10px 30px;background: #444444;color: #fff;" onclick="codeAddress()">定位</a>
+						<div style="color: #f00;padding: 5px 0;">请输入完整的地址信息，包含省-市-区/县</div>
+                        <div style="color: #f00;padding: 5px 0;">地址为空时默认通过ip定位到城市中心，输入地址之后需要点击"定位"按钮进行定位</div>
+						<div style="color: #f00;padding: 5px 0;">腾讯地图key值可在"系统设置"->"区域设置"->"开发密钥"中设置</div>
+                        <div style="width: 50%;height: 400px;" id="container"></div>
+                        <div style=" padding-top: 5px;">经纬度：<input id="coordinates" name="coordinates" type="textbox" value="{$info['coordinates']}" readonly="readonly" style="height: 35px;line-height: 35px;width: 300px;"></div>
+                    </div>
+                    
+                </div>
+            </div>
+            <!-- 微信绑定 -->
+            <div class="layui-tab-item">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">绑定微信号</label>
+                    <div class="col-sm-9">
+                        <input type="hidden" name="bind_openid" id="bind_openid" value="{$info['bind_openid']}">
+                        <span id="wx_name" style="color: red">{if $info['name']}{$info['name']}{else}暂未绑定微信号{/if}</span><span class="btn btn-sm storeblue" data-toggle="modal" data-target="#myModal1" style="margin-left: 30px;">查找</span>
+
+                        <div class="modal fade" id="myModal1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                      <h4 class="modal-title" id="myModalLabel" style="font-size: 20px;">提示</h4>
+                                    </div>
+                                    <div class="modal-body ygsearch" style="font-size: 20px;padding: 15px 30px;">
+                                        <input type="text" id="weixininput" placeholder="请输入微信名称">
+                                        <span class="btn btn-sm ygbtn storeblue" id="searchgoods">查找</span>
+                                        <div class="searchname" style="margin-top: 8px;"></div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>    
+
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">登陆账号</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="loginname" class="form-control" value="{$info['loginname']}" />
+                        <input type="hidden" name="loginname_old" class="form-control" value="{$info['loginname']}" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">登陆密码</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="loginpassword" class="form-control" value="{$info['loginpassword']}" />
+                    </div>
+                </div>
+            </div>
+            <!-- 商家特色 -->
+            <div class="layui-tab-item">
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家类型</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="type" class="form-control" value="{$info['type']}" />
+                        <span class="help-block">*您可以填写自助，午餐等等</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家特色菜</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="feature" class="form-control" value="{$info['feature']}" />
+                        <span class="help-block">*比如您店内特色菜：牛排店：可以写澳洲牛排，麻婆豆腐店可以写麻婆豆腐</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家平均价格</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="price" class="form-control" value="{$info['price']}"  style="width: 100px"/>
+                        <span class="help-block">*这里填写价格主要是吸引客户，</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">营业时间</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="layui-input" name="starttime" value="{if !$info['starttime']}00:00{else}{$info['starttime']}{/if}" id="starttime" placeholder="HH:mm" style="width: 150px;display: inline-block;"> - 
+                        <input type="text" class="layui-input" name="endtime" value="{if !$info['endtime']}00:00{else}{$info['endtime']}{/if}" id="endtime" placeholder="HH:mm" style="width: 150px;display: inline-block;">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">店内设施</label>
+                    <div class="col-sm-9">
+                        {loop $sflist $key $item}
+                            <input type="checkbox" id="facility{$item['id']}" name="facility[]" {if $item['check']==1}checked="checked"{/if} value="{$item['id']}">
+                            <label for="facility{$item['id']}">{$item['facilityname']}</label>
+                        {/loop}
+                        <span class="help-block">*这里勾选店内设施 </span>
+                    </div>
+                </div>
+            </div>
+            <!-- 商家详情 -->
+            <div class="layui-tab-item">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家主图</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_image('img', $info['img']);}
+                        <span class="help-block">*建议比例 222*222</span>
+                    </div>
+                </div>
+				<div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家优惠券入口展示图</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_image('cimg', $info['cimg']);}
+                        <span class="help-block">*建议比例 355*105</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家Banner</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_multi_image('logo', $logo);}
+                        <span class="help-block">*建议比例 750*404</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家详情</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_ueditor('content',$info['content']);}
+                        <!-- <span class="help-block">*建议比例 宽750,高不限</span> -->
+                    </div>
+                    <div class="help-block col-sm-push-2 col-sm-12">*小程序仅支持文本和图片排版，复制的请清除格式之后黏贴</div>
+                </div>
+            </div>
+            <!-- 打印配置 -->
+            <div class="layui-tab-item">
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">是否启用飞鹅打印机</label>
+                    <div class="col-sm-10">
+                        <input type="radio" value="0" name="enable_printer" id="enable_printer1" {if $info['enable_printer']==0 || empty($info['enable_printer'])}checked{/if} ><label for="enable_printer1">关闭</label>
+                        <input type="radio" value="1" name="enable_printer" id="enable_printer2" {if $info['enable_printer']==1}checked{/if}><label for="enable_printer2">开启</label>
+                    </div>
+                </div>
+
+				<div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">是否打印2份</label>
+                    <div class="col-sm-10">
+                        <input type="radio" value="0" name="backups_printer" id="enable_printer3" {if $info['backups_printer']==0 || empty($info['backups_printer'])}checked{/if} ><label for="enable_printer3">关闭</label>
+                        <input type="radio" value="1" name="backups_printer" id="enable_printer4" {if $info['backups_printer']==1}checked{/if}><label for="enable_printer4">开启</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">飞鹅账号</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="printer_user" class="form-control" value="{$info['printer_user']}" />
+                        <span class="help-block">*飞鹅云后台注册账号</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">飞鹅UKEY</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="printer_ukey" class="form-control" value="{$info['printer_ukey']}" />
+                        <span class="help-block">*飞鹅云注册账号后生成的UKEY</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">飞鹅打印机编号</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="printer_sn" class="form-control" value="{$info['printer_sn']}" />
+                        <span class="help-block">*打印机上面的编号</span>
+                    </div>
+                </div>
+            </div>
+            <!-- 配送配置 -->
+            <div class="layui-tab-item">
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">是否开启配送</label>
+                    <div class="col-sm-10">
+                        <input type="radio" value="0" name="is_delivery" id="is_delivery1" {if $info['is_delivery']==0 || empty($info['is_delivery'])}checked{/if} ><label for="is_delivery">关闭</label>
+                        <input type="radio" value="1" name="is_delivery" id="is_delivery2" {if $info['is_delivery']==1}checked{/if}><label for="is_delivery2">开启</label>
+                    </div>
+                        <span class="help-block">*平台设置开启后，此处开关才起作用，注：该设置为购物车使用配送，可设置普通或者抢购商品为配送商品加入购物车。</span>
+
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">最大配送范围</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="delivery_distance" class="form-control" value="{$info['delivery_distance']}" />
+                        <span class="help-block">*商家配送的最大距离，超过则不可配送，单位千米</span>
+                    </div>
+                </div>
+                <!-- <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">起配价</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="delivery_start" class="form-control" value="{$info['delivery_start']}" />
+                        <span class="help-block">*购物车价格满足起配价才可配送</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">免配价</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="delivery_free" class="form-control" value="{$info['delivery_free']}" />
+                        <span class="help-block">*购物车价格高于免配价即可免除配送费</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">配送费</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="delivery_price" class="form-control" value="{$info['delivery_price']}" />
+                        <span class="help-block">*配送所需价格</span>
+                    </div>
+                </div> -->
+
+                <div class="form-group">
+
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">配送设置</label>
+                    <div class="col-sm-9">
+                        <div class="input-group" style="width: 1000px;">
+                            {if $info['group']}
+                            {loop $group $index $item}
+                            <!-- <div class="actime" style="display: inline-block;width: 900px;">
+                                <input class="form-control" name="subscribe_duration[]"  value="{$item['spec']}" id="" placeholder="请按照‘yyyy-MM-dd’的格式填写时间，如2019-10-01" style="display: inline-block;width:400px;">
+
+                                <span style="width: 50px;display: inline-block">价格</span>
+                                <input type="text" name="price[]" placeholder="输入价格"  value="{$item['price']}" style="width: 100px;display: inline-block;height: 30px;border-radius: 2px;">
+                                <div style="width: 100px;display: inline-block;height: 30px;border-radius: 2px;">
+                                    <button type="button" class="storespan btn btn-xs addSpec" style="height: 35px;width: 35px;margin-top: -1px;">添加</button>
+                                    <button type="button" class="storespan btn btn-xs delSpec" style="height: 35px;width: 35px;margin-top: -1px;">删除</button>
+                                </div>
+                            </div> -->
+                            <!-- {$index} -->
+                            <div class="actime" style="display: inline-block;width: 900px;">
+                                    <input type="number" min='0'  step="0.01" class="form-control" name="group[{$index}][delivery_distancesmall]"  value="{$item['delivery_distancesmall']}" id="" placeholder="最小距离" style="display: inline-block;width:100px;">
+                                    <input type="number" min='0'  step="0.01" class="form-control" name="group[{$index}][delivery_distancebig]"  value="{$item['delivery_distancebig']}" id="" placeholder="最大距离" style="display: inline-block;width:100px;">
+                                    <div style="width: 50px;display: inline-block;margin-left: 20px;">起配价</div>
+                                    <input type="number" min='0'  step="0.01" name="group[{$index}][delivery_start]"  placeholder="输入价格" value="{$item['delivery_start']}" style="width: 80px;display: inline-block;height: 30px;border-radius: 2px;">
+                                    <div style="width: 50px;display: inline-block;margin-left: 20px;">免配价</div>
+                                    <input type="number" min='0'  step="0.01" name="group[{$index}][delivery_free]"  placeholder="输入价格" value="{$item['delivery_free']}" style="width: 80px;display: inline-block;height: 30px;border-radius: 2px;">
+                                    <div style="width: 50px;display: inline-block;margin-left: 20px;">配送费</div>
+                                    <input type="number" min='0'  step="0.01" name="group[{$index}][delivery_price]"  placeholder="输入价格" value="{$item['delivery_price']}" style="width: 80px;display: inline-block;height: 30px;border-radius: 2px;">
+                                    <div style="width: 100px;display: inline-block;height: 30px;border-radius: 2px;">
+                                        <button type="button" class="storespan btn btn-xs addSpec" style="height: 35px;width: 35px;margin-top: -1px;">添加</button>
+                                        <button type="button" class="storespan btn btn-xs delSpec" style="height: 35px;width: 35px;margin-top: -1px;">删除</button>
+                                    </div>
+                                </div>
+                            {/loop}
+                            {else}
+                            <div class="actime" style="display: inline-block;width: 800px;margin-bottom: 2px;">
+                                <input type="number" min='0'  step="0.01" class="form-control" name="group[0][delivery_distancesmall]"  value="" id="" placeholder="最小距离" style="display: inline-block;width:100px;">
+                                <input type="number" min='0'  step="0.01" class="form-control" name="group[0][delivery_distancebig]"  value="" id="" placeholder="最大距离" style="display: inline-block;width:100px;">
+                                <div style="width: 50px;display: inline-block;margin-left: 20px;">起配价</div>
+                                <input type="number" min='0'  step="0.01" name="group[0][delivery_start]" value='' placeholder="输入价格" style="width: 80px;display: inline-block;height: 30px;border-radius: 2px;">
+                                <div style="width: 50px;display: inline-block;margin-left: 20px;">免配价</div>
+                                <input type="number" min='0'  step="0.01" name="group[0][delivery_free]" value='' placeholder="输入价格" style="width: 80px;display: inline-block;height: 30px;border-radius: 2px;">
+                                <div style="width: 50px;display: inline-block;margin-left: 20px;">配送费</div>
+                                <input type="number" min='0'  step="0.01" name="group[0][delivery_price]" value='' placeholder="输入价格" style="width: 80px;display: inline-block;height: 30px;border-radius: 2px;">
+                                <div style="width: 100px;display: inline-block;height: 30px;border-radius: 2px;">
+                                    <button type="button" class="storespan btn btn-xs addSpec" style="height: 35px;width: 35px;margin-top: -1px;">添加</button>
+
+                                </div>
+                            </div>
+                            {/if}
+                            <span class="help-block">*商家配送设置，每一行的最小距离不得大于最大距离，下一行的最小距离不得大于上一行的最大距离</span>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+			<!-- 优惠券设置 -->
+			{if $is_counp==1}
+            <div class="layui-tab-item">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">是否开启优惠券</label>
+                    <div class="col-sm-10">
+                        <input type="radio" value="1" name="is_counp" id="is_counp1" {if $info['is_counp']==1 || empty($info['is_counp'])}checked{/if} ><label for="is_counp1">开启</label>
+                        <input type="radio" value="2" name="is_counp" id="is_counp2" {if $info['is_counp']==2}checked{/if}><label for="is_counp2">关闭</label>
+                    </div>
+                </div>
+            </div>
+			{/if}
+
+          </div>
+        </div>
+
+        <div class="form-group">
+            <input type="submit" name="submit" value="保存设置" class="btn col-lg-3" style="color: white;background-color: #444444;margin-left: 550px;"/>
+            <input type="hidden" name="token" value="{$_W['token']}" />
+            <input type="hidden" name="bid" value="{$info['bid']}" />
+        </div>
+
+    </form>
+
+</div>
+<script type="text/javascript">
+    $(function(){
+        $("#frame-1").show();
+        $("#yframe-1").addClass("wyactive");
+        txmap();
+
+        $(document).ready(function(){
+        //点击追加
+            $('.input-group').on('click','.addSpec',function () {
+                var i = new Date().getTime();
+                //1.把当前的tr克隆一份
+                // var newTr = $(this).parents('.actime').clone();
+                var newTr = '<div class="actime" style="display: inline-block;width: 800px;margin-bottom: 2px;">';
+                newTr += '   <input type="number" min="0" step="0.01" class="form-control" name="group['+i+'][delivery_distancesmall]"  value="" id="" placeholder="最小距离" style="display: inline-block;width:100px;">';
+                newTr += '                <input type="number" min="0" step="0.01" class="form-control" name="group['+i+'][delivery_distancebig]"  value="" id="" placeholder="最大距离" style="display: inline-block;width:100px;">';
+                newTr += '                <div style="width: 50px;display: inline-block;margin-left: 20px;">起配价</div>';
+                newTr += '                <input type="number" min="0" step="0.01" name="group['+i+'][delivery_start]"  placeholder="输入价格" style="width: 80px;display: inline-block;height: 30px;border-radius: 2px;">';
+                newTr += '                <div style="width: 50px;display: inline-block;margin-left: 20px;">免配价</div>';
+                newTr += '             <input type="number" min="0" step="0.01" name="group['+i+'][delivery_free]"  placeholder="输入价格" style="width: 80px;display: inline-block;height: 30px;border-radius: 2px;">';
+                newTr += '              <div style="width: 50px;display: inline-block;margin-left: 20px;">配送费</div>';
+                newTr += '          <input type="number" min="0" step="0.01" name="group['+i+'][delivery_price]"  placeholder="输入价格" style="width: 80px;display: inline-block;height: 30px;border-radius: 2px;">';
+                newTr += '           <div style="width: 100px;display: inline-block;height: 30px;border-radius: 2px;">';
+                newTr += '                 <button type="button" class="storespan btn btn-xs addSpec" style="height: 35px;width: 35px;margin-top: -1px;">添加</button>';
+                newTr += '                  <button type="button" class="storespan btn btn-xs delSpec" style="height: 35px;width: 35px;margin-top: -1px;">删除</button>';
+                newTr += '              </div>';
+                newTr += '         </div>';
+
+                //2.追加
+                $(this).parents('.actime').after(newTr);
+            })
+            //删除
+            $(".input-group").on("click",".delSpec",function(){
+                $(this).parents('.actime').remove();
+            });
+
+        })
+
+        $("#searchgoods").on('click',function(){
+            var name = $("#weixininput").val();
+            $.ajax({
+                type:"post",
+                url:"{php echo $this->createWebUrl('brandadd',array('op'=>'search'))}",
+                dataType:"json",
+                data:{name:name},
+                success:function(data){
+                    $(".searchname").html('');
+                    console.log(data);
+                    $(".searchname").show();
+                    for(var i=0;i<data.length;i++){
+                        $(".searchname").append('<div class="shnbox" data-dismiss="modal" id="'+data[i].openid+'" uname="'+data[i].uname+'"><a href="javascript:void(0);"><p><image src="'+data[i].img+'" style="width:24px;height:24px;">'+data[i].uname+'</p></a></div>')
+                    }
+                    $(".shnbox").each(function(){
+                        $(this).click(function(){
+                            var openid = $(this).attr("id");
+                            $('#bind_openid').val(openid);
+                            var uname = $(this).attr("uname");
+                            $('#wx_name').text(uname);
+                        })
+
+                    })
+                }
+            })
+        });
+    })
+
+    layui.use('laydate', function () {
+        var laydate = layui.laydate;
+        laydate.render({
+            elem: '#starttime',
+            type: 'time',
+            format: 'HH:mm'
+        });
+        laydate.render({
+            elem: '#endtime',
+            type: 'time',
+            format: 'HH:mm'
+        });
+    });
+    layui.use('element', function(){
+      var $ = layui.jquery
+      ,element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+    });
+</script>
+
+<style type="text/css">
+    .big-menu{overflow:inherit;}
+</style>

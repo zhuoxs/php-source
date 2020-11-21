@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>{$_W['slwl']['lang']['sys_name']}</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="">
+
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+
+	<div class="layui-tab box-tab-my">
+		<ul class="layui-tab-title">
+			<li data-op="box-select-goods" class="layui-this">选择商品</li>
+		</ul>
+		<div class="layui-tab-content">
+
+			<div class="layui-tab-item layui-show box-store-good">
+
+				<div class="layui-form-item">
+					<div class="input-group">
+						<input type="text" class="layui-input" name="" id="input-store-good-search" placeholder="请输入商品标题">
+						<span class="input-group-btn">
+							<a href="javascript:;" class="btn btn-default" id="btn-store-good-search">搜索</a>
+						</span>
+					</div>
+				</div>
+				<div class="layui-form box-body-search">
+					<table class="layui-table">
+						<colgroup>
+							<col>
+							<col width="60">
+						</colgroup>
+						<thead>
+							<tr>
+								<th>模块</th>
+								<th>操作</th>
+							</tr>
+						</thead>
+						<tbody class="box-tbody">
+							<!-- <tr>
+								<td><span class="title">标题</span></td>
+								<td><a href="javascript:;" class="btn btn-default btn-a" data-url="/pages/act/act?id=1" title="选择">选择</a></td>
+							</tr> -->
+						</tbody>
+					</table>
+				</div>
+				<div class="box-body-search-not">抱歉！未查询到与“ <span></span> ”相关的商城商品，请更换关键字后重试。</div>
+			</div>
+
+
+		</div>
+	</div>
+
+	<div class="div-clone">
+		<table>
+			<tbody>
+				<tr class="item">
+					<td><span class="title">标题</span></td>
+					<td><a href="javascript:;" class="btn btn-default btn-a" title="选择">选择</a></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<script>
+		$(function () {
+			// 商城商品
+			$(document).on('click', '#btn-store-good-search', function () {
+				var $obj = $(this);
+
+				let $url = "{php echo webUrl('',['do'=>'system/dialoggood','op'=>'store_search_good'])}";
+				let $input = $('#input-store-good-search').val();
+
+				$('.box-store-good .box-body-search-not span').text($input);
+
+				$.ajax({
+					type: "POST",
+					url: $url,
+					dataType: 'json',
+					data: {
+						keyword: $input
+					},
+					success: function (rs) {
+
+						if (rs && rs.code.toString() === '0') {
+							$('.box-store-good .box-body-search').show();
+							$('.box-store-good .box-body-search-not').hide();
+
+							$('.box-store-good .box-tbody').empty();
+
+							var $ghost;
+							$.each(rs.data, function (i, e) {
+								$ghost = $('.div-clone .item').clone(true);
+								$ghost.find('.title').text(e.title);
+								$ghost.find('.btn-a').data('id', e.id);
+
+								$('.box-store-good .box-tbody').append($ghost);
+							});
+
+							$obj.attr("disabled", false);
+						} else if (rs && rs.code.toString() === '2') {
+							$('.box-store-good .box-body-search').hide();
+							$('.box-store-good .box-body-search-not').show();
+						} else {
+							layer.msg('保存异常，请与管理员联系！', {
+								offset: '20%',
+							});
+						}
+					},
+					error: function () {
+						layer.msg('保存过程发生错误，请与管理员联系！', {
+							offset: '20%',
+						});
+					}
+				});
+			});
+
+			$('#btn-store-good-search').click();
+
+			$(document).on('click', '.btn-a', function () {
+				let $id = $(this).data('id');
+				let $cid = $('#cid').val();
+				let $title = $(this).attr('title');
+				if($.isFunction(myShowGoodComplete)){
+					let $url = "{php echo webUrl('',['do'=>'system/dialoggood','op'=>'store_good_recommand'])}";
+					var $obj = $(this);
+
+					if (!$obj.hasClass('lock')) {
+						$obj.addClass('lock'); // 不能再点击
+
+						$.ajax({
+							type: "POST",
+							url: $url,
+							dataType: 'json',
+							data: {
+								id: $id,
+								cid: $cid,
+							},
+							success: function (rs) {
+
+								if (rs && rs.code.toString() === '0') {
+									layer.msg('选择成功！' , {
+										time: 500
+									}, function () {
+										myShowGoodComplete($id, $title);
+									});
+								} else {
+									layer.msg(rs.msg, {
+										offset: '20%',
+									});
+								}
+								$obj.removeClass('lock');
+							},
+							error: function () {
+								layer.msg('保存过程发生错误，请与管理员联系', {
+									offset: '20%',
+								});
+								$obj.removeClass('lock');
+							}
+						});
+					}
+				}
+				// alert($(this).data('url'));
+			});
+		});
+
+	</script>
+</div>
+</body>
+</html>

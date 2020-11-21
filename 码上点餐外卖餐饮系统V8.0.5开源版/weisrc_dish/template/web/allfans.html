@@ -1,0 +1,609 @@
+{template 'public/header'}
+{template 'public/comhead'}
+
+{if !empty($storeid)}
+{php echo $this -> set_tabbar($action, $storeid);}
+{else}
+<ul class="nav nav-tabs">
+    <li{if $operation=='display'} class="active"{/if}><a
+        href="{php echo $this->createWebUrl('allfans', array('op' => 'display'))}">顾客管理</a></li>
+    <li{if $operation=='black'} class="active"{/if}><a
+        href="{php echo $this->createWebUrl('allfans', array('op' => 'black'))}">黑名单管理</a></li>
+    <li><a href="{php echo $this->createWebUrl('commission', array('op' => 'display'))}">推广佣金管理</a></li>
+    {if $_W['role'] == 'manager' || $_W['isfounder']}
+    <li><a href="{php echo $this->createWebUrl('cashlog', array('op' => 'display', 'logtype' => 1))}">佣金提现管理</a></li>
+    {/if}
+</ul>
+{/if}
+{if $operation == 'display' || $operation == 'black'}
+<div class="main">
+    <div class="panel panel-default" style="margin-top: 15px;">
+        <div class="panel-heading">筛选</div>
+        <div class="table-responsive panel-body">
+            <form action="./index.php" method="get" class="navbar-form navbar-left" role="form">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="weisrc_dish" />
+                <input type="hidden" name="do" value="allfans" />
+                <input type="hidden" name="op" value="display" />
+                <div class="form-group">
+                    <select class="form-control" id="status" name="status" autocomplete="off">
+                        <option value="">全部</option>
+                        <option value="1">正常下单</option>
+                        <option value="0">禁止下单</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <select class="form-control" id="types" name="types" autocomplete="off">
+                        <option value="nickname">昵称</option>
+                        <option value="username">用户名称</option>
+                        <option value="mobile">手机号码</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <select class="form-control" id="usertype" name="usertype" autocomplete="off">
+                        <option value="0">全部级别</option>
+                        <option value="1" {if $usertype==1}selected{/if}>股东[顶级]</option>
+                        <option value="2" {if $usertype==2}selected{/if}>代理商[一级]</option>
+                        <option value="3" {if $usertype==3}selected{/if}>消费者[二级]</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <select class="form-control" id="datapage" name="datapage" autocomplete="off">
+                        <option value="0">导出条数</option>
+                        <option value="1" >1～100</option>
+                        <option value="2" >101～200</option>
+                        <option value="3" >201～300</option>
+                        <option value="4" >301～400</option>
+                        <option value="5" >401～500</option>
+                        <option value="6" >501～600</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <input type="text" class="form-control" placeholder="请输入" name="keyword">
+                </div>
+                <button class="btn btn-success"><i class="fa fa-search"></i> 搜索</button>
+                <button class="btn btn-success" name="out_put" value="output"><i class="fa fa-file"></i> 导出</button>
+            </form>
+        </div>
+    </div>
+    <style>
+        /*width:50px;height:50px;border-radius:50%;*/
+    </style>
+
+    <form action="" method="post" class="form-horizontal form" >
+        <div class="panel panel-default">
+            {if $agentid != 0}
+            <div class="panel-heading">
+                <div class="row-fluid">
+                    <div class="span3 control-group">
+                        推荐人数:<strong class="text-danger">{$page_total}</strong>
+                        ,总消费:<strong class="text-danger">{$page_totalprice}</strong>
+                    </div>
+                </div>
+            </div>
+            {/if}
+            <div class="table-responsive panel-body">
+                <table class="table table-hover">
+                    <thead class="navbar-inner">
+                    <tr>
+                        <th style="width:10%;">推荐人</th>
+                        <th style="width:10%;">昵称</th>
+                        <th style="width:10%;">名称/手机</th>
+                        <th style="width:10%;">推广佣金/<br/>配送佣金</th>
+                        <th style="width:10%;">消费记录</th>
+                        <th style="width:12%;">余额/积分</th>
+                        <th style="width:10%;">审核(点击切换)</th>
+                        <th style="width:8%;">状态</th>
+                        <th style="width:20%;"></th>
+                    </tr>
+                    </thead>
+                    <tbody id="level-list">
+                    {loop $list $item}
+                    <tr>
+                        <td>
+                            {if $item['agentid']<>0}
+                            <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('allfans', array('id' => $item['agentid'], 'op' => 'post'))}">
+                            <img src="{php echo tomedia($item['agentheadimgurl']);}" style="width:30px;height:30px;padding1px;border:1px solid #ccc"/>
+                            </a>
+                            </br>{$item['agentnickname']}
+
+                        </td>
+                            {else}
+                            <span class="label label-primary">平台</span>
+                            {/if}
+                        </td>
+                        <td style="white-space:normal;">
+                            <img src="{php echo tomedia($item['headimgurl']);}" style="width:30px;height:30px;padding1px;border:1px solid #ccc"/>
+                            </br>{$item['nickname']}
+                            {if $item['is_commission']==2}
+                            </br>
+                            {if $item['agentid']>0}
+                            <span class="label label-danger">代理商</span>
+                            {else}
+                            <span class="label label-danger">股东</span>
+                            {/if}
+                            {/if}
+                            </br>{if $item['iscard']==0}
+                            <span class="label label-primary">非会员</span>
+                            {else}<span class="label label-success">会员</span>{/if}
+                        </td>
+                        <td>
+                            {if empty($item['username'])}-------{else}{$item['username']}{/if}<br>
+                            {if empty($item['mobile'])}-------{else}{$item['mobile']}{/if}
+                        </td>
+                        <td>
+                            <span class="label label-info">推广佣金:{if empty($item['commission_price'])}0.00{else}{$item['commission_price']}{/if}</span><br>
+                            <span class="label label-default">配送佣金:{if empty($item['delivery_price'])}0{else}{$item['delivery_price']}{/if}</span>
+                        </td>
+                        <td>
+                            <span class="label label-info">消费金额:{if !empty($pay_price[$item['from_user']]['totalprice'])}
+                            {php echo sprintf('%.2f', $pay_price[$item['from_user']]['totalprice']);}
+                            {else}0{/if}</span><br>
+                            <span class="label label-default">下单数量:
+                            {if !empty($order_count[$item['from_user']]['count'])}{$order_count[$item['from_user']]['count']}{else}0{/if}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="label label-info">余额:{if
+                                empty($item['credit2'])}0.00{else}{$item['credit2']}{/if}</span><br>
+                            <span class="label label-default">积分:{if empty($item['credit1'])}0{else}{$item['credit1']}{/if}</span>
+                        </td>
+                        <td>
+                            <span class="label {if $item['is_check'] == 0}label-danger{else}label-success{/if}" onclick="setProperty(this,{$item['id']})" data='{$item['is_check']}'>{if $item['is_check'] == 0}未审核{else}已审核{/if}</span>
+                        </td>
+                        <td>
+                            {if $item['status'] == 0}
+                            <span class="label label-danger">禁止下单</span>
+                            {else}
+                            <span class="label label-success">正常</span>
+                            {/if}
+                        </td>
+                        <td>
+                            <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('allorder', array('op' => 'display', 'from_user' => $item['from_user']))}">订单</a>
+                            <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('allfans', array('id' => $item['id'], 'op' => 'display', 'agentid' => $item['id']))}">下级</a>
+
+                            <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('allfans', array('id' => $item['id'], 'op' => 'post'))}">详情</a>
+                            {if $_W['isfounder'] || $_W['role'] == 'manager'}
+                            {if $item['status'] == 1}
+                            <a class="btn btn-default btn-sm" onclick="return confirm('您确定要禁止下单吗？');return false;" href="{php echo $this->createWebUrl('allfans', array('id' => $item['id'], 'status' => $item['status'], 'op' => 'setstatus'))}"
+                               title="冻结"><i class="fa fa-lock"></i>禁止</a>
+                            {else}
+                            <a class="btn btn-default btn-sm" onclick="return confirm('您确定要解除禁止状态吗？');return false;" href="{php echo $this->createWebUrl('allfans', array('id' => $item['id'], 'status' => $item['status'], 'op' => 'setstatus'))}"
+                               title="解冻"><i class="fa fa-unlock"></i>解除</a>
+                            {/if}
+                            {/if}
+                            <!--<a href="javascript:;" class="btn btn-success btn-sm" order-id="164"-->
+                               <!--onclick="$('#order-remark-container').modal();">[发送]</a>-->
+                        </td>
+                    </tr>
+                    {/loop}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </form>
+    {$pager}
+</div>
+<div class="modal fade" id="order-remark-container" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">×</span></button>
+                <h4 class="modal-title">信息通知</h4></div>
+            <div class="modal-body">
+                <textarea name="reply" class="form-control" rows="5" oninput="$(this).parent().next().find('.js-count').text(100 - $(this).val().length);;" onpropertychange="$(this).parent().next().find('.js-count').text(100 - $(this).val().length);;" maxlength="100" placeholder="最多填写 100 字"></textarea>
+            </div>
+            <div class="modal-footer" style="padding: 5px 15px;">
+                <span class="help-block pull-left">					您还可以输入：<storng>
+                    <span style="color:red; font-size:18px;" name="count" class="js-count">100</span></storng> 个字符</span>
+                <a class="btn btn-default js-cancel" data-dismiss="modal">取消</a>
+                <button type="submit" class="btn btn-primary" name="confriminfo" value="正常">发送</button>
+                <!--<a class="btn btn-primary js-order-remark-post">确定</a>-->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    <!--
+    function setProperty(obj,id){
+        $(obj).html($(obj).html() + "...");
+        $.post("{php echo $this->createWebUrl('setfansproperty')}"
+                ,{id:id, data: obj.getAttribute("data")}
+                ,function(d){
+                    $(obj).html($(obj).html().replace("...",""));
+                    $(obj).attr("data",d.data);
+                    if(d.data==1){
+                        $(obj).addClass("label-success");
+                        $(obj).removeClass("label-danger");
+                        $(obj).html('已审核');
+                    } else {
+                        $(obj).removeClass("label-success");
+                        $(obj).addClass("label-danger");
+                        $(obj).html('未审核');
+                    }
+                },"json"
+        );
+    }
+    //-->
+</script>
+{elseif $operation == 'record'}
+<div class="main">
+    <div class="panel panel-default" style="margin-top: 15px;">
+        <div class="panel-heading">筛选</div>
+        <div class="table-responsive panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="weisrc_dish" />
+                <input type="hidden" name="do" value="allfans" />
+                <input type="hidden" name="op" value="record" />
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width:90px;">会员等级</label>
+                    <div class="col-sm-2 col-lg-9">
+                        <label class="radio-inline">
+                            <input type="radio" name="groupid" value="0" {if $groupid==0}checked="checked"{/if} />所有会员
+                        </label>
+                        {loop $groups $level}
+                        <label class="radio-inline">
+                            <input type="radio" name="groupid" value="{$level['groupid']}" {if $groupid==$level['groupid']}checked="checked"{/if}/>{$level['title']}
+                        </label>
+                        {/loop}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width:90px;">关注时间</label>
+                    <div class="col-sm-2 col-lg-2">
+                        <select class="form-control" id="addtime" name="addtime" autocomplete="off">
+                            <option value="0"{if $addtime==0} selected{/if}>不限</option>
+                            <option value="1"{if $addtime==1} selected{/if}>过去7天</option>
+                            <option value="2"{if $addtime==2} selected{/if}>过去30天</option>
+                            <option value="3"{if $addtime==3} selected{/if}>过去3个月</option>
+                            <option value="4"{if $addtime==4} selected{/if}>过去6个月</option>
+                            <option value="5"{if $addtime==5} selected{/if}>过去12个月</option>
+                        </select>
+                    </div>
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width:90px;">性别</label>
+                    <div class="col-sm-2 col-lg-2">
+                        <select class="form-control" id="gender" name="gender" autocomplete="off">
+                            <option value="0"{if $gender==0} selected{/if}>不限</option>
+                            <option value="1"{if $gender==1} selected{/if}>男</option>
+                            <option value="2"{if $gender==2} selected{/if}>女</option>
+                        </select>
+                    </div>
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width:90px;">年龄</label>
+                    <div class="col-sm-2 col-lg-2">
+                        <select class="form-control" id="age" name="age" autocomplete="off">
+                            <option value="0"{if $age==0} selected{/if}>不限</option>
+                            <option value="1"{if $age==1} selected{/if}>18岁以下</option>
+                            <option value="2"{if $age==2} selected{/if}>18-24</option>
+                            <option value="3"{if $age==3} selected{/if}>25-30</option>
+                            <option value="4"{if $age==4} selected{/if}>31-35</option>
+                            <option value="5"{if $age==5} selected{/if}>36-40</option>
+                            <option value="6"{if $age==6} selected{/if}>40岁以上</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width:90px;">上次交易</label>
+                    <div class="col-sm-2">
+                        <select class="form-control" id="paytime" name="paytime" autocomplete="off">
+                            <option value="0"{if $paytime==0} selected{/if}>不限</option>
+                            <option value="1"{if $paytime==1} selected{/if}>1个月内</option>
+                            <option value="2"{if $paytime==2} selected{/if}>1-3个月内</option>
+                            <option value="3"{if $paytime==3} selected{/if}>3-6个月内</option>
+                            <option value="4"{if $paytime==4} selected{/if}>6-12个月内</option>
+                        </select>
+                    </div>
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width:90px;">交易笔数</label>
+                    <div class="col-sm-2" style="width:250px;">
+                        <div class="input-group input-medium">
+                            <input type="text" class="form-control" name="count_min"
+                                   value="{if $count_min!=0}{$count_min}{/if}">
+                            <span class="input-group-addon" style="border-left:0px;border-right:0px;">至</span>
+                            <input type="text" class="form-control" name="count_max"
+                                   value="{if $count_max!=0}{$count_max}{/if}">
+                        </div>
+                    </div>
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width:90px;">交易金额</label>
+                    <div class="col-sm-2" style="width:250px;">
+                        <div class="input-group input-medium">
+                            <input type="text" class="form-control" name="price_min"
+                                   value="{if $price_min!=0}{$price_min}{/if}">
+                            <span class="input-group-addon" style="border-left:0px;border-right:0px;">至</span>
+                            <input type="text" class="form-control" name="price_max"
+                                   value="{if $price_max!=0}{$price_max}{/if}">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width:90px;">所属门店</label>
+                    <div class="col-sm-2 col-lg-2">
+                        <select class="form-control" id="selstoreid" name="selstoreid" autocomplete="off">
+                            <option value="0"{if $selstoreid==0} selected{/if}>不限</option>
+                            {loop $storelist $item}
+                            <option value="{$item['id']}"{if $selstoreid==$item['id']} selected{/if}>{$item['title']}</option>
+                            {/loop}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width:90px;"></label>
+                    <div class="col-sm-2 col-lg-9">
+                        <button class="btn btn-success"><i class="fa fa-search"></i> 搜索</button>
+                        <button class="btn btn-info" name="out_put" value="output"><i class="fa fa-file"></i> 导出数据
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <form action="" method="post" class="form-horizontal form" >
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="row-fluid">
+                    <div class="span3 control-group">
+                        总共 <strong>{$total}</strong> 条
+                    </div>
+                </div>
+            </div>
+            <div class="table-responsive panel-body">
+                <table class="table table-hover">
+                    <thead class="navbar-inner">
+                    <tr>
+                        <th style="width:12%;">昵称</th>
+                        <th style="width:12%;">姓名</th>
+                        <th style="width:12%;">手机号码</th>
+                        <th style="width:12%;">会员等级</th>
+                        <th style="width:12%;">交易总额（元）</th>
+                        <th style="width:12%;">交易笔数（笔）</th>
+                        <th style="width:16%;">上次交易时间</th>
+                        <th style="width:12%;">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {loop $list $item}
+                    <tr>
+                        <td style="white-space:normal;">
+                            <img src="{php echo tomedia($item['headimgurl']);}" style="width:30px;height:30px;padding1px;border:1px solid #ccc"/>
+                            </br>{$item['nickname']}({$item['birthyear']})
+                        </td>
+                        <td>{if empty($item['username'])}-------{else}{$item['username']}{/if}</td>
+                        <td>{if empty($item['mobile'])}-------{else}{$item['mobile']}{/if}</td>
+                        <td>{$groups[$item['groupid']]['title']}</td>
+                        <td>
+                            {$item['totalprice']}
+                        </td>
+                        <td>{$item['totalcount']}</td>
+                        <td>
+                            {if !empty($item['paytime'])}
+                            {php echo date('Y-m-d H:i:s', $item['paytime'])}
+                            {/if}
+                        </td>
+                        <td>
+                            <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('allfans', array('id' => $item['id'], 'op' => 'post'))}"><i class="fa fa-list"></i>详情</a>
+                            {if $item['status'] == 1}
+                            <a class="btn btn-default btn-sm" onclick="return confirm('您确定要禁止下单吗？');return false;" href="{php echo $this->createWebUrl('allfans', array('id' => $item['id'], 'status' => $item['status'], 'op' => 'setstatus'))}"
+                               title="冻结"><i class="fa fa-lock"></i>禁止</a>
+                            {else}
+                            <a class="btn btn-default btn-sm" onclick="return confirm('您确定要解除禁止状态吗？');return false;" href="{php echo $this->createWebUrl('allfans', array('id' => $item['id'], 'status' => $item['status'], 'op' => 'setstatus'))}"
+                               title="解冻"><i class="fa fa-unlock"></i>解除</a>
+                            {/if}
+                        </td>
+                    </tr>
+                    {/loop}
+                    </tbody>
+                </table>
+            </div>
+            <div class="panel-footer">
+                <a class="btn btn-warning" onclick="return confirm('此操作不可恢复，确认同步？');return false;" href="{php echo $this->createWebUrl('allfans', array('op' => 'synchrodata'))}"><i class="fa fa-cog" ></i> 同步数据</a>
+            </div>
+        </div>
+    </form>
+    {$pager}
+</div>
+<div class="modal fade" id="order-remark-container" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">×</span></button>
+                <h4 class="modal-title">信息通知</h4></div>
+            <div class="modal-body">
+                <textarea name="reply" class="form-control" rows="5" oninput="$(this).parent().next().find('.js-count').text(100 - $(this).val().length);;" onpropertychange="$(this).parent().next().find('.js-count').text(100 - $(this).val().length);;" maxlength="100" placeholder="最多填写 100 字"></textarea>
+            </div>
+            <div class="modal-footer" style="padding: 5px 15px;">
+                <span class="help-block pull-left">					您还可以输入：<storng>
+                    <span style="color:red; font-size:18px;" name="count" class="js-count">100</span></storng> 个字符</span>
+                <a class="btn btn-default js-cancel" data-dismiss="modal">取消</a>
+                <button type="submit" class="btn btn-primary" name="confriminfo" value="正常">发送</button>
+                <!--<a class="btn btn-primary js-order-remark-post">确定</a>-->
+            </div>
+        </div>
+    </div>
+</div>
+{elseif $operation == 'post'}
+<div class="main">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <a class="btn btn-warning" href="{php echo $this->createWebUrl('allfans', array('op' => 'display', 'storeid' => $storeid))}">返回会员管理
+            </a>
+        </div>
+    </div>
+    <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data" id="invitative">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                用户信息
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">是否为代理商</label>
+                    <div class="col-sm-9">
+                        <label for="is_commission1" class="radio-inline"><input type="radio" name="is_commission" value="1" id="is_commission1" {if $item['is_commission'] == 1}checked="true"{/if} /> 普通用户</label>
+                        &nbsp;&nbsp;&nbsp;
+                        <label for="is_commission2" class="radio-inline"><input type="radio" name="is_commission" value="2" id="is_commission2"  {if empty($item) || $item['is_commission'] == 2}checked="true"{/if} /> 代理商</label>
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                {if !empty($item)}
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">推广二维码</label>
+                    <div class="col-sm-9">
+                        <img src="{php echo $this->createWebUrl('GetQrcode',array('url'=>$agent_url))}"/>
+                    </div>
+                </div>
+                {/if}
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">场景值</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="scene_str" value="{$item['scene_str']}"
+                               class="form-control" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label"><span class="require">*</span>推荐人</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <div class="input-group">
+                            <input type="text" name="nickname" value="{$agent['nickname']}" class="form-control" id="nickname"
+                                   readonly="">
+                            <input type="hidden" name="agentid" value="{$agent['id']}" id="agentid">
+                        <span class="input-group-btn">
+				            <button class="btn btn-default" type="button" onclick="$('#modal-module-menus').modal();" data-original-title="" title="">选择粉丝</button>
+                            <button class="btn btn-default" type="button" onclick="$('#agentid').val('0');$('#nickname').val('');"
+                                    data-original-title="" title="">清除</button>
+			            </span>
+                        </div>
+                        <div class="input-group cover" style="margin-top:.5em;">
+                            <img src="{php echo tomedia($fans['headimgurl']);}" width="150" />
+                        </div>
+                        <div class="help-block"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">微信ID</label>
+                    <div class="col-sm-9">
+                        <p class="form-control-static">
+                            {$item['from_user']}
+                        </p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">昵称</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="nickname2" value="{$item['nickname']}"
+ class="form-control" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">头像</label>
+                    <div class="col-sm-9">
+                        {if empty($item['headimgurl'])}
+                        {php echo tpl_form_field_image('headimgurl', '../addons/weisrc_dish/template/images/default-headimg.jpg')}
+                        {else}
+                        {php echo tpl_form_field_image('headimgurl', $item['headimgurl'])}
+                        {/if}
+                        <div class="help-block">大图片建议尺寸：80像素 * 80像素</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">累计下单数量</label>
+                    <div class="col-sm-9">
+                        <p class="form-control-static">
+                            {$order_count}
+                        </p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">取消订单数量</label>
+                    <div class="col-sm-9">
+                        <p class="form-control-static">
+                            {$cancel_count}
+                        </p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">累计消费金额</label>
+                    <div class="col-sm-9">
+                        <p class="form-control-static">
+                            {if empty($pay_price)}0{else}{$pay_price}{/if}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">用户名</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="username" value="{$item['username']}" id="username" class="form-control" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">手机</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="mobile" value="{$item['mobile']}" id="mobile" class="form-control" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">地址</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="address" value="{$item['address']}" id="address" class="form-control" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">坐标</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_coordinate('baidumap', $item)}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">最后访问时间</label>
+                    <div class="col-sm-9">
+                        <p class="form-control-static">
+                            {php echo date('Y-m-d H:i:s', $item['lasttime'])}
+                        </p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">加入时间</label>
+                    <div class="col-sm-9">
+                        <p class="form-control-static">
+                            {php echo date('Y-m-d H:i:s', $item['dateline'])}
+                        </p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" style="color:#f00;">禁止下单</label>
+                    <div class="col-sm-9">
+                        <label class="radio-inline">
+                            <input type="radio" name="status" value="1" {if $item['status']==1 || empty($item)}checked{/if}>正常
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" name="status" value="0" {if isset($item['status']) && empty($item['status'])}checked{/if}>禁止</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group col-sm-12">
+            <input type="submit" name="submit" value="保存设置" class="btn btn-primary col-lg-3"/>
+            <input type="hidden" name="token" value="{$_W['token']}" />
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    function check() {
+        if($.trim($('#username').val()) == '') {
+            message('没有输入姓名.', '', 'error');
+            return false;
+        }s
+        return true;
+    }
+</script>
+{template 'web/_modal_fans'}
+{/if}
+{if $_W['isfounder']}
+{template 'common/footer'}
+{else}
+{template 'public/footer'}
+{/if}

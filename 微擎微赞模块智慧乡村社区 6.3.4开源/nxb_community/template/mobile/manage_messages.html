@@ -1,0 +1,259 @@
+{template 'manage_header'}
+<link rel="stylesheet" href="{MODULE_URL}myui/css/peng.css">
+<link rel="stylesheet" href="{MODULE_URL}myui/css/icons-extra.css">
+<link rel="stylesheet" href="{MODULE_URL}myui/css/iconmore.css">
+<link rel="stylesheet" href="{MODULE_URL}myui/css/new.css">
+<style>
+	.cover{width:60px;height:60px;border-radius:30px;}
+	.mt1{margin-top:1em;}
+	
+</style>
+
+<body>
+	
+	<div class="mui-content c-hei3">
+
+		{template 'manage_top'}
+		<div class="mui-row">
+			{template 'manage_left'}
+
+			<div class="mui-col-xs-10 c-hei5 p20">
+				
+				<button type="button" class="mui-btn mui-btn-primary" onclick="xz();">新增消息</button>
+				<div class="mui-row c-wh mb1 mt1 uhide" id="xzbox">
+					<div class="mui-col-xs-12 ">
+						
+				<form class="mui-input-group" action="" method="post">
+						<div class="mui-input-row">
+							<label>类别</label>
+							<input type="text" class="mui-input-clear" name="type" placeholder="如：活动消息">
+						</div>
+						<div class="mui-input-row">
+							<label>标题</label>
+							<input type="text" class="mui-input-clear" name="title" placeholder="必填">
+						</div>
+						<div class="mui-input-row">
+							<textarea name="content" row="3" placeholder="请输入消息内容"></textarea>
+						</div>
+						
+						<div class="mui-row">
+							
+							<div class="mui-col-xs-12 pl15 pr15 pt1 pb1">
+								<p>接收人员</p>
+								
+								<button type="button" class="mui-btn mui-btn-outlined">全选</button>
+								{if $manage['lev']==2}
+									{php echo getalltownuser($_W['uniacid'],$townid)}
+								{else if $manage['lev']==3}
+									{php echo getallvillageuser($_W['uniacid'],$townid)}
+								{/if}
+								
+								
+							<input name="checkbox" value="Item 1" type="checkbox" >人员1
+							<input name="checkbox" value="Item 2" type="checkbox" >人员2
+							<input name="checkbox" value="Item 3" type="checkbox" >人员3
+							<input name="checkbox" value="Item 4" type="checkbox" >人员4
+							
+							
+							</div>
+							
+							
+							
+						</div>
+						
+						
+
+						<div class="mui-button-row" style="margin-left:18px;margin-right:18px;height:50px;">
+
+							<input type="submit" name="submit" class="mui-btn mui-btn-primary c-blu" value="确认">
+							<input type="hidden" name="token" value="{$_W['token']}" />
+
+						</div>
+
+					</form>
+
+						
+					</div>
+				</div>
+				
+				<div class="mui-row c-wh mb1 mt1">
+					
+					<div class="mui-col-xs-12 pt1 pb1 pl15 t-gre fb">
+						消息管理
+						
+					</div>
+					
+					
+					<div class="mui-col-xs-12">
+						
+						<table width="100%" class="mui-table">
+							<thead>
+								<tr>
+									<th>类型</th>
+									<th>标题</th>
+									<th>内容</th>
+									<th>发布人</th>
+									<th>接收人</th>
+									<th>状态</th>
+									<th>发布时间</th>
+									<th>操作</th>
+								</tr>
+								
+								
+							</thead>
+							
+							
+							<tbody>
+								<tr class="">
+									
+									<td colspan="8">
+										<div class="mui-row">
+						
+											<div class="mui-col-xs-12" id="infolist">
+							
+							
+							
+											</div>
+						
+										</div>
+					
+									</td>
+								</tr>
+				
+							</tbody>
+						</table>
+
+					</div>
+				
+					<div class="mui-col-xs-12 tx-c pt1 pb1">
+						
+						<button type="button" class="mui-btn mui-btn-primary" id="jiazai" onclick="jz(0)">加载更多</button>
+
+
+					</div>
+				</div>
+				
+				
+			</div>
+		</div>
+
+	</div>
+
+</body>
+
+</html>
+<script>
+	
+			$(document).ready(function(){
+				
+  				var count = 0;
+  				jz(count);
+  				
+			});
+			
+		
+			
+			
+
+			function jz(count) {
+				
+				
+				count+=1;
+				
+				if(count>{php echo $count}){
+					$("#jiazai").removeAttr("onclick");
+					$("#jiazai").text("没有更多数据了");
+				}else{
+					
+					$("#jiazai").attr("onclick",'jz('+count+')');
+					
+				}
+				
+				
+					//mui('#pullrefresh').pullRefresh().endPullupToRefresh((++count > {php echo $count})); //参数为true代表没有更多数据了。
+				var table = document.body.querySelector('#infolist');
+				var cells = document.body.querySelectorAll('.oneinfo');
+				var infonum=cells.length;
+					//alert(infonum);
+
+				var cx="{php echo $cx}";	
+				mui.ajax({
+                    type: "get",
+                    dataType: "json",
+                    url: "{php echo $this->createMobileUrl('manage_messages_m',array())}"+"&cx="+cx,
+                    data: {
+                    	num:infonum,
+                    	psize:{php echo $psize}      	
+                    },
+                 
+                    success: function(msg){
+                    	console.log(JSON.stringify(msg));
+						var data=msg.log
+						
+						if(data!=''){
+							
+							var ul = document.createElement('table');
+							ul.className="mui-table tx-c c-wh";
+							ul.innerHTML=data;
+                        	table.insertBefore(ul, table.lastChild); 
+                        	
+						}
+                        	
+                    }
+                });  
+
+                    
+                    
+                    
+                    
+				
+			}
+			
+			
+			mui('#infolist').on('tap', 'a', function() {
+				var id = this.getAttribute('href');
+				var href = this.href;
+				mui.openWindow({
+					id: id,
+					url: this.href,										
+				});
+			});
+	
+			function xz(){
+				$("#xzbox").removeClass("uhide");
+			}
+	
+	
+			function helpdel(id){
+				
+				var o=document.getElementById("help"+id);
+				var btnArray = ['否', '是'];
+				mui.confirm('删除这条记录吗？', '', btnArray, function(e) {
+					if (e.index == 1) {
+						
+					mui.ajax({
+                    	type: "get",
+                    	dataType: "json",
+                    	url: "{php echo $this->createMobileUrl('manage_help_del',array());}"+"&id="+id,
+                    	data: {},                
+                    	success: function(msg){
+                    		//console.log(JSON.stringify(msg)); 
+                    		
+                    		if(msg.status==1){
+                    			mui.toast(msg.log);
+                    			 $(o).remove();
+
+                    		}
+                    	
+                    	}
+                	});  
+						
+						
+					}
+				})
+				
+			}
+			
+</script>
+
+{template 'manage_foot'}

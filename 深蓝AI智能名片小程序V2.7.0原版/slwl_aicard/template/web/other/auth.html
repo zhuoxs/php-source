@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>{$_W['slwl']['lang']['sys_name']}</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="">
+	{template 'public/header'}
+
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+	{template 'public/top'}
+	{template 'public/left'}
+
+	<div class="layui-body">
+		<div class="layui-main">
+			<fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+				<legend>系统授权({$_W['current_module']['title']}-{$_W['current_module']['author']})</legend>
+			</fieldset>
+			<form class="layui-form" action="" method="post">
+				<input type="hidden" name="id" value="{$adv['id']}" />
+				<div class="layui-form-item">
+					<label class="layui-form-label">域名</label>
+					<div class="layui-input-block">
+						<input type="text" name="options[domain]" value="{$domain}" class="layui-input" readonly="readonly" />
+					</div>
+				</div>
+				<div class="layui-form-item">
+					<label class="layui-form-label">站点IP</label>
+					<div class="layui-input-block">
+						<input type="text" class="layui-input" name="options[ip]" value="{CLIENT_IP}" readonly="readonly" />
+					</div>
+				</div>
+				<div class="layui-form-item">
+					<label class="layui-form-label">授权码</label>
+					<div class="layui-input-block">
+						<input type="text" name="options[code]" value="{$settings['code']}" class="layui-input" />
+					</div>
+				</div>
+				<div class="layui-form-item">
+					<label class="layui-form-label">授权状态</label>
+					<div class="layui-input-block">
+						<div class="box-badge-panel">
+							{if $settings['status'] == '1' }
+								<span class="box-badge box-ok">已授权</span>
+							{else}
+								<span class="box-badge box-err">未授权</span>
+							{/if}
+						</div>
+					</div>
+				</div>
+				<div class="layui-form-item">
+					<div class="layui-input-block">
+						<button class="layui-btn" lay-submit lay-filter="auth">保存</button>
+						<input type="hidden" name="token" value="{$_W['token']}" />
+					</div>
+				</div>
+				<div class="layui-form-item">
+					<label class="layui-form-label">提示</label>
+					<div class="layui-input-block">
+						<div class="layui-form-mid layui-word-aux">请把此页面的域名和IP（或截图）发给客服</div>
+					</div>
+				</div>
+
+
+				<fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+					<legend>异常修复</legend>
+				</fieldset>
+				<div class="layui-form-item">
+					<label class="layui-form-label">协议</label>
+					<div class="layui-input-block">
+						<input type="checkbox" name="agreement" value="1" lay-skin="primary" title="我已经做好了相关文件及数据库的备份工作，并自愿承担所存在的风险">
+					</div>
+				</div>
+				<div class="layui-form-item">
+					<label class="layui-form-label"></label>
+					<div class="layui-input-block">
+						<div><button class="layui-btn" lay-submit lay-filter="authanomaly">授权异常修复</button></div>
+						<div class="layui-form-mid layui-word-aux">按钮不要乱点击，只有授权异常时才点击或联系客服</div>
+					</div>
+				</div>
+			</form>
+
+			<script>
+				layui.use('form', function(){
+					var form = layui.form;
+
+					// 保存
+					form.on('submit(auth)', function(data){
+						let url = "{php echo webUrl('',['do'=>'other/auth','op'=>'post'])}";
+						var $obj = $(this);
+
+						if (!$obj.hasClass('lock')) {
+							$obj.addClass('lock'); // 不能再点击
+
+							$.ajax({
+								type: "POST",
+								url: url,
+								dataType: 'json',
+								data: data.field,
+								success: function (rs) {
+
+									if (rs && rs.code.toString() === '0') {
+										layer.msg('保存成功！' , {
+											time: 500
+										}, function () {
+											window.location.href = "{php echo webUrl('',['do'=>'other/auth'])}";
+										});
+									} else {
+										layer.msg(rs.msg, {
+											offset: '20%',
+										});
+									}
+									$obj.removeClass('lock');
+								},
+								error: function () {
+									layer.msg('保存过程发生错误，请与管理员联系', {
+										offset: '20%',
+									});
+									$obj.removeClass('lock');
+								}
+							});
+						}
+
+						return false;
+					});
+
+					// 授权异常修复
+					form.on('submit(authanomaly)', function(data){
+						let $url = "{php echo webUrl('',['do'=>'other/auth','op'=>'post_tablepre'])}";
+						var $obj = $(this);
+
+						if (!$obj.hasClass('lock')) {
+							$obj.addClass('lock'); // 不能再点击
+
+							layer.confirm('授权异常修复吗？', {
+								offset: '20%',
+								btn: ['再想想', '修复'],
+								scrollbar: false,
+								closeBtn: 0,
+							}, function (i) {
+							   layer.close(i);
+							}, function (i) {
+
+								$.ajax({
+									type: "POST",
+									url: $url,
+									dataType: 'json',
+									data: data.field,
+									success: function (rs) {
+
+										if (rs && rs.code.toString() === '0') {
+											layer.msg('修复成功', {
+												time: 500
+											},
+
+											function () {
+												$obj.removeClass('lock');
+											});
+										} else {
+											layer.msg(rs.msg, {
+												offset: '20%',
+											});
+											$obj.removeClass('lock');
+										}
+									},
+									error: function () {
+										layer.msg('保存过程发生错误，请与管理员联系', {
+											offset: '20%',
+										});
+										$obj.removeClass('lock');
+									}
+								});
+							});
+						}
+						return false;
+					});
+				});
+			</script>
+
+		</div>
+	</div>
+
+	{template 'public/copyright'}
+</div>
+
+{template 'public/footer'}
+</body>
+</html>

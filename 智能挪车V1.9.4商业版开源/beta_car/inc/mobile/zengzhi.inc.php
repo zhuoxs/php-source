@@ -1,0 +1,2 @@
+<?php
+ goto Kz3gE; S4A9r: $data = pdo_getall(table . "\165\162\x6c", array("\165\156\x69\x61\x63\x69\144" => uniacid)); goto yNPD8; Kz3gE: global $_GPC, $_W; goto DGiH1; DGiH1: $title = "\345\xa2\x9e\345\x80\xbc\346\234\215\345\212\xa1"; goto g3Vm2; g3Vm2: $setting = json_decode(pdo_get(table . "\172\145\156\147\172\x68\x69", array("\165\156\x69\141\x63\x69\144" => uniacid), "\x77\145\x69\x7a\150\141\156\x67")["\x77\145\151\172\150\141\156\x67"], true); goto S4A9r; yNPD8: include $this->template("\172\x65\156\x67\x7a\x68\x69");

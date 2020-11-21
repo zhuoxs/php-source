@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="viewport" content="width=device-width,height=device-height,inital-scale=1.0,maximum-scale=1.0,user-scalable=no;">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+		<meta name="format-detection" content="telephone=no">
+		<link href="{TG_URL_ARES}css/activity-style.css" rel="stylesheet" type="text/css">
+	</head>
+	<script type="text/javascript">
+		function loading(canvas, options) {
+			this.canvas = canvas;
+			if (options) {
+				this.radius = options.radius || 12;
+				this.circleLineWidth = options.circleLineWidth || 4;
+				this.circleColor = options.circleColor || 'lightgray';
+				this.moveArcColor = options.moveArcColor || 'gray';
+			} else {
+				this.radius = 12;
+				this.circelLineWidth = 4;
+				this.circleColor = 'lightgray';
+				this.moveArcColor = 'gray';
+			}
+		}
+		loading.prototype = {
+			show: function() {
+				var canvas = this.canvas;
+				if (!canvas.getContext) return;
+				if (canvas.__loading) return;
+				canvas.__loading = this;
+				var ctx = canvas.getContext('2d');
+				var radius = this.radius;
+				var me = this;
+				var rotatorAngle = Math.PI * 1.5;
+				var step = Math.PI / 6;
+				canvas.loadingInterval = setInterval(function() {
+					ctx.clearRect(0, 0, canvas.width, canvas.height);
+					var lineWidth = me.circleLineWidth;
+					var center = {
+						x: canvas.width / 2,
+						y: canvas.height / 2
+					};
+
+					ctx.beginPath();
+					ctx.lineWidth = lineWidth;
+					ctx.strokeStyle = me.circleColor;
+					ctx.arc(center.x, center.y + 20, radius, 0, Math.PI * 2);
+					ctx.closePath();
+					ctx.stroke();
+					//在圆圈上面画小圆   
+					ctx.beginPath();
+					ctx.strokeStyle = me.moveArcColor;
+					ctx.arc(center.x, center.y + 20, radius, rotatorAngle, rotatorAngle + Math.PI * .45);
+					ctx.stroke();
+					rotatorAngle += step;
+
+				},
+				100);
+			},
+			hide: function() {
+				var canvas = this.canvas;
+				canvas.__loading = false;
+				if (canvas.loadingInterval) {
+					window.clearInterval(canvas.loadingInterval);
+				}
+				var ctx = canvas.getContext('2d');
+				if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+			}
+		};
+	</script>
+	</head>
+	<body data-role="page" class="activity-scratch-card-winning">
+		<script src="{TG_URL_ARES}js/jquery.min.js" type="text/javascript"></script>
+		<script src="{TG_URL_ARES}js/wScratchPad.js" type="text/javascript"></script>
+		<div class="main">
+			<div class="cover">
+				<img src="{TG_URL_ARES}images/activity/activity-scratch-card-bannerbg.png">
+				<div id="prize">
+				</div>
+				<div id="scratchpad">
+				</div>
+			</div>
+			<div class="content">
+				<div id="zjl" style="display:none" class="boxcontent boxwhite">
+					<div class="box">
+						<div class="title-red" style="color: #444444;">
+							<span class="red"></span>
+							<span>
+								恭喜您
+							</span>
+						</div>
+						<div class="Detail">
+							<p>
+								您中了：
+								<span class="red" id ="theAward"></span>
+								<input type="hidden" name="zj" id="zj" value="" />
+							</p>
+							<!--<p>
+								兑奖：
+								<a href="javascript:;" id="save-btn">
+								<span class="red" id="sncode" style="">
+									点击领取
+								</span>
+								</a>
+							</p>-->
+							<p class="red"></p>
+						</div>
+					</div>
+				</div>
+				<div class="boxcontent boxwhite">
+					<div class="box">
+						<div class="title-brown">
+							<span>
+								奖项设置：
+							</span>
+						</div>
+						<div class="Detail">
+							<p>
+								一等奖： {$prize['first']['p']}
+							</p>
+							<p>
+								二等奖： {$prize['second']['p']}
+							</p>
+							<p>
+								三等奖： {$prize['third']['p']}
+							</p>
+							<p>
+								参与奖： {$prize['forth']['p']}
+							</p>
+						</div>
+					</div>
+				</div>
+				<div class="boxcontent boxwhite">
+					<div class="box">
+						<div class="title-brown">
+							活动说明：
+						</div>
+						<div class="Detail">
+							<p class="red">
+								{$scratch['detail']}
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div style="clear:both;">
+			</div>
+		</div>
+		<script type="text/javascript">
+			var zjl = false;
+			var num = 0;
+			var goon = true;
+			$(function() {
+				$("#scratchpad").wScratchPad({
+					width: 150,
+					height: 40,
+					color: "#a9a9a7",
+					scratchMove: function() {
+						num++;
+						if (num == 2) {
+							var get = "{$get}";
+							if(get=='success'){
+								var all = {$all_num};
+								var first_rate = {$first_rate};
+								var second_rate = {$second_rate};
+								var third_rate = {$third_rate};
+								var forth_rate = {$forth_rate};
+								var randNum = Math.round(Math.random()*all);
+								if(randNum>0 && randNum<=first_rate){
+									var award = "一等奖";
+									zjl = 'first';
+								}else if(randNum>first_rate && randNum<=(second_rate+first_rate)){
+									var award = "二等奖";
+									zjl = 'second';
+								}else if(randNum>(second_rate+first_rate) && randNum<=(second_rate+first_rate+third_rate)){
+									var award = "三等奖";
+									zjl = 'third';
+								}else if(randNum>(second_rate+first_rate+third_rate) && randNum<=(second_rate+first_rate+third_rate+forth_rate)){
+									var award = "参与奖";
+									zjl = 'forth';
+								}else{
+									var award = "谢谢参与";
+								}
+							}else{
+								if(get!='fail'){
+									alert(get);
+								}
+								var award = "谢谢参与";
+							}
+							document.getElementById('prize').innerHTML = award;
+							$("#theAward").html(award);
+							$("#zj").val(zjl);
+							var id = "{$_GPC['id']}";
+							if(award != "谢谢参与"){
+								$.post("{php echo app_url('pay/success/activity_ajax')}",{zj:zjl,id:id},
+							function(data) {
+								setTimeout('go()',2000);
+								
+							},
+							"json");
+							}
+							
+						}
+
+						if (zjl && num > 10 && goon) {
+							goon = false;
+							$("#zjl").slideToggle(500);
+						}
+					}
+				});
+
+				//$("#prize").html("谢谢参与");
+				//loadingObj.hide();
+				//$(".loading-mask").remove();
+			});
+			function go(){
+									alert("自动领取成功");
+									location.href="{php echo app_url('member/home/activity')}";
+								}
+			// 保存数据
+			
+		</script>
+		
+	</body>
+
+</html>

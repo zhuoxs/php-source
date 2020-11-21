@@ -1,0 +1,170 @@
+{template 'common/header'}
+
+<ul class="nav nav-tabs">
+    <li class="active"><a href="{php echo $this->createWebUrl('order', array('op'=>'display','aid'=>$aid));}">购买列表</a></li>
+</ul>
+
+<div class="main">
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="crad_qrcode_red" />
+                <input type="hidden" name="do" value="order" />
+                 <div class="form-group" >
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">所属活动</label>
+                        <div class="col-sm-6 col-xs-12">
+                            <select  name="aid" id="aid">
+                              <option value="0" {if empty($aid)}selected{/if}>所属活动
+	              		{loop $activity_info $activity_val}
+	              			<option value="{$activity_val['id']}" {if $activity_val['id']==$aid}selected{/if}>{$activity_val['name']}
+	              		{/loop}
+                                </select>
+                            <span class="help-block"></span></div>
+                    </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">订单号</label>
+                    <div class="col-xs-12 col-sm-8 col-md-8 col-lg-6">
+                        <input class="form-control" name="order_no" id="order_no" type="text" value="{$_GPC['order_no']}" placeholder="请输入订单号">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">关键字</label>
+                    <div class="col-xs-12 col-sm-8 col-md-8 col-lg-6">
+                        <input class="form-control" name="keyword" id="keyword" type="text" value="{$_GPC['keyword']}" placeholder="请输入OpenID,昵称,电话">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">订单状态</label>
+                    <div class="col-xs-12 col-sm-8 col-md-8 col-lg-6">
+                        <select name="status" class="form-control">
+                            <option value="0" {if empty($_GPC['status'])}selected="selected"{/if}>全部</option>
+                            <option value="2" {if intval($_GPC['status']) == 2}selected="selected"{/if}>未付款</option>
+                            <option value="1" {if intval($_GPC['status']) == 1}selected="selected"{/if}>已付款</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">时间</label>
+                    <div class="col-xs-12 col-sm-8 col-md-8 col-lg-6">
+                        {php echo tpl_form_field_daterange('createtime', $createtime);}
+                    </div>
+                    <div class="col-xs-12 col-sm-2 col-md-1 col-lg-1">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            汇总统计
+        </div>
+        <div class="table-responsive panel-body">
+            <table class="table table-hover">
+                <tr>
+                    <th style="width:33%;">总金额:{$sum_money}元</th>
+                    <th style="width:33%;">已支付:{$freeze_money}元</th>
+                    <th style="width:33%;">未支付:{$use_money}元</th>
+                </tr>
+
+            </table>
+        </div>
+    </div>  
+
+    <div class="panel panel-default">
+        <div class="panel-heading">购买列表-{$activity_name} 总数：{$total}</div>
+
+        <div class="panel-body table-responsive">
+
+            <form action="" id="form1" method="post" class="form-horizontal form" enctype="multipart/form-data">
+
+                <table class="table table-hover">
+
+                    <thead class="navbar-inner">
+
+                        <tr>
+                            <th style="width: 5%;" class="row-first">选择</th>
+                            <th class="col-sm-1">ID</th>
+                            <th class="col-sm-2">订单信息</th>
+                            <th class="col-sm-3">客户信息</th>
+                            <th class="col-sm-2">下单日期</th>
+                            <th class="col-sm-2">付款日期</th>
+                            <th class="col-sm-1">金额</th>
+                            <th class="col-sm-1">状态</th>
+                            <th class="col-sm-2">操作</th>
+                        </tr>
+                    </thead>
+                    {loop $list $key $order}
+                    <tbody class="tr_order">
+                        <tr>
+                            <td><input type="checkbox" name="ids[]" value="{$order['id']}" /></td>
+                            <td>{$order['id']}</td>
+                            <td>{$order['order_no']}<br>{if $order['times']}购买次数：{$order['times']}{/if}</td>
+                            <td>{$order['openid']}<br>昵称：{$order['nickname']}<br>电话：{$order['tel']}<br>
+                            </td>
+                            <td>{php echo date('Y-m-d H:s:i', $order['createtime']);}</td>
+                            <td>
+                                {if !empty($order['paytime'])}
+                                {php echo date('Y-m-d H:s:i', $order['paytime']);}
+                                {/if}
+                            </td>
+                            <td>{$order['money']}</td>
+                            <td>{if $order['status']==1}已支付{else}未支付{/if}</td>
+                            <td>{if empty($order['paytime']) && $order['status']!=1}<a class="btn   btn-default" title="手动支付" href="javascript:void();" onclick="drop_confirm('您确定要将该订到设为已支付状态吗?此处支付只改变订单状态，无真实资金交易', '{php echo $this->createWebUrl('order',array('op'=>'is_pay','id'=>$order['id']))}');">手动支付</a>{/if}
+                                <a class="btn  btn-danger" rel="tooltip" href="javascript:void();" onclick="drop_confirm('您确定要删除吗?删除不可恢复，同时删除所有相关数据！', '{php echo $this->createWebUrl('order',array('op'=>'del','id'=>$order['id']))}');" title="删除"><i class="fa fa-times"></i></a>
+                            </td>
+                        </tr>
+                    </tbody>
+                    {/loop}
+                    <tr>
+                        <td colspan="10">
+                            <input name="aid" type="hidden" value="{$aid}"/>
+                            <input name="op" id="op" type="hidden" value="" />
+                            <input name="token" type="hidden" value="{$_W['token']}" />
+                            <button type="button" class="btn btn-primary" name="btndeleteall" id="btndeleteall" value=""/>批量删除</button> 
+                            <button  type="button" class="btn btn-danger" onclick="delete_all()">清空（删除所有记录）</button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </form>
+        </div>
+        {$pager}
+    </div>
+    <script type="text/javascript">
+        function delete_all() {
+        if (confirm('确认删除 所有信息吗,删除完不可恢复?')) {
+        var keyword = $("#keyword").val();
+        var aid = $("#aid").val();
+        window.location.href = "{php echo $this->createWebUrl('order',array('op'=>'deleteall'))}" + "&keyword=" + keyword+"&aid="+aid;
+        }
+        }
+        $(function () {
+        $(".check_all").click(function () {
+        var checked = $(this).get(0).checked;
+        $("input[type=checkbox]").attr("checked", checked);
+        });
+        $("#btndeleteall").click(function () {
+        var check = $("input[type=checkbox][class!=check_all]:checked");
+        if (check.length < 1) {
+        alert('请选择要删除的数据!');
+        return false;
+        }
+        if (confirm("确认要删除选择的数据?删除后不可恢复")) {
+        $('#op').val('deleteids');
+        $('#form1').submit();
+        }
+        });
+        });
+        function drop_confirm(msg, url){
+        if (confirm(msg)){
+        window.location = url;
+        }
+        }
+    </script>
+    {template 'common/footer'}

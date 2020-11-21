@@ -1,0 +1,350 @@
+{template 'common/header'}
+<link rel="stylesheet" type="text/css" href="{MODULE_URL}template/web/css/bootstrap-switch.min.css"/>
+<link rel="stylesheet" type="text/css" href="{MODULE_URL}template/web/css/settinglists.css"/>
+<script src="{MODULE_URL}template/web/js/highlight.js"></script>
+<script src="{MODULE_URL}template/web/js/bootstrap-switch.min.js"></script>
+<script src="{MODULE_URL}template/web/js/main.js"></script>
+<ul class="nav nav-tabs">
+    <li class="active"><a href="{php echo $this->createWebUrl('settinglists', array('version_id' => $_GPC['version_id']));}">活动列表</a></li>
+    <!--<li><a href="{php echo $this->createWebUrl('settingedit', array('version_id' => $_GPC['version_id']));}">添加新活动</a></li>-->
+    <li><a href="{php echo $this->createWebUrl('settingrecycle', array('version_id' => $_GPC['version_id']));}">回收站</a></li>
+</ul>
+<div class="change-style">
+    <a href="{php echo $this->createWebUrl('settingnewedit', array('version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}" class="btn btn-default change-version newsetting">快速创建</a>
+    <a href="{php echo $this->createWebUrl('settinglists', array('version_id' => $_GPC['version_id'],'edition' => ''));}" class="btn btn-default change-version">切换旧版</a>
+</div>
+<div class="main">
+    <div class="panel panel-info">
+        <div class="panel-heading">搜索</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site">
+                <input type="hidden" name="a" value="entry">
+                <input type="hidden" name="m" value="xiaof_toupiao">
+                <input type="hidden" name="do" value="settinglists">
+                <input type="hidden" name="version_id" value="{$_GPC['version_id']}">
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">主题</label>
+                    <div class="col-xs-12 col-sm-7 col-lg-7">
+                        <input class="form-control" name="key" id="" type="text" value="{$_GPC['key']}">
+                    </div>
+                    <div class="col-xs-12 col-sm-2 col-lg-2">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+    <p class="bg-success" style="padding: 15px; margin:0px; margin-bottom: 13px;">
+        小提示：<br/>
+        01.建议用其他主域名二级域名做活动，参数设置里新增可设置公众号的全局活动域名<br/>
+        02.活动列表显示当前登录用户为管理员的活动，列表为空请联系管理员<br/>
+        <span style="color: red;">03.新版只显示在新版后台添加的活动，旧版添加的活动请切换至旧版管理。</span><br/>
+		<div>&#22823;&#37327;&#28304;&#30721;&#65292;&#25345;&#32493;&#26356;&#26032;&#65306;&#119;&#119;&#119;&#46;&#108;&#97;&#110;&#114;&#101;&#110;&#122;&#104;&#105;&#106;&#105;&#97;&#46;&#99;&#111;&#109;</div>
+    </p>
+{if isset($module_ban['xiaof_toupiao'])}
+<p class="bg-danger" style="padding: 15px;">警告：消息订阅未打开本模块的订阅，会影响系统稳定。......<a target="_blank" href="{php echo wurl('extension/subscribe/subscribe');}">去开启</a></p>
+{/if}
+{if $_W['account']['level'] <= 3 && empty($unisetting['account'])}
+<p class="bg-danger" style="padding: 15px;">警告：当前活动公众号类型为非认证服务号，同时未借用oauth权限，会导致重复关注问题。（如果有多开，多开的号也需要借用同一服务号）......<a target="_blank" href="{php echo url('profile/passport');}">去借用</a></p>
+{/if}
+	<form action="?{$_SERVER['QUERY_STRING']}" method="post" id="form1">
+        <table class="table table-hover table-settinglists"  style="width:100%;z-index:-10;" cellspacing="0" cellpadding="0">
+            <thead class="navbar-inner">
+            <tr>
+				<th style="width:5%;">删？</th>
+                <th style="width:5%;">编号</th>
+                <th style="width:14%;">宣传图</th>
+                <th style="width:22%;">信息</th>
+				<th style="width:活动状态25%;">数据&状态</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $list $item}
+            <tr>
+				<td><input type="checkbox" name="delete[]" value="{$item['id']}" /></td>
+                <td>{$item['id']} </td>
+                <td class="list-center">
+                    {if !empty($item['thumb'])}
+                    <img src="{php echo tomedia($item['thumb'][0])}">
+                    {else if !empty($item['banner_themes'])}
+                    <img src="{php echo tomedia($item['banner_themes'])}">
+                    {/if}
+                </td>
+				<td>
+                    <p>活动名称：{$item['title']}</p>
+                    <p>活动链接：<a href="javascript:;" data-url="{$item['app_url']}" style="margin-right:0px;" class="color-default js-clip">复制链接</a>
+                        <img class="setting-qrcode" src="{$item['qrcode']}" onclick="openrule('{$item['id']}');">
+                    </p>
+                    <p>投票时间：{$item['start']}<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{$item['end']}</p>
+                    <p class="shower_{$item['id']}"><span class="label label-danger">已结束</span></p>
+                    <script type="text/javascript">
+                        {if strtotime($item['end'])-time()>=1}
+                        var ti{$item['id']} = {php echo strtotime($item['end'])-time();};
+                        function showtime{$item['id']}(){
+                            if(ti{$item['id']} <= 0 ){
+                                $(".shower_{$item['id']}").html('<span class="label label-danger">已结束</span>');
+                                clearTimeout(param{$item['id']});
+                            }else{
+                                var d{$item['id']} = parseInt(ti{$item['id']}/3600/24);
+                                var h{$item['id']} = parseInt((ti{$item['id']}%(3600*24))/3600);
+                                var m{$item['id']} = parseInt((ti{$item['id']}%(3600*24))%3600/60);
+                                var s{$item['id']} = parseInt((ti{$item['id']}%(3600*24))%60);
+                                $(".shower_{$item['id']}").html('<span class="label label-success">'+d{$item['id']}+' 天 '+ h{$item['id']}+' 时 '+m{$item['id']}+' 分 '+s{$item['id']}+' 秒</span>');
+                                ti{$item['id']} = ti{$item['id']} - 1;
+                            }
+
+                        }
+                        showtime{$item['id']}();
+                        var param{$item['id']} = setInterval("showtime{$item['id']}()",1000);
+                        {else}
+                        $(".shower_{$item['id']}").html('<span class="label label-danger">已结束</span>');
+                        {/if}
+                    </script>
+                </td>
+				<td class="list-data">
+                    <p>
+                        <span class="label label-info">选手：{if empty($item['totals']['vote']['joins'])}0{else}{$item['totals']['vote']['joins']}{/if}</span>
+                        <span class="label label-info">投票：{if empty($item['totals']['vote']['goods'])}0{else}{$item['totals']['vote']['goods']}{/if}</span>
+                        <span class="label label-info">浏览：{if empty($item['totals']['vote']['clicks'])}0{else}{$item['totals']['vote']['clicks']}{/if}</span>
+                    </p>
+                    <p>
+                        <span class="label label-info">分享：{if empty($item['totals']['vote']['shares'])}0{else}{$item['totals']['vote']['shares']}{/if}</span>
+                        <span class="label label-info">收入：{if empty($item['totals']['fee'])}0{else}{$item['totals']['fee']}{/if}</span>
+                        <span class="label label-info">支出：0</span>
+                    </p>
+                    <p class="list-status">
+                    活动状态：<input onchange="gcheck(this)" settingid="{$item['id']}" id="switch-state" class="status" type="checkbox" {if empty($item['isrun'])}checked{/if}>
+                    </p>
+                </td>
+                <td class="text-right operation" style="overflow:visible;">
+                    <div>
+                        <a href="{php echo $this->createWebUrl('lists', array('sid'=>$item['id'], 'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}" class="btn btn-default">报名管理</a>
+                        <a href="{php echo $this->createWebUrl('settingposter', array('sid'=>$item['id'], 'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}" class="btn btn-default">分享海报</a>
+                        <a href="{php echo $this->createWebUrl('overview', array('sid'=>$item['id'], 'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}" class="btn btn-default">数据报表</a>
+                    </div>
+                    <div>
+                        <a href="{php echo $this->createWebUrl('settingdomain', array('sid'=>$item['id'], 'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}" class="btn btn-default">域名设置</a>
+                        <a href="{php echo $this->createWebUrl('paylog', array('sid'=>$item['id'], 'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}" class="btn btn-default">财务管理</a>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-success dropdown-toggle btn btn-default" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                &nbsp;更&nbsp;多&nbsp;&nbsp; <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a href="{php echo $this->createWebUrl('settingbrush', array('sid'=>$item['id'], 'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}" >防刷设置</a></li>
+                                <li><a href="{php echo $this->createWebUrl('settingcredit', array('sid'=>$item['id'], 'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}" >积分设置</a></li>
+                                <li><a href="{php echo $this->createWebUrl('settingprize', array('sid'=>$item['id'], 'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}" >抽奖设置</a></li>
+                                <li><a href="{php echo $this->createWebUrl('bindacid', array('sid'=>$item['id'], 'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}">活动多开</a></li>
+                                <li><a href="javascript:(0);" onclick="openmodal('{$item['id']}','{$item['title']}','{$item['joinstart']}','{$item['joinend']}','{$item['start']}','{$item['end']}')" >活动复制</a></li>
+                                <li><a href="{php echo $this->createWebUrl('excletop', array('sid'=>$item['id'], 'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}">导出选手</a></li>
+                                <li><a href="{php echo $this->createWebUrl('imagetop', array('sid'=>$item['id'], 'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}">导出选手图片</a></li>
+                                <li><a href="{php echo $this->createWebUrl('exclegifts', array('sid'=>$item['id'], 'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}">导出礼物道具记录</a></li>
+                                <li><a href="javascript:if(confirm('确定要清除投票票数数据吗?清除后数据不能恢复')){location='{php echo $this->createWebUrl('cleandata', array('sid'=>$item['id'], 'version_id' => $_GPC['version_id']));}'}">清空票数</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="customset">
+                        <a href="{php echo $this->createWebUrl('settingnewedit', array('sid'=>$item['id'], 'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}" class="btn btn-default">编辑</a>
+                        <a href="{php echo $this->createWebUrl('settingmyedit', array('id'=>$item['id'], 'sid'=>$item['id'], 'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}" class="btn btn-default">个性化设置</a>
+                    </div>
+                </td>
+            </tr>
+            {/loop}
+            </tbody>
+        </table>
+		
+        <table class="table table-hover">
+            <tr>
+                <td width="30">
+                    <input type="checkbox" onclick="var ck = this.checked;$(':checkbox').each(function(){this.checked = ck});" />
+                </td>
+                <td class="text-left">
+                    <input name="token" type="hidden" value="{$_W['token']}" />
+					<!--<input type="submit" class="btn btn-primary span2" name="pass" value="删除并清除图片" /> &nbsp;-->
+					<input type="submit" class="btn btn-primary span2" name="del" value="放入回收站" /><!--(不要轻易删除活动，会连带投票数据一起删除。且不可恢复)-->
+                </td>
+            </tr>
+        </table>
+        {$pager}
+	</form>
+</div>
+
+<div class="modal fade" id="myModal" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">活动复制</h4>
+            </div>
+            <div class="modal-body">
+                <form action="" id="users-form" method="post" class="form-horizontal" role="form">
+                    <input type="hidden" name="sid" id="csid" value="">
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">公众号</label>
+                        <div class="col-xs-12 col-sm-8 col-lg-9">
+                            <select name="copyuniacid" class="form-control">
+                                {loop $accounts $items}
+                                <option {if $_W['uniacid'] == $items['uniacid']} selected{/if} value="{$items['uniacid']}">{$items['name']}</option>
+                                {/loop}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">活动主题</label>
+                        <div class="col-xs-12 col-sm-8 col-lg-9">
+                            <input type="text" class="form-control" id="title" name="title" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">报名时间</label>
+                        <div class="col-xs-12 col-sm-8 col-lg-9">
+                            <input name="jointimes[start]" id="joinstart" type="hidden" value="" />
+                            <input name="jointimes[end]" id="joinend" type="hidden" value="" />
+                            <button class="btn btn-default daterange daterange-time" type="button"><span class="date-title"></span> <i class="fa fa-calendar"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">投票时间</label>
+                        <div class="col-xs-12 col-sm-8 col-lg-9">
+                            <input name="times[start]" id="timesstart" type="hidden" value="" />
+                            <input name="times[end]" id="timesend" type="hidden" value="" />
+                            <button class="btn btn-default daterange daterange-time" type="button"><span class="date-title"></span> <i class="fa fa-calendar"></i></button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="users-save btn btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ruleModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="ruleModalLabel">活动入口</h4>
+            </div>
+            <div class="modal-body">
+                <p id="ruleModalurl">
+                </p>
+                <p id="ruleModalqrcode">
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="qrcodeModal" tabindex="-1" role="dialog" aria-labelledby="qrcodeModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">活动入口</h4>
+            </div>
+            <div class="modal-body">
+                <img src="" class="showqrcode">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $('.users-save').click(function(){
+        $.post("{php echo $this->createWebUrl('copysetting');}",$("#users-form").serialize(),function(data){
+            $('#myModal').modal('hide');
+            location.reload()
+        });
+    });
+
+    function openrule(sid){
+        var result;
+        $("#ruleModalurl").html('');
+        $("#ruleModalqrcode").html('');
+        $.get("{php echo $this->createWebUrl('getrule');}&sid="+ sid, function(data){
+            result = $.parseJSON(data);
+            $("#ruleModalurl").html('链接入口：<a target="_blank" href="'+result.url+'" class="btn btn-default" style="margin-left: 8px;">点击PC预览</a><br/><p class="bg-success" style="padding: 5px;margin: 13px 0px;">'+result.url+'</p>');
+            $("#ruleModalqrcode").html('二维码入口：<br/><img src="'+result.qrcode+'"/>');
+            $('#ruleModal').modal('show');
+        });
+
+    }
+
+    function openmodal(sid,title,joinstart,joinend,start,end){
+        $("#csid").val(sid);
+            $("#title").val(title);
+            $("#joinstart").val(joinstart);
+            $("#joinend").val(joinend);
+            $("#timesstart").val(start);
+            $("#timesend").val(end);
+            require(["jquery","daterangepicker"], function($){
+                $(function(){
+                    $(".daterange.daterange-time").each(function(){
+                        var elm = this;
+                        var startDate =  $(elm).prev().prev().val();
+                        var endDate = $(elm).prev().val();
+                        $(elm).find(".date-title").html(startDate + " 至 " + endDate);
+                        $(this).daterangepicker({
+                            startDate: startDate,
+                            endDate: endDate,
+                            format: "YYYY-MM-DD HH:mm",
+                            timePicker: true,
+                            timePicker12Hour : false,
+                            timePickerIncrement: 1,
+                            minuteStep: 1
+                        }, function(start, end){
+                            $(elm).find(".date-title").html(start.toDateTimeStr() + " 至 " + end.toDateTimeStr());
+                            $(elm).prev().prev().val(start.toDateTimeStr());
+                            $(elm).prev().val(end.toDateTimeStr());
+                        });
+                    });
+                });
+            });
+        $('#myModal').modal('show');
+    }
+
+
+    $('#form1').submit(function(){
+        if($(":checkbox[name='delete[]']:checked").size() > 0){
+            return confirm('确定放入回收站吗？');
+        }
+        alert('没有选择活动');
+        return false;
+    });
+    function gcheck(obj){
+        var sid = $(obj).attr('settingid');
+        var isrun = $(obj).bootstrapSwitch('state');
+        //console.log($(obj).attr('settingid'));
+        //console.log($(obj).bootstrapSwitch('state'));
+        $.ajax({
+            'url': "{php echo $this->createWebUrl('settinglists', array('version_id' => $_GPC['version_id'],'from' => 'isrun'));}"+'&sid=' + sid+'&isrun=' + isrun,
+            success: function (response) {
+                if(response == '1'){
+                    setTimeout( function(){
+                        alert('修改成功');
+                    }, 400 );
+                }
+            }
+        });
+    }
+    function showqrcode(obj) {
+        var url = $(obj).attr('src');
+        $(".showqrcode").attr('src',url);
+        $('#qrcodeModal').modal('show');
+    }
+</script>
+{template 'edition'}
+{template 'common/footer'}

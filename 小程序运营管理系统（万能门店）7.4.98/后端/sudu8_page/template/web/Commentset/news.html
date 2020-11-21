@@ -1,0 +1,896 @@
+{template 'web/common/header'}
+<style>
+#sonscatas select{margin-bottom: 15px}
+.delbtn{border-color: #e7e7eb;float: left;background: #eee;width: 40px;text-align: center;padding: 3px 6px;font-size: 12px;}
+</style>
+<div class="page">
+<div class="page_content">
+{if $opt == 'display'}
+
+<div style="height:55px">
+    <h3 style="float: left;margin-top: 0;">文章列表</h3>
+    <div class="pull-right">
+        <a href="{php echo $this->createWebUrl('Commentset', array('op' => 'news', 'opt' => 'post', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']))}"  class="btn btn-primary we7-padding-horizontal" style="margin-bottom: 20px">添加文章</a>
+    </div>
+</div>
+<form class="form-horizontal" action="" method="post">
+<div style="margin-bottom:10px">
+    <div style="display: inline-block;">
+        搜索栏目:
+    </div>
+    <div style="display: inline-block;">
+        <select name="sid" id="sid" style="width: 200px">
+            <option value="0">栏目选择</option>
+            {loop $cates $item}
+                <option value="{$item['id']}" {if $item['id'] == $sid}selected{/if}>{$item['name']}</option>
+                {if $item['ziji']}
+                    {loop $item['ziji'] $iis}
+                        <option value="{$iis['id']}" {if $iis['id'] == $sid}selected{/if}>|--{$iis['name']}</option>
+                    {/loop}
+                {/if}
+            {/loop}
+        </select>
+    </div>   
+    <div style="display: inline-block;">
+        <input type="text" name="skey" id="skey" value="{$skey}" class="form-control ng-pristine ng-untouched ng-valid ng-empty" style="border-radius: 0px"  placeholder="搜索关键字" autocomplete="off">
+    </div> 
+    <div style="display: inline-block;">
+        <input name="token" type="hidden" value="{$_W['token']}" />
+        <input type="hidden" name="first" id="first" value="1">
+        <div class="btn btn-primary" id="filter" style="display: inline-block;font-size: 12px;" />提交</div>
+    </div> 
+</div>
+</form>
+    <table class="table we7-table table-hover article-list vertical-middle">
+        <tr>
+            <td style="width:100px">排序</td>
+            <td>ID</td>
+            <td>所属栏目</td>
+            <td>缩略图</td>
+            <td>标题</td>
+            <td class="text-right">操作</td>
+            <td>
+                <input type="checkbox" id="all" />全选&nbsp;&nbsp;
+                <a class="btn btn-default btn-sm" onclick="delall()">批量删除</a>
+            </td>
+        </tr>
+        {loop $products $item}
+        <tr>
+            <td>
+                {$item['num']}
+            </td>
+            <td style="width: 100px">
+                <a href="javascript:;" href="javascript:;" data-id="{$item['id']}" class="label label-success ng-scope js-clip" >{$item['id']}</a>
+            </td>
+            <td style="width: 100px">
+                {$item['name']}
+            </td>
+            <td style="width: 150px">
+                <img src="{media $item['thumb']}" width="100px" alt="">
+            </td>
+            <td>
+                {$item['id']}-{$item['title']}
+            </td>
+            <td class="text-right">
+                <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('Commentset', array('op' => 'news', 'opt' => 'post', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}" >编辑</a>
+
+                <a class="btn btn-default btn-sm" onclick="return confirm('此操作不可恢复，确认吗？'); return false;" href="{php echo $this->createWebUrl('Commentset', array('op' => 'news', 'opt' => 'delete', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}">删除</a>
+            </td>
+            <td>
+                <input type="checkbox" name="csb"  value="{$item['id']}"/>
+            </td>
+        </tr>
+        {/loop}
+    </table>
+    {$pager}
+<script>
+$('#all').on('click',function(){
+    if (this.checked) {
+        $("input[name='csb']").prop("checked", true);
+    } else {
+        $("input[name='csb']").removeAttr("checked");
+    }
+});
+function delall(){
+    var id_arr = new Array();
+    $.each($("input[name='csb']"),function(){
+        if(this.checked){
+            id_arr.push($(this).val());
+        }
+    });
+   if(id_arr.length>0){
+    $.ajax({
+
+            url : "{php echo $this->createWebUrl('Commentset',['op' => 'batchdel'])}",
+
+            type:'post',
+
+            dataType:'json',
+
+            data:{
+                id_arr:id_arr,
+                type:'showArt'
+            },
+            success:function (res) {
+
+                alert(res.message);
+       
+                if(res.code == 1){
+
+                    window.location.href="{php echo $this->createWebUrl('Commentset',['op' => 'news','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']])}";
+
+                }
+
+            }
+
+        });
+
+
+
+   }else{
+       alert("您未选择删除对象");
+       return false;
+   }
+}
+$("#filter").click(function(){
+    window.location.href = "{php echo $this->createWeburl('commentset', array('id' => $item['id'], 'opt' =>'display','op'=>'news','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'page'=>$_GPC['page']))}" + "&sid=" + $('#sid').val() + '&skey=' + $('#skey').val();
+})
+
+// $(document).ready(function(){
+// 	$('.pagination a').each(function(){
+        
+// 	    if(!$(this).parent().hasClass('active')){
+// 	        var href = $(this).attr('href');
+//             console.log(href);
+// 	        if(href.indexOf('&sid')>=0){
+// 	            href = href.substring(0, href.indexOf('&sid'));
+// 	        }
+	    
+// 	        $(this).attr('href', href + "&sid=" + $('#sid').val() + "&skey=" + $("#skey").val());
+	     
+// 	    }
+// 	})		
+// })
+
+
+$('.js-clip').each(function(){
+    util.clip(this, $(this).data('id'));
+});
+</script>
+{/if}
+{if $opt == 'post'}
+
+<form class="form-horizontal" action="" method="post">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">文章管理</h3>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">序号</label>
+                <div class="form-controls col-sm-5">
+                    <input type="number" min='0' name="num" value="{$item['num']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">序号越大越靠前</div>
+            </div>
+             <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">所属栏目</label>
+                <div class="form-controls col-sm-5">
+                    <select name="cid" class="form-control">
+                         {loop $listAll $cateP}
+                            <option value="{$cateP['id']}" {if $cateP['id']==$item['cid']}selected{/if}>{if $cateP['cid'] == 0}{/if}{$cateP['name']}</option>
+                            {loop $cateP['data'] $cate}
+                                <option value="{$cate['id']}" {if $cate['id']==$item['cid']}selected{/if}>{if $cate['cid'] !== 0}&nbsp;&nbsp;|----{/if}{$cate['name']}</option>
+                            {/loop}
+                        {/loop}
+                    </select>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">选择所属栏目，不选为顶级</div>
+            </div>  
+
+
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">推荐到横排</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="type_x" value="0" {if $item['type_x'] == '0'} checked{/if} />
+                        不推荐
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="type_x" value="1" {if $item['type_x'] == '1'} checked{/if} />
+                        推荐
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">推荐后会在首页横排区块显示</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">推荐到竖排</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="type_y" value="0" {if $item['type_y'] == '0'} checked{/if} />
+                        不推荐
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="type_y" value="1" {if $item['type_y'] == '1'} checked{/if} />
+                        推荐
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">推荐后会在首页竖排区块显示</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">推荐到首页栏目</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="type_i" value="0" {if $item['type_i'] == '0'} checked{/if} />
+                        不推荐
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="type_i" value="1" {if $item['type_i'] == '1'} checked{/if} />
+                        推荐
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">推荐后会在首页该栏目块显示</div>
+            </div>
+
+
+
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">访问量</label>
+                <div class="form-controls col-sm-5">
+                    <input type="number" min='0' name="hits" value="{$item['hits']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">可自行填写</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">付费价格</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="art_price" onkeyup='clearNoNum(this)' value="{$item['music_art_info']['art_price']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">0或空为不收费</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">更新时间</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="edittime" value="{$item['edittime']}" id="datetimepicker" data-date-format="yyyy-mm-dd hh:ii" style="width: 200px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">文章更新时间，设置后小程序端显示该时间，不设置显示首次创建时间</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">标题</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="title" id="title" value="{$item['title']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">请填写文章标题</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">缩略图</label>
+                <div class="form-controls col-sm-5">
+                    {php echo tpl_form_field_image('thumb', $item['thumb'])}
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">最宽750px，高度随意</div>
+            </div>
+
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">分享图</label>
+                <div class="form-controls col-sm-5">
+                    {php echo tpl_form_field_image('shareimg', $item['shareimg'])}
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">最宽750px，高度随意</div>
+            </div>
+
+            <div class="form-group" style="display: none">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">商品属性</label>
+                <div class="form-controls col-sm-2">
+                    <label class="select_one">
+                        售价<input type="text" style="width: 70px;display: inline-block;margin: 0 8px;" name="nprice" value="{$item['nprice']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">元
+                    </label>
+                </div>
+                <div class="form-controls col-sm-2">
+                    <label class="select_one">
+                        原价<input type="text" style="width: 70px;display: inline-block;margin: 0 8px;" name="oprice" value="{$item['oprice']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">元
+                    </label>
+                </div>
+                <div class="form-controls col-sm-2">
+                    <label class="select_one">
+                        已售<input type="text" style="width: 70px;display: inline-block;margin: 0 8px;" name="sales" value="{$item['sales']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">个
+                    </label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">简介</label>
+                <div class="form-controls col-sm-5">
+                    <textarea class="form-control" rows="3" name="desc" placeholder="">{$item['desc']}</textarea>
+                    <div class="help-block">请输入简介</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">文章详情</label>
+                <div class="form-controls col-sm-5">
+                    {php echo tpl_ueditor('text', $item['text']);}
+                    <div class="help-block">请输入详细介绍</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">关联文章</h3>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label class="control-label col-sm-2" style="margin-right:45px">输入关键词</label>
+                <div class="form-controls col-sm-3">
+                  <input type="text" class="form-control" value="" id="keys">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">实时搜索数据</div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-sm-2" style="margin-right:45px">选择关联文章</label>
+                <div class="form-controls col-sm-3">
+                    <select name="mulitcataid" class="form-control" id="keys_list" >
+                        <option value="0">请选择关联文章</option>
+                    </select>
+                </div>
+                <div class="col-sm-3">
+                    <a href="javascript:;" style="font-size: 24px;border: 1px solid #5bc0de;color: #fff;padding: 0 7px;float: left;height: 34px;line-height: 30px;    background: #5bc0de;" onclick="adds()">+</a>
+                </div>
+            </div>
+
+            <div id="glnews">
+            {loop $glnews $items2}
+                <div class="form-group" id="news{$items2['id']}">
+                    <label class="control-label col-sm-2" style="margin-right:45px"></label>
+                    <div class="form-controls col-sm-3" style="overflow: hidden;">
+                        <input type="hidden" name="choose[]" value="{$items2['id']}" readonly="readonly">
+                        {$items2['title']}
+                    </div>
+                    <div class="col-sm-1"><a href="javascript:;" class="delbtn" onclick="del({$items2['id']})">删除</a></div>
+                    <div class="form-controls col-sm-3 help-block"></div>
+                </div>
+            {/loop}
+            </div>
+        </div>
+    </div>  
+
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">高级设置</h3>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">跳转地址</label>
+                <div class="form-controls col-sm-3">
+                    <input type="text" name="weburl" id="weburl" value="{$item['weburl']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-3"></div>
+                <div class="form-controls col-sm-3 help-block">可填网址或小程序页面地址，添加后不会打开本页面</div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-sm-2" style="margin-right:45px">是否属于多栏目</label>
+                <div class="form-controls col-sm-3">
+                    <select name="mulitcataid" class="form-control" id="multi" onchange="catecheck(this)" >
+                        <option value="1">不属于多栏目</option>
+                        {loop $cates $items}
+                        <option value="{$items['id']}" <?php if($item['mulitcataid'] == $items['id']){echo 'selected';} ?>>{$items['name']}</option>
+                        {/loop}
+                    </select>
+                </div>
+                <div class="col-sm-3"></div>
+                <div class="form-controls col-sm-3 help-block">选择所属栏目</div>
+            </div>
+
+            <div class="form-group" id="catelists_sons" style="display: block;">
+                <label class="control-label col-sm-2" style="margin-right:45px">选择多分类</label>
+                <div class="form-controls col-sm-3" id="sonscatas">
+                    {loop $sons_keys $vv}
+                    <select name="sons[]" class="form-control">
+                        <optgroup label="{$vv['varible']}">
+                            {loop $vv['sons'] $vs}
+                            <option value="{$vs['id']}" <?php if(in_array($vs['id'],explode(',',$item['sons_catas']))){echo 'selected';} ?>>{$vs['varible']}</option>
+                            {/loop}
+                        </optgroup>
+                    </select>
+                    {/loop}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">底部菜单栏</label>
+                <div class="form-controls col-sm-3">
+                    <select name="pro_flag" class="form-control">
+                        <option value="0" {if !$item['pro_flag']}selected{/if}{if $item['pro_flag']==0}selected{/if}>使用全局底部</option>
+                        <option value="-1" {if $item['pro_flag']==-1}selected{/if}>不显示底部</option>
+                         {loop $catelist $v}
+                            <option value="{$v['id']}" {if $v['id']==$item['pro_flag']}selected{/if}>{$v['title']}</option>
+                         {/loop}
+                    </select>
+                </div>
+                <div class="col-sm-3"></div>
+                <div class="form-controls col-sm-3 help-block">全局底部为左侧底部菜单栏</div>
+            </div>
+
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">表单选择</label>
+                <div class="form-controls col-sm-3">
+                    <select name="formset" class="form-control">
+                        <option value="0">---不启用---</option>
+                            {loop $forms $val}
+                                <option value="{$val['id']}" {if $val['id'] == $item['formset']}selected=selected{/if}>{$val['formname']}</option>
+                            {/loop}
+                    </select>
+                </div>
+                <div class="col-sm-3"></div>
+                <div class="form-controls col-sm-3 help-block">选择后则可提交信息</div>
+            </div>
+        </div>
+    </div>  
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">视频设置</h3>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">视频地址</label>
+                <div class="form-controls col-sm-5">
+                    <textarea class="form-control" rows="3" name="video" placeholder="">{$item['video']}</textarea>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">请添加mp4视频远程地址或腾讯视频网址</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">视频封面</label>
+                <div class="form-controls col-sm-5">
+                    {php echo tpl_form_field_image('labels', $item['labels'])}
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">不填写则默认为文章缩略图</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">视频支付观看</label>
+                <div class="form-controls col-sm-2">
+                    <div class="input-group">
+                      <input type="text" onkeyup='clearNoNum(this)' class="form-control" name="price" value="{$item['price']}">
+                      <span class="input-group-addon">元</span>
+                    </div>
+                </div>
+                <div class="col-sm-4"></div>
+                <div class="form-controls col-sm-3 help-block">0为免费观看</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">自动播放</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="market_price" value="false" {if $item['market_price'] == 'false'} checked{/if} />
+                        不自动播放
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="market_price" value="true" {if $item['market_price'] == 'true'} checked{/if} />
+                        自动播放
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">是否打开页面或支付后自动播放</div>
+            </div>
+        </div>
+    </div>  
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">音频设置</h3>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">音频标题</label>
+                <div class="form-controls col-sm-5">
+                    <input type="text" name="musicTitle" value="{$item['music_art_info']['musicTitle']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">请填写音频标题</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">音频</label>
+                <div class="form-controls col-sm-5">
+                    <textarea class="form-control" rows="3" name="music" placeholder="">{$item['music_art_info']['music']}</textarea>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">请添加音频远程地址</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">音频支付观看</label>
+                <div class="form-controls col-sm-2">
+                    <div class="input-group">
+                      <input type="text" onkeyup='clearNoNum(this)' class="form-control" name="music_price" value="{$item['music_art_info']['music_price']}">
+                      <span class="input-group-addon">元</span>
+                    </div>
+                </div>
+                <div class="col-sm-4"></div>
+                <div class="form-controls col-sm-3 help-block">0或空为免费观看</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">自动播放</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="musictype" value="1" {if $item['music_art_info']['musictype'] == '1'} checked{/if} />
+                        正常音频
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="musictype" value="2" {if $item['music_art_info']['musictype'] == '2'} checked{/if} />
+                        背景音频
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">是否打开页面或支付后自动播放</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">自动播放</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="autoPlay" value="2" {if $item['music_art_info']['autoPlay'] == '2'} checked{/if} />
+                        不自动播放
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="autoPlay" value="1" {if $item['music_art_info']['autoPlay'] == '1'} checked{/if} />
+                        自动播放
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">是否打开页面或支付后自动播放</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">循环播放</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="loopPlay" value="2" {if $item['music_art_info']['loopPlay'] == '2'} checked{/if} />
+                        不循环播放
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="loopPlay" value="1" {if $item['music_art_info']['loopPlay'] == '1'} checked{/if} />
+                        循环播放
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">是否打开页面或支付后自动播放</div>
+            </div>
+        </div>
+    </div> 
+    <!-- 分销设置 -->
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">分销设置</h3>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right: 45px">是否开启分销</label>
+                <div class="form-controls col-sm-5" style="padding-top: 7px">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="fx_uni" value="1" {if $item['fx_uni']}{if $item['fx_uni'] == '1'}checked{/if}{else}checked{/if}/>
+                        开启
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="fx_uni" value="2" {if $item['fx_uni']}{if $item['fx_uni'] == '2'}checked{/if}{else}checked{/if}/>
+                        关闭
+                    </label>
+                </div>
+            </div>
+            <div class="form-group nr">
+                <label for="" class="control-label col-sm-2" style="margin-right: 45px">分销佣金类型</label>
+                <div class="form-controls col-sm-5" style="padding-top: 7px">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="commission_type" value="1" {if $item['commission_type']}{if $item['commission_type'] == '1'}checked{/if}{else}checked{/if} />
+                        百分比
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="commission_type" value="2" {if $item['commission_type'] == '2'}checked{/if}/>
+                        固定金额
+                    </label>
+                </div>
+            </div>
+            <div class="form-group nr">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">佣金设置</label>
+                <div class="form-controls col-sm-3">
+                    <div class="input-group">
+                      <span class="input-group-addon">一级佣金</span>
+                      <input type="number" min='0' class="form-control" name="commission_one" value="{if $item['commission_one']}{$item['commission_one']}{else}0{/if}">
+                      <span class="input-group-addon bfb">%</span>
+                      <span class="input-group-addon je" style="display: none;">元</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group nr">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px"></label>
+                <div class="form-controls col-sm-3">
+                    <div class="input-group">
+                        <span class="input-group-addon">二级佣金</span>
+                      <input type="number" min='0' class="form-control" name="commission_two" value="{if $item['commission_two']}{$item['commission_two']}{else}0{/if}">
+                      <span class="input-group-addon bfb">%</span>
+                      <span class="input-group-addon je" style="display: none;">元</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group nr">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px"></label>
+                <div class="form-controls col-sm-3">
+                    <div class="input-group">
+                        <span class="input-group-addon">三级佣金</span>
+                      <input type="number" min='0' class="form-control" name="commission_three" value="{if $item['commission_three']}{$item['commission_three']}{else}0{/if}">
+                      <span class="input-group-addon bfb">%</span>
+                      <span class="input-group-addon je" style="display: none;">元</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px"></label>
+                <div class="form-controls col-sm-3">开启分销只会走这里设置的比例或金额，关闭则该文章不参与分销</div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function clearNoNum(obj){  
+          obj.value = obj.value.replace(/[^\d.]/g,"");  //清除“数字”和“.”以外的字符
+          if(obj.value.charAt(0,1) == "."){
+            obj.value = "";
+          }
+          obj.value = obj.value.replace(/\.{2,}/g,"."); //只保留第一个. 清除多余的   
+          obj.value = obj.value.replace(".","$#$").replace(/\./g,"").replace("$#$",".");  
+          obj.value = obj.value.replace(/^(\-)*(\d+)\.(\d\d).*$/,'$1$2.$3');//只能输入两个小数   
+          if(obj.value.indexOf(".")< 0 && obj.value !=""){//以上已经过滤，此处控制的是如果没有小数点，首位不能为类似于 01、02的金额  
+           obj.value= parseFloat(obj.value);  
+          }  
+        }
+
+        $('input[name="fx_uni"]').each(function(){
+            $(this).click(function(){
+                if($(this).val()==1){
+                    $('.nr').show()
+                }else{
+                    $('.nr').hide()
+                }
+            })
+        })
+        $('input[name="commission_type"]').each(function(){
+            $(this).click(function(){
+                if($(this).val()==1){
+                    $('.bfb').show()
+                    $('.je').hide()
+                }else{
+                    $('.bfb').hide()
+                    $('.je').show()
+                }
+            })
+        })
+    </script>
+    <!-- 分销设置 -->   
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">评论设置</h3>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">本篇文章评论</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="comment" value="2" {if $item['comment'] == '2'} checked{/if} />
+                        默认设置
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="comment" value="0" {if $item['comment'] == '0'} checked{/if} />
+                        本篇关闭
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="comment" value="1" {if $item['comment'] == '1'} checked{/if} />
+                        本篇启用
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">不管全局是否开启，按本规则生效</div>
+            </div>
+            <!-- <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">本文章分享设置</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="share_gz" value="1" {if $item['share_gz'] == '1'} checked{/if} />
+                        公共规则
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="share_gz" value="2" {if $item['share_gz'] == '2'} checked{/if} />
+                        自身规则
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">公共规则在“营销管理”内</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">分享类型</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="share_type" value="1" {if $item['share_type'] == '1'} checked{/if} />
+                        仅个人
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="share_type" value="2" {if $item['share_type'] == '2'} checked{/if} />
+                        仅群
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="share_type" value="3" {if $item['share_type'] == '3'} checked{/if} />
+                        个人+群
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">分享获得积分的类型</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">分享获得积分</label>
+                <div class="form-controls col-sm-2">
+                    <div class="input-group">
+                      <input type="text" class="form-control" name="share_score" value="{$item['share_score']}">
+                      <span class="input-group-addon">积分/次</span>
+                    </div>
+                </div>
+                <div class="col-sm-4"></div>
+                <div class="form-controls col-sm-3 help-block">分享一次获得的积分</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">分享限制</label>
+                <div class="form-controls col-sm-2">
+                    <div class="input-group">
+                      <input type="text" class="form-control" name="share_num" value="{$item['share_num']}">
+                      <span class="input-group-addon">次/每天</span>
+                    </div>
+                </div>
+                <div class="col-sm-4"></div>
+                <div class="form-controls col-sm-3 help-block">每人每天可分享获得积分次数</div>
+            </div> -->
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">好友点击送积分</h3>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">是否启用规则</label>
+                <div class="form-controls col-sm-5">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="get_share_gz" value="1" {if $item['get_share_gz'] == '1'} checked{/if} />
+                        开启
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="get_share_gz" value="2" {if $item['get_share_gz'] == '2'} checked{/if} />
+                        关闭
+                    </label>
+                </div>
+                <div class="col-sm-1"></div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">获取积分</label>
+                <div class="form-controls col-sm-2">
+                    <div class="input-group">
+                      <input type="number" min='0' class="form-control" name="get_share_score" value="{$item['get_share_score']}">
+                      <span class="input-group-addon">积分/次</span>
+                    </div>
+                </div>
+                <div class="col-sm-4"></div>
+                <div class="form-controls col-sm-3 help-block">他人点击分享一次获得的积分</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">获取积分限制</label>
+                <div class="form-controls col-sm-2">
+                    <div class="input-group">
+                      <input type="number" min='0' class="form-control" name="get_share_num" value="{$item['get_share_num']}">
+                      <span class="input-group-addon">次/每天</span>
+                    </div>
+                </div>
+                <div class="col-sm-4"></div>
+                <div class="form-controls col-sm-3 help-block">他人每日点击分享获取积分次数限制</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <div class="col-sm-12">
+            <input name="token" type="hidden" value="{$_W['token']}" />
+            <input type="submit" class="btn btn-primary col-lg-1" name="submit" value="提交" />
+        </div>
+    </div>
+</form>
+        <link rel="stylesheet" type="text/css" href="{$_W['siteroot']}web/resource/components/datetimepicker/jquery.datetimepicker.css"/ >
+        <script type="text/javascript" src="{$_W['siteroot']}web/resource/components/datetimepicker/jquery.datetimepicker.js"></script>
+        <script src="https://cdn.bootcss.com/bootstrap-select/2.0.0-beta1/js/bootstrap-select.min.js"></script>
+        <script type="text/javascript">
+            $(function(){
+                $('#datetimepicker').datetimepicker({
+                    lang:'ch',
+                    format:"Y-m-d H:i:s",
+                    allowBlank:true,
+                    validateOnBlur:false,
+                });
+            })
+        </script>
+<script>
+        function adds(){
+            var choose = $('#keys_list option:selected').val();
+            if(choose!=0){
+                $.ajax({
+                    url : "{php echo $this->createWeburl('Commentset',array('op'=>'news','opt'=>'getnews'))}",type:'post',dataType:'json',
+                    data:{
+                        id : choose
+                    },success:function(res) {
+                        var news = '<div class="form-group" id="news'+res.id+'"><label class="control-label col-sm-2" style="margin-right:45px"></label><div class="form-controls col-sm-3" style="overflow: hidden;"><input type="hidden" name="choose[]" value="'+res.id+'" readonly="readonly">'+res.title+'</div><div class="col-sm-1"><a href="javascript:;" class="delbtn" onclick="del('+res.id+')">删除</a></div><div class="form-controls col-sm-3 help-block"></div></div>';
+                        $("#glnews").append(news)
+                    }
+                })
+            }
+        }
+        function del(id){
+            $("#news"+id).hide();
+            $("#news"+id).html("");
+        }
+        $("#keys").bind('input propertychange',function () {
+            var keys = $("#keys").val();
+            if(keys!=""){
+                 $.ajax({
+                    url : "{php echo $this->createWeburl('Commentset',array('op'=>'news','opt'=>'searchs'))}",type:'post',dataType:'json',
+                    data:{
+                        keys : keys
+                    },success:function(res) {
+                        var shtml = '<option value="0">选择关联文章</option>';
+                        $.each(res,function (k,v) {
+                            shtml+='<option value="'+v.id+'">'+v.title+'</option>';
+                        });
+                        $("#keys_list").html(shtml);
+                    }
+                })
+            }
+        });
+          
+        function catecheck(me){
+            var id = $(me).val();
+            if(id !=0){
+                $.ajax({
+                    url:"{php echo $this->createWeburl('Commentset',array('op'=>'news', 'opt'=>'getcates'))}",type:'post',dataType:'json',
+                    data:{
+                        id:id
+                    },success:function(res){
+                        console.log(res);
+                        var shtml = '';
+                        $.each(res.sons,function (k,v) {
+                            var opg = '<select name="sons[]" class="form-control">';
+                            opg += '<optgroup label="'+v.varible+'">';
+
+                            var option = '';
+                            $.each(v.sons,function (ks,vs) {
+                                option += '<option value="'+vs.id+'">'+vs.varible+'</option>';
+                            });
+                            opg += option+"</optgroup></select>";
+                            shtml+=opg;
+                        });
+                        $("#sonscatas").html(shtml);
+                    }
+                })
+            }else{
+                $("#catelists_i").hide();
+                $("#catelists").html("");
+            }
+        }
+
+</script>
+{/if}
+
+    </div>
+
+</div>
+

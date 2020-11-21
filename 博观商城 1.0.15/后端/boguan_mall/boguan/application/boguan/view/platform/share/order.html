@@ -1,0 +1,216 @@
+{include file="common/header"}
+<section class="main-body">
+    <div class="main_content">
+        <!--second sidebar-->
+        {include file="platform/pub/share-nav"}
+        <!--main body content-->
+        <div class="main_mbody">
+            <ul class="col-xs-12">
+                <div class="main_mbody-title">
+                    <h5>分销订单</h5>
+                </div>
+                <div class="main-con main-sanji">
+                    <div class="alert alert-warning alert-dismissible" role="alert">
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        为了方便以下佣金统计，我们把三级分销的上下级关系用以下称呼，推荐人称为“邀请方”，推荐人的上级称为“经理”，推荐人的上上级称为“总经理”
+                    </div>
+                    <form action="">
+                        <ul class="nav-contral clearit">
+                            <li class="pull-right">
+                                <input type="submit" class="right-input btn" value="搜索">
+                            </li>
+                            <li class="pull-right">
+                                <input type="text" name="keyword"  class="right-input" placeholder="请输入关键字" value="{:input('keyword')}">
+                            </li>
+                            <li class="pull-right">
+                                <select class="control-chosen control-input" name="type">
+                                    <option value="1" {if input('type') == 1}selected{/if}>订单号</option>
+                                    <option value="2" {if input('type') == 2}selected{/if}>用户名</option>
+
+                                </select>
+                            </li>
+                        </ul>
+                        <div class="main-table table-responsive">
+                            <table class="table table-hover table-condensed">
+                                <thead>
+                                <tr>
+                                    <th class="order-tab-20">商品信息</th>
+                                    <th class="order-tab-15">成交金额(不计运费)</th>
+                                    <th class="order-tab-20">分销员昵称</th>
+                                    <th class="order-tab-15">佣金</th>
+                                    <th class="order-tab-15">操作</th>
+                                </tr>
+                                </thead>
+                                {if $order->isEmpty()}<tbody></tbody>{/if}
+                            </table>
+                            {volist name="order" id="vo"}
+                            <div class="order-item" data-styleid="city_distribution">
+                                <table class="table table-bordered bg-white">
+                                    <tr>
+                                        <td colspan="6" class="sanji-order">
+                                            <ul class="order-address">
+                                                <li>2018-04-22 19:42:48</li>
+                                                <li>订单号：<span>{$vo.order_no}</span></li>
+                                                <li>用户：<span>{$vo.user.nickname}</span></li>
+                                                <li>订单类型：<span>{if $vo.order_type == '1'}商城订单{elseif $vo.order_type == '2'}同城订单{else}自提订单{/if}</span></li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="sanji-pro order-tab-20">
+                                            <ul>
+                                                {volist name="$vo.snap_info" id="v"}
+                                                <li data-toggle="tooltip" data-placement="top" title="{$v.name}">
+                                                    <div class="min-img"><img src="{$v.image}" ondragstart="return false" alt="" title=""></div>
+                                                    <div class="min-title">
+                                                        <div class="name"><span>{$v.name}</span></div>
+                                                        <div class="guige">规格：<span>{if $v.attr_name}{:implode(',',$v.attr_name)}{else}无{/if}</span></div>
+                                                    </div>
+                                                </li>
+                                                {/volist}
+                                            </ul>
+                                        </td>
+                                        <td class="sanji-money order-tab-15">
+                                            ￥ {$vo.amount}
+                                        </td>
+                                        <td class="sanji-details order-tab-50" colspan="3">
+                                            <ul>
+                                                {volist name=":getUserShareMoney($vo['user_id'],$vo['uniacid'],$vo['id'])" id="vv" key="kk"}
+                                                    {if $vv.parent}
+                                                    <li>
+                                                        <div class="level-1 level">
+                                                            <div class="title">{if $kk == 1}推荐人{elseif $kk == 2}经理{elseif $kk== 3}总经理{/if}：</div><span>{$vv.parent.nickname}</span>
+                                                        </div>
+                                                        <div class="level-3 level">
+                                                            {$vv.money}
+                                                        </div>
+                                                    </li>
+                                                    {/if}
+                                                {/volist}
+
+                                            </ul>
+                                        </td>
+                                        <td class="order-tab-15 order-control">
+                                            <span>{if $vo.status == 0 && $vo.is_cancel == 0}
+                                                待付款
+                                                {elseif $vo.status == 1 && $vo.is_cancel == 0}
+                                                已付款
+                                                {elseif $vo.status == 2}
+                                                待发货
+                                                {elseif $vo.status == 1 && $vo.is_cancel == 1}
+                                                已取消
+                                                {elseif $vo.status == 0 && $vo.is_cancel == 1}
+                                                已取消
+                                                {elseif $vo.status == 3}
+                                                已完成
+                                                {elseif $vo.status == 4}
+                                                已退款
+                                                {else}
+                                                订单异常
+                                                {/if}
+                                            </span>
+                                            <div>
+                                                <a class="order-a-refused" href="{:url('boguan/platform.order/detail',['id'=> $vo.id])}">详情</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            {/volist}
+                        </div>
+                        {$page}
+                    </form>
+                </div>
+            </ul>
+                {include file="common/copyright"}
+    </div>
+
+    </div>
+    </div>
+</section>
+
+{include file="common/footer"}
+<script>
+    //更新状态
+function status(id,status) {
+    console.log(id);
+    console.log(status)
+    var text= '';
+    if (status == 1){
+
+        text= '审核通过';
+    }else if(status == 2) {
+
+        text= '审核不通过';
+    }else if(status == 3) {
+
+        text= '清退';
+    }
+    layui.use(['layer','form'], function(){
+        var layer = layui.layer,form = layui.form;;
+
+        layer.confirm('确认'+ text +'吗？', {btn:['确认'], yes:function(index){
+                //按钮【按钮一】的回调
+                //此处请求后台程序，下方是成功后的前台处理……
+                $.ajax({
+                    type: 'POST',
+                    url: '{:url("boguan/platform.share/updateStatus")}',
+                    data:{
+                        'id':id,
+                        'status': status,
+                    },
+                    success: function(data) {
+                        console.log(data);
+                        if (data.errorCode == 1) {
+
+                            layer.msg(data.msg,{icon: 1})
+                            window.location.reload()
+
+                        } else {
+                            layer.msg(data.msg,{icon: 2})
+                        }
+                    },
+                    error: function (data) {
+                        console.log(data.responseText);
+                        layer.msg(data.msg,{icon: 2})
+                    }
+                });
+                layer.close(index);
+            }});
+    })
+}
+
+    /*删除*/
+    function del(id,key){
+
+        layui.use(['layer','form'], function(){
+            var layer = layui.layer,form = layui.form;;
+
+            layer.confirm('确认删除吗？', {btn:['确认'], yes:function(index){
+                    //按钮【按钮一】的回调
+                    //此处请求后台程序，下方是成功后的前台处理……
+                    $.ajax({
+                        type: 'POST',
+                        url: '{:url("boguan/platform.share/del")}',
+                        data:{'id':id},
+                        success: function(data) {
+                            console.log(data);
+                            if (data.errorCode == 1) {
+
+                                layer.msg(data.msg,{icon: 1})
+                                $('.'+key).remove();
+                            } else {
+                                layer.msg(data.msg,{icon: 2})
+                            }
+                        },
+                        error: function (data) {
+                            console.log(data.responseText);
+                            layer.msg(data.msg,{icon: 2})
+                        }
+                    });
+                    layer.close(index);
+                }});
+        })
+
+    }
+</script>

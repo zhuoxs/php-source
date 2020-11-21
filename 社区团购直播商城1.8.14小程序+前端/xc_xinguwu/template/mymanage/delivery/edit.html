@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {template 'common/edithead'}
+
+    <style type="text/css">
+        .province {
+            width: 160px;
+            float: left;
+            position: relative;
+            height: 35px;
+            line-height: 35px;
+        }
+
+        .province:hover {
+            background: #EEEEEE;
+            border: 1px solid #666666;
+            border-bottom: 1px solid #999;
+        }
+
+        .checkbox {
+            margin-top: 0px;
+            margin-bottom: 0px;
+            margin-left: 30px;
+        }
+
+        .province ul {
+            float: left;
+            position: absolute;
+            top: 32px;
+            left: -1px;
+            padding: 0;
+            margin: 0px;
+            width: 520px;
+            z-index: 1055;
+            background: #EEEEEE;
+            border: 1px solid #666666;
+        }
+
+        .province ul li {
+            float: left;
+            min-width: 130px;
+
+            height: 35px;
+            line-height: 35px;
+        }
+
+        .searchable-select-dropdown {
+            z-index: 100;
+        }
+
+
+        .checkbox>input.ui-checkbox{
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            position: relative;
+            overflow: visible;
+            border: 0;
+            background: 0 0;
+            -webkit-appearance: none;
+            outline: 0;
+            margin-right: 8px;
+            vertical-align: middle;
+            margin-left: -30px;
+        }
+        .ui-checkbox:before {
+            content: '';
+            display: block;
+            width: 24px;
+            height: 24px;
+            border: 1px solid #dfe0e1;
+            -webkit-background-clip: padding-box;
+            background-clip: padding-box;
+            position: absolute;
+            -webkit-appearance: none;
+            outline: 0;
+            left: 0;
+            top: 0;
+        }
+        .ui-checkbox:checked:after {
+            content: '';
+            display: block;
+            width: 14px;
+            height: 14px;
+            background: #64bd63;
+
+            position: absolute;
+            left: 5px;
+            top: 5px;
+            outline: 0;
+            border: none;
+            -webkit-appearance: none;
+        }
+        .ui-checkbox:hover{
+            border:none;
+            margin: 0;
+        }
+        .ui-checkbox:valid{
+            border:none;
+            margin: 0;
+        }
+
+
+        input[disabled],.province .checkbox input:disabled,input.disabled{
+            color: #333;
+            -webkit-text-fill-color:#333;
+            -webkit-opacity:1;
+            opacity: 1;
+
+            background:  #ddd;
+        }
+
+        #tbody-areas input[type=number]{
+
+            text-align: center;
+        }
+
+    </style>
+
+
+
+    <!--微擎 -->
+    <!--这个放在最后一切平白安全-->
+    <script type="text/javascript" src="./resource/js/require.js?v=20170915"></script>
+    <script type="text/javascript">
+//编辑器里使用
+        var urobj=[];
+    </script>
+</head>
+<body class="nav-md" style="min-width: 800px">
+<div>
+    <div class="container xc_edit_from" >
+        <div class="main_container" style="overflow-x: hidden;min-height: 100vh;background-color: white;width: 100%;">
+                <div class="col-md-12 col-xs-12">
+                    <div class="x_panel">
+                        <ul class="we7-page-tab">
+                            <li><a a href="{php echo $this->createWebUrl($do, array('op'=>'edit','xtitleb'=>urlencode($xtitleb),'xtitlea'=>urlencode($xtitlea)));}">{$xtitleb}- {$xtitlea}增加</a></li>
+                        </ul>
+                        <div class="x_content">
+                            <br/>
+                            <form class="form-horizontal form-label-left input_mask" method="post" action="{php echo $this->createWebUrl($do, array('op'=>'save'));}" id="xc_form">
+                                <input type="hidden" name="id" value="{$id}">
+                                <div class="form-group">
+                                    <label class="control-label col-md-2 col-sm-3 col-xs-12">类型</label>
+                                    <div class="col-md-10 col-sm-9 col-xs-12 xradio" data-value="{$xc['contents']['calculatetype']}">
+
+
+                                        <label class="radio inline">
+                                            <input class="ui-radio" type="radio" name="calculatetype" value="weight"
+                                                   data-value="{$xc['contents']['calculatetype']}">按重量
+                                        </label>
+                                        <label class="radio inline">
+                                            <input class="ui-radio" type="radio" name="calculatetype" value="number"
+                                                   data-value="{$xc['contents']['calculatetype']}">按件
+                                        </label>
+
+                                    </div>
+                                </div>
+
+
+                                <div class="form-group" style="display: none">
+                                    <label class="control-label col-md-2 col-sm-3 col-xs-12">物流公司</label>
+                                    <div class="col-md-10 col-sm-9 col-xs-12">
+
+                                        <select class="form-control" name="express" data-select="{$xc['contents'][express]}"
+                                                id="select">
+                                            <!--<option value="0">请选择分类</option>-->
+                                            <option value="顺丰">顺丰</option>
+                                            <option value="申通">申通</option>
+                                            <option value="EMS">EMS</option>
+                                        </select>
+
+                                    </div>
+                                </div>
+
+
+                                <div class="form-group">
+                                    <label class="control-label col-md-2 col-sm-3 col-xs-12">配送区域</label>
+                                    <div class="col-md-10 col-sm-9 col-xs-12">
+
+                                        <div style="color: red">续重必填，否则无法计算快递费</div>
+
+                                        <table style="width:100%;">
+                                            <thead>
+                                            <tr>
+                                                <th style="height:40px;width:400px;">运送到</th>
+                                                <th class="weight" style="width:110px;">首重(克)</th>
+                                                <th class="weight" style="width:110px;">首费(元)</th>
+                                                <th class="weight" style="width:110px;">续重(克)</th>
+                                                <th class="weight" style="width:110px;">续费(元)</th>
+
+                                                <th class="number" style="width: 110px; display: none;">首件(个)</th>
+                                                <th class="number" style="width: 110px; display: none;">运费(元)</th>
+                                                <th class="number" style="width: 110px; display: none;">续件(个)</th>
+                                                <th class="number" style="width: 110px; display: none;">续费(元)</th>
+                                                <th style="width:80px;">管理</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody id="tbody-areas">
+                                            <tr>
+                                                <td style="padding:10px;">全国 [默认运费]</td>
+                                                <td class="weight text-center">
+                                                    <input type="number" class="form-control" name="default_firstweight"
+                                                           value="{if $xc['contents']['default']['default_firstweight'] }{$xc['contents']['default']['default_firstweight']}{else}1000{/if}"
+                                                           style="width:100px;" data-value="{$xc['contents']['default']['default_firstweight']}" ></td>
+                                                <td class="weight text-center">
+
+
+                                                    <input type="number"  class="form-control" name="default_firstprice"
+                                                           value="{$xc['contents']['default']['default_firstprice']}"
+                                                           style="width:100px;"  ></td>
+                                                <td class="weight text-center">
+                                                    <input type="number" class="form-control" name="default_secondweight"
+                                                           value="{if $xc['contents']['default']['default_secondweight'] }{$xc['contents']['default']['default_secondweight']}{else}1000{/if}"
+                                                           style="width:100px;">
+                                                </td>
+                                                <td class="weight text-center">
+                                                    <input type="number"  class="form-control" name="default_secondprice"
+                                                           value="{$xc['contents']['default']['default_secondprice']}" style="width:100px;">
+                                                </td>
+                                                <td class="weight"></td>
+                                                <td class="number text-center" style="display: none;">
+                                                    <input type="number"
+                                                           value="{if $xc['contents']['default']['default_firstnum']}{$xc['contents']['default']['default_firstnum']}{else}1{/if}"
+                                                           class="form-control" name="default_firstnum" style="width:100px;">
+                                                </td>
+                                                <td class="number text-center" style="display: none;">
+                                                    <input type="number" value="{$xc['contents']['default']['default_firstnumprice']}"
+                                                           class="form-control" name="default_firstnumprice" style="width:100px;">
+                                                </td>
+                                                <td class="number text-center" style="display: none;">
+                                                    <input type="number"
+                                                           value="{if $xc['contents']['default']['default_secondnum']}{$xc['contents']['default']['default_secondnum']}{else}1{/if}"
+                                                           class="form-control" name="default_secondnum" style="width:100px;">
+                                                </td>
+                                                <td class="number text-center" style="display: none;">
+                                                    <input type="number" value="{$xc['contents']['default']['default_secondnumprice']}"
+                                                           class="form-control" name="default_secondnumprice" style="width:100px;">
+                                                </td>
+                                                <td class="number" style="display: none;"></td>
+                                            </tr>
+                                            {loop $xc['contents']['setting'] $index $set}
+                                            <tr class="add_tr">
+                                                <td style="word-break:break-all;width:100px;padding:10px;line-height:22px;overflow:hidden; white-space: normal;">
+                                                    <span class="cityshtml"></span>
+                                                    <input type="hidden" class="citys" name="citys" value='{$set["citys"]}'/> <a
+                                                        style="color: #428BCA;" href="javascript:;" onclick="editRegion(this)">编辑</a>
+                                                </td>
+                                                <td class="weight text-center" valign="top"
+                                                    style="padding-top: 10px; display: table-cell;"><input type="number"
+                                                                                                           value="{$set['value']['firstweight']}"
+                                                                                                           class="form-control"
+                                                                                                           name="firstweight"
+                                                                                                           style="width:100px;"></td>
+                                                <td class="weight text-center" valign="top"
+                                                    style="padding-top: 10px; display: table-cell;"><input type="number"
+                                                                                                           value="{$set['value']['firstprice']}"
+                                                                                                           class="form-control"
+                                                                                                           name="firstprice"
+                                                                                                           style="width:100px;"></td>
+                                                <td class="weight text-center" valign="top"
+                                                    style="padding-top: 10px; display: table-cell;"><input type="number"
+                                                                                                           value="{$set['value']['secondweight']}"
+                                                                                                           class="form-control"
+                                                                                                           name="secondweight"
+                                                                                                           style="width:100px;"></td>
+                                                <td class="weight text-center" valign="top"
+                                                    style="padding-top: 10px; display: table-cell;"><input type="number"
+                                                                                                           value="{$set['value']['secondprice']}"
+                                                                                                           class="form-control"
+                                                                                                           name="secondprice"
+                                                                                                           style="width:100px;"></td>
+                                                <td class="number text-center" valign="top" style="padding-top: 10px; display: none;">
+                                                    <input type="number" value="{$set['value']['firstnum']}" class="form-control"
+                                                           name="firstnum" style="width:100px;"></td>
+                                                <td class="number text-center" valign="top" style="padding-top: 10px; display: none;">
+                                                    <input type="number" value="{$set['value']['firstnumprice']}" class="form-control"
+                                                           name="firstnumprice" style="width:100px;"></td>
+                                                <td class="number text-center" valign="top" style="padding-top: 10px; display: none;">
+                                                    <input type="number" value="{$set['value']['secondnum']}" class="form-control"
+                                                           name="secondnum" style="width:100px;"></td>
+                                                <td class="number text-center" valign="top" style="padding-top: 10px; display: none;">
+                                                    <input type="number" value="{$set['value']['secondnumprice']}" class="form-control"
+                                                           name="secondnumprice" style="width:100px;"></td>
+                                                <td style="text-align: center;padding-top:10px;" valign="top"><a href="javascript:;"
+                                                                                                                 class="btn btn-default btn-sm"
+                                                                                                                 onclick="$(this).parent().parent().remove()"><i
+                                                        class="fa fa-remove"></i></a></td>
+                                            </tr>
+                                            {/loop}
+
+                                            </tbody>
+                                        </table>
+                                        <div class="btn btn-default" id="addRegion">增加配送区域</div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label col-md-2 col-sm-3 col-xs-12">不配送区域</label>
+                                    <div class="col-md-10 col-sm-9 col-xs-12">
+                                        <input type="hidden" name="notarea" value="{$xc['contents']['notarea']}">
+                                        <div class="form-control-static" id="notarea"></div>
+                                        <div class="btn btn-default" onclick="notarea(this)">选择地区</div>
+                                    </div>
+                                </div>
+
+
+
+                                <div class="form-group" style="display: none">
+                                    <label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">状态</label>
+                                    <div class="col-xs-12 col-sm-8" style="position: relative;">
+                                        <input type="checkbox" class="js-switch" value="1" name="status"
+                                               data-value="{$xc['status']}" data-field="status">
+                                    </div>
+                                </div>
+                                <div class="row xc_btnmar"  ></div>
+                                <div class="form-group xc_btn_row"  >
+                                    <div class="col-md-9 col-sm-9 col-xs-12 col-md-offset-5 col-sm-offset-5  col-md-xs-5 ">
+                                        <button type="button" class="btn btn-primary" id="btsave">确认</button>
+                                                                            <a type="button" class="btn btn-default"  href="{php echo $this->createWebUrl($do, array('op'=>'list','xtitleb'=> urlencode($xtitleb),'xtitlea'=>urlencode($xtitlea)));}" >返回</a>
+
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- Modal -->
+<div class="modal fade bs-example-modal-lg" id="address_list" tabindex="-1" role="dialog"
+     aria-labelledby="myModalLabel" style="overflow: visible">
+    <div class="modal-dialog modal-lg" role="document" >
+        <div class="modal-content" >
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="myModalLabel">区域选择</h4>
+            </div>
+            <div class="modal-body" style="overflow:visible;">
+                <div class="form-group" id="province_list" >
+
+
+                </div>
+
+            </div>
+
+            <div class="modal-footer" style="clear: both;" >
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" id="sure">确认</button>
+                <button type="button" class="btn btn-primary" id="edit" style="display: none">确认</button>
+                <button type="button" class="btn btn-primary" id="isnotarea" style="display: none">确认</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+{template 'common/editfoot'}
+<script src="../addons/{php echo $_GPC['m']}/resource/address/city-picker.js"></script>
+
+<script type="text/javascript">
+
+
+
+    var modobj = '';
+    function editRegion(elm) {
+        modobj = elm;
+        $('#province_list input').prop('checked', false).prop('disabled', false);
+        $('#province_list .ui-checkboxcount').text('');
+        var city_data = $(elm).prev().val();
+
+
+        city_data = JSON.parse(city_data);
+
+        $('#edit').show();
+        $('#sure').hide();
+        $('#isnotarea').hide();
+
+
+        var index = $(elm).index();
+
+        if ($('#tbody-areas .add_tr').length >= 1) {
+            $('#tbody-areas .add_tr').each(function (q, w) {
+                if (q == index - 1) {
+                    return;
+                }
+
+                var al_da = $(this).find('.citys').val();
+
+                if (al_da != '') {
+                    al_da = JSON.parse(al_da);
+
+                    $('#province_list .province').each(function () {
+                        var that = this;
+                        $.each(al_da, function (i, n) {
+                            if ($(that).find('.city').val() == i) {
+                                $(that).find('.city').prop('disabled', true)
+                                $(that).find('ul input').each(function () {
+                                    var obj = this;
+                                    $.each(n, function (j, m) {
+                                        if ($(obj).val() == m) {
+                                            $(obj).prop('disabled', true);
+                                        }
+
+                                    })
+                                })
+                            }
+                        })
+                    })
+                }
+            })
+        }
+
+
+        $('#province_list .province').each(function () {
+            var that = this;
+            $.each(city_data, function (i, n) {
+
+                if ($(that).find('.city').val() == i) {
+                    $(that).find('.city').prop('checked', true);
+                    $(that).find('ul input').each(function () {
+                        var obj = this;
+                        $.each(n, function (j, m) {
+                            if ($(obj).val() == m) {
+                                $(obj).prop('checked', true)
+                            }
+                        })
+                    })
+
+                }
+
+            })
+        });
+
+
+        $('#address_list').modal('show');
+
+
+    }
+    /*添加不配送区域*/
+    function notarea(elm) {
+        $('#edit').hide();
+        $('#sure').hide();
+        $('#isnotarea').show();
+        $('#province_list input').prop('checked', false).prop('disabled', false);
+        $('#province_list .ui-checkboxcount').text('');
+
+        /*获取已选值*/
+        var val = $('input[name="notarea"]').val();
+
+        if (val != '') {
+            console.log(val)
+            val  = JSON.parse(val);
+            $('#province_list .province').each(function () {
+                var that = this;
+                $.each(val, function (i, n) {
+                    if ($(that).find('.city').val() == i) {
+                        $(that).find('.city').prop('checked', true)
+                        $(that).find('ul input').each(function () {
+                            var obj = this;
+                            $.each(n, function (j, m) {
+                                if ($(obj).val() == m) {
+                                    $(obj).prop('checked', true);
+                                    if ($(that).find('.ui-checkboxcount').text() == ''){
+                                        $(that).find('.ui-checkboxcount').text(1);
+                                    }else {
+                                        $(that).find('.ui-checkboxcount').text(parseInt($(that).find('.ui-checkboxcount').text()) +1)
+                                    }
+                                }
+
+                            })
+                        })
+                    }
+                })
+            })
+        }
+
+
+        $('#address_list').modal('show');
+
+
+
+    }
+
+    $('#isnotarea').click(function () {
+        var cuuert = {};
+
+        $('#province_list .province').each(function () {
+            if ($(this).find('.city').is(':checked')) {
+                var p_nmae = $(this).find('.city').val();
+                var cut = [];
+
+                $(this).find('ul input').each(function () {
+                    if ($(this).is(':checked')) {
+                        cut.push($(this).val())
+                    }
+                })
+                cuuert[p_nmae] = cut;
+            }
+        });
+        var xhtml = [];
+        for (var a in cuuert) {
+            xhtml.push(a + ":" + cuuert[a].join(","))
+        }
+
+        cuuert = JSON.stringify(cuuert);
+
+
+        $('input[name="notarea"]').val(cuuert);
+        $('#notarea').html(xhtml.join("<br>"));
+
+        $('#address_list').modal('hide');
+    })
+
+
+    $(function () {
+
+
+        /*生成地址信息*/
+        var data = $.rawCitiesData;
+        $.each(data, function (i, n) {
+            var html = '';
+            html += '<div class="province"> <label class="checkbox inline"> <input type="checkbox" class="ui-checkbox city" value="' + n.name + '" />' + n.name + '<span class="ui-checkboxcount" style="color:#ff6600"></span> </label><ul style="display:none">';
+            $.each(n.sub, function (j, m) {
+                html += '<li> <label class="checkbox inline"> <input type="checkbox" class="ui-checkbox" value="' + m.name + '"/>' + m.name + '</label></li>';
+            })
+            html += '</ul> </div>';
+            $('#province_list').append(html);
+        });
+
+
+
+
+
+        if ($('#select').attr('data-select') != '') {
+            $('.searchable-select-holder').html($('#select').attr('data-select'));
+            $('#select option').each(function () {
+                if ($(this).val() == $('#select').attr('data-select')) {
+                    $(this).prop('selected', true)
+                }
+            })
+        }
+
+
+        $('#tbody-areas .add_tr').each(function () {
+            var val = $(this).find('.citys').val();
+
+            if(val!="")
+            {
+                val = JSON.parse(val);
+
+                var xhtml = [];
+                for (var a in val) {
+                    xhtml.push(a + ":" + val[a].join(","))
+                }
+                $(this).find('.cityshtml').html(xhtml.join('<br>'))
+            }
+
+        })
+
+
+        if ($('input[name="notarea"]').val() != ''){
+            var val = $('input[name="notarea"]').val();
+
+            val = JSON.parse(val);
+            var xdhtml= [];
+            for (var a in val){
+                xdhtml.push(a+":"+val[a].join(","))
+            }
+
+            $('#notarea').html(xdhtml.join("<br>"))
+        }
+
+        if($('input[name="calculatetype"]:checked').val() == 'number'){
+            $('.weight').hide();
+            $('.number').show();
+        }
+
+
+        $('#province_list .province').mouseover(function () {
+            $(this).find('ul').show();
+        }).mouseout(function () {
+            $(this).find('ul').hide();
+        });
+
+
+
+        $('#province_list .province .city').change(function () {
+            if ($(this).is(':checked')) {
+                $(this).parent().next().find('input').prop('checked', true);
+
+                $(this).next().text($(this).parent().next().find('input').length);
+            } else {
+                $(this).parent().next().find('input').prop('checked', false);
+                $(this).next().text('');
+            }
+        });
+
+        $('#province_list ul input').change(function () {
+            if ($(this).is(':checked')) {
+                if ($(this).parents('.province').find('.city').not(':checked')) {
+                    $(this).parents('.province').find('.city').prop('checked', true);
+                }
+
+                if ($(this).parents('.province').find('.ui-checkboxcount').text() == '') {
+
+                    $(this).parents('.province').find('.ui-checkboxcount').text(1)
+                } else {
+                    $(this).parents('.province').find('.ui-checkboxcount').text(parseInt($(this).parents('.province').find('.ui-checkboxcount').text()) + 1);
+                }
+            } else {
+
+
+                if ($(this).parents('.province').find('.ui-checkboxcount').text() == 1) {
+                    $(this).parents('.province').find('.ui-checkboxcount').text('')
+
+                    if ($(this).parents('.province').find('.city').not(':checked')) {
+                        $(this).parents('.province').find('.city').prop('checked', false);
+                    }
+                } else {
+                    $(this).parents('.province').find('.ui-checkboxcount').text(parseInt($(this).parents('.province').find('.ui-checkboxcount').text()) - 1);
+                }
+
+            }
+        });
+
+        /*切换计费方式*/
+        $('input[name="calculatetype"]').change(function () {
+            if ($(this).val() == 'weight') {
+                $('.weight').show();
+                $('.number').hide();
+            }
+            if ($(this).val() == 'number') {
+                $('.weight').hide();
+                $('.number').show();
+            }
+        });
+
+        /*增加区域*/
+        $('#addRegion').click(function () {
+            $('#edit').hide();
+            $('#sure').show();
+            $('#isnotarea').hide();
+            $('#province_list input').prop('checked', false).prop('disabled', false);
+            $('#province_list .ui-checkboxcount').text('');
+
+            /*获取已选择的区域  设为disable*/
+            if ($('#tbody-areas .add_tr').length >= 1) {
+                $('#tbody-areas .add_tr').each(function () {
+                    var al_da = $(this).find('.citys').val();
+
+                    if (al_da != '') {
+                        al_da = JSON.parse(al_da);
+
+                        $('#province_list .province').each(function () {
+                            var that = this;
+                            $.each(al_da, function (i, n) {
+                                if ($(that).find('.city').val() == i) {
+                                    $(that).find('.city').prop('disabled', true)
+                                    $(that).find('ul input').each(function () {
+                                        var obj = this;
+                                        $.each(n, function (j, m) {
+                                            if ($(obj).val() == m) {
+                                                $(obj).prop('disabled', true);
+                                            }
+
+                                        })
+                                    })
+                                }
+                            })
+                        })
+                    }
+                })
+            }
+
+
+            $('#address_list').modal('show');
+
+
+        });
+
+
+        $('#edit').click(function () {
+            var cuuert = {};
+
+            $('#province_list .province').each(function () {
+                if ($(this).find('.city').is(':checked')) {
+                    var p_nmae = $(this).find('.city').val();
+                    var cut = [];
+
+                    $(this).find('ul input').each(function () {
+                        if ($(this).is(':checked')) {
+                            cut.push($(this).val())
+                        }
+                    })
+
+                    cuuert[p_nmae] = cut;
+
+                }
+            });
+
+            var xhtml = [];
+            for (var a in cuuert) {
+                xhtml.push(a + ":" + cuuert[a].join(","))
+            }
+
+            cuuert = JSON.stringify(cuuert);
+
+            $(modobj).prev().val(cuuert);
+            $(modobj).prevAll('.cityshtml').html(xhtml.join('<br>'));
+
+            $('#address_list').modal('hide')
+
+        })
+
+
+        /*确认*/
+        $('#sure').click(function () {
+            var cuuert = {};
+
+            $('#province_list .province').each(function () {
+                if ($(this).find('.city').is(':checked')) {
+                    var p_nmae = $(this).find('.city').val();
+                    var cut = [];
+
+                    $(this).find('ul input').each(function () {
+                        if ($(this).is(':checked')) {
+                            cut.push($(this).val())
+                        }
+                    })
+                    cuuert[p_nmae] = cut;
+                }
+            });
+            var xhtml = [];
+            for (var a in cuuert) {
+                xhtml.push(a + ":" + cuuert[a].join(","))
+            }
+
+            cuuert = JSON.stringify(cuuert);
+
+            var html = '<tr class="add_tr" ><td style="word-break:break-all;width:100px;padding:10px;line-height:22px;overflow:hidden; white-space: normal;"> <span class="cityshtml">' + xhtml.join("<br>") + '</span>  <input type="hidden" class="citys" name="citys" value=' + "'" + cuuert + "'" + '/> <a style="color: #428BCA;" href="javascript:;" onclick="editRegion(this)" >编辑</a> </td> <td class="weight text-center" valign="top" style="padding-top: 10px; display: table-cell;"><input type="text" value="1000" class="form-control" name="firstweight" style="width:100px;"></td> <td class="weight text-center" valign="top" style="padding-top: 10px; display: table-cell;"><input type="text" value="" class="form-control" name="firstprice" style="width:100px;"></td> <td class="weight text-center" valign="top" style="padding-top: 10px; display: table-cell;"><input type="text" value="1000" class="form-control" name="secondweight" style="width:100px;"></td> <td class="weight text-center" valign="top" style="padding-top: 10px; display: table-cell;"><input type="text" value="" class="form-control" name="secondprice" style="width:100px;"></td> <td class="number text-center" valign="top" style="padding-top: 10px; display: none;"><input type="number" value="1" class="form-control" name="firstnum" style="width:100px;"></td> <td class="number text-center" valign="top" style="padding-top: 10px; display: none;"><input type="text" value="" class="form-control" name="firstnumprice" style="width:100px;"></td> <td class="number text-center" valign="top" style="padding-top: 10px; display: none;"><input type="number" value="1" class="form-control" name="secondnum" style="width:100px;"></td> <td class="number text-center" valign="top" style="padding-top: 10px; display: none;"><input type="text" value="" class="form-control" name="secondnumprice" style="width:100px;"></td> <td style="text-align: center;padding-top:10px;" valign="top"><a href="javascript:;" class="btn btn-default btn-sm" onclick="$(this).parent().parent().remove()"><i class="fa fa-remove"></i></a></td> </tr>';
+            $('#tbody-areas').append(html);
+
+
+            $('#address_list').modal('hide')
+        })
+
+
+    })
+
+
+        var xpagecss = {
+            xload: function () {
+                swal({
+                    title: "操作中",
+                    text: "",
+                    imageUrl: "../addons/{php echo $_GPC['m']}/resource/images/xload1.gif",
+                    showConfirmButton: false,
+                    allowOutsideClick: true
+                });
+            },
+            close: function () {
+                swal.close();
+            }
+        };
+
+    $(function () {
+
+
+
+        $.validator.setDefaults({
+            highlight: function (e) {
+                $(e).closest(".col-xs-12").removeClass("has-success").addClass("has-error")
+            }, success: function (e) {
+                e.closest(".col-xs-12").removeClass("has-error").addClass("has-success")
+            }, errorClass: "help-block m-b-none", validClass: "help-block m-b-none"
+        }), $().ready(function () {
+            var e = "<i class='fa fa-times-circle'></i> ";
+            var vlidp = {
+                rules: {
+                    express: {
+                        minlength: 2
+                    }
+                },
+                messages: {
+                    express: {minlength: e + '请选择相应的物流公司'}
+                },
+                submitHandler: function (form) {
+                    xajaxfrom(form);
+                    return false;
+                }
+            }
+            $("#form").validate(vlidp);
+        });
+
+        var replyrdata = {};
+        replyrdata[1] = "success";
+        replyrdata[-1] = "error";
+        replyrdata[2] = "warning";
+        replyrdata[3] = "info";
+        replyrdata[4] = "question";
+        function message(data) {
+            $mesoption = {};
+            if (data["status"] === 1) {
+                if ($('[name="id"]').val() == "") {
+                    /*表单重置*/
+                    form.reset();
+                    /*富文本框的重置*/
+
+                    /*上传图片 重置*/
+                    $(".container").find(".img-thumbnail").attr("src", "./resource/images/nopic.jpg");
+                }
+            }
+            $mesoption["timer"] = 1000;
+            $mesoption["type"] = replyrdata[data["status"]];
+            $mesoption["title"] = data["message"];
+            $mesoption["text"] = data["message"];
+            swal($mesoption);
+
+        }
+
+        function xajaxfrom(form) {
+            console.log($('#select option:selected').val());
+
+            if ($('#select option:selected').val() == 0) {
+                swal({
+                    title: '提示',
+                    text: '请先选择物流公司',
+                    type: 'error',
+                    timer: 5000
+                })
+                return;
+            }
+
+
+            $actfrom = $(form);
+
+            var post_data = {};
+
+
+            var _data = [];
+            $('#tbody-areas .add_tr').each(function (index) {
+                var citys = $(this).find('input[name="citys"]').val();
+
+                citys = JSON.parse(citys);
+
+                var province = {};
+
+                $.each(citys, function (i, n) {
+
+                    province[i] = n
+
+                })
+
+
+                var temmdoel = {};
+                temmdoel["citys"] = province;
+
+
+                var temvalue = {};
+                $(this).find("input").each(function () {
+                    if ($(this).attr('name') == 'citys') {
+                        return;
+                    }
+                    temvalue[$(this).attr("name")] = $(this).val();
+                });
+                temmdoel["value"] = temvalue;
+
+                _data.push(temmdoel);
+
+
+            });
+
+            var _default = {};
+            $('#tbody-areas tr:first').find('input').each(function () {
+                _default[$(this).attr('name')] = $(this).val();
+            })
+            post_data['setting'] = _data;
+            post_data['default'] = _default;
+            post_data['express'] = $('#select option:selected').val();
+            post_data['id'] = $('input[name="id"]').val();
+            post_data['calculatetype'] = $('input[name="calculatetype"]:checked').val();
+            post_data['notarea'] =$('input[name="notarea"]').val();
+            if ($('input[name="status"]').is(":checked")) {
+                post_data['status'] = 1;
+            } else {
+                post_data['status'] = -1;
+            }
+
+
+            xpagecss.xload();
+            $.ajax({
+                type: $(form).attr("method"),
+                url: $(form).attr("action"),
+                dataType: "json",
+                data: post_data,
+                success: function (msg) {
+
+                 msg["title"] = msg["message"];
+               msg["text"] = msg["message"];
+                    swal(msg);
+
+
+                  // message(msg)
+                }
+            });
+        }
+        $("#btsave").click(function () {
+            $brvalue= $("#xc_form").valid();
+            if($brvalue){
+                xajaxfrom("#xc_form");
+            }
+            return false;
+        })
+
+    })
+
+
+
+
+
+    ///city-picker
+
+
+
+
+
+
+
+
+
+
+
+$(function () {
+
+//验证数据
+    $(".ajax-select,.js-select2").change(function () {
+        $("#xc_form").valid();
+    })
+})
+
+
+
+
+
+
+
+
+
+
+</script>
+
+</body>
+</html>
+

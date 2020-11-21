@@ -1,0 +1,485 @@
+{template 'public/header'}
+{template 'public/comhead'}
+{if $operation == 'display'}
+<ul class="nav nav-tabs">
+    <li {if $operation == 'display' || empty($operation)}class="active"{/if}><a href="{php echo $this->createWebUrl('card', array('op' => 'display', 'storeid' => $storeid))}">会员管理</a></li>
+    <li {if $operation == 'post'}class="active"{/if}><a href="{php echo $this->createWebUrl('card', array('op' => 'post'))}">会员卡设置</a></li>
+    <li {if $operation == 'post'}class="active"{/if}><a href="{php echo $this->createWebUrl('card', array('op' => 'opencard'))}">添加会员卡</a></li>
+</ul>
+{if $cardsetting}
+<div class="panel panel-default">
+    <div class="panel-heading">
+        门店会员卡：
+        <input type="checkbox" name="status" value="1" {if intval($cardsetting['status'])==1} checked="checked" {/if}/>
+    </div>
+</div>
+{/if}
+<div class="main">
+    <form action="" method="post" class="form-horizontal form">
+        <div class="panel panel-default">
+            <div class="table-responsive panel-body">
+                <table class="table table-hover">
+                    <thead class="navbar-inner">
+                    <tr>
+                        <th style="width:10%;">卡号</th>
+                        <th style="width:10%;">昵称</th>
+                        <th style="width:10%;">消费积分</th>
+                        <th style="width:14%;">开卡时间</th>
+                        <th style="width:14%;">到期时间</th>
+                        <th style="width:12%;">状态</th>
+                        <th style="width:15%;"></th>
+                    </tr>
+                    </thead>
+                    <tbody id="level-list">
+                    {loop $list $item}
+                    <tr>
+                        <td>
+                            {$item['carnumber']}
+
+                        </td>
+                        <td style="white-space:normal;">
+                            <img src="{php echo tomedia($item['headimgurl']);}" style="width:30px;height:30px;padding1px;border:1px solid #ccc"/>
+                            </br>{$item['nickname']}
+                        </td>
+                        <td>
+                            {$item['balance_score']}
+                        </td>
+                        <td>
+                            {php echo date('Y-m-d H:i:s', $item['dateline'])}
+                        </td>
+                        <td>
+                            {if $item['lasttime'] < TIMESTAMP}
+                            已过期
+                            {else}
+                            {php echo date('Y-m-d H:i:s', $item['lasttime'])}
+                            {/if}
+                        </td>
+                        <td>
+                            {if $item['status'] == 0}
+                            <span class="label label-danger">冻结</span>
+                            {else}
+                            <span class="label label-success">正常</span>
+                            {/if}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                            {if $_W['isfounder'] || $_W['role'] == 'manager'}
+                            {if $item['status'] == 1}
+                            <a class="btn btn-default btn-sm" onclick="return confirm('您确定要冻结吗？');return false;"
+                               href="{php echo $this->createWebUrl('card', array('id' => $item['id'], 'storeid' => $item['storeid'],'status' => $item['status'], 'op' => 'setstatus'))}"
+                               title="冻结"><i class="fa fa-lock"></i>禁止</a>
+                            {else}
+                            <a class="btn btn-default btn-sm" onclick="return confirm('您确定要解除冻结状态吗？');return false;" href="{php echo $this->createWebUrl('card', array('id' => $item['id'], 'storeid' => $item['storeid'], 'status' => $item['status'], 'op' => 'setstatus'))}"
+                               title="解冻"><i class="fa fa-unlock"></i>解除</a>
+                            {/if}
+                            {/if}
+                            <!--<a href="javascript:;" class="btn btn-success btn-sm" order-id="164"-->
+                            <!--onclick="$('#order-remark-container').modal();">[发送]</a>-->
+
+                            <a href="javascript:;" title="充值" class="btn btn-default btn-sm pay" data-codeid="{$item['id']}" data-status="{$item['status']}" title="充值" >充值</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {/loop}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </form>
+    {$pager}
+</div>
+<!--<div id="modal-module-menus" class="modal fade" tabindex="-1">-->
+    <!--<div class="modal-dialog" style="width: 800px;">-->
+        <!--<input type="hidden" name="id" id="id" value="0">-->
+        <!--<div class="modal-content">-->
+            <!--<div class="modal-header"><button aria-hidden="true" data-dismiss="modal" class="close" type="button">×-->
+            <!--</button><h3>选择粉丝</h3></div>-->
+            <!--<div class="modal-body" >-->
+                <!--<div class="row">-->
+                    <!--<div class="input-group">-->
+                        <!--<input type="text" class="form-control" name="keyword" value="" id="search-kwd" placeholder="输入粉丝昵称进行搜索" />-->
+                        <!--<span class='input-group-btn'><button type="button" class="btn btn-default" onclick="search_entries();">搜索</button></span>-->
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div id="module-menus" style="padding-top:5px;"></div>-->
+            <!--</div>-->
+            <!--<div class="modal-footer"><a href="#" class="btn btn-default" data-dismiss="modal" aria-hidden="true">关闭</a></div>-->
+        <!--</div>-->
+    <!--</div>-->
+<!--</div>-->
+<div id="modal-module-menus-recharge"  class="modal fade" tabindex="-1">
+    <div class="modal-dialog" style='width: 520px;'>
+        <div class="modal-content">
+            <div class="modal-header"><button aria-hidden="true" data-dismiss="modal" class="close" type="button">×</button><h3>会员充值</h3></div>
+            <div class="modal-body">
+                <form id="Form1" action="{php echo $this->createWebUrl('card', array('op' => 'addcoin'))}" method="post" class="form-horizontal">
+                    <input type="hidden" name="id" id="id" value="0">
+                    <input type="hidden" name="storeid" id="storeid" value="{$storeid}">
+                    <input type="hidden" name="status" id="status" value="0">
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">充值消费积分</label>
+                        <div class="col-sm-9">
+                            <div class="input-append">
+                                <input type="text" placeholder="积分" name="price" id="price" class="form-control" data-rule-required="true" data-rule-number="true">
+                                <span class="add-on"><i class="icon-cny"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">操作原因</label>
+                        <div class="col-sm-9">
+                            <textarea name="remark" id="remark" class="form-control"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label"></label>
+                        <div class="col-sm-9">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-primary">提交</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    function search_entries() {
+        var kwd = $.trim($('#search-kwd').val());
+        $.post('{php echo $this->createWebUrl('querycouponfans');}', {keyword: kwd}, function(dat){
+            $('#module-menus').html(dat);
+        });
+    }
+    function select_entry(fansid) {
+        var couponid = $("#id").val();
+        var url = "{php echo $this->createWebUrl('sendusercoupon', array())}";
+        $.post(
+                url,
+                {
+                    couponid:couponid,
+                    fansid:fansid
+                },
+                function (data) {
+                    alert(data.msg);
+                }, 'json'
+        );
+    }
+</script>
+<script>
+    require(['bootstrap.switch', 'util'], function($, u){
+        $(function(){
+            $(':checkbox').bootstrapSwitch();
+            $(':checkbox').on('switchChange.bootstrapSwitch', function(e, state){
+                $this = $(this);
+                var name = $this.attr('name');
+                var status = this.checked ? 1 : 0;
+                var type = '1';
+                var url = "{php echo $this->createWebUrl('card', array('op' => 'couponstatus'))}";
+                $.post(
+                        url,
+                        {
+                            type:type,
+                            status:status
+                        },
+                        function (data) {
+                            if (data.errno == -1) {
+                                u.message(data.error, location.href, 'success');
+                            } else {
+                                u.message('操作失败, 请稍后重试.');
+                            }
+                        }, 'json'
+                );
+            });
+        });
+    });
+
+    $(function () {
+        $("tr").delegate(".pay", "click", function () {
+            $("#price").val("100");
+            $("#id").val($(this).attr("data-codeid"));
+            $("#status").val($(this).attr("data-status"));
+            $('#modal-module-menus-recharge').modal();
+        });
+    });
+</script>
+{else if $operation == 'post'}
+<script type="text/html" id="distance-form-html">
+    {php include $this->template('web/_card_item');}
+</script>
+<script type="text/html" id="privilege-form-html">
+    {php include $this->template('web/_privilege_item');}
+</script>
+
+<div class="main">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <a class="btn btn-warning"
+               href="{php echo $this->createWebUrl('card', array('op' => 'display', 'storeid' => $storeid))}">返回会员管理
+            </a>
+        </div>
+    </div>
+    {if $cardsetting}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            门店会员卡：
+            <input type="checkbox" name="status" value="1" {if intval($cardsetting['status'])==1} checked="checked"
+            {/if}/>
+        </div>
+    </div>
+    {/if}
+    <form action="" method="post" onsubmit="return check();" class="form-horizontal form" enctype="multipart/form-data">
+        <input type="hidden" id="id" name="id" value="{$reply['id']}"/>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                会员卡设置
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">会员卡标题</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="card_title" value="{$cardsetting['title']}" id="title" class="form-control" placeholder="请输入会员卡标题"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">开卡奖励消费积分</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="opencardcredit" value="{$cardsetting['opencardcredit']}" class="form-control" placeholder=""/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">推荐奖励消费积分</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="sendcredit" value="{$cardsetting['sendcredit']}" class="form-control" placeholder=""/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">消费多少金额可使用抵扣积分</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="startmoney" value="{$cardsetting['startmoney']}" class="form-control" placeholder=""/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">每次最多抵扣几个积分</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="maxcredit" value="{$cardsetting['maxcredit']}" class="form-control" placeholder=""/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">会员开卡费用</label>
+                    <div class="col-sm-9">
+                        <div class="help-block">
+                            <a id="add-distance"><i class="fa fa-plus-circle"></i> 添加开卡项</a>
+                        </div>
+                    </div>
+                </div>
+                <div id="distance-list">
+                    {if !empty($distancelist)}
+                    {loop $distancelist $row}
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label"></label>
+                        <div class="col-sm-7">
+                            <div class="input-group">
+                                <span class="input-group-addon">名称：</span>
+                                <input type="text" class="form-control" value="{$row['title']}"
+                                       name="title[{$row['id']}]">
+                                <span class="input-group-addon no-b">使用</span>
+                                <input type="text" class="form-control" value="{$row['daycount']}" name="day[{$row['id']}]">
+                                <span class="input-group-addon no-b">天,费用</span>
+                                <input type="text" class="form-control" value="{$row['price']}"
+                                       name="price[{$row['id']}]">
+                                <span class="input-group-addon no-l-b">元</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-1">
+                            <a class="btn btn-danger btn-sm" onclick="$(this).parents('.form-group').remove(); return false;" href="#">删除
+                            </a>
+                        </div>
+                    </div>
+                    {php $flag = false;}
+                    {/loop}
+                    {/if}
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">会员特权</label>
+                    <div class="col-sm-9">
+                        <div class="help-block">
+                            <a id="add-privilege"><i class="fa fa-plus-circle"></i> 添加特权</a>
+                        </div>
+                    </div>
+                </div>
+                <div id="privilege-list">
+                    {if !empty($privilegelist)}
+                    {loop $privilegelist $row}
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label"></label>
+                        <div class="col-sm-7">
+                            <div class="input-group">
+                                <span class="input-group-addon">名称：</span>
+                                <input type="text" class="form-control" value="{$row['title']}"
+                                       name="privilegetitle[{$row['id']}]">
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-addon no-b">描述：</span>
+                                <input type="text" class="form-control" value="{$row['desc']}" name="desc[{$row['id']}]">
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-addon no-b">图标：</span>
+                                <select class="form-control" name="icon[{$row['id']}]" class="form-control">
+                                    <option value="1" {if $row['icon'] == 1}selected="selected"{/if}>优惠券</option>
+                                    <option value="2" {if $row['icon'] == 2}selected="selected"{/if}>购物车</option>
+                                    <option value="3" {if $row['icon'] == 3}selected="selected"{/if}>限时</option>
+                                    <option value="4" {if $row['icon'] == 4}selected="selected"{/if}>免</option>
+                                </select>
+                                <span class="input-group-addon no-b">链接</span>
+                                <input type="text" class="form-control" value="{$row['url']}"
+                                       name="url[{$row['id']}]">
+
+                            </div>
+                        </div>
+                        <div class="col-sm-1">
+                            <a class="btn btn-danger btn-sm" onclick="$(this).parents('.form-group').remove(); return false;" href="#">删除
+                            </a>
+                        </div>
+                    </div>
+                    {php $flag = false;}
+                    {/loop}
+                    {/if}
+                </div>
+                <div class="form-group type3">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">相关条款</label>
+                    <div class="col-sm-9">
+                        <textarea style="height:200px;" class="richtext form-control" name="card_rule" id="content">{$cur_store['card_rule']}</textarea>
+                        <div class="help-block"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-12">
+                <input name="submit" type="submit" value="保存设置" class="btn btn-primary col-lg-3" />
+                <input type="hidden" name="token" value="{$_W['token']}"/>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    $('#add-distance').click(function(){
+        $('#distance-list').append($('#distance-form-html').html());
+    });
+</script>
+<script type="text/javascript">
+    $('#add-privilege').click(function(){
+        $('#privilege-list').append($('#privilege-form-html').html());
+    });
+</script>
+
+<script type="text/javascript">
+    require(['jquery', 'util'], function ($, u) {
+        $(function () {
+            u.editor($('.richtext')[0]);
+        });
+    });
+
+    require(['bootstrap.switch', 'util'], function($, u){
+        $(function(){
+            $(':checkbox').bootstrapSwitch();
+            $(':checkbox').on('switchChange.bootstrapSwitch', function(e, state){
+                $this = $(this);
+                var name = $this.attr('name');
+                var status = this.checked ? 1 : 0;
+                var type = '1';
+                var url = "{php echo $this->createWebUrl('card', array('op' => 'couponstatus'))}";
+                $.post(
+                        url,
+                        {
+                            type:type,
+                            status:status
+                        },
+                        function (data) {
+                            if (data.errno == -1) {
+                                u.message(data.error, location.href, 'success');
+                            } else {
+                                u.message('操作失败, 请稍后重试!');
+                            }
+                        }, 'json'
+                );
+            });
+        });
+    });
+</script>
+{else if $operation == 'opencard'}
+<ul class="nav nav-tabs">
+    <li><a href="{php echo $this->createWebUrl('card', array('op' => 'display', 'storeid' => $storeid))}">会员管理</a></li>
+    <li {if $operation == 'post'}class="active"{/if}><a href="{php echo $this->createWebUrl('card', array('op' => 'post', 'storeid' => $storeid))}">会员卡设置</a></li>
+    <li  class="active"><a href="#">添加会员卡</a></li>
+</ul>
+
+<link rel="stylesheet" href="{$_W['siteroot']}addons/weisrc_dish/public/web/css/awesome-bootstrap-checkbox.css">
+<div class="main">
+    <!--<script type="text/javascript">-->
+        <!--require(['jquery', 'util'], function($, u){-->
+            <!--$('#form1').submit(function(e) {-->
+                <!--if($.trim($(':text[name="username"]').val()) == '') {-->
+                    <!--u.message('没有输入用户名.', '', 'error');-->
+                    <!--return false;-->
+                <!--}-->
+                <!--if($('#storeid option:selected').val() == 0) {-->
+                    <!--u.message('请选择所属门店.', '', 'error');-->
+                    <!--return false;-->
+                <!--}-->
+            <!--});-->
+        <!--});-->
+    <!--</script>-->
+    <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data" id="form1">
+        <input type="hidden" name="storeid" value="{$storeid}" />
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                添加会员卡
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label"><span class="require">*</span>微信昵称</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <div class="input-group">
+                            <input type="text" name="nickname" value="{$fans['nickname']}" class="form-control" readonly="">
+                            <input type="hidden" name="from_user" value="{$account['from_user']}">
+                        <span class="input-group-btn">
+				            <button class="btn btn-default" type="button" onclick="$('#modal-module-menus').modal();" data-original-title="" title="">选择粉丝</button>
+			            </span>
+                        </div>
+                        <div class="input-group cover" style="margin-top:.5em;">
+                            <img src="{php echo tomedia($fans['headimgurl']);}" width="150" />
+                        </div>
+                        <div class="help-block"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label"><span class="require">*</span>天数
+                    </label>
+                    <div class="col-sm-10 col-lg-9">
+                        <input type="text" name="daycount" class="form-control" value="7" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label"><span class="require">*</span>消费积分
+                    </label>
+                    <div class="col-sm-10 col-lg-9">
+                        <input type="text" name="balance_score" class="form-control" value="10" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group col-sm-12">
+            <input type="submit" name="submit" value="保存设置" class="btn btn-primary col-lg-3" />
+            <input type="hidden" name="token" value="{$_W['token']}" />
+        </div>
+    </form>
+</div>
+{template 'web/_modal_card'}
+
+{/if}
+{if $_W['isfounder']}
+{template 'common/footer'}
+{else}
+{template 'public/footer'}
+{/if}

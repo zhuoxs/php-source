@@ -1,0 +1,376 @@
+{template '_header'}
+<style>
+    .popover{
+        width:170px;
+        font-size:12px;
+        line-height: 21px;
+        color: #0d0706;
+    }
+    .popover span{
+        color: #b9b9b9;
+    }
+    .nickname{
+        display: inline-block;
+        max-width:150px;
+        overflow: hidden;
+        text-overflow:ellipsis;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    .tooltip-inner{
+        border:none;
+    }
+
+    ._cover {
+        color: #337ab7 !important;
+    }
+</style>
+<div class="page-header">
+    当前位置：<span class="text-primary">分销商管理 </span>
+</div>
+<div class="page-content">
+   <form action="./index.php" method="get" class="form-horizontal" role="form" id="form1">
+            <input type="hidden" name="c" value="site" />
+            <input type="hidden" name="a" value="entry" />
+            <input type="hidden" name="m" value="ewei_shopv2" />
+            <input type="hidden" name="do" value="web" />
+            <input type="hidden" name="r" value="commission.agent" />
+        <div class="page-toolbar m-b-sm m-t-sm">
+            <span class="pull-left">{php echo tpl_daterange('time', array('sm'=>true, 'placeholder'=>'成为分销商时间'),true);}</span>
+            <div class="input-group">
+                        <div class="input-group-select">
+                            <select name='status' class='form-control' style="width:80px;"  >
+                                <option value=''>状态</option>
+                                <option value='0' {if $_GPC['status']=='0'}selected{/if}>未审核</option>
+                                <option value='1' {if $_GPC['status']=='1'}selected{/if}>已审核</option>
+                            </select>
+                        </div>
+                        <div class="input-group-select">
+                            <select name='searchfield'  class='form-control'   style="width:90px;"  >
+                                <option value='member' {if $_GPC['searchfield']=='member'}selected{/if}>分销商</option>
+                                <option value='parent' {if $_GPC['searchfield']=='parent'}selected{/if}>推荐人</option>
+                            </select>
+                        </div>
+                    <div class="input-group-select">
+                        <select name='followed' class='form-control' style="width:80px">
+                            <option value=''>关注</option>
+                            <option value='0' {if $_GPC['followed']=='0'}selected{/if}>未关注</option>
+                            <option value='1' {if $_GPC['followed']=='1'}selected{/if}>已关注</option>
+                            <option value='2' {if $_GPC['followed']=='2'}selected{/if}>取消关注</option>
+                        </select>
+                    </div>
+                    <div class="input-group-select">
+                        <select name='agentlevel' class='form-control' style="width:100px;"  >
+                            <option value=''>等级</option>
+                            {loop $agentlevels $level}
+                            <option value='{$level['id']}' {if $_GPC['agentlevel']==$level['id']}selected{/if}>{$level['levelname']}</option>
+                            {/loop}
+                        </select>
+                    </div>
+                    <div class="input-group-select">
+                        <select name='isagentblack'  class='form-control'   style="width:90px;"  >
+                            <option value=''>黑名单</option>
+                            <option value='0' {if $_GPC['isagentblack']=='0'}selected{/if}>否</option>
+                            <option value='1' {if $_GPC['isagentblack']=='1'}selected{/if}>是</option>
+                        </select>
+                    </div>
+                          <input type="text" class="form-control input-sm"  name="keyword" value="{$_GPC['keyword']}" placeholder="昵称/姓名/手机号"/>
+                         <span class="input-group-btn">
+                            <button class="btn  btn-primary" type="submit"> 搜索</button>
+                             {ifp 'commission.agent.export'}
+                            <button type="submit" name="export" value="1" class="btn btn-success ">导出</button>
+                            {/if}
+                        </span>
+                </div>
+        </div>
+  </form>
+{if count($list)>0}
+        <div class='page-table-header'>
+            <input type="checkbox"/>
+            <div class="btn-group">
+                {ifp 'commission.agent.edit'}
+                <a class='btn btn-default btn-sm btn-op btn-operation' data-toggle='batch' data-href="{php echo webUrl('commission/agent/agentblack',array('agentblack'=>1))}" data-confirm='确认要设置黑名单?'>
+                    <i class="icow icow icow-heimingdan2"></i>设置黑名单
+                </a>
+                <a class='btn btn-default btn-sm btn-op btn-operation'  data-toggle='batch' data-href="{php echo webUrl('commission/agent/agentblack',array('agentblack'=>0))}" data-confirm='确认要取消黑名单?'>
+                    <i class="icow icow-yongxinyonghu"></i>取消黑名单
+                </a>
+                <a class='btn btn-default btn-sm btn-op btn-operation'  data-toggle='batch' data-href="{php echo webUrl('commission/agent/check',array('status'=>1))}"  data-confirm='确认要审核通过?'>
+                    <i class="icow icow-shenhetongguo"></i>审核通过
+                </a>
+                <a class='btn btn-default btn-sm btn-op btn-operation'  data-toggle='batch' data-href="{php echo webUrl('commission/agent/check',array('status'=>0))}" data-confirm='确认要取消审核?'>
+                    <i class="icow icow-yiquxiao"></i>取消审核</a>
+                {/if}
+                {ifp 'commission.agent.delete'}
+                <a class="btn btn-default btn-sm btn-op btn-operation" type="button" data-toggle='batch-remove' data-confirm="确认要删除?" data-href="{php echo webUrl('commission/agent/delete')}">
+                    <i class='icow icow-shanchu1'></i> 删除
+                </a>
+                {/if}
+            </div>
+        </div>
+        <table class="table table-hover table-responsive">
+            <thead class="navbar-inner" >
+            <tr>
+                <th style="width:25px;"></th>
+                <th style='width:100px;'>会员</th>
+                <th style='width:110px;'>姓名<br/>手机号码<br>等级</th>
+                <th style='width:110px;'>上级</th>
+                <th style='width:110px;'>上级姓名<br>上级手机号<br>上级等级</th>
+                <th style='width:80px;'>累计佣金<br/>打款佣金</th>
+                <th style='width:80px;'>下级分销商</th>
+                <th style='width:90px;'>注册时间</br>审核时间</th>
+                <th style='width:70px;'>状态</th>
+                <th style='width:70px;'>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $list $row}
+           <tr >
+                <td>
+                    <input type='checkbox'   value="{$row['id']}"/>
+                </td>
+               
+                <td style="overflow: visible">
+                    <div  style="display: flex"  rel="pop" data-content="
+                    <span>ID: </span>{$row['id']} </br>
+                     <span>推荐人：</span> {if empty($row['agentid'])}
+                                  {if $row['isagent']==1}
+                                      总店
+                                      {else}
+                                     暂无
+                                      {/if}
+                                {else}
+                    {if !empty($row['parentavatar'])}
+                         <img class='radius50' src='{$row['parentavatar']}' style='width:20px;height:20px;padding1px;border:1px solid #ccc' onerror='this.src='../addons/ewei_shopv2/static/images/noface.png''/>
+                    {/if}
+                       [{$row['agentid']}]
+                        {if empty($row['parentname'])}未更新
+                            {else}{$row['parentname']}
+                        {/if}
+					   {/if}</br>
+                        <span>是否关注：</span>
+                         {if empty($row['followed'])}
+                                {if empty($row['unfollowtime'])}
+                                未关注
+                                {else}
+                                取消关注
+                                {/if}
+                            {else}
+                                已关注
+                            {/if}</br>
+                            <span>状态:</span>  {if $row['isblack']==1}黑名单{else}正常{/if}
+					   ">
+                        {ifp 'member.list.view'}
+                        <a href="{php echo webUrl('member/list/detail',array('id' => $row['id']));}" title='查看会员信息' target='_blank' style="display: flex">
+                            {if !empty($row['avatar'])}
+                            <img class="radius50" src='{php echo tomedia($row['avatar'])}' style='width:30px;height:30px;padding1px;border:1px solid #ccc' onerror="this.src='../addons/ewei_shopv2/static/images/noface.png'"/>
+                            {/if}
+                        <span style="display: flex;flex-direction: column;justify-content: center;align-items: flex-start;padding-left: 5px">
+                            <span class="nickname">
+                                {if strexists($row['openid'],'sns_wa')}<i class="icow icow-xiaochengxu" style="color: #7586db;vertical-align: middle;" data-toggle="tooltip" data-placement="top" title="" data-original-title="来源: 小程序"></i>{/if}
+                                {if empty($row['nickname'])}未更新{else}{$row['nickname']}{/if}
+                            </span>
+                            {if $row['agentblack']==1}
+                            <span class="text-danger">黑名单<i class="icow icow-heimingdan1"style="color: #db2228;margin-left: 2px;font-size: 13px;"></i></span>
+                            {/if}
+                        </span>
+                        </a>
+                        {else}
+                        {if !empty($row['avatar'])}
+                        <img class="radius50" src='{php echo tomedia($row['avatar'])}' style='width:30px;height:30px;padding1px;border:1px solid #ccc' onerror="this.src='../addons/ewei_shopv2/static/images/noface.png'"/>
+                        {/if}
+                        <span style="display: flex;flex-direction: column;justify-content: center;align-items: flex-start;padding-left: 5px">
+                            <span class="nickname">
+                                {if empty($row['nickname'])}未更新{else}{$row['nickname']}{/if}
+                            </span>
+                            {if $row['agentblack']==1}
+                            <span class="text-danger">黑名单<i class="icow icow-heimingdan1"style="color: #db2228;margin-left: 2px;font-size: 13px;"></i></span>
+                            {/if}
+                        </span>
+
+                        {/if}
+                    </div>
+                </td>
+
+                <td>{$row['realname']} <br/>
+                    {$row['mobile']} <br>
+                    {if empty($row['levelname'])} {php echo empty($this->set['levelname'])?'普通等级':$this->set['levelname']}{else}{$row['levelname']}{/if}
+                </td>
+                <td>
+                    <a
+                        {if !empty($row['pid'])}
+                        href="{php echo webUrl('member/list/detail', array('id' => $row['pid']))}"
+                        {else}
+                        href= "javascript:void(0)"
+                        {/if}
+                    >
+                    <img class='radius50' src='{$row['parentavatar']}' style='width:20px;height:20px;padding1px;border:1px solid #ccc' onerror="this.src='../addons/ewei_shopv2/static/images/noface.png'"/>
+                    {php echo empty($row['parentname']) ? '总店' : $row['parentname']} <br/>
+                    </a>
+                </td>
+                <td>
+                    姓名：{php echo empty($row['parentrealname']) ? '未命名' : $row['parentrealname']}
+                    <br/>
+                    手机号：{php echo empty($row['parentmobile']) ? '-' : $row['parentmobile']}
+                    <br/>
+                    等级：{php echo empty($row['parentlevelname']) ? '-' : $row['parentlevelname']} <br/>
+
+                </td>
+
+                <td><span class="text-danger">{$row['commission_total']}</span><br/><span class="text-warning">{$row['commission_pay']}</span></td>
+                <td >
+
+                    {ifp 'commission.agent.user'}
+                    <a class="_cover" href="{php echo webUrl('commission/agent/user',array('id' => $row['id'], 'level' => 1));}"  target='_blank' data-toggle='popover' data-placement='right' data-html="true" data-trigger='hover' data-content='查看推广下线'>
+                        {$row['levelcount']}
+                    </a>
+                    {else}
+                        {$row['levelcount']}
+                    {/if}
+                        
+                    </td>
+                       <td>
+                           {php echo date('Y-m-d',$row['createtime'])} {php echo date('H:i',$row['createtime'])} <br/>
+                           {if !empty($row['agenttime'])}
+                           {php echo date('Y-m-d',$row['agenttime'])} {php echo date('H:i',$row['agenttime'])}
+                           {elseif $row['isagent'] == 1 && $row['status'] == 1 && $row['agenttime'] == 0}
+                           {php echo date('Y-m-d',$row['createtime'])} {php echo date('H:i',$row['createtime'])}
+                           {/if}
+                       </td>
+
+                <td>
+             
+                   
+                    <span class='label {if $row['status']==1}label-primary{else}label-default{/if}'
+										  {ifp 'commission.agent.check'}
+										  data-toggle='ajaxSwitch' 
+                                                                                                                                                                                                          data-confirm ='确认要{if $row['status']==1}取消审核{else}审核通过{/if}?'
+										  data-switch-value='{$row['status']}'
+										  data-switch-value0='0|未审核|label label-default|{php echo webUrl('commission/agent/check',array('status'=>1,'id'=>$row['id']))}'  
+										  data-switch-value1='1|已审核|label label-primary|{php echo webUrl('commission/agent/check',array('status'=>0,'id'=>$row['id']))}'
+										  {/if}
+										>
+										  {if $row['status']==1}已审核{else}未审核{/if}</span>
+                    <br/>
+
+                    <span class='label {if $row['agentblack']==1}label-default{else}label-primary{/if}'
+                    {ifp 'commission.agent.agentblack'}
+                    data-toggle='ajaxSwitch'
+                    data-switch-refresh='true'
+                    data-confirm ='确认要{if $row['agentblack']==1}取消{else}加入{/if}分销商黑名单?'
+                    data-switch-value='{$row['agentblack']}'
+                    data-switch-value0='0|正常|label label-primary|{php echo webUrl('commission/agent/agentblack',array('agentblack'=>1,'id'=>$row['id']))}'
+                    data-switch-value1='1|黑名单|label label-default|{php echo webUrl('commission/agent/agentblack',array('agentblack'=>0,'id'=>$row['id']))}'
+                    {/if}
+                    >
+                    {if $row['agentblack']==1}黑名单{else}正常{/if}</span>
+
+                     </td>
+
+             
+        
+                <td  style="overflow:visible;">
+                            {ifp 'order.list'}
+                                <a class="btn  btn-op btn-operation" href="{php echo webUrl('order/list',array('agentid' => $row['id']));}"  target='_blank'>
+                                    <span data-toggle="tooltip" data-placement="top" title="" data-original-title="推广订单">
+                                        <i class='icow icow-tuiguang'></i>
+                                    </span>
+                                </a>
+                            {/if}
+                            {ifp 'commission.agent.delete'}
+                                    <a class="btn  btn-op btn-operation" data-toggle='ajaxRemove' href="{php echo webUrl('commission/agent/delete',array('id' => $row['id']));}"  data-confirm="确定要删除该分销商吗？">
+                                       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="删除分销商">
+                                               <i class='icow icow-shanchu1'></i>
+                                            </span>
+                                    </a>
+                            {/if}
+                            {ifp 'order'}
+                                <a class="btn  btn-op btn-operation" href="{php echo webUrl('order/list', array('searchfield'=>'member', 'keyword'=>$row['nickname']))}"  target='_blank'>
+                                     <span data-toggle="tooltip" data-placement="top" title="" data-original-title="会员订单">
+                                        <i class='icow icow-dingdan2'></i>
+                                    </span>
+                                </a>
+                            {/if}
+                            {ifp 'finance.recharge.credit1|finance.recharge.credit2'}
+                                <a class="btn  btn-op btn-operation" data-toggle="ajaxModal" href="{php echo webUrl('finance/recharge', array('type'=>'credit1','id'=>$row['id']))}" >
+                                    <span data-toggle="tooltip" data-placement="top" title="" data-original-title="充值">
+                                       <i class='icow icow-31'></i>
+                                    </span>
+                                </a>
+                            {/if}
+                </td>
+            </tr>
+            {/loop}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td colspan="3">
+                        <div class="btn-group">
+                            {ifp 'commission.agent.edit'}
+                            <a class='btn btn-default btn-sm btn-op btn-operation' data-toggle='batch' data-href="{php echo webUrl('commission/agent/agentblack',array('agentblack'=>1))}" data-confirm='确认要设置黑名单?'>
+                                <i class="icow icow icow-heimingdan2"></i>设置黑名单
+                            </a>
+                            <a class='btn btn-default btn-sm btn-op btn-operation'  data-toggle='batch' data-href="{php echo webUrl('commission/agent/agentblack',array('agentblack'=>0))}" data-confirm='确认要取消黑名单?'>
+                                <i class="icow icow-yongxinyonghu"></i>取消黑名单
+                            </a>
+                            <a class='btn btn-default btn-sm btn-op btn-operation'  data-toggle='batch' data-href="{php echo webUrl('commission/agent/check',array('status'=>1))}"  data-confirm='确认要审核通过?'>
+                                <i class="icow icow-shenhetongguo"></i>审核通过
+                            </a>
+                            <a class='btn btn-default btn-sm btn-op btn-operation'  data-toggle='batch' data-href="{php echo webUrl('commission/agent/check',array('status'=>0))}" data-confirm='确认要取消审核?'>
+                                <i class="icow icow-yiquxiao"></i>取消审核</a>
+                            {/if}
+                            {ifp 'commission.agent.delete'}
+                            <a class="btn btn-default btn-sm btn-op btn-operation" type="button" data-toggle='batch-remove' data-confirm="确认要删除?" data-href="{php echo webUrl('commission/agent/delete')}">
+                                <i class='icow icow-shanchu1'></i> 删除
+                            </a>
+                            {/if}
+                        </div>
+                    </td>
+                    <td colspan="5" class="text-right">{$pager}</td>
+                </tr>
+            </tfoot>
+        </table>
+        {else}
+            <div class='panel panel-default'>
+                <div class='panel-body' style='text-align: center;padding:30px;'>
+                     暂时没有任何分销商!
+                </div>
+            </div>
+            {/if}
+</div>
+    <script language="javascript">
+			  
+
+ 
+			require(['bootstrap'],function(){
+        $("[rel=pop]").popover({
+            trigger:'manual',
+            placement : 'right',
+            title : $(this).data('title'),
+            html: 'true', 
+            content : $(this).data('content'),
+            animation: false
+        }).on("mouseenter", function () {
+                    var _this = this;
+                    $(this).popover("show"); 
+                    $(this).siblings(".popover").on("mouseleave", function () {
+                        $(_this).popover('hide');
+                    });
+                }).on("mouseleave", function () {
+                    var _this = this;
+                    setTimeout(function () {
+                        if (!$(".popover:hover").length) {
+                            $(_this).popover("hide")
+                        }
+                    }, 100);
+                });
+ 
+	 
+	   });
+ 
+			   
+</script> 
+ 
+{template '_footer'}

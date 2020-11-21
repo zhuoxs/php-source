@@ -1,0 +1,131 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+	<li class="active"><a href="#">兑换记录</a></li>
+</ul>
+<div class="app-content">
+	<div class="app-filter">
+		<div class="filter-list">
+			<form action="" method="get" class="form-horizontal" role="form" id="form1">
+				<input type="hidden" name="c" value="site" />
+				<input type="hidden" name="a" value="entry" />
+				<input type="hidden" name="m" value="weliam_merchant" />
+				<input type="hidden" name="p" value="consumption" />
+				<input type="hidden" name="ac" value="order" />
+				<input type="hidden" name="do" value="record"/>
+				<input type="hidden" name="status" value="{$_GPC['status']}"/>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">记录状态</label>
+					<div class="col-sm-9">
+						<div class="btn-group">
+							<a href="{php echo wl_filter_url('status:');}" class="btn {if empty($_GPC['status'])}btn-primary{else}btn-default{/if}">不限</a>
+							<a href="{php echo wl_filter_url('status:1');}" class="btn {if $_GPC['status'] == '1'}btn-primary{else}btn-default{/if}">待发货</a>
+							<a href="{php echo wl_filter_url('status:2');}" class="btn {if $_GPC['status'] == '2'}btn-primary{else}btn-default{/if}">待收货</a>
+							<a href="{php echo wl_filter_url('status:3');}" class="btn {if $_GPC['status'] == '3'}btn-primary{else}btn-default{/if}">已完成</a>
+						</div>
+					</div>
+				</div>
+				<div class="form-group form-inline">
+					<label class="col-sm-2 control-label">记录搜索</label>
+					<div class="col-sm-9">
+						<select name="keywordtype" class="form-control">
+							<option value="0" {if $_GPC['keywordtype']==0 || empty($_GPC['keywordtype'])}selected="selected"{/if}>关键字类型</option>
+							<option value="1" {if $_GPC['keywordtype']==1}selected="selected"{/if}>用户昵称</option>
+							<option value="2" {if $_GPC['keywordtype']==2}selected="selected"{/if}>用户id</option>
+							<option value="3" {if $_GPC['keywordtype']==3}selected="selected"{/if}>商品id</option>
+							<option value="4" {if $_GPC['keywordtype']==4}selected="selected"{/if}>消耗积分大于</option>
+							<option value="5" {if $_GPC['keywordtype']==5}selected="selected"{/if}>消耗积分小于</option>
+						</select>
+						<input type="text" name="keyword" class="form-control" value="{$_GPC['keyword']}"  placeholder="请输入关键字"/>
+	                </div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">兑换时间</label>
+					<div class="col-md-2">
+						{php echo tpl_form_field_daterange('time_limit', array('starttime' => date('Y-m-d',$starttime), 'endtime' => date('Y-m-d', $endtime)));}
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label"></label>
+					<div class="col-md-9">
+						<button class="btn btn-primary" id="search">筛选</button>
+						<!--<button class="btn btn-default min-width" name="export" type="submit" value="export"><i class="fa fa-download"></i>  导出记录</button>-->
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+	<script type="text/javascript">
+        $("#search").click(function(){
+            $('#form1')[0].submit();
+        })
+	</script>
+
+	<div class="app-table-list">
+		<div class="panel panel-default">
+			<div class="table-responsive">
+				<table class="table table-hover table-bordered">
+					<thead>
+					<tr>
+						<th class="text-center" style="width:40px;">ID</th>
+						<th class="text-center" style="width:150px;">用户信息</th>
+						<th class="text-center" style="width:150px;">商品信息</th>
+						<th class="text-center" style="width:70px;">消耗积分(金额)</th>
+						<th class="text-center" style="width:100px;">操作时间</th>
+						<th class="text-center" style="width:150px;">状态与操作</th>
+					</tr>
+					</thead>
+					<tbody>
+					{loop $list $item}
+					<tr class="text-center" >
+						<td>{$item['id']}</td>
+						<td>
+							<div class="img" style="text-align: left;padding-left: 2rem;">
+								<img style="height: 2.5rem;width: 2.5rem;position: relative;top: -0.5rem;" class="scrollLoading" src="{IMAGE_PIXEL}" data-url="{php echo tomedia($item['avatar'])}">
+								<div style="display: inline-block;position: relative;top: .5rem;" >
+									<span> {$item['nickname']}</span><br/>
+									<span>ID:{$item['mid']}</span>
+								</div>	
+							</div>
+						</td>
+						<td>
+							<div class="img" style="text-align: left;padding-left: 2rem;">
+								<img style="height: 2.5rem;width: 2.5rem;position: relative;top: -0.5rem;" class="scrollLoading" src="{IMAGE_PIXEL}" data-url="{php echo tomedia($item['goodsthumb'])}">
+								<div style="display: inline-block;position: relative;top: .5rem;" >
+									<span>{$item['goodstitle']}</span><br/>
+									<span>ID:{$item['goodsid']}</span>
+								</div>
+							</div>
+						</td>						
+						<td>
+							{$item['integral']}{if $item['money']>0}+￥{$item['money']}{/if}
+						</td>
+						<td>
+							兑换:{php echo date('Y-m-d H:i:s',$item['createtime'])}
+							{if $item['sendtime']}<br/>发货:{php echo date('Y-m-d H:i:s',$item['sendtime'])}{/if}
+							{if $item['receivetime']}<br/>收货:{php echo date('Y-m-d H:i:s',$item['receivetime'])}{/if}
+						</td>
+						<td>
+							{if $item['status'] == 1}
+							<label class='label label-warning'>待发货</label>
+							<a class="btn btn-primary btn-xs" data-toggle="ajaxModal"  href="{php echo web_url('order/wlOrder/send',array('id' => $item['id'],'type' => 'consumption'))}">确认发货</a>
+							{else if $item['status'] == 2}
+							<label class='label label-default'>待收货</label>
+							<a class="text-primary" data-toggle="ajaxModal"  href="{php echo web_url('order/wlOrder/send', array('id' => $item['id'],'type' => 'consumption','edit_flag'=>1))}">修改物流</a>
+							<a class="text-primary" data-toggle='ajaxPost'  href="{php echo web_url('order/wlOrder/sendcancel', array('id' => $item['id'],'type' => 'consumption'))}" data-confirm="确认取消发货？">取消发货</a>
+							<a class="btn btn-primary btn-xs" data-toggle="ajaxPost"  href="{php echo web_url('order/wlOrder/collect', array('id' => $item['id'],'type' => 'consumption'))}" data-confirm="确认买家收货？">确认收货</a>
+							{else}
+							<label class='label label-success'>已完成</label>
+							<a class="text-primary" data-toggle="ajaxModal"  href="{php echo web_url('order/wlOrder/send', array('id' => $item['id'],'type' => 'consumption','edit_flag'=>1))}">修改物流</a>
+							{/if}
+						</td>
+					</tr>
+					{/loop}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+
+{$pager}
+{php include wl_template('common/footer');}

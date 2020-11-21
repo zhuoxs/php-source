@@ -1,0 +1,153 @@
+{template 'common/header'}
+<link rel="stylesheet" href="../addons/mzhk_sun/static/layui/css/layui.css?1"  media="all">
+<script src="../addons/mzhk_sun/static/layui/layui.js" charset="utf-8"></script>
+
+<link rel="stylesheet" type="text/css" href="../addons/mzhk_sun_plugin_redpacket/template/style/style.css">
+<style type="text/css">
+	.table-responsive{border: 1px solid #e7e7eb;}
+	.table-responsive th{background-color: #f4f6f9;border-right: 1px solid #e7e7eb}
+	.table-responsive td{border-right: 1px solid #e7e7eb}
+	.table-responsive .btn-primary{border:0; padding: 3px 8px; margin-bottom: 3px;}
+	.row {margin-left: -35px;}
+</style>
+<ul class="we7-page-tab">
+	<li class="active"><a>红包订单</a></li>
+</ul>
+<!-- 搜索start -->
+<div class="row ygrow">
+    <div class="col-lg-12">
+        <form action="" method="get">
+			<input type="hidden" name="c" value="site" />
+			<input type="hidden" name="a" value="entry" />
+			<input type="hidden" name="m" value="mzhk_sun_plugin_redpacket" />
+			<input type="hidden" name="do" value="redorder" />
+			<input type="hidden" name="op" id="doop" value="" />
+            <div class="input-group">
+                <table>
+                  <tr>
+                    <td>
+                      <select name="nametype">
+                        <option value="">请选择输入内容</option>
+                        <option value="key_fname" {if $nametype=='key_fname'}selected{/if}>红包名称</option>
+						<option value="key_uname" {if $nametype=='key_uname'}selected{/if}>用户名称</option>
+                      </select>
+                    </td>
+                    <td><input type="text" name="keywords" class="form-control" value="{$keywords}" placeholder="请输入"></td>
+					<td>
+                      <select name="timetype">
+                        <option value="">请选择要搜索的时间方式</option>
+                        <option value="key_addtime" {if $timetype=='key_addtime'}selected{/if}>领取时间</option>
+                        <option value="key_paytime" {if $timetype=='key_paytime'}selected{/if}>过期时间</option>
+                        <option value="key_finishtime" {if $timetype=='key_finishtime'}selected{/if}>使用时间</option>
+                      </select>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control" name="time_start_end" value="{$time_start_end}" id="time_start_end" placeholder="-" style="width: 200px">
+                    </td>
+					<td>
+                      <span class="input-group-btn">
+                        <input type="submit" class="btn btn-default" name="submit" id="searchorder" value="查找"/>
+                      </span>
+                    </td>
+                  </tr>
+                </table>
+            </div>
+            <input type="hidden" name="token" value="{$_W['token']}"/>
+        </form>
+    </div>
+</div>
+<!-- 搜索end -->
+<div class="clearfix" style="margin-left: -20px;margin-right: -20px;">
+	<table class="table table-responsive">
+		<tr>
+			<th>id</th>
+			<th>红包名称</th>
+			<th>红包金额</th>
+			<th>使用条件</th>
+			<th>红包类型</th>
+			<th>领取时间</th>
+			<th>过期时间</th>
+			<th>使用状态</th>
+			<th>使用时间</th>
+			<th>用户名称</th>
+			<th>关联订单类型</th>
+			<th>关联订单id</th>
+			<th>操作</th>
+		</tr>
+		{loop $list $index $val}
+			<tr>
+				<td>{$val['id']}</td>
+				<td>{$val['rname']}</td>
+				<td>{$val['rmoney']}</td>
+				<td>满{$val['allowmoney']}元可用</td>
+				<td>{if $val['type']==1}拉新红包{elseif $val['type']==2}每日红包{elseif $val['type']==3}返利红包{else}联盟红包{/if}</td>
+				<td>{php echo date("Y-m-d H:i:s",$val['addtime']);}</td>
+				<td>{if $val['overtime']<time()}已过期{else}{php echo date("Y-m-d H:i:s",$val['overtime']);}{/if}</td>
+				<td>{if $val['isuse']==1}已使用{else}未使用{/if}</td>
+				<td>{if $val['usetime']}{php echo date("Y-m-d H:i:s",$val['usetime']);}{else}未使用{/if}</td>
+				<td>{$val['name']}</td>
+				<td>{if $val['lid']==1}普通订单{elseif $val['lid']==2}砍价订单{elseif $val['lid']==3}拼团订单{elseif $val['lid']==5}抢购订单{else}未使用{/if}</td>
+				<td>
+					{if $val['orid']!=0 && $val['isuse']==1}
+						{$val['orderNum']}
+						{if $val['lid']==1}（普通）{elseif $val['lid']==2}（砍价）{elseif $val['lid']==3}（拼团）{elseif $val['lid']==5}（抢购）{else}（次卡）{/if}
+					{else}
+						未使用
+					{/if}
+				</td>
+				<td>
+					<a href="{php echo $this->createWeburl('SetOrderStatus', array('id'=>$val[id]));}" class="btn btn-primary" {if $val['status']==1}style="background-color: #d9534f;"{else}style="background-color: #0275d8;"{/if}>{if $val['status']==1}已禁用{else}点击禁用{/if}</a>
+					<a data-toggle="modal" data-target="#myModal{$val['id']}" class="btn btn-primary" style="background-color: #d9534f;">删除</a>
+					<div class="modal fade" id="myModal{$val['id']}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    <h4 class="modal-title" id="myModalLabel" style="font-size: 20px;">提示</h4>
+                                </div>
+                                <div class="modal-body" style="font-size: 20px">
+                                    确定删除么？
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                                    <a href="{php echo $this->createWeburl('DeleteOrder', array('id'=>$val[id]));}" type="button" class="btn btn-info" >确定</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+				</td>
+			</tr>
+		{/loop}
+	</table>
+
+	<div id="fenye">
+	{$pager}
+	</div>
+</div>
+<script type="text/javascript">
+    $(function(){
+
+        layui.use('laydate', function () {
+            var laydate = layui.laydate;
+            laydate.render({
+              elem: '#time_start_end',
+              range: true
+            });
+        });
+
+        $(".allcheck").on('click',function(){
+            var checked = $(this).get(0).checked;
+            $("input[type=checkbox]").prop("checked",checked);
+        });
+
+        $("#exportorder").on('click',function(){
+            $("#doop").val("exportorder");
+        })
+        $("#searchorder").on('click',function(){
+            $("#doop").val("");
+        })
+
+        $("#frame-2").show();
+        $("#yframe-2").addClass("wyactive");
+    })
+</script>

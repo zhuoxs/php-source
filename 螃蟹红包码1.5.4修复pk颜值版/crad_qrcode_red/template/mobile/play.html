@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="edge">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+        <title>{$activity['name']}-{$cfg['site_name']}</title>
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/mui.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/bootstrap.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/static/css/style.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/static/css/game.css">
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/font-awesome.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/liMarquee.css" />
+        <script src="../addons/crad_qrcode_red/template/mobile/static/vendor/jquery-3.3.1.min.js"></script>
+         <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/jigsaw.css" />
+        <script type="text/javascript" src="https://api.map.baidu.com/api?v=2.0&ak=AWp7FI93cxFM1Nai0FWmBGvnSt0uB2bG&s=1"></script>
+         {php echo register_jssdk(false);}
+        <style>
+            .footer {display:none;}
+        </style>
+    </head>
+    <body>
+<!--手机号验证弹窗-->
+                <div class="phone_code" hidden>
+                	<div class="phone_ul">
+                		<div class="modal-content wanjiao copyse_with">
+                            <div class="modal-header yanse">
+                            	 {if $activity['check_tel']==2}核销卡券前{else}领取红包{/if}前需验证手机号
+                                <button type="button" class="close" id="phone_out" onclick="$('.phone_code').hide();">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <form class="form-horizontal" id="tel_form">
+                                    <div class="phone_one">
+                                        <div class="one_mouth">
+                                            <input type="text" id="check_phone" name="check_phone" placeholder="请输入手机号码" value="{$user['tel']}">
+                                        </div>
+                                    </div>
+                                    <div class="phone_two">
+                                        <div class="two_mouth">
+                                            <input type="text"  id="check_code"  name="check_code"  maxlength="6" placeholder="请输入验证码">
+                                        </div>
+                                        <input type="button" id="btnSendCode" class="btn btn-default phbtns" value="获取验证码" onClick="sendMessage()"></input>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="phone_footer">
+				                <button type="button" class="btn btn-success" id="check_tel">确定</button>
+				                <button type="button" class="btn btn-default" onclick="$('.phone_code').hide();">取消</button>
+				            </div>
+                        </div>
+                	</div>
+                </div>
+                <script type="text/javascript">
+				var InterValObj; //timer变量，控制时间
+				var count = 60; //间隔函数，1秒执行
+				var curCount;//当前剩余秒数
+                                var check_tel="{$activity['check_tel']}";
+                                var is_check_tel="{$user['is_check']}";
+                                var doing = false;
+				function sendMessage() {
+                                    if (check_tel<1 || is_check_tel>0) {
+                show_message(0, "无效操作", 3000, 1);
+                return;
+            }
+            
+             if (doing == true) {
+                                    return;
+                                }
+                                var tel = $("#check_phone").val();
+                                if (tel == "" || tel.length != 11) {
+                                    show_message(0, "请正确填写手机号码", 5000, 1);
+                                    return;
+                                }
+                                var RegMobile = /^1[34578]\d{9}$/;
+                                if (!RegMobile.test(tel)) {
+                                    show_message(0, "请正确填写手机号码", 5000, 1);
+                                    return;
+                                }
+                                doing = true;
+                                $.ajax({
+                                    type: "POST",
+                                    dataType: "json",
+                                    url: "{php echo $this->createMobileUrl('ajax_info',array('op'=>'verification','aid'=>$aid))}",
+                                    data: {tel: tel},
+                                    success: function (ret) {
+
+                                        if (ret.sta == 1) {
+                                            curCount = count;
+                                           
+                                            //设置button效果，开始计时
+                                         $("#btnSendCode").attr("disabled", "true");
+					$("#btnSendCode").val( + curCount + "秒再获取");
+					InterValObj = window.setInterval(SetRemainTime, 1000); //启动计时器，1秒执行一次
+                                        } else {
+                                            doing = false;
+                                            show_message(0, ret.error, 5000, 1);
+                                        }
+                                    },
+                                    error: function (json) {
+                                        show_message(0, "系统繁忙，请稍后重试", 5000, 1);
+                                        doing = false;
+                                    }
+                                });
+				}
+				//timer处理函数
+				function SetRemainTime() {
+					if (curCount == 0) {   
+                                                doing = false;            
+						window.clearInterval(InterValObj);//停止计时器
+						$("#btnSendCode").removeAttr("disabled");//启用按钮
+						$("#btnSendCode").val("重新发送验证码");
+						code = ""; //清除验证码。如果不清除，过时间后，输入收到的验证码依然有效    
+					}
+					else {
+						curCount--;
+						$("#btnSendCode").val( + curCount + "秒再获取");
+					}
+				}
+                                
+                                 $('#check_tel').on('click', function () {
+                var tel = $("#check_phone").val();
+                                 
+             if (check_tel<1 || is_check_tel>0) {
+                show_message(0, "无效操作", 3000, 1);
+                return;
+            }
+            if (!tel || !$('#check_code').val()) {
+                show_message(0, "手机号和验证码不能为空", 3000, 1);
+                return;
+            }
+            if (tel.search(/^([0-9]{11})?$/) == -1) {
+                show_message(0, "手机号码格式错误", 3000, 1);
+                return false;
+            }
+            var sendurl_tel = "{php echo $this->createMobileUrl('ajax_info',array('op'=>'check_tel','aid'=>$aid))}";
+            var form_tel = $('#tel_form').serialize();
+            
+            $.post(sendurl_tel, form_tel, function (ret) {
+                if (ret.sta == 1) {
+                    $("#gameSuccessBox").css("display","block");
+                    is_check_tel=1;
+                    $('.phone_code').hide();
+                    //show_message(2, "验证成功", 3000, 1);
+                     $('#gameSuccessBoxBtn1').click();
+                    return;
+                }
+                show_message(0, ret.error, 3000, 1);
+            }, 'json');
+        });
+ </script>
+    	
+    	
+    	<div class="lodings" hidden>
+			<div class="lodings_li">
+				<div class="lodings_ku">
+					<i class="icon-spinner icon-spin"></i>
+				</div>
+			</div>
+		</div>
+<script type="text/javascript">
+    {if $activity['image_body']}
+    var back_image = "{php echo tomedia($activity['image_body'])}";
+    $("body").css("background-image", "url(" + back_image + ")");
+    {else}
+    $("body").css("background-image", "url(../addons/crad_qrcode_red/template/mobile/img/red_bj.png)");
+    {/if} 
+   </script>    
+            
+        <audio id="back_music" preload src="{if empty($lipstick_image['music_game'])}../addons/crad_qrcode_red/template/mobile/static/audio/bg_audio.mp3{else}{php echo tomedia($lipstick_image['music_game'])}{/if}" loop="true"></audio>
+        <audio id="split_audio" preload src="../addons/crad_qrcode_red/template/mobile/static/audio/split_audio.mp3"></audio>
+        <audio id="collision_audio" preload src="../addons/crad_qrcode_red/template/mobile/static/audio/collision_audio.mp3"></audio>
+        <audio id="Countdown_10s_audio" preload src="../addons/crad_qrcode_red/template/mobile/static/audio/Countdown_10s_audio.mp3"></audio>
+        <audio id="gameFail_audio" preload src="../addons/crad_qrcode_red/template/mobile/static/audio/gameFail_audio.mp3"></audio>
+        <audio id="gameSuccess_audio" preload src="../addons/crad_qrcode_red/template/mobile/static/audio/gameSuccess_audio.mp3"></audio>
+        <audio id="insert_audio" preload src="../addons/crad_qrcode_red/template/mobile/static/audio/insert_audio.mp3"></audio>
+        <audio id="success_audio" preload src="../addons/crad_qrcode_red/template/mobile/static/audio/success_audio.mp3"></audio>
+        <audio controls="controls" autoplay="autoplay" id="music_audio"></audio>
+        <audio controls="controls" autoplay="autoplay" id="music_ad"></audio>
+ <input name="lipstick_level" id="lipstick_level" type="hidden" value="{$activity['lipstick_level']}" />
+ <input name="lipstick_difficulty" id="lipstick_difficulty" type="hidden" value="{$activity['lipstick_difficulty']}" />
+        <!--切关页-->
+        <!--进入游戏时注释，开始游戏时打开-->
+        <div class="levelSwitchBox" id="levelSwitchBox" style="display: none;">
+            <img id="levelSwitchBoxMain" class="levelSwitchBoxMain" src="{if empty($lipstick_image['cover1'])}../addons/crad_qrcode_red/template/mobile/static/img/level_1_main.jpg{else}{php echo tomedia($lipstick_image['cover1'])}{/if}">
+        </div>
+
+        <!--游戏结束-->
+        <!--<a href="javascript:history.go(0);" class="PopupBox" id="gameOverBox" style="display: none;">
+            <div id="gameOverClose" class="close">
+                <img src="../addons/crad_qrcode_red/template/mobile/static/img/close_btn.jpg">
+            </div>
+            <div id="gameOverBoxTitle">闯关失败</div>
+            <div class="PopupBoxBtn" id="gameOverBoxBtn">重新闯关</div>
+        </a>-->
+        <div class="code_ok_out" id="gameOverBox">
+            <div class="code_li_ok">
+                <div class="dialogs">
+                        <div class="dialogs_top">
+                            很遗憾
+                            <a href="javascript:history.go(0);"><span id="gameOverClose" class="mui-icon mui-icon-close guang"></span></a>	
+                        </div>
+                        <div class="dialogs_ok_out">闯关失败！</div>
+                        <div class="congnew_sse" id="gameOverBoxBtn">重新闯关</div>
+                </div>
+            </div>
+        </div>
+
+        <!--游戏通关-->
+        <!--<a href="javascript:history.go(0);" class="PopupBox" id="gameSuccessBox" style="display: none;">
+            <div id="gameSuccessClose" class="close">
+                <img src="../addons/crad_qrcode_red/template/mobile/static/img/close_btn.jpg">
+            </div>
+            <div id="gameSuccessBoxText">闯关成功</div>
+            <div class="PopupBoxBtn" id="gameSuccessBoxBtn">再玩一次</div>
+        </a>-->
+        <div class="code_ok_out" id="gameSuccessBox">
+            <div class="code_li_ok">
+                <div class="dialogs">
+                        <div class="dialogs_top">
+                            恭喜
+                            <a href="javascript:history.go(0);"><span id="gameSuccessClose" class="mui-icon mui-icon-close guang"></span></a>
+                        </div>
+                        <div class="dialogs_ok_out">闯关成功！</div>
+<!--                        <div class="congnew" id="gameSuccessBoxBtn">再玩一次</div>-->
+                        <div class="congnew" id="gameSuccessBoxBtn1" {if $red_info}hidden{/if}>领取红包</div>
+                </div>
+            </div>
+        </div>
+
+        <!--购买次数-->
+        <div class="chase" hidden>
+            <div class="chase_li">
+                <div class="chase_zong">
+                    <div class="chase_top">
+                        游戏次数已用完~
+                        <span class="mui-icon mui-icon-close chase_out"></span>
+                    </div>
+                    <div class="chase_center">
+                        <div class="chase_tips">
+                            {if $activity['lipstick_num_day'] && $activity['share_open'] && $invitation_times>0}{php echo $activity['share_tips'] ? $activity['share_tips'] : '请根据红包码提示操作获取更多次数';}</br>{/if}
+                            请选择购买的游戏次数
+                        </div>
+                        <div class="numzong">
+                        	<!--<div class="mui-numbox" style="width: 140px;" data-numbox-min='1' data-numbox-max='9999'>
+	                            <button class="mui-btn mui-btn-numbox-minus" type="button">-</button>
+	                            <input  class="mui-input-numbox" type="number" value="1" id="times"/>
+	                            <button class="mui-btn mui-btn-numbox-plus" type="button">+</button>
+	                        </div>-->
+	                        <div class="kuang">
+								<div class="kuang_one">次数:</div>
+								<div class="kuang_tu">
+									<span class="icon-angle-right"></span>
+								</div>
+								<div class="slect">
+									<select id="times_game" name="times_game">
+                                                                                                                                      {if $buy_rules}
+                                                        {loop $buy_rules $buy_rule}
+										<option value="{$buy_rule['game_times']}">{$buy_rule['game_times']}次({$buy_rule['game_money']}元)</option>
+							{/loop}	
+                                                        {/if}
+									</select>
+                                                                    
+								</div>
+							</div>
+                        </div>
+                    </div>
+                    
+                    <div class="chase_btn">
+                        购 买
+                    </div>
+                    <div class="tipsse">
+                    	温馨提示：挑战成功后剩余次数作废~
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+   
+                $(".chase_out").click(function () {
+                    $(".chase").hide();
+                });
+                $(".chase_btn").click(function () {
+                    $(".chase").hide();
+                var times=$("#times_game").val();
+                var money=$("#times_game option:selected").text();
+                    var btnArray = ['确定','取消'];
+                            mui.confirm("确定要购买"+money+"游戏机会", '购买提示', btnArray, function(e) {
+                            if (e.index == 1) {
+                              
+                            } else {
+                                window.location.href = "{php echo $this->createMobileUrl('buy',array('aid' => $aid, 'uuid' => $uuid))}"+"&times="+times;
+                                
+                            }
+                            });
+                });
+
+        </script>
+
+        <div class="zong">
+
+            <div class="top">
+                <div class="top_li">
+                    <span class="xiao str1">
+                        {if empty($red_info)}
+                        <span class="qufen">{$activity['top_tips']}</span>
+                        {/if}
+                        {if $red_info&&$red_list_new}
+                        {loop $red_list_new $red_new}
+                        <span class="qufen">{$red_new['top_tips_red']}</span>
+                        {/loop}	
+                        {/if}
+                    </span>
+                </div>
+            </div>
+            <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/jquery-2.1.1.min.js" ></script>
+            <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/jquery.liMarquee.js" ></script>
+            <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/jigsaw.js" ></script>
+
+           <script>
+				$(window).load(function(){
+				$('.str1').liMarquee();
+				$('.str2').liMarquee({
+					direction: 'right'	
+				});
+				var stringEl = $('.str3').liMarquee();
+				$('.speedChange').on('click',function(){
+					var speedChange = $(this);
+					var dataSpeed = speedChange.data('scrollamount');
+		
+					stringEl.trigger('mouseenter');
+					stringEl.data({scrollamount:dataSpeed});
+					stringEl.trigger('mouseleave');
+					
+					return false;	
+				});
+				$('.str4').liMarquee({
+					drag: false	
+				});
+				$('.str5').liMarquee({	
+					hoverstop: false
+				});
+				$('.str6').liMarquee();
+				$('.btnPause').on('click',function(){
+					$('.str6').liMarquee('pause');
+				});
+				$('.btnPlay').on('click',function(){
+					$('.str6').liMarquee('play');
+				})
+				});
+		    </script> 
+            <div class="zhuang_yq">
+                <div class="fugai">
+                    <div class="zhiding_yq" >
+                    	<!--开始按钮，进入页面时显示，开始游戏时隐藏-->
+                    	<div class="linqu_name">
+                            {if $red_info['status']==1}
+                            <div class="linqu_out">
+                                已领取
+                            </div>
+                            {elseif $red_info['status']==4}
+                            <div class="linqu_out">
+                                已退回
+                            </div>
+                    {else}
+			<div class="linqu_li_name">
+                   
+                                                             开始游戏
+           
+							</div>
+                    {/if}
+						</div>
+			<!--游戏区域，进入页面时隐藏,开始游戏时显示-->
+                    	<div id="bocks">
+                    		<div class="dangci">
+                                {if $red_info}红包已领取，{/if}
+                                {if ($qrcode['last_time'] < strtotime(date("Y-m-d")))||(empty($activity['lipstick_num'])&&empty($activity['lipstick_num_day']))}{$game_tip_before}
+                                {elseif $activity['lipstick_num']>0&&$lipstick_num_surplus<1}游戏次数已用完
+                                {elseif $lipstick_num_day_surplus>0}今日剩余<span>{$lipstick_num_day_surplus}次</span>
+                                {elseif $activity['lipstick_num_day'] && $invitation_times>0}{if $activity['buy_times']}今日游戏超过最大次数,请购买获取游戏次数{else}今日游戏超过最大次数,明天再来吧{/if}
+                                {elseif $invitation_content}{$invitation_content}
+                                {elseif $activity['lipstick_num_day']>0&&$activity['share_open']}{php echo $activity['share_tips'] ? $activity['share_tips'] : '今日次数用完啦，根据红包码提示操作获取更多次数';}
+                                {elseif $lipstick_num_surplus>0}{if $activity['lipstick_num_day']>0}今日次数已用完,{/if}累计剩余<span>{$lipstick_num_surplus}次</span>
+                                {/if}
+                    	</div>
+                        <!--游戏主画面-->
+                        <div class="layoutRoot" id="app">
+                            <div class="game" id="game" style="width: 100% !important; height: 938px;">
+                                <div class="account">
+                                    <!-- <img class="avatar" src="">-->
+                                    <span></span>
+                                </div>
+
+                                <div class="bulletsNumBox" style="display: none;">
+                                    <img class="bulletsNum" id="bulletsNum1" src="../addons/crad_qrcode_red/template/mobile/static/img/1.png">
+                                </div>
+
+                                <!--游戏区域-->
+                                <canvas style="position: relative;z-index: 3" id="gameStage" class="canvasb"></canvas>
+
+                                <div id="bm" style="width: 100%; height: 100%;position: fixed;background-color: rgba(0,0,0,0);top: 5.3rem; transform: translate(-5%,-1%); z-index: 2"></div>
+
+                                <div class="tips">
+                                    <p id="currentLevel">当前关数: <span>1</span></p>
+                                    <p id="gameTip"></p>
+                                </div>
+
+                                <!--关卡显示-->
+                                <div class="levelbox" id="levelbox" hidden>
+                                    <div class="level"><img id="level_1" src="../addons/crad_qrcode_red/template/mobile/static/img/level_icon_1_active.png"></div>
+                                    {if empty($activity['lipstick_level'])||$activity['lipstick_level']>1}
+                                    <div class="level"><img id="level_2" src="../addons/crad_qrcode_red/template/mobile/static/img/level_icon_2_active.png"></div>
+                                    {/if}
+                                    <!-- <div class="level"><img id="level_3" src="../addons/crad_qrcode_red/template/mobile/static/img/level_3.png"></div>-->
+                                    {if empty($activity['lipstick_level'])||$activity['lipstick_level']>2}
+                                    <div class="level"><img id="level_3" src="../addons/crad_qrcode_red/template/mobile/static/img/level_icon_3_active.png"></div>
+                                    {/if}
+                                </div>
+
+                                <!--剩余时间-->
+                                <div id="timebox" hidden>30</div>
+                            </div>
+                        </div>
+                    	</div>
+                    </div>
+                     {if $cfg['copyright']}
+    <div class="yun">
+        <span>
+            {$cfg['copyright']}
+        </span>
+    </div>
+    {/if}
+                </div>
+              <div class="meikai" {if $red_info['status']==1}hidden{/if}>
+     <div class="biaoyu">
+        {if $activity['closed_wish']}{$activity['closed_wish']}{else}新年开门大吉，财源广进！{/if}
+    </div>
+</div>
+<div class="kaila" {if $red_info['status']!=1}hidden{/if}>
+     <div class="banhu">
+        {if $activity['open_wish']}{$activity['open_wish']}{else}恭喜发财，大吉大利！{/if}
+    </div>
+    <div class="shanguang">
+        <img src="../addons/crad_qrcode_red/template/mobile/img/gir.png" />
+    </div>
+    <div class="huabu" {if $red_info['status']==1}style="height: 32vw;"{/if}>
+
+         <div class="huabu_one">
+            {if $red_info['status']==1}{$red_info['money']}<span>元</span>{/if}
+        </div>
+        <div class="huabu_two">
+            {if $activity['open_tips']}{$activity['open_tips']}{else}请在微信服务通知中领取红包{/if}
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+        <div class="xinx">
+            <img src="../addons/crad_qrcode_red/template/mobile/img/xin.png" />
+        </div>
+        <div class="xinx_t">
+            <img src="../addons/crad_qrcode_red/template/mobile/img/xin_t.png" />
+        </div>
+        <div class="shan">
+            <img src="../addons/crad_qrcode_red/template/mobile/img/shan.png" />
+        </div>
+        <div class="shan_two">
+            <img src="../addons/crad_qrcode_red/template/mobile/img/shan.png" />
+        </div>
+        <span class="icon-double-angle-up huadong"></span>
+        <script>
+                        var  send_url="{php echo $this->createMobileurl('ajax_red',array('aid'=>$aid,'uuid'=>$uuid))}";
+                         //点击开始按钮
+                    var red_run=false;
+                    var time_day=0;
+                     var lipstick_num_day=0;
+                      var key_lipstick='';
+                       var token_lipstick='';
+                       var now_level='';
+                       var time_all=0;
+                       var lipstick_time_all=0;
+                       var invitation_times=0;
+                       var buy_times={$activity['buy_times']};
+                       var share_open={$activity['share_open']};
+                    {if $lipstick_num_day_surplus>0}
+                    time_day={$lipstick_num_day_surplus};
+                    {/if}
+                            {if $lipstick_num_surplus>0}
+                    time_all={$lipstick_num_surplus};
+                    {/if}                
+                          {if $activity['lipstick_num_day']>0}
+                    lipstick_num_day={$activity['lipstick_num_day']};
+                    {/if}
+                        
+                        {if $activity['lipstick_num']>0}
+                    lipstick_time_all={$activity['lipstick_num']};
+                    {/if}
+                        
+                         {if $invitation_times>0}
+                    invitation_times={$invitation_times};
+                    {/if}
+			 $('#gameSuccessBoxBtn1').click(function(){
+           if (check_tel=='1' && is_check_tel<1) {
+                $('.phone_code').show(); 
+                $(".code_ok_out").hide();
+return;
+            }
+                              {if $activity['validate_open']==1}
+                              $(".huakuai").show();
+                               jigsaw.init(document.getElementById('captcha'),function () {
+	        $(".huakuai").hide();
+                document.getElementById('captcha').innerHTML = ''
+                {/if}
+                 if (!red_run) {
+                            red_run=true;
+                            $(".lodings").show();
+                            $(".code_ok_out").hide();
+                            $.ajax({
+                            type: 'post',
+                                    url: send_url,
+                                    data: {op: 'lipstick',level: now_level, key_lipstick: key_lipstick,token_lipstick:token_lipstick},
+                                    success: function (data) {
+                                    setTimeout(function () { red_run = false; }, 2000);
+                                    if (data.sta == 1) {
+                                    $(".huabu_one").html(data.money + "<span>元</span>");
+                                    var gao = $(".zong").scrollTop();
+                                    if (gao == "0") {
+                                    $(".meikai").hide();
+                                    $(".kaila").show();
+                                    $(".huabu").animate({height: "32vw"}, 1000);
+                                    } else {
+                                    $(".zong").animate({scrollTop: 0}, 500, function () {
+                                    $(".meikai").hide();
+                                    $(".kaila").show();
+                                    $(".huabu").animate({height: "32vw"}, 1000);
+                                    });
+                                    }
+                                    $(".lodings").hide();
+//                                    show_message(1, '红包领取成功，请到微信查看', 3000, 1);
+                                    return;
+                                    } else {
+                                    $(".lodings").hide();
+                                    if (data.nosubscribe == 1) {
+                                    $('.code_tan').show();
+                                    }else{
+                                    show_message(3, data.error, 5000, 1);
+                                    }
+                                    return;
+                                    }
+                                    }
+                            });
+                           setTimeout(function () { red_run = false; }, 2000);
+                        }
+                
+            {if $activity['validate_open']==1} 
+	    },function(){    
+	        document.getElementById('msg').innerHTML = '验证失败，请重试！'
+	    });
+            {/if}
+                          
+                            });
+
+                           
+                    
+                    
+                     {if empty($red_info)&&$activity['lipstick_num_day']&&$activity['share_open']&&empty($invitation_times)}
+           var share_user_status = setInterval(function () {
+        $.get("{php echo $this->createMobileUrl('ajax_info', array('aid' => $aid, 'uuid' => $uuid))}" + "&op=share_user_count", function (ret) {
+        if (ret.sta == 1) {
+           $('.dangci').html(ret.invitation_content);
+        }else if (ret.sta == 2) {
+             clearInterval(share_user_status);
+             $('.dangci').html(ret.invitation_content);
+             time_day=time_day+ret.times;
+             if(time_day>0){
+                $('.linqu_li_name').html("开始游戏");
+                 show_message(2, "恭喜您今日增加了"+ret.times+"次游戏机会", 3000, 1);
+             }
+        }
+        }, 'json');
+        }, 3000);
+ 
+    {/if}
+                    
+         
+                    
+		</script>
+        
+{if $activity['subscribe']}
+<div class="code_tan" {if $subscribe}hidden{/if}>
+     <div class="code_li">
+        <div class="dialogs">
+            <div class="dialogs_top">
+                参加活动前需关注公众号
+                <span class="mui-icon mui-icon-close guang"></span>	
+            </div>
+            {if $activity['subscribe']==1}
+            {if $activity['sub_image']||$_W["account"]['qrcode']}
+            <div class="dialogs_center">
+                <img src="{if $activity['sub_image']}{php echo tomedia($activity['sub_image']);}{else}{$_W['account']['qrcode']}{/if}" />
+            </div>
+            {/if}
+            {else}
+            <div class="dialogs_center">
+                <img src="{if $qrcode['qrcode']}{php echo $this->createMobileurl('qr', array('url' => base64_encode($qrcode['qrcode'])));}{else if $activity['qrcode_one']&&$activity['qrcode_url']}{php echo $this->createMobileurl('qr', array('url' => base64_encode($activity['qrcode_url'])))}{else}{$_W['account']['qrcode']}{/if}" />
+            </div>
+            {/if}
+            {if $activity['subscribe']==1}
+            {if $activity['sub_tips']}
+            <div class="address">
+                <textarea readonly="readonly">{$activity['sub_tips']}</textarea>
+            </div>
+            {/if}
+            {else}
+            <div class="address">
+                <textarea readonly="readonly">请长按识别图中二维码，关注后点击推送图文消息进入参加活动</textarea>
+            </div>
+            {/if}
+        </div>
+    </div>
+</div>
+{/if}
+<div class="code_ok" hidden>
+    <div class="code_li_ok">
+        <div class="dialogs">
+            <div class="dialogs_top">
+                操作提示
+                <span class="mui-icon mui-icon-close guang"></span>	
+            </div>
+            <div class="dialogs_ok">
+                <span class="glyphicon glyphicon-ok-circle yess"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="huakuai" hidden>
+    	<div class="xuebu">
+    		<div class="huakuai_out"><span class="glyphicon glyphicon-remove-circle"></span></div>
+    	<div class="huakuai_li">
+    		<div class="container">
+			  <div id="captcha" style="position: relative"></div>
+			  <div id="msg"></div>
+			</div>
+    	</div>
+    	</div>
+   </div>
+
+{if $adinfo_red_image}
+
+				<div class="congrea_zong" hidden>
+					<div class="congrea">
+					<div class="congrea_li">
+                                            {if $adinfo_red_image['image_url']}
+                                            {if $adinfo_red_image['link']}
+                                           <a href="{$adinfo_red_image['link']}">
+                                               {/if}
+						<img src="{php echo tomedia($adinfo_red_image['image_url'])}" />
+                                               
+                                                 {if $adinfo_red_image['link']}
+                                           </a>
+                                               {/if}
+                                                {/if}   
+						<div class="congs">
+							<div class="congs_lis">
+								<span class="mui-icon mui-icon-closeempty"></span>
+							</div>
+						</div>
+					</div>
+				</div>
+				</div>
+<script type="text/javascript">
+setTimeout("$('.congrea_zong').show();", 5000);
+</script> 
+{/if}
+<script>
+$(".congs").click(function(){
+        		  $(".congrea_zong").hide();
+        	    });                                                                                                
+                                                                                                            
+ $(".huakuai_out span").click(function(){
+                        $(".huakuai").hide();
+                        document.getElementById('captcha').innerHTML = ''
+                });
+                 var error_map=1;
+{if $activity['share_open']==1}
+         wx.ready(function () {
+            wx.error(function (res) {
+              
+   error_map=0;
+    var lo = "{$activity['statusd']}";
+    {if empty($_COOKIE['lat'][$aid]) || empty($_COOKIE['lng'][$aid])}
+    if (lo == 2){
+    distance();
+    }
+    function distance(){
+    var geolocation = new BMap.Geolocation();
+    geolocation.getCurrentPosition(function(r){
+    if (this.getStatus() == BMAP_STATUS_SUCCESS){
+     if(r.accuracy==null){
+        show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+	return;
+     }
+    var position = {
+    lng: r.point.lng,
+    lat: r.point.lat,
+    }
+    positions(position);
+    } else {
+    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+    }
+    }, {enableHighAccuracy: true});
+    }
+    function positions(position){
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {lat: position.lat,lng:position.lng}, function (data) {
+    var data = eval('(' + data + ')');
+    if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    }
+    {/if}
+    {if empty($_COOKIE['gps'][$aid])}
+    var gps = 0;
+    var place = "{$activity['site']}";
+    if (lo == 1 && place != ''){
+    var p = place.split(",");
+    var geolocation = new BMap.Geolocation();
+    geolocation.getCurrentPosition(function(r) {
+    if (this.getStatus() == BMAP_STATUS_SUCCESS) {
+     
+     var mk = new BMap.Marker(r.point);
+         if(r.accuracy==null){
+           show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+	  return;
+	 }
+    locLng = r.point.lng;
+    locLat = r.point.lat;
+    var geoc = new BMap.Geocoder();
+    geoc.getLocation(r.point, function(rs){
+  
+    var addComp = rs.addressComponents;
+//    var position =  addComp.province + addComp.city +  addComp.district +  addComp.street +  addComp.streetNumber;
+    if (p.indexOf(addComp.province) >= 0 || p.indexOf(addComp.city) >= 0 || p.indexOf(addComp.district) >= 0){
+    gps = 1;
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {gps: gps}, function (data) {
+    var data = eval('(' + data + ')');
+     if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    } else{
+     gps = 2;
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {gps: gps}, function (data) {
+    var data = eval('(' + data + ')');
+     if(data.sta=='1'){
+//    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    show_message(0, '对不起,您不在本次活动范围,请期待我们下一次活动', 3000, 0);
+    gps = 0;
+    }
+    });
+    } else{
+    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+    gps = 0;
+    };
+    }, {
+    enableHighAccuracy: true
+    });
+    }
+    {/if}
+
+	});
+         if(error_map==1){
+           var lo = "{$activity['statusd']}";
+    {if empty($_COOKIE['lat'][$aid]) || empty($_COOKIE['lng'][$aid])}
+    if (lo == 2){
+     wx.getLocation({
+            type: 'gcj02', //wgs84 或 gcj02
+                    success: function (res) {
+                    var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                    var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                     var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {lat: latitude,lng:longitude,type:1}, function (data) {
+    var data = eval('(' + data + ')');
+    if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    }
+    });
+    }
+    {/if}
+  {if empty($_COOKIE['gps'][$aid])}
+    var gps = 0;
+    var place = "{$activity['site']}";
+    if (lo == 1 && place != ''){
+    var p = place.split(",");
+            wx.getLocation({
+            type: 'gcj02', //wgs84 或 gcj02
+                    success: function (res) {
+                    var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                            var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                            var MJKD_LATLNG = latitude + ',' + longitude;
+                            var data = {
+                            location:MJKD_LATLNG,
+                                    key:"TRJBZ-RIEWU-ODUVS-BBWXX-ITXYZ-H4FXM",
+                                    get_poi:0
+                            }
+                    var url = "http://apis.map.qq.com/ws/geocoder/v1/?";
+                            data.output = "jsonp";
+                            $.ajax({
+                            type:"get",
+                                    dataType:'jsonp',
+                                    data:data,
+                                    jsonp:"callback",
+                                    jsonpCallback:"QQmap",
+                                    url:url,
+                                    success:function(json){
+                                            if (p.indexOf(json.result.address_component.province) >= 0 || p.indexOf(json.result.address_component.city) >= 0 || p.indexOf(json.result.address_component.district) >= 0){
+                                            gps = 1;
+                                            var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+                                            $.post(url, {gps: gps}, function (data) {
+                                            var data = eval('(' + data + ')');
+                                                    if (data.sta == '1'){
+                                            window.location.href = updateUrl(window.location.href, 'temp_time');
+                                            }
+                                            });
+                                    } else{
+                                            var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+                                            $.post(url, {gps: '2'}, function (data) {
+                                            });
+                                            show_message(0, '对不起,您不在本次活动范围,请期待我们下一次活动', 3000, 0);
+                                            gps = 0;
+                                    }
+                                    },
+                                    error : function(err){ show_message(0, '服务端错误，请刷新浏览器后重试', 3000, 0);
+                                            gps = 0; }
+                            });
+                    },
+                    fail: function(res) {
+                    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+                            gps = 0;
+                    }
+            });
+    }
+    {/if}
+          
+        }
+            var sharedata = {
+                title: "{if $activity['share_title']}{$activity['share_title']}{else}{$activity['name']}{/if}",
+                desc: "{if $activity['share_desc']}{php echo str_replace("\r\n", "。", trim($activity['share_desc']));}{else}{php echo str_replace("\r\n", "<br/>", trim($activity['description']));}{/if}",
+                link: "{$shareurl}",
+                imgUrl: "{if $activity['share_img']}{php echo tomedia($activity['share_img'])}{else}{php echo tomedia($activity['image_logo'])}{/if}",
+                success: function () {
+                      $.get("{php echo $this->createMobileUrl('ajax_info', array('aid' => $aid, 'uuid' => $uuid))}", {op: 'share_status'}, function (ret) {
+                        if (ret.sta == 1) {
+                           window.location.href=updateUrl(window.location.href);
+                        } 
+
+                    }, 'json');
+                },
+                cancel: function () {
+                }
+            };
+            
+ {if $activity['share_type']!=2}
+  wx.onMenuShareTimeline(sharedata);
+ {/if}
+     
+ {if $activity['share_type']!=1}
+  wx.onMenuShareAppMessage(sharedata);
+ {/if}
+
+  wx.hideMenuItems({
+                menuList: [
+                    'menuItem:exposeArticle'
+                    , 'menuItem:share:qq'
+                    , 'menuItem:share:weiboApp'
+                    , 'menuItem:share:facebook'
+                     {if $activity['share_type']==2}
+                    , "menuItem:share:timeline"
+ {/if}
+      {if $activity['share_type']==1}
+                    , "menuItem:share:appMessage"
+ {/if}
+                    , 'menuItem:share:QZone'
+                ],
+                success: function (res) {
+                },
+                fail: function (res) {
+                }
+            });
+
+             });
+
+{else}
+{if $adinfo_red_share}
+         wx.ready(function () {
+              wx.error(function (res) {
+                error_map=0;
+                   var lo = "{$activity['statusd']}";
+    {if empty($_COOKIE['lat'][$aid]) || empty($_COOKIE['lng'][$aid])}
+    if (lo == 2){
+    distance();
+    }
+    function distance(){
+    var geolocation = new BMap.Geolocation();
+    geolocation.getCurrentPosition(function(r){
+    if (this.getStatus() == BMAP_STATUS_SUCCESS){
+     if(r.accuracy==null){
+               show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+	return;
+     }
+    var position = {
+    lng: r.point.lng,
+    lat: r.point.lat,
+    }
+    positions(position);
+    } else {
+    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+    }
+    }, {enableHighAccuracy: true});
+    }
+    function positions(position){
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {lat: position.lat,lng:position.lng}, function (data) {
+    var data = eval('(' + data + ')');
+    if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    }
+    {/if}
+    {if empty($_COOKIE['gps'][$aid])}
+    var gps = 0;
+    var place = "{$activity['site']}";
+    if (lo == 1 && place != ''){
+    var p = place.split(",");
+    var geolocation = new BMap.Geolocation();
+    geolocation.getCurrentPosition(function(r) {
+    if (this.getStatus() == BMAP_STATUS_SUCCESS) {
+     
+     var mk = new BMap.Marker(r.point);
+         if(r.accuracy==null){
+                  show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+	  return;
+	 }
+    locLng = r.point.lng;
+    locLat = r.point.lat;
+    var geoc = new BMap.Geocoder();
+    geoc.getLocation(r.point, function(rs){
+  
+    var addComp = rs.addressComponents;
+//    var position =  addComp.province + addComp.city +  addComp.district +  addComp.street +  addComp.streetNumber;
+    if (p.indexOf(addComp.province) >= 0 || p.indexOf(addComp.city) >= 0 || p.indexOf(addComp.district) >= 0){
+    gps = 1;
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {gps: gps}, function (data) {
+    var data = eval('(' + data + ')');
+     if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    } else{
+     gps = 2;
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {gps: gps}, function (data) {
+    var data = eval('(' + data + ')');
+     if(data.sta=='1'){
+//    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    show_message(0, '对不起,您不在本次活动范围,请期待我们下一次活动', 3000, 0);
+    gps = 0;
+    }
+    });
+    } else{
+    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+    gps = 0;
+    };
+    }, {
+    enableHighAccuracy: true
+    });
+    }
+    {/if}
+	});
+        if(error_map==1){
+          var lo = "{$activity['statusd']}";
+    {if empty($_COOKIE['lat'][$aid]) || empty($_COOKIE['lng'][$aid])}
+    if (lo == 2){
+     wx.getLocation({
+            type: 'gcj02', //wgs84 或 gcj02
+                    success: function (res) {
+                    var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                    var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                     var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {lat: latitude,lng:longitude,type:1}, function (data) {
+    var data = eval('(' + data + ')');
+    if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    }
+    });
+    }
+    {/if}
+  {if empty($_COOKIE['gps'][$aid])}
+    var gps = 0;
+    var place = "{$activity['site']}";
+    if (lo == 1 && place != ''){
+    var p = place.split(",");
+            wx.getLocation({
+            type: 'gcj02', //wgs84 或 gcj02
+                    success: function (res) {
+                    var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                            var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                            var MJKD_LATLNG = latitude + ',' + longitude;
+                            var data = {
+                            location:MJKD_LATLNG,
+                                    key:"TRJBZ-RIEWU-ODUVS-BBWXX-ITXYZ-H4FXM",
+                                    get_poi:0
+                            }
+                    var url = "http://apis.map.qq.com/ws/geocoder/v1/?";
+                            data.output = "jsonp";
+                            $.ajax({
+                            type:"get",
+                                    dataType:'jsonp',
+                                    data:data,
+                                    jsonp:"callback",
+                                    jsonpCallback:"QQmap",
+                                    url:url,
+                                    success:function(json){
+                                            if (p.indexOf(json.result.address_component.province) >= 0 || p.indexOf(json.result.address_component.city) >= 0 || p.indexOf(json.result.address_component.district) >= 0){
+                                            gps = 1;
+                                            var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+                                            $.post(url, {gps: gps}, function (data) {
+                                            var data = eval('(' + data + ')');
+                                                    if (data.sta == '1'){
+                                            window.location.href = updateUrl(window.location.href, 'temp_time');
+                                            }
+                                            });
+                                    } else{
+                                            var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+                                            $.post(url, {gps: '2'}, function (data) {
+                                            });
+                                            show_message(0, '对不起,您不在本次活动范围,请期待我们下一次活动', 3000, 0);
+                                            gps = 0;
+                                    }
+                                    },
+                                    error : function(err){ show_message(0, '服务端错误，请刷新浏览器后重试', 3000, 0);
+                                            gps = 0; }
+                            });
+                    },
+                    fail: function(res) {
+                    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+                            gps = 0;
+                    }
+            });
+    }
+    {/if}
+    }
+          
+            var sharedata = {
+                title: "{$adinfo_red_share['share_title']}",
+                desc: "{php echo str_replace("\r\n", "。", trim($adinfo_red_share['share_desc']));}",
+                link: "{$shareurl_ad}",
+                imgUrl: "{php echo tomedia($adinfo_red_share['share_img'])}",
+                success: function () {
+                },
+                cancel: function () {
+                }
+            };
+
+  wx.onMenuShareTimeline(sharedata);
+  wx.onMenuShareAppMessage(sharedata);
+
+
+  wx.hideMenuItems({
+                menuList: [
+                    'menuItem:exposeArticle'
+                    , 'menuItem:share:qq'
+                    , 'menuItem:share:weiboApp'
+                    , 'menuItem:share:facebook'
+                    , 'menuItem:share:QZone'
+                ],
+                success: function (res) {
+                },
+                fail: function (res) {
+                }
+            });
+
+             });
+
+{else}
+ wx.ready(function () {
+wx.error(function (res) {
+                 var lo = "{$activity['statusd']}";
+                 error_map=0;
+    {if empty($_COOKIE['lat'][$aid]) || empty($_COOKIE['lng'][$aid])}
+    if (lo == 2){
+    distance();
+    }
+    function distance(){
+    var geolocation = new BMap.Geolocation();
+    geolocation.getCurrentPosition(function(r){
+    if (this.getStatus() == BMAP_STATUS_SUCCESS){
+     if(r.accuracy==null){
+                 show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+
+	return;
+     }
+    var position = {
+    lng: r.point.lng,
+    lat: r.point.lat,
+    }
+    positions(position);
+    } else {
+    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+    }
+    }, {enableHighAccuracy: true});
+    }
+    function positions(position){
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {lat: position.lat,lng:position.lng}, function (data) {
+    var data = eval('(' + data + ')');
+    if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    }
+    {/if}
+    {if empty($_COOKIE['gps'][$aid])}
+    var gps = 0;
+    var place = "{$activity['site']}";
+    if (lo == 1 && place != ''){
+    var p = place.split(",");
+    var geolocation = new BMap.Geolocation();
+    geolocation.getCurrentPosition(function(r) {
+    if (this.getStatus() == BMAP_STATUS_SUCCESS) {
+     
+     var mk = new BMap.Marker(r.point);
+         if(r.accuracy==null){
+                     show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+
+	  return;
+	 }
+    locLng = r.point.lng;
+    locLat = r.point.lat;
+    var geoc = new BMap.Geocoder();
+    geoc.getLocation(r.point, function(rs){
+  
+    var addComp = rs.addressComponents;
+//    var position =  addComp.province + addComp.city +  addComp.district +  addComp.street +  addComp.streetNumber;
+    if (p.indexOf(addComp.province) >= 0 || p.indexOf(addComp.city) >= 0 || p.indexOf(addComp.district) >= 0){
+    gps = 1;
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {gps: gps}, function (data) {
+    var data = eval('(' + data + ')');
+     if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    } else{
+     gps = 2;
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {gps: gps}, function (data) {
+    var data = eval('(' + data + ')');
+     if(data.sta=='1'){
+//    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    show_message(0, '对不起,您不在本次活动范围,请期待我们下一次活动', 3000, 0);
+    gps = 0;
+    }
+    });
+    } else{
+    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+    gps = 0;
+    };
+    }, {
+    enableHighAccuracy: true
+    });
+    }
+    {/if}
+	});
+if(error_map==1){
+   var lo = "{$activity['statusd']}";
+    {if empty($_COOKIE['lat'][$aid]) || empty($_COOKIE['lng'][$aid])}
+    if (lo == 2){
+     wx.getLocation({
+            type: 'gcj02', //wgs84 或 gcj02
+                    success: function (res) {
+                    var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                    var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                     var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {lat: latitude,lng:longitude,type:1}, function (data) {
+    var data = eval('(' + data + ')');
+    if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    }
+    });
+    }
+    {/if}
+  {if empty($_COOKIE['gps'][$aid])}
+    var gps = 0;
+    var place = "{$activity['site']}";
+    if (lo == 1 && place != ''){
+    var p = place.split(",");
+            wx.getLocation({
+            type: 'gcj02', //wgs84 或 gcj02
+                    success: function (res) {
+                    var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                            var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                            var MJKD_LATLNG = latitude + ',' + longitude;
+                            var data = {
+                            location:MJKD_LATLNG,
+                                    key:"TRJBZ-RIEWU-ODUVS-BBWXX-ITXYZ-H4FXM",
+                                    get_poi:0
+                            }
+                    var url = "http://apis.map.qq.com/ws/geocoder/v1/?";
+                            data.output = "jsonp";
+                            $.ajax({
+                            type:"get",
+                                    dataType:'jsonp',
+                                    data:data,
+                                    jsonp:"callback",
+                                    jsonpCallback:"QQmap",
+                                    url:url,
+                                    success:function(json){
+                                            if (p.indexOf(json.result.address_component.province) >= 0 || p.indexOf(json.result.address_component.city) >= 0 || p.indexOf(json.result.address_component.district) >= 0){
+                                            gps = 1;
+                                            var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+                                            $.post(url, {gps: gps}, function (data) {
+                                            var data = eval('(' + data + ')');
+                                                    if (data.sta == '1'){
+                                            window.location.href = updateUrl(window.location.href, 'temp_time');
+                                            }
+                                            });
+                                    } else{
+                                            var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+                                            $.post(url, {gps: '2'}, function (data) {
+                                            });
+                                            show_message(0, '对不起,您不在本次活动范围,请期待我们下一次活动', 3000, 0);
+                                            gps = 0;
+                                    }
+                                    },
+                                    error : function(err){ show_message(0, '服务端错误，请刷新浏览器后重试', 3000, 0);
+                                            gps = 0; }
+                            });
+                    },
+                    fail: function(res) {
+                    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+                            gps = 0;
+                    }
+            });
+    }
+    {/if}
+    }
+     
+         wx.hideMenuItems({
+    menuList: [
+             'menuItem:share:appMessage'
+            , 'menuItem:share:timeline'
+            , 'menuItem:share:qq'
+            , 'menuItem:share:weiboApp'
+            , 'menuItem:share:facebook'
+            , 'menuItem:share:QZone'
+    ],
+            success: function (res) {
+            },
+            fail: function (res) {
+            }
+    });
+        });
+  {/if}      
+{/if}
+                  
+      {if $red_info['status']==4}
+ show_message(0, "红包领取超时，已被退回", 5000, 1);
+    {/if}   
+       {if $error_message}
+ show_message(0, "{$error_message}", 6000, 1);
+    {/if}    
+        
+    function show_message(type, text, time, back_status){
+    $(".lodings").hide();
+    $(".code_ok").hide();
+    if (type == 1){
+    setTimeout(" window.location.href=updateUrl(window.location.href);", 4000);
+    $(".dialogs_ok").html('<span class="glyphicon glyphicon-ok-circle yess"></span>' + text);
+    }else if (type == 2){
+    $(".dialogs_ok").html('<span class="glyphicon glyphicon-ok-circle yess"></span>' + text);
+    }else if (type == 3){
+    setTimeout(" window.location.href=updateUrl(window.location.href);", 4000);
+    $(".dialogs_ok").html('<span class="glyphicon glyphicon-remove-circle nos"></span>' + text);
+    }else{
+    $(".dialogs_ok").html('<span class="glyphicon glyphicon-remove-circle nos"></span>' + text);
+    }
+    $(".code_ok").show();
+    if (time){
+    setTimeout('$(".code_ok").hide();', time);
+    }
+    return 1;
+    }
+    
+    $(".guang").click(function(){
+    $(".code_ok").hide();
+    $(".code_tan").hide();
+    });
+                   
+    var music = document.getElementById("music_audio");
+    var music_ad = document.getElementById("music_ad"),music_ad_src;
+    var u = navigator.userAgent;
+    var isiOS = !!u.match(/\(i[^;]+; CPU.+Mac OS X/);
+//    if (isiOS) {
+//    window.addEventListener('touchstart', playfun, false);
+//    }
+//    function playfun() {
+//    music.load();
+//    music.play();
+//    window.removeEventListener('touchstart', playfun, false);
+//    }
+   {if empty($activity['statusd'])||($activity['statusd']==1&&$_COOKIE['gps'][$aid]) || ($activity['statusd']==2&&$_COOKIE['lat'][$aid]&&$_COOKIE['lng'][$aid])}
+   {if $red_info['status']!=4}
+   {if empty($_GPC['t'])||$red_info['status']}
+    setaudio();
+    {/if}  
+    {/if} 
+    {/if}
+
+               $("#music_audio").on('ended', function () {
+    if (isiOS) {
+   setTimeout('music_ad.src= music_ad_src;', 2000); 
+    }else{
+    setTimeout('music_ad.src= music_ad_src;', 2000);
+    music_ad.play();
+    }
+                  });
+                            
+                 function play_audio() {
+   if (isiOS) {
+       
+                            document.addEventListener("WeixinJSBridgeReady", function () {
+                                 music.play();
+                                 music_ad.src= '';
+                                 music_ad.load();
+                                 music_ad.play();
+                            }, false);
+
+                        }else{
+                         
+                        music.play();
+                    }
+    }               
+                            
+
+            function setaudio() {
+                var sendurl = "{php echo $this->createMobileUrl('ajax_info', array('aid' => $aid, 'uuid' => $uuid,'op' => 'get_audio'))}";
+                music.pause();
+                //$.ajaxSettings.async = false;
+                $.get(sendurl,function (ret) {
+                    if (ret.sta == 1) {
+                        music.src = ret.path;
+                        music_ad_src = ret.path_ad;
+                        music.volume = "{$activity['audio_volume']}";
+                        music_ad.volume = "{$activity['audio_volume']}";
+                    } 
+                }, 'json');
+//                 $.ajaxSettings.async = true;
+                 play_audio();
+            }
+            var url = "{php echo $this->createMobileUrl('ajax_info', array('aid' => $aid, 'uuid' => $uuid))}";
+              {if $red_info['status'] == 1}
+//  var toptime = setInterval(function () {
+//    $.get(url + "&op=get_red_new", function (ret) {
+//    if (ret.sta == 1) {
+//    $('.xiao').html(ret.content);
+//    }
+//    }, 'json');
+//    }, 2000);
+    
+    var gao = $(".zong").scrollTop();
+    if (gao == "0") {
+    $(".meikai").hide();
+    $(".kaila").show();
+    $(".huabu").animate({height: "32vw"}, 1000);
+    } else {
+    $(".zong").animate({scrollTop: 0}, 500, function () {
+    $(".meikai").hide();
+    $(".kaila").show();
+    $(".huabu").animate({height: "32vw"}, 1000);
+    });
+    }
+    {/if}
+            
+  
+    {if empty($red_info['status'])}
+    var get_red_status = setInterval(function () {
+    $.get(url + "&op=get_red_status", function (ret) {
+    if (ret.sta == 1) {
+    window.location.href = updateUrl(window.location.href);
+    }
+    }, 'json');
+    }, 2000);
+    {/if}
+
+   {if $red_info['status']==1&&empty($activity['coupon_open'])&&$activity['red_jump_link']}
+   var red_jump_time="{php echo $activity['red_jump_time']?$activity['red_jump_time']*1000:5000;}";
+    setTimeout(function () { window.location.href = "{$activity['red_jump_link']}"; }, red_jump_time);
+   {/if}
+
+
+            function getObjectURL(file) {
+            var url = null;
+            if (window.createObjectURL != undefined) {
+            url = window.createObjectURL(file);
+            } else if (window.URL != undefined) {
+            url = window.URL.createObjectURL(file);
+            } else if (window.webkitURL != undefined) {
+            url = window.webkitURL.createObjectURL(file);
+            }
+            return url;
+            }
+
+
+    function updateUrl(url, key){
+    var key = (key || 't') + '=';
+    var reg = new RegExp(key + '\\d+');
+    var timestamp = + new Date();
+    if (url.indexOf(key) > - 1){
+    return url.replace(reg, key + timestamp);
+    } else{
+    if (url.indexOf('\?') > - 1){
+    var urlArr = url.split('\?');
+    if (urlArr[1]){
+    return urlArr[0] + '?' + key + timestamp + '&' + urlArr[1];
+    } else{
+    return urlArr[0] + '?' + key + timestamp;
+    }
+    } else{
+    if (url.indexOf('#') > - 1){
+    return url.split('#')[0] + '?' + key + timestamp + location.hash;
+    } else{
+    return url + '?' + key + timestamp;
+    }
+    }
+    }
+    }
+    
+           //canvas宽度
+    var CANVAS_WIDTH = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+    //canvas高度
+    var CANVAS_HEIGHT = window.innerHeight;
+    CANVAS_WIDTH = CANVAS_WIDTH / CANVAS_HEIGHT>0.636?CANVAS_HEIGHT*0.636:CANVAS_WIDTH;
+    var ratio = CANVAS_WIDTH / 750;
+    document.getElementsByTagName('html')[0].style.fontSize = 100*ratio + "px";
+    //大圆半径, 旋转中心处的圆
+    var RADIUS_BIG = 204*ratio;
+    //分裂大圆
+    var CircleCenterSplit = [
+        {"left":{"url":"{if empty($lipstick_image['circle_left1'])}../addons/crad_qrcode_red/template/mobile/static/img/CircleCenter_1_split_left.png{else}{php echo tomedia($lipstick_image['circle_left1'])}{/if}","w":"238","h":"407","rs":Math.PI*2},
+         "right":{"url":"{if empty($lipstick_image['circle_right1'])}../addons/crad_qrcode_red/template/mobile/static/img/CircleCenter_1_split_right.png{else}{php echo tomedia($lipstick_image['circle_right1'])}{/if}","w":"230","h":"407","cutx":"26","rs":Math.PI*2}},
+        {"left":{"url":"{if empty($lipstick_image['circle_left2'])}../addons/crad_qrcode_red/template/mobile/static/img/CircleCenter_2_split_left.png{else}{php echo tomedia($lipstick_image['circle_left2'])}{/if}","w":"238","h":"407","rs":Math.PI*2},
+         "right":{"url":"{if empty($lipstick_image['circle_right2'])}../addons/crad_qrcode_red/template/mobile/static/img/CircleCenter_2_split_right.png{else}{php echo tomedia($lipstick_image['circle_right2'])}{/if}","w":"230","h":"407","cutx":"26","rs":Math.PI*2}},
+        {"left":{"url":"{if empty($lipstick_image['circle_left3'])}../addons/crad_qrcode_red/template/mobile/static/img/CircleCenter_3_split_left.png{else}{php echo tomedia($lipstick_image['circle_left3'])}{/if}","w":"238","h":"407","rs":Math.PI*2},
+         "right":{"url":"{if empty($lipstick_image['circle_right3'])}../addons/crad_qrcode_red/template/mobile/static/img/CircleCenter_3_split_right.png{else}{php echo tomedia($lipstick_image['circle_right3'])}{/if}","w":"230","h":"407","cutx":"26","rs":Math.PI*2}},
+    ];
+    //弹夹剩余子弹数
+    var BulletCirclesIndex = 0;
+    //小圆半径, 旋转周围及子弹圆形半径
+    var RADIUS_SMALL = 10;
+    //弹夹剩余子弹数字体大小
+    var CircleCenterText =120*ratio+"px";
+    //子弹射入深度
+    var BULLET_PIERCED_DEEP = 42*ratio;
+    //默认旋转速度, 弧度为单位
+    var ROTATION_SPEED = 0.01;
+    //击中震动Y向距离
+    var QUAKE_Y = 4;
+    //转速数组
+    var ROTAION_SPEED_ARRAY = [-0.1,-0.05,-0.01,0.01,0.05,0.1]
+    //震动速度
+    var QUAKE_SPEED = 2;
+    //旋转中心震动前Y坐标
+    var oldy;
+    //变速频率（秒）
+    var changeSpeed = 2;
+    //重力
+    var g = 0.2;
+    //大圆初始y向分裂速度
+    var vy = 8;
+    //是否向上震动
+    var isup = true;
+    //发射子弹资源数组
+    var arrayLipstick = ["{if empty($lipstick_image['launch1'])}../addons/crad_qrcode_red/template/mobile/static/img/Lipstick_1.png{else}{php echo tomedia($lipstick_image['launch1'])}{/if}","{if empty($lipstick_image['launch2'])}../addons/crad_qrcode_red/template/mobile/static/img/Lipstick_2.png{else}{php echo tomedia($lipstick_image['launch2'])}{/if}","{if empty($lipstick_image['launch3'])}../addons/crad_qrcode_red/template/mobile/static/img/Lipstick_3.png{else}{php echo tomedia($lipstick_image['launch3'])}{/if}"];
+    //左下角横子弹资源数组
+    var arrayLaunchHorizontal = ["{if empty($lipstick_image['launch_horizontal1'])}../addons/crad_qrcode_red/template/mobile/static/img/Sword_small_1.png{else}{php echo tomedia($lipstick_image['launch_horizontal1'])}{/if}","{if empty($lipstick_image['launch_horizontal2'])}../addons/crad_qrcode_red/template/mobile/static/img/Sword_small_1.png{else}{php echo tomedia($lipstick_image['launch_horizontal2'])}{/if}","{if empty($lipstick_image['launch_horizontal3'])}../addons/crad_qrcode_red/template/mobile/static/img/Sword_small_1.png{else}{php echo tomedia($lipstick_image['launch_horizontal3'])}{/if}"];
+   //左下角横子弹灰资源数组
+    var arrayLaunchGray = ["{if empty($lipstick_image['launch_gray1'])}../addons/crad_qrcode_red/template/mobile/static/img/Sword_small_1_gray.png{else}{php echo tomedia($lipstick_image['launch_gray1'])}{/if}","{if empty($lipstick_image['launch_gray2'])}../addons/crad_qrcode_red/template/mobile/static/img/Sword_small_1_gray.png{else}{php echo tomedia($lipstick_image['launch_gray2'])}{/if}","{if empty($lipstick_image['launch_gray3'])}../addons/crad_qrcode_red/template/mobile/static/img/Sword_small_1_gray.png{else}{php echo tomedia($lipstick_image['launch_gray3'])}{/if}"];
+   
+        
+   //中心圆资源数组
+    var arrayCenterCircle = ["{if empty($lipstick_image['circle_center1'])}../addons/crad_qrcode_red/template/mobile/static/img/CircleCenter_1.png{else}{php echo tomedia($lipstick_image['circle_center1'])}{/if}","{if empty($lipstick_image['circle_center2'])}../addons/crad_qrcode_red/template/mobile/static/img/CircleCenter_2.png{else}{php echo tomedia($lipstick_image['circle_center2'])}{/if}","{if empty($lipstick_image['circle_center3'])}../addons/crad_qrcode_red/template/mobile/static/img/CircleCenter_3.png{else}{php echo tomedia($lipstick_image['circle_center3'])}{/if}"];
+   
+    var arraylevelCover = ["{if empty($lipstick_image['cover1'])}../addons/crad_qrcode_red/template/mobile/static/img/level_1_main.jpg{else}{php echo tomedia($lipstick_image['cover1'])}{/if}","{if empty($lipstick_image['cover2'])}../addons/crad_qrcode_red/template/mobile/static/img/level_2_mains.jpg{else}{php echo tomedia($lipstick_image['cover2'])}{/if}","{if empty($lipstick_image['cover3'])}../addons/crad_qrcode_red/template/mobile/static/img/level_3_mains.jpg{else}{php echo tomedia($lipstick_image['cover3'])}{/if}"];
+  
+   //关卡资源
+    var levelUrl = [
+        {"normal":"../addons/crad_qrcode_red/template/mobile/static/img/level_icon_1_active.png","active":"../addons/crad_qrcode_red/template/mobile/static/img/level_icon_1_active.png"},
+        {"normal":"../addons/crad_qrcode_red/template/mobile/static/img/level_icon_2.png","active":"../addons/crad_qrcode_red/template/mobile/static/img/level_icon_2_active.png"},
+        {"normal":"../addons/crad_qrcode_red/template/mobile/static/img/level_icon_3.png","active":"../addons/crad_qrcode_red/template/mobile/static/img/level_icon_3_active.png"}
+    ];
+    //旋转半径 = canvas高度*0.25,canvas宽度*0.5-40中大者
+    var ROTATION_RADIUS = Math.max(CANVAS_HEIGHT * 0.25, CANVAS_WIDTH * 0.5 - 40);
+    //旋转中心 = {x:canvas宽度*0.5,y:旋转半径+小圆半径+10}
+    var ROTATION_CENTER = {x: CANVAS_WIDTH * 0.5, y:494*ratio};
+    //子弹宽高
+    var AimBullet = {w:43*ratio,h:168*ratio}
+    var AimBulletBottom =CANVAS_HEIGHT-58*ratio-AimBullet.h+BULLET_PIERCED_DEEP;
+    //调参Json
+    /*var Difficulty_Json = {
+        "SUCCESS_PARAMETERS" :{
+            "ROTAION_SPEED_ARRAY" : [-0.07,-0.05,-0.01,0.01,0.05,0.07],
+            "rotationAccelerationSpeed" : 0.007,
+            "levelArray" : [[0,2,0.02,30],[0,2,0.04,40],[0,13,0.06,60]]
+        },
+        "fail_PARAMETERS":{
+            "ROTAION_SPEED_ARRAY" : [-0.1,-0.05,-0.01,0.01,0.05,0.1],
+            "rotationAccelerationSpeed" : 0.02,
+            "levelArray" : [[0,2,0.02,30],[0,2,0.04,40],[0,13,0.06,60]],
+            "cheatDistance":AimBullet.w*0.6,
+            "startJudgeCheatDistanceNum":6
+        }
+    }*/
+    //子弹发射速度
+    var BULLET_SPEED = -30;
+    //弹夹宽、高、间距、bottom值
+    var CLIPSIZE = {w:89*ratio,h:21*ratio,space:41*ratio,bottom:60*ratio}
+    //子弹之间的距离 = 小圆半径*2+15
+    var BULLET_SPACE = 15 + RADIUS_SMALL * 2;
+    var BULLET_TEXT_STYLE = "#333333";
+    // 配置游戏口红的参数
+    var D_Json = {
+        "Level1_PARAMETERS":{
+            "ROTAION_SPEED_ARRAY" : {$level_parameters[0][0]},
+            "rotationAccelerationSpeed" : {$level_parameters[0][1]},
+            "levelArray":{$level_parameters[0][2]}
+            /*"levelArray":[0,2,0.02,30]*/
+        },
+        "Level2_PARAMETERS":{
+             "ROTAION_SPEED_ARRAY" : {$level_parameters[1][0]},
+            "rotationAccelerationSpeed" : {$level_parameters[1][1]},
+            "levelArray":{$level_parameters[1][2]}
+            /*"levelArray":[0,2,0.04,40]*/
+        },
+        "Level3_PARAMETERS":{
+            "ROTAION_SPEED_ARRAY" : {$level_parameters[2][0]},
+            "rotationAccelerationSpeed" : {$level_parameters[2][1]},
+            "levelArray":{$level_parameters[2][2]}
+            /*"levelArray":[0,5,0.06,60]*/
+        },
+        "LAST_3_PARAMETERS":{
+            "ROTAION_SPEED_ARRAY" : [-0.09,-0.07,-0.05,0.06,0.08,0.09],
+            "rotationAccelerationSpeed" : 0.009,
+            "levelArray":[0,6,0.07,60]
+        },
+        //    [0,口红数，速度，时间]
+        "LAST_2_PARAMETERS":{
+            "ROTAION_SPEED_ARRAY" : [-0.1,-0.08,-0.03,0.04,0.07,0.1],
+            "rotationAccelerationSpeed" : 0.009,
+            "levelArray":[0,8,0.08,60]
+        },
+        "LAST_1_PARAMETERS":{
+            "ROTAION_SPEED_ARRAY" : [-0.1,-0.07,-0.03,0.03,0.07,0.1],
+            "rotationAccelerationSpeed" : 0.009,
+            "levelArray":[0,12,0.09,60]
+        },
+        "fail_PARAMETERS":{
+            "cheatDistance":AimBullet.w*5,
+            "startJudgeCheatDistanceNum":3
+        }
+    };
+    
+</script>
+
+        <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/static/js/myjs.js?t={php echo time();}" ></script>
+        <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/mui.min.js" ></script>
+       
+       	
+       <!--进入游戏时注释，起点-->
+        <script src="../addons/crad_qrcode_red/template/mobile/static/vendor/jweixin-1.3.2.js"></script>
+        <script src="../addons/crad_qrcode_red/template/mobile/static/vendor/jquery.cookie.js"></script>
+        <script src="../addons/crad_qrcode_red/template/mobile/static/vendor/bodymovin.js"></script>
+        <script src="../addons/crad_qrcode_red/template/mobile/static/vendor/JicemoonMobileTouch.js"></script>
+        <script src="../addons/crad_qrcode_red/template/mobile/static/js/HardestGame.js?t={php echo time();}"></script>
+        <script src="../addons/crad_qrcode_red/template/mobile/static/js/play.js?t={php echo time();}"></script>
+        
+        <script>
+                                                                                
+        $(function() {
+            $('.linqu_li_name').click(function(){ 
+                if(time_all<1&&lipstick_time_all>0){
+                    if(buy_times>0){
+                    $(".chase").show();
+                }else{
+                    show_message(0, "游戏次数用完了", 3000, 1);
+                }
+                    return;
+                }
+                if(time_day<1&&lipstick_num_day>0){
+               if(buy_times>0){
+                    $(".chase").show();
+                } else if(share_open>0&&invitation_times<1){
+                    show_message(0, "今日次数用完了,请根据红包码提示获取更多次数", 3000, 1);
+                }else{
+                    show_message(0, "今日次数用完了,明天再来吧", 3000, 1);
+                }
+                    return;
+                }
+                $('.linqu_name').hide();
+$("#levelSwitchBox").css("display","block");
+			     setTimeout(function () { $("#levelSwitchBox").css("display","none"); }, 2000);
+			     $('#levelbox').show();
+			     $('#timebox').show();
+			     $('.dangci').hide();
+			    if(!hg){
+			        createHg(false);
+			    }    
+			    playAudioInWechat(document.getElementById('back_music'));
+			    var scrollHeight = $('.zong').prop("scrollHeight");
+				    var scroH = $('.zong').scrollTop(); //滚动高度  
+			      var viewH = $('.zong').height(); //可见高度  
+			      var contentH = $('.zong').get(0).scrollHeight; //内容高度
+			    $(".zong").animate({scrollTop:scrollHeight}, 1500);
+				window.clearInterval(doInter);
+            });
+        });                                                              
+                                                                                
+                                                                                
+                                                                                
+            var loadedMusic = false;
+            //      document.body.addEventListener('touchmove', function (e) {
+            //          e.preventDefault(); //阻止默认的处理方式(阻止下拉滑动的效果)
+            //      }, {passive: false});
+
+            var baseUrl = function GetRequest() {
+                var url = location.search;  //获取url中"?"符后的字符串
+                var theRequest = new Object();
+                if (url.indexOf("?") != -1) {
+                    url = url.split("?")[1];
+                    strs = url.split("&");
+                    for (var i = 0; i < strs.length; i++) {
+                        theRequest[strs[i].split("=")[0]] = (strs[i].split("=")[1]);
+                    }
+                }
+                return theRequest;
+            };
+
+            var jsonParamsAlias = baseUrl();
+            // var jsonParams = {
+            //     "game_id" : jsonParamsAlias.gid,
+            //     "game_pay" : jsonParamsAlias.pay,
+            //     "product_id" : jsonParamsAlias.pid,
+            //     "randomNum" : jsonParamsAlias.rand,
+            //     "forecast_result": jsonParamsAlias.res,
+            //     "user_id" : jsonParamsAlias.uid
+            // }
+            //console.log(jsonParamsAlias);
+
+            var jsonParams = {
+                "game_id": "",
+                "game_pay": "",
+                "product_id": "",
+                "randomNum": "",
+                "forecast_result": "",
+                "user_id": ""
+            };
+
+            if (jsonParamsAlias.slient) {
+                $('audio').prop('muted', true);
+            }
+            var cookieDelTime = new Date(Math.floor(new Date(new Date().getTime() + 150000)));
+            $.cookie('game_cookie', null);
+            $.cookie('game_cookie', JSON.stringify(jsonParams), {expires: cookieDelTime});
+//            console.log($.cookie('game_cookie'));
+
+            // 动画播放
+            var anim = bodymovin.loadAnimation({
+                wrapper: document.querySelector('#bm'),
+                animType: 'svg',
+                loop: false,
+                autoplay: false,
+                prerender: true,
+                path: '../addons/crad_qrcode_red/template/mobile/static/data.json'
+            });
+
+            function play() {
+                anim.goToAndStop(0, true)
+                anim.play()
+            }
+//            document.addEventListener('DOMContentLoaded', function () {
+//                audioAutoPlay();
+//            });
+//
+//            function audioAutoPlay() {
+//                var audio = document.getElementById('back_music');
+//                audio.play();
+//                document.addEventListener("WeixinJSBridgeReady", function () {
+//                    audio.play();
+//                }, false);
+//            }
+
+            document.addEventListener('visibilitychange', function (e) {
+                function audioStop() {
+                    var audio = document.getElementById('back_music');
+                    document.hidden ? audio.pause() : audio.play();
+                    document.addEventListener("WeixinJSBridgeReady", function () {
+                        document.hidden ? audio.pause() : audio.play();
+                    }, false);
+                }
+                audioStop();
+            });
+        </script>
+       <!--进入游戏时注释，结尾-->
+
+    </body>
+</html>

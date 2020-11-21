@@ -1,0 +1,281 @@
+{template 'mmanage/common'}
+<style>
+    .fui-title{
+        font-size: .6rem;
+        color: #999
+    }
+    .fui-title span {
+        display: inline-block;
+        width: 0.2rem;
+        height: 0.65rem;
+        float: left;
+        margin-right: 0.35rem;
+        background: #00aeff;
+        margin-top: 0.185rem;
+    }
+    .fui-cell-group .fui-cell.change{
+        display: block;
+    }
+    .fui-cell-group .fui-cell.change .fui-cell-info{
+        margin-bottom: .5rem;
+        font-size: .65rem;
+    }
+    .fui-cell-group .fui-cell.change .fui-cell-label{
+        line-height: 1.5;
+        color: #999;
+        font-size: .65rem;
+    }
+    .fui-cell-group .fui-cell .fui-input{
+        font-size: .65rem;
+        padding: .65rem .5rem;
+        height: auto;
+        width: 13.5rem
+    }
+    .fui-cell-group .fui-cell .fui-input::-webkit-input-placeholder{
+        color: #b2b2b2;
+    }
+    .fui-list.noclick{
+        padding: 0
+    }
+    .fui-footer .btn {
+        margin: 0;
+        height: 2.45rem;
+        width: 5rem;
+        float: left;
+        border-radius: 0;
+        border: 0;
+        line-height: 2.45rem;
+        color: #fff;
+        font-size: .75rem
+    }
+    .fui-footer .btn.btn-default{
+        background: #bbb
+    }
+    .fui-footer .fui-list-angle{
+        font-size: .7rem;
+        margin-right: 0
+    }
+    .fui-footer .fui-list-inner{
+        padding-left:.6rem
+    }
+    .actually{
+        position: fixed;
+        bottom: 2.45rem;
+        background: #fffced;
+        left: 0;
+        right: 0;
+        font-size: .6rem;
+        color: #999
+    }
+    .add,.minus{
+        width: 1.15rem;
+        height: 1.15rem;
+        background: #fff;
+        display: inline-block;
+        border: 1px solid #b2b2b2;
+        /*text-align: center;*/
+        line-height: 1.15rem;
+        padding-left: .1rem;
+        color: #999;
+        font-size: .8rem
+    }
+    .add{
+        margin-left: .7rem
+    }
+</style>
+
+<form id="change_price">
+    <input type='hidden' name='id' value='{$id}' />
+    <input type='hidden' id='changeprice-orderprice' value="{php echo $item['price']-$item['dispatchprice']}"/>
+    <input type='hidden' id='changeprice-dispatchprice' value="{$item['dispatchprice']}"/>
+
+    <div class='fui-page fui-page-current' id="ajaxModal">
+        <div class="fui-header fui-header-success">
+            <div class="fui-header-left">
+                <a class="back btn-back"></a>
+            </div>
+            <div class="title">订单改价</div>
+            <div class="fui-header-right"></div>
+        </div>
+        <div class="fui-content navbar" style="padding-bottom: 1.95rem;">
+            <div class="fui-title">
+                <span></span>商品改价
+            </div>
+            <div class="fui-cell-group">
+                {loop $order_goods $key $goods}
+                    <div class="fui-cell change">
+                        <div class="fui-cell-info" >{$goods['title']}</div>
+                        <div class="fui-cell-label"  style="width: auto">单价：<span>{php echo number_format($goods['oldprice']/$goods['total'],2)}</span></div>
+                        <div class="fui-cell-label"  style="width: auto">数量：<span>{$goods['total']}</span></div>
+                        <div class="fui-cell-label" style="width: auto">小计：<span>{$goods['realprice']}{if $goods['realprice']!=$goods['oldprice']} <label class='fui-label fui-label-danger'>改价</label>{/if}</span></div>
+                        <div class="fui-cell-info" style="background: #f7f7f7;margin-top: .5rem;border-radius:.2rem">
+                            <input type="text" placeholder="填写加价或减价" class="fui-input changeprice_orderprice" name="changegoodsprice[{$goods['id']}]" value="" >
+                            <span class="minus icon icon-minus"></span>
+                            <span class="add icon icon-add1"></span>
+                        </div>
+                    </div>
+                {/loop}
+            </div>
+            <div class="fui-title">
+                <span></span>运费
+            </div>
+            <div class="fui-cell-group">
+                <div class="fui-cell">
+                    <div class="fui-cell-info">
+                        <input type="text" class="fui-input" name='changedispatchprice' id='changeprice_dispatchprice' placeholder="请填写运费"  value="{$item['dispatchprice']}" style="padding: 0 .5rem">
+                    </div>
+                </div>
+            </div>
+            <div class="fui-title">
+                <i class="text-danger">*</i>买家实付=原价+运费+涨价或降价<br>
+                <i class="text-danger">*</i>改价后价格不能少于0元 <br>
+                该订单最多支持<i>99</i>次改价，您已改价<i style="color:red"> {$item['ordersn2']}</i>次
+            </div>
+        </div>
+        <div class="fui-cell-group actually">
+            <div class="fui-cell">
+                买家实付：<span id='orderprice'>{php echo number_format( $item['price']-$item['dispatchprice'],2)}</span> + <span id='dispatchprice'>{$item['dispatchprice']}</span> <span id='changeprice'></span> = <span id='lastprice'>{$item['price']}</span>
+            </div>
+        </div>
+        <div class="fui-footer">
+            <div class="fui-list noclick">
+                <div class="fui-list-inner">
+                    <div class="subtitle">实付:<span class="text-success"  id='sub_lastprice' style="margin-left:.4rem">{$item['price']}</span></div>
+                </div>
+                <div class="fui-list-angle">
+                    <div class="btn  btn-default">取消</div>
+                    <div class="btn  btn-success">确定</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<script language="javascript">
+
+    var order_price = 0;
+    var dispatch_price = 0;
+
+    order_price = parseFloat($('#changeprice-orderprice').val());
+    dispatch_price = parseFloat($('#changeprice-dispatchprice').val());
+
+    //减价
+    $('.minus.icon.icon-minus').click(function () {
+        var num=$(this).siblings('.fui-input').val();
+        if(num==""){
+            num=0;
+        }
+        $(this).siblings('.fui-input').val(parseInt(num)-1);
+        compute();
+    })
+
+    //加价
+    $('.add.icon.icon-add1').click(function () {
+        var num=$(this).siblings('.fui-input').val();
+        if(num==""){
+            num=0;
+        }
+        $(this).siblings('.fui-input').val(parseInt(num)+1);
+        compute();
+    })
+
+
+    //监听文本框
+    $('input').bind('input propertychange', function() {
+        compute();
+    });
+
+    //计算价格
+    function compute () {
+        var change_dispatchprice = parseFloat($('#changeprice_dispatchprice').val());
+        if(!$.isNumber($('#changeprice_dispatchprice').val())){
+            change_dispatchprice = dispatch_price;
+        }
+        var dprice = change_dispatchprice;
+        if (dprice <= 0) {
+            dprice = 0;
+        }
+        $('#dispatchprice').html(dprice.toFixed(2));
+        var oprice = 0;
+        $('.changeprice_orderprice').each(function () {
+            var p = 0;
+            if ($.trim($(this).val()) != '') {
+                p = parseFloat($.trim($(this).val()));
+            }
+            oprice += p;
+        });
+        if(Math.abs(oprice)>0){
+            if (oprice < 0) {
+                $('#changeprice').css('color', 'red');
+                $('#changeprice').html( " - " + Math.abs(oprice));
+            } else {
+                $('#changeprice').css('color', 'green');
+                $('#changeprice').html( " + " + Math.abs(oprice));
+            }
+        }
+        var lastprice =  order_price + dprice + oprice;
+        $('#lastprice').html( lastprice.toFixed(2) );
+        $('#sub_lastprice').html( lastprice.toFixed(2) );
+    }
+
+    function mc_check(){
+        var can = true;
+        var lastprice = 0;
+        $('.changeprice_orderprice').each(function () {
+            if( $.trim( $(this).val())==''){
+                return true;
+            }
+            var p = 0;
+            if ( !$.isNumber($(this).val())) {
+                $(this).select();
+                FoxUI.toast.show("请输入数字!");
+                can =false;
+                return false;
+            }
+            var val  = parseFloat( $(this).val() );
+            if(val<=0 && Math.abs(val) > parseFloat( $(this).parent().prev().html())) {
+                $(this).select();
+                FoxUI.toast.show("单个商品价格不能优惠到负数!");
+                can =false;
+                return false;
+            }
+            lastprice+=val;
+        });
+        var op = order_price + dispatch_price+ lastprice;
+        if( op <0){
+            FoxUI.toast.show("订单价格不能小于0元!");
+            return false;
+        }
+        if(!can){
+            return false;
+        }
+        return true;
+    }
+
+
+    $(".btn-default").unbind('click').click(function () {
+        window.history.back()
+    });
+
+
+    $(".btn-success").unbind('click').click(function () {
+        var can=mc_check();
+        console.log(can);
+        if(can){
+            FoxUI.confirm("确定要修改订单价格吗？", function () {
+                var obj=$('#change_price').serialize()
+                core.json("mmanage/order/op/changeprice", obj, function (json) {
+                    if (json.status != 1) {
+                        FoxUI.toast.show(json.result.message);
+                    } else {
+                        FoxUI.toast.show("修改成功");
+                        setTimeout(function () {
+                            window.history.back()
+                        }, 500)
+                    }
+                }, true, true)
+            })
+        }
+    })
+</script>
+{template '_footer'}
+<!--OTEzNzAyMDIzNTAzMjQyOTE0-->

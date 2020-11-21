@@ -1,0 +1,504 @@
+{template 'web/common/header'}
+<style>
+.ssdd{
+    width: 200px;
+    border: 1px solid #dedede;
+    padding: 20px 10px;
+}
+.zzcc{
+    position: fixed;
+    top: 0; 
+    width: 100%;
+    height: 100%;
+    background-color: #000000;
+    opacity: 0.4;
+    z-index: 100000;
+}
+.bbdd{
+    position: fixed;
+    z-index: 100001;
+    background-color: #ffffff;
+    width: 600px;
+    height: 250px;
+    top: 50%;
+    left: 50%;
+    margin-top: -175px;
+    margin-left: -300px;
+    padding: 10px;
+}
+.ddhh{
+    line-height: 30px;
+    position: relative;
+}
+.ddxx{
+    position: absolute;
+    right: 0;
+    top:0;
+    cursor:pointer;
+}
+.inputs{
+	position: relative;
+	top:2px;
+	left: 0px;
+}
+input{z-index:1!important;}
+.colorpicker{z-index:99!important;}
+</style>
+<link rel="stylesheet" type="text/css" href="{MODULE_URL}static/js/colorpicker.css">
+<script src="{MODULE_URL}static/js/colorpicker.js"></script>
+<div class="page">
+
+    <div class="page_content">
+		
+		{if $opt == 'display'}
+    	<div style="height:80px">
+			<h3 style="float: left;margin-top: 0;">会员等级</h3>
+			<div style="clear:both;"></div>
+			<div style="display: flex;">
+				<a class="btn btn-primary we7-padding-horizontal" href="{php echo $this->createWebUrl('Userset', array('op' => 'vipgrade', 'opt' => 'post', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}">添加等级</a>
+				<div style="flex: 1;"></div>
+				<div>
+					<select name="usergrade" id="usergrade" style="width: 150px;" >
+						<option value="0">会员等级</option>
+						{loop $grade_arr $i}
+		                	<option value="{$i['grade']}" {if $usergrade == $i['grade']}selected='selected'{/if}>{$i['name']}({$i['grade']}级)</option>
+						{/loop}
+					</select>
+					<div class="btn btn-primary" id="filter" style="display: inline-block;font-size: 12px;">搜索</div>
+				</div>
+			</div>
+		</div>
+		<script type="text/javascript">
+            $("#filter").click(function(){
+                var url = window.location.href;
+                window.location.href = url + "&usergrade=" + $('#usergrade').val();
+            })
+        </script>
+		<div>
+			<table class="table we7-table table-hover article-list vertical-middle">
+		        <tr>
+		            <td>ID</td>
+		            <td>等级</td>
+		            <td style="max-width: 300px;">等级名称</td>
+		            <td>达到所需购买金额</td>
+		            <td>升级条件</td>
+		            <td>状态</td>
+		            <td>操作</td>
+		        </tr>
+		        <tbody id="shujl">
+		        {loop $list $item}
+		            <tr>
+		            	<td>
+		                    {$item['id']}
+		                </td>
+		                <td>
+		                    {$item['grade']}
+		                </td>
+		                <td style="max-width: 300px;">
+		                    {$item['name']}
+		                </td>
+		                <td>
+		                    {$item['upgrade']}
+		                </td>
+		                <td>
+		                    {$item['price']}
+		                </td>
+		                <td>
+		                	{if $item['status'] == 1}
+							<span class="label  label-primary">启用</span>
+							{/if}
+		                    {if $item['status'] == 0}
+		                    <span class="label  label-default">禁用</span>
+							{/if}
+							{if $item['status'] == 1 && $item['grade'] > 1}
+							|
+							<a class="btn-sm" style="color:blue;padding:0;" href="{php echo $this->createWebUrl('Userset', array('op' => 'vipgrade', 'opt' => 'operate', 'jy' => 0,'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}">禁用</a>
+							{/if}
+							{if $item['status'] == 0 && $item['grade'] > 1}
+							|
+							<a class="btn-sm" style="color:blue;padding:0;" href="{php echo $this->createWebUrl('Userset', array('op' => 'vipgrade', 'opt' => 'operate', 'jy' => 1,'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}">启用</a>
+							{/if}
+		                </td>
+
+		                <td class="text-left">
+		                	<a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('Userset', array('op' => 'vipgrade', 'opt' => 'post', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}" >编辑</a>
+		                	{if $item['grade'] > 1}
+				            <a class="btn btn-default btn-sm" onclick="return confirm('此操作不可恢复，确认吗？'); return false;" href="{php echo $this->createWebUrl('Userset', array('op' => 'vipgrade', 'opt' => 'delete', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}">删除</a>
+				            {/if}
+				            <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('Userset', array('op' => 'display',  'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id'],'vip'=>$item['grade']))}">查看会员</a>
+			            </td>
+		            </tr>
+		        {/loop}
+		        </tbody>
+		    </table>
+		    <div id="fenye">
+		        {$pager}
+		    </div>
+		</div>
+		{/if}
+		{if $opt == 'post'}
+			<form class="form-horizontal" action="" method="post" onsubmit="return checks()">
+			    <div class="panel panel-default">
+			        <div class="panel-heading">
+			            <h3 class="panel-title">会员等级设置</h3>
+			        </div>
+			        <div class="panel-body">
+						<div class="form-group">
+			                <label class="control-label col-sm-2" style="margin-right:45px">等级<span style="color:red;">*</span></label>
+			                <div class="form-controls col-sm-5">
+			                    <select name="grade" id="select_grade" class="form-control" {if $item['grade']==1}disabled style="background: #efefef!important;"{/if}>
+			                        {loop $grade_arr $i}
+			                        	<option value="{$i}" <?php if(in_array($i, $changed)){echo 'disabled style="background: #efefef;"';}?>{if $item['grade']==$i}selected='selected'{/if}>{$i}级会员</option>
+									{/loop}
+			                    </select>
+			                </div>
+			                <div class="col-sm-1"></div>
+			                <div class="form-controls col-sm-3 help-block">数字越大，等级越高；会员满足条件由低到高自动升级</div>
+			            </div>
+						<div class="form-group">
+			                <label for="" class="control-label col-sm-2" style="margin-right:45px">会员权益页等级图</label>
+			                <div class="form-controls col-sm-5">
+			                	<img src="{$module_url}static/images/vipgrade/black/n.png" alt="" style="width: 40px;">
+			                	<img src="{$module_url}static/images/vipgrade/gray/n.png" alt="" style="width: 40px;">
+			                </div>
+			                <div class="col-sm-1"></div>
+			                <div class="form-controls col-sm-3 help-block">n为当前等级，第一张为达到显示图，第二张为未达到显示图</div>
+			            </div>
+			            <div class="form-group">
+			                <label for="" class="control-label col-sm-2" style="margin-right:45px">等级名称<span style="color: red;">*</span></label>
+			                <div class="form-controls col-sm-5">
+			                    <input  type="text" name="name" id="name" value="{$item['name']}" maxlength="16" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+			                </div>
+			                <div class="col-sm-1"></div>
+			                <div class="form-controls col-sm-3 help-block">最多16个汉字</div>
+			            </div>
+
+			            <div class="form-group">
+			                <label for="" class="control-label col-sm-2" style="margin-right:45px">升级条件<span style="color: red;">*</span></label>
+			                <div class="control-label" style="text-align: left;float: left;">累计消费达到</div>
+			                <div class="form-controls col-sm-2">
+			                    <input type="text" name="upgrade" placeholder="小于1亿" {if $item['grade']==1}disabled{/if} onkeyup="clearNoNum(this)" id="upgrade" value="{$item['upgrade']}" style="width: 200px;float: left;margin:0 10px;" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off"><span style="line-height: 30px;">元</span>
+			                </div>
+			                <div class="col-sm-3 p_n" style="padding-top: 7px;display: {if $item['grade'] < 2}none;{/if}">需大于<span class="prev_upgrade">{if $item['prev']>0}{$item['prev']}{else}0{/if}</span>元<span class="p_n_n" style="display: {if $item['next']==0}none;{/if}">且小于<span class="next_upgrade">{$item['next']}</span>元</span></div>
+			            </div>
+
+			            <div class="form-group">
+			                <label for="" class="control-label col-sm-2" style="margin-right:45px">购买价格</label>
+			                <div class="form-controls col-sm-5">
+			                    <input  type="text" name="price" {if $item['grade']==1}disabled{/if} onkeyup="clearNoNum(this)" id="price" value="{$item['price']}" style="width: 200px;float: left;margin-right: 10px;" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off"><span style="line-height: 30px;">元</span>
+			                </div>
+			                <div class="col-sm-1"></div>
+		                	<div class="form-controls col-sm-3 help-block">直接购买该等级会员价格</div>
+			            </div>
+						<div class="form-group">
+			                <label for="" class="control-label col-sm-2" style="margin-right:45px">会员等级状态</label>
+			                <div class="form-controls col-sm-5">
+			                    <label style="margin-right: 20px">
+			                        <input type="radio" name="status" value="1" {if $item['grade']==1}disabled{/if} {if $id==0}checked{/if}{if $item['status'] == 1} checked{/if} />
+			                        开启
+			                    </label>
+			                    <label style="margin-right: 20px">
+			                        <input type="radio" name="status" value="0" {if $item['grade']==1}disabled{/if} {if $id > 0}{if $item['status'] == 0} checked{/if}{/if} />
+			                        关闭
+			                    </label>
+			                </div>
+			                <div class="col-sm-1"></div>
+			                <div class="form-controls col-sm-3 help-block">如不选择，默认开启</div>
+			            </div>
+
+			            <div class="form-group">
+			                <label for="" class="control-label col-sm-2" style="margin-right:45px">背景颜色</label>
+			                <div class="form-controls col-sm-5">
+			                    <div id="colorSelector">
+			                        <div style="width: 34px;height: 34px;background: {$item['bgcolor']};float: left;border: 1px solid #ccc;border-right: 0;"></div>
+			                    </div>
+			                    <input type="text" name="bgcolor" id="tabbar_bg" value="{$item['bgcolor']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty" placeholder="" autocomplete="off" style="width: 100px;">
+			                </div>
+			                <div class="choose_bz col-sm-5"></div>
+			            </div>
+
+			            <div class="form-group">
+			                <label for="" class="control-label col-sm-2" style="margin-right:45px">会员卡图<span style="color: red;">*</span></label>
+			                <div class="form-controls col-sm-5">
+			                    {php echo tpl_form_field_image('card_img', $item['card_img'])}
+			                </div>
+			                <input type="text" class="btn btn-primary col-lg-1" name="default" value="恢复默认图" style="margin-left: 10px;padding:6px 6px;width: 80px;font-size: 12px;">
+			            </div>
+			            <div class="form-group" style="margin-bottom: 15px;">
+			                <label for="" class="control-label col-sm-2" style="margin-right:45px">会员权益</label>
+			                <div class="form-controls col-sm-5" style="display: flex;">
+			                	<div>
+			                    	<input type="checkbox" name="coupon_flag" class="inputs" value="1" {if $item['coupon_flag'] == 1} checked {/if}> <span style="line-height: 30px;">优惠券</span>
+			                	</div>
+			                    <div class="select" style="width: 300px;margin:0 10px;">
+				                    <select name="coupon_id[]" class="form-control coupon_id" id="coupon_id">
+				                        <option value="0" selected>不赠送</option>
+				                        {loop $coupon $v}
+				                        	<option value="{$v['id']}" {if $v['id']==$item['coupon_give'][0]['coupon_id']}selected='selected'{/if} {if $v['overdue']==0}disabled style="background: #efefef;"{/if}>[{$v['id']}]-{$v['title']}{if $v['overdue']==0}--(已过期){/if}</option>
+										{/loop}
+				                    </select>
+								</div>
+								<div class="add">
+									<input class="s1" type="number" min="0" name='coupon_num[]' value="{$item['coupon_give'][0]['coupon_num']}" style="border: 1px solid #e7e7eb;padding:6px 12px;"><span style="line-height: 30px;margin:0 10px;" class="span"> 张 </span>
+								</div>
+			                    <div class="btn btn-primary col-lg-1" onclick="add()" >添加</div>
+			                </div>
+		                	<div class="col-sm-1"></div>
+		                	<div class="form-controls col-sm-3 help-block">带有“--(已过期)”结尾标题的优惠券已过期</div>
+			            </div>
+			            <div class="couponadd">
+		            	{loop $item['coupon_give'] $k $vv}
+			            	{if $k > 0}
+							<div class="form-group del{$k}" style="margin-bottom: 15px;">
+		                		<label for="" class="control-label col-sm-2" style="margin-right:45px"></label>
+				            	<div class="form-controls col-sm-5" style="display: flex;">
+				                	<div style="width: 59px;">
+				                	</div>
+				                    <div class="select" style="width: 300px;margin:0 10px;">
+					                    <select  name="coupon_id[]" class="form-control coupon_id" >
+					                        <option value="0">不赠送</option>
+					                        {loop $coupon $v}
+					                        	<option value="{$v['id']}" {if $v["id"] == $vv['coupon_id']}selected="selected"{/if} {if $v['overdue']==0}disabled style="background: #efefef;"{/if}>[{$v["id"]}]-{$v["title"]}{if $v['overdue']==0}--(已过期){/if}</option>
+											{/loop}
+					                    </select>
+									</div>
+									<div class="add">
+				                    	<input type="number" min="0" name="coupon_num[]" value="{$vv['coupon_num']}" style="border: 1px solid #e7e7eb;padding:6px 12px;"><span style="line-height: 30px;margin:0 10px;"> 张 </span>
+				            		</div>
+									<div class="btn btn-default col-lg-1" onclick="del({$k})">删除</div>
+				                </div>
+				            </div>
+				            {/if}
+			            {/loop}
+			            </div>
+			            <div class="form-group" style="margin-bottom: 15px;">
+			                <label for="" class="control-label col-sm-2" style="margin-right:45px"></label>
+			                <div class="form-controls col-sm-5" >
+			                    <input type="checkbox" name="free_package"  class="inputs" value="1" {if $item['free_package'] == 1} checked {/if}> <span style="line-height: 30px;">会员包邮</span>
+			                </div>
+			                <div class="col-sm-1"></div>
+			                <div class="form-controls col-sm-3 help-block">秒杀、多规格商品(商品管理)、拼团快递配送商品</div>
+			            </div>
+			            <div class="form-group" style="margin-bottom: 15px;">
+			                <label for="" class="control-label col-sm-2" style="margin-right:45px"></label>
+			                <div class="form-controls col-sm-5" style="display: flex;">
+			                	<div>
+			                    	<input type="checkbox" name="discount_flag"  class="inputs" value="1"  {if $item['discount_flag'] == 1} checked {/if}> <span style="line-height: 30px;">会员折扣</span>
+			                	</div>
+			                    <input type="text" onkeyup="clearNoNum(this)" name='discount_grade' value="{$item['discount_grade']}" style="border: 1px solid #e7e7eb;margin-left: 10px;padding:6px 12px;"><span style="line-height: 30px;margin:0 10px;"> 折 </span>
+			                </div>
+			                <div class="col-sm-1"></div>
+			                <div class="form-controls col-sm-3 help-block">多规格商品(商品管理)、预约预定商品</div>
+			            </div>
+			            <div class="form-group" style="margin-bottom: 15px;">
+			                <label for="" class="control-label col-sm-2" style="margin-right:45px"></label>
+			                <div class="form-controls col-sm-5" style="display: flex;">
+			                	<div>
+			                    	<input type="checkbox" name="score_flag" value="1" class="inputs" {if $item['score_flag'] == 1} checked {/if}> <span style="line-height: 30px;">买送积分</span>
+			                	</div>
+			                    <input type="number" min="0" name='score_bei' value="{if $item}{$item['score_bei']}{else}1{/if}" style="border: 1px solid #e7e7eb;margin-left: 10px;padding:6px 12px;"><span style="line-height: 30px;margin:0 10px;"> 倍 </span>
+			                </div>
+			                <div class="col-sm-1"></div>
+			                <div class="form-controls col-sm-3 help-block">秒杀，多规格商品(商品管理)</div>
+			            </div>
+			            <div class="form-group" style="margin-bottom: 15px;">
+			                <label for="" class="control-label col-sm-2" style="margin-right:45px"></label>
+			                <div class="form-controls col-sm-5" style="display: flex;">
+			                	<div>
+			                    	<input type="checkbox" name="score_feedback_flag" value="1" class="inputs" {if $item['score_feedback_flag'] == 1} checked {/if}> <span style="line-height: 30px;">积分回馈</span>
+			                	</div>
+			                    <input type="number" min="0" name='score_feedback' value="{$item['score_feedback']}" style="border: 1px solid #e7e7eb;margin-left: 10px;padding:6px 12px;">
+			                </div>
+			            </div>
+			            <div class="form-group">
+			                <label for="" class="control-label col-sm-2" style="margin-right:45px">等级说明</label>
+			                <div class="form-controls col-sm-5" style="padding-right: 30px;display: flex;">
+			                	<textarea class="form-control" rows="6" name="descs" placeholder="" maxlength="200">{$item['descs']}</textarea>
+			                </div>
+			                <div class="col-sm-1"></div>
+			                <div class="form-controls col-sm-3 help-block">最多可输入200个字</div>
+			            </div>
+			        </div>
+			    </div>
+			    <div class="form-group">
+			        <div class="col-sm-12">
+			            <input name="token" type="hidden" value="{$_W['token']}" />
+			            <input type="hidden" name="id" value="{$item['id']}">
+			            <input type="submit" class="btn btn-primary col-lg-1" name="submit" value="提交"  />
+			        </div>
+			    </div>
+			</form>
+		{/if}
+    </div>
+</div>
+<script>
+	var grade = {if $item['grade']}{$item['grade']}{else}0{/if};
+	$(document).ready(function(){
+		var grade1 = $("#select_grade").val();
+		if(grade == 0){
+			$.ajax({
+				url:"{php echo $this->createWebUrl('Userset', array('op' => 'vipgrade', 'opt' => 'ajax', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}",
+				dataType:"json",
+				type:"post",
+				data:{
+					grade:grade1
+				},
+				success:function(e){
+					$(".p_n").show();
+					if(e.next){
+						$(".p_n_n").show();
+						$(".next_upgrade").html(e.next);
+					}else{
+						$(".p_n_n").hide();
+						$(".next_upgrade").html('');
+					}
+					$(".prev_upgrade").html(e.prev);
+				}
+			})
+		}
+
+        // var selectValue = $('.select').find('select').val();
+        // (selectValue == 0) ? $('.add').hide() : $('.add').show();
+        // $('.select').find('select').click(function(){
+        //     var option = $(this).find('option:selected').val();
+        //     option == 0 ? $('.add').hide() : $('.add').show();
+        // });
+    });
+    $('#select_grade').change(function(){
+        var grade = $(this).val();
+		$.ajax({
+			url:"{php echo $this->createWebUrl('Userset', array('op' => 'vipgrade', 'opt' => 'ajax', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}",
+			dataType:"json",
+			type:"post",
+			data:{
+				grade:grade
+			},
+			success:function(e){
+				$(".p_n").show();
+				if(e.next){
+					$(".p_n_n").show();
+					$(".next_upgrade").html(e.next);
+				}else{
+					$(".p_n_n").hide();
+					$(".next_upgrade").html('');
+				}
+				$(".prev_upgrade").html(e.prev);
+			}
+		})
+    });
+	$("input[name='default']").click(function(){
+		$("input[name='card_img']").val("{$module_url}static/images/vip_card.png");
+		$(".img-responsive").attr("src","{$module_url}static/images/vip_card.png");
+	})
+var i = 1;
+function add(){
+	var str = '<div class="form-group del'+i+'" style="margin-bottom: 15px;">\
+			            	<label for="" class="control-label col-sm-2" style="margin-right:45px"></label>\
+			            	<div class="form-controls col-sm-5" style="display: flex;">\
+			                	<div style="width: 59px;">\
+			                	</div>\
+			                    <div class="select" style="width: 300px;margin:0 10px;">\
+				                    <select name="coupon_id[]" class="form-control coupon_id">\
+				                        <option value="0">不赠送</option>\
+				                        {loop $coupon $v}\
+				                        	<option value="{$v['id']}" {if $v["id"]==$item["coupon_id"]}selected="selected"{/if} {if $v["overdue"]==0}disabled style="background: #efefef;"{/if}>[{$v["id"]}]-{$v["title"]}{if $v["overdue"]==0}--(已过期){/if}</option>\
+										{/loop}\
+				                    </select>\
+			                    </div>\
+								<div class="add">\
+			                    	<input type="number" min="0" name="coupon_num[]" style="border: 1px solid #e7e7eb;padding:6px 12px;"><span style="line-height: 30px;margin:0 10px;"> 张 </span>\
+								</div>\
+			                    <div class="btn btn-default col-lg-1" onclick="del('+i+')">删除</div>\
+			                </div>\
+			            </div>';
+	$(".couponadd").append(str);
+	++i;
+	// var selectValue = $('.select').find('select').val();
+	// (selectValue == 0) ? $('.add').hide() : $('.add').show();
+	// $('.select').find('select').click(function(){
+	// 	var option = $(this).find('option:selected').val();
+	// 	option == 0 ? $('.add').hide() : $('.add').show();
+	// });
+}
+
+
+
+function del(j){
+	$(".del"+j).remove();
+}
+function checks(){
+	var name = $.trim($("input[name='name']").val());
+	var grade = {$grade};
+	if(name == ''){
+		alert("等级名称不能为空");
+		return false;
+	}
+	var upgrade = $.trim($("input[name='upgrade']").val());
+	if(upgrade == '' || upgrade > 100000000){
+		alert("升级条件不能为空且小于亿元");
+		return false;
+	}
+	var prev_upgrade = parseFloat($(".prev_upgrade").html());
+	var next_upgrade = parseFloat($(".next_upgrade").html());
+	if(next_upgrade > 0){
+		if(upgrade <= prev_upgrade || upgrade >= next_upgrade){
+			alert("升级条件需大于"+prev_upgrade+"且小于"+next_upgrade);
+			return false;
+		}
+	}else{
+		if(upgrade <= prev_upgrade && grade != 1){
+			alert("升级条件需大于"+prev_upgrade);
+			return false;
+		}
+	}
+
+	
+
+
+	var card_img = $("input[name='card_img']").val();
+	if(card_img == ''){
+		alert("会员卡图不能为空");
+		return false;
+	}
+	var discount_flag = $("input[name='discount_flag']").val();
+	if(discount_flag == 1){
+		var discount_grade = $("input[name='discount_grade']").val();
+		if(discount_grade != '' && discount_grade > 10){
+			alert("会员折扣必须小于10");
+			return false;
+		}
+	}
+	
+}
+
+$('#colorSelector').ColorPicker({
+    color: '#ffffff',
+    onShow: function (colpkr) {
+        $(colpkr).fadeIn(500);
+        return false;
+    },
+    onHide: function (colpkr) {
+        $(colpkr).fadeOut(500);
+        return false;
+    },
+    onChange: function (hsb, hex, rgb) {
+        $('#colorSelector div').css('backgroundColor', '#' + hex);
+        $('#tabbar_bg').val("#"+hex);
+        $('.choose_headbg').css('backgroundColor', '#' + hex)
+    }
+});
+function clearNoNum(obj){  
+  obj.value = obj.value.replace(/[^\d.]/g,"");  //清除“数字”和“.”以外的字符
+  if(obj.value.charAt(0,1) == "."){
+    obj.value = "";
+  }
+  obj.value = obj.value.replace(/\.{2,}/g,"."); //只保留第一个. 清除多余的   
+  obj.value = obj.value.replace(".","$#$").replace(/\./g,"").replace("$#$",".");  
+  obj.value = obj.value.replace(/^(\-)*(\d+)\.(\d\d).*$/,'$1$2.$3');//只能输入两个小数   
+  if(obj.value.indexOf(".")< 0 && obj.value !=""){//以上已经过滤，此处控制的是如果没有小数点，首位不能为类似于 01、02的金额  
+   obj.value= parseFloat(obj.value);  
+  }  
+}
+
+
+</script>

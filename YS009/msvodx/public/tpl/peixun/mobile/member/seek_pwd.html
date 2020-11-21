@@ -1,0 +1,213 @@
+{include file="common/head"}
+
+<div id="block-B" class="pp_con_wrap">
+    <div class="pp_main fc-main clearfix" id="J_verify-phone">
+        <form action="" method="post" id="myform">
+        <!--安全验证-->
+
+        <div id="step1" class="pp_pw_retakeStep">
+            <div class="retakeStep_wrap">
+                <div class="pp_icon step_bg stepOne">
+                    <div class="step_list">
+                        <ul>
+                            <li class="step_pass">1.安全验证</li>
+                            <li>2.设置新密码</li>
+                            <li>3.修改成功</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="step_con">
+                        <div class="pp_account_form_item">
+                            <span class="vl-inline item_title_big">
+                                <label>{if condition="$register_validate eq 1"}绑定邮箱地址：{else/}绑定邮箱手机号码：{/if}</label>
+                            </span>
+                            <span class="vl-inline item_input">
+                                <input id="email" name="email" class="input-common input-common-ph" type="text"
+                                       {if condition="$register_validate eq 1"}placeholder="请输入您绑定的完整邮箱地址"{else/}placeholder="请输入您绑定的手机号码"{/if}  >
+                            </span>
+                           <!--发送之后追加class="sent"-->
+                            <!--<span class="error-warnning">邮箱不正确</span>-->
+                        </div>
+                        <div class="pp_account_form_item">
+                            <span class="vl-inline item_title_big">
+                                <label>请输入验证码：</label>
+                            </span>
+                            <span class="vl-inline item_input" style="width: 66%;display: inline-block;">
+                                <input id="mailVerifyCode" class="input-common input-common-ph" style="width: 100%;"
+                                       type="text" placeholder="请输入验证码">
+                            </span>
+                            <a class="set-warnning" id="getCodeBtn" onclick="sendCode()">获取验证码</a>
+                        </div>
+                        <!--发送验证按钮开始-->
+                        <div class="pp_account_form_item">
+                            <span class="vl-inline">
+                             <a id="nextStepBtn" class="pc-btn pc-btn-green" onclick="checkCode()" href="javascript:void(0)">下一步</a>
+                            </span>
+                        </div>
+                        <!--发送验证邮件按钮结束-->
+
+                </div>
+            </div>
+        </div>
+        <!--设置新邮箱-->
+        <div id="step2" style="display: none;" class="pp_pw_retakeStep">
+            <div class="retakeStep_wrap">
+                <div class="pp_icon step_bg stepThree">
+                    <div class="step_list">
+                        <ul>
+                            <li class="step_pass">1.进行安全验证</li>
+                            <li class="step_pass">2.设置新密码</li>
+                            <li>3.修改成功</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="step_con">
+                    <form action="">
+                        <div class="pp_account_form_item">
+                                <span class="item_title_big">
+                                    <label for="">新的密码：</label>
+                                </span>
+                            <span class="item_input">
+                                    <input class="input-common" id='new' name="new"  type="password" placeholder="6~20位字母或数字">
+                                </span>
+                            <!--<span class="error_warnning"></span>-->
+                        </div>
+                        <div class="pp_account_form_item">
+                                <span class="item_title_big">
+                                    <label for="">确认密码：</label>
+                                </span>
+                            <span class="item_input">
+                                    <input class="input-common" id='confirm' name="confirm" type="password" placeholder="请再次输入密码">
+                                </span>
+                            <!--<span class="error_warnning"></span>-->
+                        </div>
+                        <!--发送验证按钮开始-->
+                        <div class="pp_account_form_item">
+                            <span class="vl-inline">
+                             <a id="saveBindBtn" class="pc-btn pc-btn-green" onclick="setPassWord()" href="javascript:void(0)">确认修改</a>
+                            </span>
+                        </div>
+                        <!--发送验证邮件按钮结束-->
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!--修改成功-->
+        <div id="step3" style="display: none;" class="pp_pw_retakeStep">
+            <div class="retakeStep_wrap">
+                <div class="pp_icon step_bg stepTwo">
+                    <div class="step_list">
+                        <ul>
+                            <li class="step_pass">1.进行安全验证</li>
+                            <li class="step_pass">2.设置新密码</li>
+                            <li class="step_pass">3.修改成功</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="step_con">
+                    <div class="success_note">
+                        <i class="success_hint_bd btn fn-baocunchenggong"></i>
+                        <span>恭喜您，密码修改成功！</span><br>
+                        <a href="{:url('member/member')}">个人中心</a>
+                        <a href="/">首页</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </form>
+    </div>
+</div>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+    });
+    var register_validate = "{$register_validate}";
+    var  curTime  = 0;
+    var disabled = 0;
+    var curGetCodeBtn = $('#getCodeBtn');
+    var curMailObj = $('#email');
+    if(register_validate == 1){
+        var pregStr = /^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+(.[a-zA-Z0-9_-])+/;
+        var types = '邮箱地址';
+        var type = 'email';
+    }else{
+        var pregStr = /((13[0-9])|(14[5|7])|(15([0-3]|[5-9]))|(18[0,5-9]))\d{8}$/;
+        var types = '手机号码';
+        var type = 'tel';
+    }
+    //send code
+    function sendCode() {
+        if(disabled)  return false;
+        var mailUrl= $('#email').val();
+        if (pregStr.test(mailUrl)) {
+            var url = "{:url('api/getFindPassWordCode')}";
+            var postData = {content: mailUrl,type:type};
+            $.post(url, postData, function (resp) {
+                if (resp.statusCode == 0) {
+                    disabled = 1;
+                    $('#mailVerifyCode').focus();
+                    curTime = 35;
+                    layer.msg(resp.error);
+                    timerIndex = setInterval("timer()", 1000);
+                } else {
+                    layer.msg(resp.error);
+                }
+            }, 'JSON');
+        } else {
+            layer.msg('请输入正确的'+types);
+            return false;
+        }
+    }
+    function timer() {
+        curTime--;
+        if (curTime <= 0) {
+            clearInterval(timerIndex);
+            disabled = 0;
+            curGetCodeBtn.html('获取验证码').on('click', function(){
+            }).removeClass('sent');
+        }else{
+            curGetCodeBtn.html(curTime + '秒').addClass('sent');
+        }
+    }
+    function checkCode() {
+        var mailUrl= $('#email').val();
+        var code =  $('#mailVerifyCode').val();
+        if (pregStr.test(mailUrl)) {
+            var url = "{:url('api/checkPassWordCode')}";
+            var postData = {content: mailUrl,code:code,type:type};
+            $.post(url, postData, function (resp) {
+                if (resp.statusCode == 0) {
+                    $('#step1').hide('slow');
+                    $('#step2').show('slow');
+                } else {
+                    layer.msg(resp.error);
+                }
+            }, 'JSON');
+        } else {
+            layer.msg('请输入正确的'+types);
+            return false;
+        }
+    }
+    function setPassWord() {
+        curMailObj = $('#new');
+        var newpass = curMailObj.val();
+        var confirm = $('#confirm').val();
+        if(newpass.length < 6 || (newpass.length >20)){
+            layer.msg('密码为6~20位字母或数字');
+            return false;
+        }
+        if(newpass != confirm) {
+            layer.msg('两次密码不一致');
+            return false;
+        }
+        $('#myform').submit();
+    }
+</script>
+{if condition="$status eq '1'"}
+<script>
+$('#step1').hide();
+$('#step2').hide();
+$('#step3').show();
+</script>
+{/if}
+</body>
+</html>

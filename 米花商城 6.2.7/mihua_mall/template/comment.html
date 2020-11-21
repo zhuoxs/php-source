@@ -1,0 +1,187 @@
+{template 'header'} 
+{template 'left'} 
+
+   <style>
+table th, table td{
+	text-align:center;
+}
+
+   </style>
+      <section id="content">
+        <section class="vbox">
+          <section class="scrollable padder">
+            <ul class="breadcrumb no-border no-radius b-b b-light pull-in">
+              <li><a href="{php echo $this->createWebUrl("index")}"><i class="fa fa-home"></i>首页</a></li>
+              <li class="active">评论管理</li>          
+            </ul> 
+<ul class="nav nav-tabs">
+	<li {if $_GPC['do']=='comment'}class="active"{/if}><a href="{php echo $this->createWebUrl('comment', array('status' => '-1'))}">评论审核</a></li>
+	<li {if $_GPC['do']=='virtual_comments'}class="active"{/if}><a href="{php echo $this->createWebUrl('virtual_comments', array('op' => 'display'))}">虚拟评论</a></li>
+
+</ul>
+    <div class="main">
+		<div class="stat">
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form" id="form">
+				<input type="hidden" name="a" value="entry" />
+				<input type="hidden" name="c" value="site" />
+				<input type="hidden" name="m" value="mihua_mall" />
+				<input type="hidden" name="do" value="comment" />
+				<input type="hidden" name="submit" value="搜索" />
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">商品名</label>
+                    <div class="col-sm-8 col-lg-9 col-xs-12">
+                        <input class="form-control" name="title" id="" type="text" value="{$title}" >
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">评论状态</label>
+                    <div class="col-sm-8 col-lg-9 col-xs-12">
+                    	<select name='status'>
+                    		<option value='-1' {if $_GPC['status']==-1}selected {/if}>全部</option>
+                    		<option value='0' {if $_GPC['status']==0}selected {/if}>未审核</option>
+                    		<option value='1' {if $_GPC['status']==1}selected {/if}>通过</option>
+                    		<option value='2' {if $_GPC['status']==2}selected {/if}>未通过</option>
+                    	</select>
+                    </div>
+                </div>
+                <div class="form-group">
+                	  <div class="col-sm-4 col-xs-12"> </div>
+                    <div class="col-sm-4 col-xs-12">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                        <button type="button" class="btn btn-default">总记录数：{$total}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+			<div class="stat-div">
+				<div class="sub-item" id="table-list">
+                    <div class="panel panel-info" style="overflow:hidden;border-color:#ddd">
+                        <div class="panel-heading" style="background:#f5f5f5;border-bottom:1px solid #ddd;color:#333;">筛选</div>
+                        <div class="panel-body  table-responsive" style="padding:15px;background:#fff;">
+					<div class="sub-content">
+						<table class="table table-hover">
+							<thead class="navbar-inner">
+								<tr>
+									<th class="row-hover">头像</th>
+									<th class="row-hover">用户</th>
+									<th class="row-hover">商品</th>
+									<th class="row-hover">内容</th>
+									<th class="row-hover">时间</th>
+									<th class="row-hover">操作</th>
+								</tr>
+							</thead>
+							<tbody>
+								{loop $list $v}
+								<tr>
+									<td><img  class="avatarIcon " src="{if $v['avatar']}{$v['avatar']}{/if}"onerror="this.src='../addons/mihua_mall/admin/images/avatar_default.jpg'" />  
+									</td>
+									<td>{$v['nickname']}</td>
+									<td>
+										{$v['title']}
+									</td>
+									
+									<td title='{$v['comment_content']}'>{$v['comment_content']}</td>
+									<td >
+										{php echo date("Y-m-d H:i:s",$v['addtime']);}
+									</td>
+									<td>
+									{if $v['status']==0}
+									<a  title="通过" href="{php echo $this->createWebUrl('comment', array('cid' =>$v['comment_id'],'op'=>'domanage','status'=>1))}" class="btn btn-link" style="padding:0;">
+									<i class="fa fa-check"></i></a>
+									<a  title="不通过" href="{php echo $this->createWebUrl('comment', array('cid' =>$v['comment_id'],'op'=>'domanage','status'=>2))}" class="btn btn-link" style="padding:0;">
+									<i class="fa fa-times"></i></a>
+									{elseif $v['status']==1}
+									<!--审核通过-->
+									<a  class="btn btn-link" style="padding:0;" title="审核通过"><i class="fa fa-check" style="color:#ccc;"></i></a>
+									{elseif $v['status']==2}
+									<!--审核不通过-->
+									<a  class="btn btn-link" style="padding:0;" title="审核不通过" ><i class="fa fa-times"  style="color:#ccc;"></i></a>									
+									{/if}
+
+									<a style="padding:0;" class="replybtn" data-toggle="tooltip" data-placement="top" title="回复评论">
+										<i class="fa fa-pencil"  onclick="reply_btn({php echo $v['comment_id']},'{php echo $v['comment_content']}')"></i></a>	
+									
+									<a style="padding:0;" href="{php echo $this->createWebUrl('comment', array('cid' =>$v['comment_id'],'op'=>'delete'))}"
+										 onclick="return confirm('此操作不可恢复，确认删除？');return false;" data-toggle="tooltip" data-placement="top" title="删除">
+										<i class="fa fa-trash-o" ></i></a>								
+									</td>
+								</tr>
+								{if $v['reply']}
+								<tr>
+									<td colspan = " 6 ">
+							管理员回复：{$v['reply']}
+									</td>
+								</tr>
+								{/if}
+
+								
+
+
+								{/loop}
+							</tbody>
+						</table>
+					</div>
+				</div>
+                        </div>
+					{$pager}
+				</div>
+			</div>
+		</div>
+    </div>
+
+<div  class="replyForm modal-dialog" style="display:none;position: absolute;  top: 45%;  left: 30%;">
+	<div style="display:none" class="replyid">{$v['comment_id']}</div>
+
+									<div class="modal-content">
+											<div class="commenttitle"  style="margin: 10px;font-size:16px;"></div>
+											<textarea style="height:150px;margin: 10px;padding: 5px;" class="span7" id="admin_reply" name="admin_remark" cols="70"
+											placeholder="评论回复" value=""  ></textarea>
+
+												<button type="submit" onclick="reply_submit();" style="float:right;margin: 100px 20px 0 0;" class="btn btn-success span2" >确认提交</button>
+											
+									</div>
+
+									</div>
+
+<script>
+function reply_btn(cid,title){
+	$(".replyid").html(cid);
+	$(".commenttitle").html(title);
+  $(".replyForm").show();
+
+}
+function reply_submit(){
+  var reply=$("#admin_reply").val();
+  var cid=$(".replyid").html();
+	$.ajax({				
+			type:'post',
+			url:'{php echo $this->createWebUrl('comment')}',
+			dataType: 'json',					
+			data:{'cid':cid,'op':'reply','reply':reply},
+			success:function(data){					
+				if(data.status=='success'){
+				$(".replyForm").hide();
+				window.location.reload();
+				
+				}else{
+					alert("提交失败");
+				}
+					
+			}
+		});
+
+}
+function check_adminRemark(){
+	if($("#admin_reply").val()==""){
+		alert("回复内容不能为空");
+		return false;
+	}
+
+}
+</script>
+
+{template 'footer'}

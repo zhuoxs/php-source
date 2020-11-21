@@ -1,0 +1,147 @@
+{php include wl_template('common/header');}
+<style type="text/css">
+	.weui-uploader__file img{height:100%;width: 100%;}
+	#container{padding-top: 0.4rem;padding-bottom: 0.35rem;height: 10rem;width: 100%;}
+</style>
+<div class="page-group" >
+    <div class="page page-current">
+    	<header class="bar bar-nav">
+		    <h1 class="title">店铺快速入驻</h1>
+		</header>
+		<form action="{php echo app_url('storeqr/bdstoreqr/enterfast')}" enctype="multipart/form-data" id="form" method="post">
+		<div class="content native-scroll" style="top: 2.2rem;">
+		    <div class="weui-cells__title">基本信息</div>
+		    <div class="list-block">
+		        <ul>
+		            <li>
+		            	<div class="weui-cell">
+			                <div class="weui-cell__bd">
+			                    <div class="weui-uploader">
+			                        <div class="weui-uploader__hd">
+			                            <p class="weui-uploader__title">店铺图标</p>
+			                            <div class="weui-uploader__info"></div>
+			                        </div>
+			                        <div class="weui-uploader__bd">
+			                            <ul class="weui-uploader__files upload_images_views" style="margin-left: -45px;">
+			                            	{if !empty($store['logo'])}
+			                            	<li class="weui-uploader__file">
+			                            		<img src="{php echo tomedia($store['logo'])}">
+			                            		<input type="hidden" name="images[]"  value="{$store['logo']}" />
+			                            	</li>
+			                            	{/if}
+			                            </ul>
+			                            <div class="weui-uploader__input-box upload_btn">
+			                            </div>
+			                        </div>
+			                    </div>
+			                </div>
+			            </div>
+		            </li>
+		            <li>
+		                <div class="item-content">
+		                    <div class="item-inner">
+		                        <div class="item-title label">店铺名称</div>
+		                        <div class="item-input">
+		                            <input type="text" placeholder="请输入店铺名称" name="merchant[storename]" value="{$store['storename']}"></div>
+		                    </div>
+		                </div>
+		            </li>
+		            <li>
+		                <div class="item-content">
+		                    <div class="item-inner">
+		                        <div class="item-title label">店铺电话</div>
+		                        <div class="item-input">
+		                            <input type="text" placeholder="请输入店铺电话" name="merchant[mobile]" value="{$store['mobile']}"></div>
+		                    </div>
+		                </div>
+		            </li>
+		            <li class="align-top">
+		                <div class="item-content">
+		                    <div class="item-inner">
+		                        <div class="item-title label">店铺地址</div>
+		                        <div class="item-input">
+		                            <input type="text" placeholder="请输入店铺地址" name="merchant[address]" value="{$store['address']}">
+		                        </div>
+		                    </div>
+		                </div>
+		            </li>
+		            <li class="align-top">
+		                <div class="item-content">
+		                    <div class="item-inner">
+		                        <div class="item-input" >
+		                            <div id="container" tabindex="0"></div>
+		                        </div>
+		                    </div>
+		                </div>
+		            </li>
+		        </ul>
+		    </div>
+		    <div class="weui-cells__title">店主信息</div>
+		    <div class="list-block">
+		        <ul>
+		            <li>
+		                <div class="item-content">
+		                    <div class="item-inner">
+		                        <div class="item-title label">联系人</div>
+		                        <div class="item-input">
+		                            <input type="text" placeholder="请输入店主姓名" class="" name="merchant[realname]" value="{$store['realname']}"></div>
+		                    </div>
+		                </div>
+		            </li>
+		            <li>
+		                <div class="item-content">
+		                    <div class="item-inner">
+		                        <div class="item-title label">电话</div>
+		                        <div class="item-input">
+		                            <input type="text" placeholder="请输入店主电话" class="" id="tel" name="merchant[tel]" value="{$store['tel']}"></div>
+		                    </div>
+		                </div>
+		            </li>
+		        </ul>
+		    </div>
+		    <input type="hidden" name="token" value="{$_W['token']}"/>
+		    <input type="hidden" name="cardsn" value="{$_GPC['cardsn']}"/>
+		    <input type="hidden" name="salt" value="{$_GPC['salt']}"/>
+		    <input type="hidden" name="lng" value="{$store['location']['lng']}" value="" id="storelng" />
+		    <input type="hidden" name="lat" value="{$store['location']['lat']}" value="" id="storelat" />
+		    <div class="weui-btn-area">
+	            <a class="weui-btn weui-btn_primary external" href="javascript:validate()" id="showTooltips" onclick="fun();">确定</a>
+	        </div>
+		</div>
+		</form>
+	</div>
+</div>
+<script type="text/javascript">
+function fun(){
+	var tel = $('#tel').val();
+	var reg = /^0?1[3|4|5|7|8|9][0-9]\d{8}$/;
+		if (!reg.test(tel)) {
+		  	$.toast('请填写正确的手机号');
+			return false;
+		}
+	$('#form').submit()
+}
+common.uploadImageByWxJs(1);
+common.deleteImagesInWxJs();
+
+var map = new AMap.Map('container',{
+    resizeEnable: true,
+    {if !empty($store['location'])}center: [{$store['location']['lng']}, {$store['location']['lat']}],{/if}
+    zoom: 15
+});
+AMap.plugin('AMap.Geocoder',function(){
+    var geocoder = new AMap.Geocoder({
+        city: "010"//城市，默认：“全国”
+    });
+    var marker = new AMap.Marker({
+        map:map,
+        bubble:true
+    })
+    map.on('click',function(e){
+        marker.setPosition(e.lnglat);
+	    $('#storelng').val(e.lnglat.lng);
+	    $('#storelat').val(e.lnglat.lat);
+    })
+});
+</script>
+{php include wl_template('common/footer');}

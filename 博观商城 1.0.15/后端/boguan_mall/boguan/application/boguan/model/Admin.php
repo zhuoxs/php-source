@@ -1,0 +1,2 @@
+<?php
+ namespace app\boguan\model; class Admin extends BaseModel { public function user() { return $this->hasone("\x55\x73\x65\162", "\151\x64", "\x75\163\145\162\x5f\x69\144")->field("\x69\x64\54\156\x69\x63\153\156\141\155\x65\x2c\x61\166\x61\x74\141\x72"); } }

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>{if $logtype==1}推广佣金提现{else}配送佣金提现{/if}</title>
+    <link rel="stylesheet" type="text/css" href="{php echo $this->cur_mobile_path}/css/api.css"/>
+    <link rel="stylesheet" type="text/css" href="{php echo $this->cur_mobile_path}/css/common.css"/>
+    <link rel="stylesheet" type="text/css" href="{php echo $this->cur_mobile_path}/css/order-new.css?v=1"/>
+    <link rel="stylesheet" type="text/css" href="{php echo $this->cur_mobile_path}/css/fakeLoader.css">
+    <script src="{php echo $this->cur_mobile_path}/script/jquery-1.8.3.min.js"></script>
+</head>
+<body>
+<div id="wrap">
+    <header class="bar bar-nav">
+        <a class="button button-link button-nav pull-left" href="javascript:void(0)" onclick="history.go(-1)">
+            <span class="icon-left"></span>
+        </a>
+        <h1 class="title">{if $logtype==1}推广佣金提现{else}配送佣金提现{/if}</h1>
+    </header>
+    <div class="content">
+        <div class="list-block address-editor">
+            <ul class="full-width-form">
+                <li class="item-content">
+                    <div class="item-inner">
+                        <div class="item-title label">当前佣金:</div>
+                        <div class="item-input" style="padding-right:30px; line-height:21px;">
+                            <span class="money" style="color: #FF6600;font-size: 20px;">{if $logtype==1}{$commission_price}{else}{$delivery_price}{/if}</span>元
+                            <input type="hidden" id="commission_price" value="{if $logtype==1}{$commission_price}{else}{$delivery_price}{/if}" name="commission_price">
+                            <input type="hidden" id="logtype" value="{$logtype}" name="logtype">
+                        </div>
+                    </div>
+                </li>
+                <li class="item-content">
+                    <div class="item-inner">
+                        <div class="item-title label">提现佣金:</div>
+                        <div class="item-input">
+                            <input type="text" placeholder="请输入您要提现的金额" name="totalprice" id="totalprice" value="">
+                        </div>
+                    </div>
+                </li>
+                {if $delivery_rate>0}
+                <li class="item-content">
+                    <div class="item-inner">
+                        <div class="item-title label">手续费:</div>
+                        <div class="item-input" style="padding-right:30px; line-height:21px;">
+                            每笔提现{$delivery_rate}%
+                        </div>
+                    </div>
+                </li>
+                {/if}
+                <li class="item-content">
+                    <div class="item-inner">
+                        <div class="item-title label">
+                            提现金额到:
+                        </div>
+                        <div class="item-input">
+                            <label class="label-checkbox item-content">
+                                <input type="hidden" id="type" value="1">
+
+                                <input type="radio" name="ctype" value="1" onclick="settype('1');" checked>
+                                <div class="item-media">
+                                    <i class="icon icon-form-checkbox">
+                                    </i>
+                                    <span>&nbsp;微信账号</span>
+                                </div>
+                            </label>
+                            <!--<label class="label-checkbox item-content">-->
+                                <!--<input type="radio" name="ctype" value="2" onclick="settype('2');">-->
+                                <!--<div class="item-media">-->
+                                    <!--<i class="icon icon-form-checkbox">-->
+                                    <!--</i>-->
+                                    <!--<span>&nbsp;会员余额</span>-->
+                                <!--</div>-->
+                            <!--</label>-->
+                            <!--<label class="label-checkbox item-content">-->
+                                <!--<input type="radio" name="ctype" value="3" onclick="settype('3');">-->
+                                <!--<div class="item-media">-->
+                                    <!--<i class="icon icon-form-checkbox">-->
+                                    <!--</i>-->
+                                    <!--<span>&nbsp;现金提现</span>-->
+                                <!--</div>-->
+                            <!--</label>-->
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+<nav class="bar bar-tab">
+    <a href="#" class="button button-fill delivery-button-submit" id="btnselect">
+        确认提现
+    </a>
+</nav>
+<div class="popup-overlay"></div>
+<script type="text/javascript">
+    function settype(type) {
+        $("#type").val(type)
+    }
+
+    function postmain() {
+        $("#btnselect").hide();
+        if (true) {
+            var url = "{php echo $this->createMobileUrl('commission_form', array('op' => 'post'), true)}";
+            var totalprice = parseFloat($("#totalprice").val());
+            var type = $("#type").val();
+            var logtype = $("#logtype").val();
+
+
+            $.ajax({
+                url: url, type: "post", dataType: "json", timeout: "10000",
+                data: {
+                    "type":type,
+                    "logtype":logtype,
+                    "op": "post",
+                    "totalprice": totalprice
+                },
+                success: function (data) {
+                    if (data.message['code'] != 0) {
+                        alert('已申请提现请等待管理员审核！');
+                        setTimeout(jumptourl, 2000);
+                    } else {
+                        alert(data.message['msg']);
+                    }
+                    $("#btnselect").show();
+                }, error: function () {
+                    alert("提交失败！");
+                }
+            });
+        } else {
+            $("#btnselect").show();
+        }
+    }
+
+    function jumptourl() {
+        "{if $logtype==1}"
+        var url = "{php echo $this->createMobileUrl('mymemberlist', array(), true)}";
+        location.href = url;
+        "{else}"
+        var url = "{php echo $this->createMobileUrl('deliveryorder', array(), true)}";
+        location.href = url;
+        "{/if}"
+
+    }
+
+
+    $("#btnselect").click(function () {
+        var bool = checkItem();
+        if (bool) {
+            postmain();
+        }
+    });
+
+    function checkItem() {
+        commission_price = parseFloat($("#commission_price").val());
+        if (commission_price <= 0) {
+            alert("你当前没有佣金！");
+            return false;
+        }
+
+        totalprice = parseFloat($("#totalprice").val());
+        if (totalprice <= 0) {
+            alert("请输入要提现的金额！");
+            return false;
+        }
+
+        if (totalprice > commission_price) {
+            alert("提现的金额不能大于您的佣金！");
+            return false;
+        }
+        return true;
+    }
+</script>
+</body>
+</html>

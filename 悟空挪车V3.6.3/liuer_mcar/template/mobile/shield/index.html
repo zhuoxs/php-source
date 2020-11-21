@@ -1,0 +1,142 @@
+{template 'header'}
+<style>
+    body.pageBind {
+        background: #f5f5f5;
+    }
+
+    .pageBind header {
+        background: none;
+    }
+
+    .user-form {
+        border-radius: 0;
+        margin: 0px;
+    }
+
+    .pageBind h3 {
+        color: #ffffff;
+        font-size: .35rem;
+        text-align: center;
+        margin-top: .5rem;
+        margin-bottom: .5rem;
+    }
+
+    .user-do {
+        margin: 0 15px;
+    }
+
+    .yd-cell-box {
+        margin-bottom: 0;
+    }
+
+    .saorao {
+        width: 100%;
+        /*margin-bottom: 10px;*/
+    }
+    <?php if($config['saorao_jianju']): ?>
+    .saorao {
+        margin-bottom:<?php echo $config['saorao_jianju']; ?>;
+    }
+    <?php endif;?>
+
+    .saorao img {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .header {
+        margin-bottom: 10px;
+    }
+</style>
+<?php
+$config = get_module_info();
+$banner = $config['saorao_banner'] ? tomedia($config['saorao_banner']) : ASSETS . '/images/saorao.jpg';
+?>
+<body class="pageBind pageFooter">
+<div id="hook-app">
+    <?php if($config['header_isshow']): ?>
+    <div class="header">
+        <yd-navbar title="免打扰设置">
+            <a href="<?php echo $this->createMobileUrl('user'); ?>" slot="left">
+                <yd-navbar-back-icon></yd-navbar-back-icon>
+            </a>
+        </yd-navbar>
+    </div>
+    <?php endif; ?>
+    <div class="saorao">
+        <img src="{$banner}" alt="">
+    </div>
+    <div class="user-form">
+        <yd-cell-group>
+            <yd-cell-item type="label">
+                <div slot="left">免打扰设置</div>
+                <yd-switch slot="right" v-model="is_shield" true-value="1" false-value="0"></yd-switch>
+            </yd-cell-item>
+            <yd-cell-item arrow>
+                <span slot="left"><i class="fa fa-clock-o"></i> 开始时间</span>
+                <yd-datetime type="time" v-model="starttime" slot="right"></yd-datetime>
+            </yd-cell-item>
+            <yd-cell-item arrow>
+                <span slot="left"><i class="fa fa-clock-o" style="transform: rotate(90deg)"></i> 结束时间</span>
+                <yd-datetime type="time" v-model="endtime" slot="right"></yd-datetime>
+            </yd-cell-item>
+        </yd-cell-group>
+
+    </div>
+    <div class="user-do">
+        <yd-button size="large" type="warning" shape="angle" @click.native="handle" style="background: #04be01">保存
+        </yd-button>
+    </div>
+</div>
+
+<script>
+    var url = "<?php echo $this->createMobileUrl('shield',['op'=>'save']); ?>";
+    var is_shield = parseInt("<?php echo $vip['is_saorao'];?>");
+    var vipUrl = "<?php echo $this->createMobileUrl('vip'); ?>";
+    var access = parseInt("{$access}");
+
+    var app = new Vue({
+        el: '#hook-app',
+        data: {
+            is_shield: is_shield,
+            starttime: '{$vip["starttime"]}',
+            endtime: '{$vip["endtime"]}',
+        },
+        mounted: function(){
+            if(access == 0){
+                this.$dialog.alert({
+                    mes: '会员才能使用免打扰功能',
+                    callback: function(){
+                        location.href = vipUrl;
+                    }
+                });
+            }
+        },
+        methods: {
+            handle: function () {
+                this.$dialog.loading.open('提交中...');
+                $.post(url, {
+                    is_shield: this.is_shield,
+                    starttime: this.starttime,
+                    endtime: this.endtime
+                }, function (resp) {
+                    app.$dialog.loading.close();
+                    if(!resp.error){
+                        app.message(resp.msg,'success');
+                    }else{
+                        app.message(resp.msg,'error');
+                    }
+                },'json');
+            },
+            message: function (msg,icon) {
+                this.$dialog.toast({
+                    icon:icon,
+                    mes: msg,
+                    timeout: 1500
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>

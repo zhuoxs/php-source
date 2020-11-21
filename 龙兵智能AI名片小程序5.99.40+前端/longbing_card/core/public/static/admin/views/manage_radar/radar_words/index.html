@@ -1,0 +1,123 @@
+<title>话术管理</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a lay-href="/radar_event/index"><cite>事件列表</cite></a>
+        <a><cite>话术管理</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">话术管理</div>
+                <div class="layui-card-body">
+                    <table class="layui-hide" id="test-table-autowidth" lay-filter="test-table-autowidth"></table>
+                    <!--头部操作按钮-->
+                    <script type="text/html" id="test-table-toolbar-toolbarDemo">
+                        <div class="layui-btn-container">
+                            <button class="layui-btn layui-btn-sm" lay-event="addData">新增话术</button>
+                        </div>
+                    </script>
+                    <!--行内操作按钮-->
+                    <script type="text/html" id="test-table-autowidth-barDemo">
+                        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .layui-table-cell {
+        height:auto;
+    }
+</style>
+<script>
+
+    layui.use(['admin', 'table'], function(){
+        var table = layui.table;
+        var $ = layui.$
+                ,admin = layui.admin
+                ,element = layui.element
+                ,layer = layui.layer
+                ,form = layui.form;
+
+
+        var router = layui.router();
+
+        var event_id=router.search.event_id;
+        if(typeof(event_id)=='undefined'){
+            event_id=0;
+        }
+
+        table.render({
+            elem: '#test-table-autowidth'
+            ,url: config.url+'manage_radar/radar_words/index&event_id='+event_id
+            ,toolbar: '#test-table-toolbar-toolbarDemo'
+            ,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+            ,page:true
+            ,cols: [[
+                {field:'id', title: 'ID', sort: true},
+                {field:'event_name', title: '所属事件'},
+                {field:'time_start', title: '开始次数'},
+                {field:'time_end', title: '截止次数'
+                    ,templet: function(d){
+                    if(d.time_end==0){
+                        return '无限大';
+                    }else{
+                        return d.time_end;
+                    }
+                }},
+                {field:'words', title: '话术'},
+                {align:'center', fixed: 'right', toolbar: '#test-table-autowidth-barDemo'}
+
+            ]]
+        });
+
+        //头工具栏事件
+        table.on('toolbar(test-table-autowidth)', function(obj){
+            switch(obj.event){
+                case 'addData':
+                    //跳转到新增页面
+                    window.location.href =config.html_url+'manage_radar/radar_words/edit/event_id='+event_id;
+                    break;
+            };
+        });
+
+        //监听工具条
+        table.on('tool(test-table-autowidth)', function(obj){
+
+            var data = obj.data;
+            if(obj.event === 'del'){
+                layer.confirm('真的删除行么', function(index){
+                    obj.del();
+                    layer.close(index);//关掉提示框
+                    //掉删除接口
+                    admin.req({
+                        type:'POST',
+                        url: config.url+'manage_radar/radar_words/delete'//数据接口
+                        ,data:{"id":data.id},
+                        done:function(res){
+                            layer.msg('成功', {
+                                offset: '15px'
+                                ,icon: 1
+                                ,time: 1000
+                            }, function(){
+                                window.location.href =config.html_url+'manage_radar/radar_words/index/event_id='+event_id;
+                            });
+                        }
+                    });
+                });
+            } else if(obj.event === 'edit'){
+                //layer.alert('编辑行：<br>'+ JSON.stringify(data))
+                //跳转到编辑页面
+                window.location.href =config.html_url+'manage_radar/radar_words/edit/id='+data.id+'/event_id='+event_id;
+            }
+        });
+
+    });
+</script>

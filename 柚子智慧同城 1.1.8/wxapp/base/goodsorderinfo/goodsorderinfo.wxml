@@ -1,0 +1,170 @@
+<!--www.lanrenzhijia.com   time:2019-06-01 22:11:56 -->
+<import  src="/zhy/template/wxParse/wxParse.wxml"  />
+<import  src="/zhy/template/temloading/temloading.wxml"  />
+<block wx:if="{{show}}">
+	<view class="wrap">
+		<block wx:if="{{order.order_status==0}}">
+			<view class="order-status">待支付<block wx:if="{{goods_overdue}}">
+					<text>(商品已过期)</text>
+				</block>
+			</view>
+		</block>
+		<block wx:if="{{order.order_status==1}}">
+			<view class="order-status">待使用</view>
+		</block>
+		<block wx:if="{{order.order_status==3}}">
+			<view class="order-status">完成</view>
+		</block>
+		<block wx:if="{{order.order_status==4}}">
+			<view class="order-status">取消订单</view>
+		</block>
+		<block wx:if="{{order.order_status==5}}">
+			<view class="order-status">售后</view>
+		</block>
+		<view bindtap="onTelTap" class="store bgw">
+			<view class="store-name">{{order.store.name}}</view>
+			<view class="store-tel">
+				<image class="img1" src="/zhy/resource/images/tel2.png"></image>
+				<view class="v2">联系商家</view>
+			</view>
+		</view>
+		<block wx:for="{{order.detail}}" wx:key="*this" wx:for-item="item" wx:for-index="index" >
+			<view class="goods">
+				<image class="g-lef" mode="aspectFill" src="{{img_root}}{{item.pic||order.goods.pic}}"></image>
+				<view class="g-rig">
+					<view class="gr-top">{{item.gname}}</view>
+					<view class="gr-cont">
+						<block wx:if="{{item.attr_list}}">
+							<view class="v1">规格：{{item.attr_list}}</view>
+						</block>
+						<view class="v2">×{{item.num}}</view>
+					</view>
+					<view class="gr-bot">￥{{item.unit_price}}</view>
+				</view>
+			</view>
+		</block>
+		<view class="order-code bgw">
+			<view class="oc-head">
+				<view class="och-lef">
+					<view class="v1">订单编号：{{order.order_no}}</view>
+					<view class="v2">下单时间：{{order.create_time}}</view>
+				</view>
+				<view class="och-rig">
+					<view class="v1">总计：</view>
+					<view class="v2">￥{{countPrice}}</view>
+				</view>
+			</view>
+			<block wx:if="{{order.order_status==20&&order.after_sale!=1}}">
+				<view class="verification-qr">
+					<canvas canvasId="qrcode" class="vq-code"></canvas>
+					<view class="vq-warm">
+						<text>注：</text>向商家出示二维码扫描即可核销消费					</view>
+				</view>
+			</block>
+		</view>
+		<view class="info">
+			<block wx:if="{{order.after_sale==1}}">
+				<view class="info-list txt-red">
+					<view class="v1 txt-red">退款状态</view>
+					<view class="v2">{{order.review_status==0?'退款处理中':order.review_status==1?'退款成功':order.review_status==2?'退款失败':'未知'}}</view>
+				</view>
+			</block>
+			<block wx:if="{{order.after_sale==1&&order.review_reason}}">
+				<view class="info-list txt-red">
+					<view class="v1 txt-red">拒退原因</view>
+					<view class="v2">{{order.review_reason}}</view>
+				</view>
+			</block>
+			<block wx:if="{{order.after_sale==1&&order.refund_time}}">
+				<view class="info-list txt-red">
+					<view class="v1 txt-red">退款时间</view>
+					<view class="v2">{{time.toTime(order.refund_time)}}</view>
+				</view>
+			</block>
+			<block wx:if="{{order.goods.is_support_refund==0}}">
+				<view class="info-list">
+					<view class="v1">关于退款</view>
+					<view class="v2">本商品暂不支持退款</view>
+				</view>
+			</block>
+			<view class="info-list">
+				<view class="v1">配送方式</view>
+				<view class="v2">到店消费</view>
+			</view>
+			<view class="info-list">
+				<view class="v1">支付方式</view>
+				<view class="v2">{{order.pay_type==1?'微信支付':order.pay_type==2?'余额支付':'未知'}}</view>
+			</view>
+			<view class="info-list">
+				<view class="v1">消费地址</view>
+				<view class="v2">{{order.store.address}}</view>
+			</view>
+			<view class="info-list">
+				<view class="v1">预留电话</view>
+				<view class="v2">{{order.phone}}</view>
+			</view>
+			<block wx:if="{{order.free_num>0}}">				<view class="info-list">
+					<view class="v1">已免费</view>
+					<view class="v2">{{order.free_num}}单</view>
+				</view>
+			</block>
+			<view class="info-list">
+				<view class="v1">留言</view>
+				<view class="v2">
+					<block wx:if="{{!order.remark}}">
+						<text>未填写</text>
+					</block>
+					<block wx:if="{{order.remark}}">
+						<text>{{order.remark}}</text>
+					</block>
+				</view>
+			</view>
+		</view>
+		<block wx:if="{{order.after_sale!=1}}">
+			<view class="goi-footer">
+				<block wx:if="{{order.order_status==10}}">
+					<view bindtap="onCancelOrderTap" class="black-btn">取消订单</view>
+				</block>
+				<block wx:if="{{order.order_status==10&&!goods_overdue}}">
+					<view bindtap="onPayTap" class="red-btn">{{buttonName?buttonName:'立即支付'}}</view>
+				</block>
+				<block wx:if="{{(order.order_status==20&&order.after_sale==0)&&order.goods.is_support_refund==1}}">
+					<view bindtap="onRefundTap" class="black-btn">申请退款</view>
+				</block>
+				<block wx:if="{{order.order_status==40||order.order_status==60}}">
+					<view bindtap="onDeleteTap" class="black-btn">删除订单</view>
+				</block>
+				<block wx:if="{{order.order_status==40&&order.is_evaluation==0}}">
+					<view bindtap="onEvaluationTap" class="red-btn">立即评价</view>
+				</block>
+				<block wx:if="{{order.after_sale==1&&order.review_status==0}}">
+					<view bindtap="onCancelRefundTap" class="red-btn">取消退款</view>
+				</block>
+			</view>
+		</block>
+		<block wx:if="{{payType}}">
+			<view class="pay-type">
+				<view class="pay-tit">选择支付方式</view>
+				<view bindtap="onChooseTap" class="pay-webchat" data-pay="1">
+					<image class="icon54" src="/zhy/resource/images/wx.png"></image>
+					<view class="v1">微信支付</view>
+					<image class="icon-choice" src="/zhy/resource/images/{{pay_type==1?'radio2.png':'radio1.png'}}"></image>
+				</view>
+				<view bindtap="onChooseTap" class="pay-balance" data-pay="2">
+					<image class="icon54" src="/zhy/resource/images/balance.png"></image>
+					<view class="v1">余额支付</view>
+					<image class="icon-choice" src="/zhy/resource/images/{{pay_type==2?'radio2.png':'radio1.png'}}"></image>
+				</view>
+				<view class="pay-btn">
+					<view bindtap="onPaycloseTap" class="pay-close">取消</view>
+					<view bindtap="payNow" class="pay-button">确认支付</view>
+				</view>
+			</view>
+		</block>
+	</view>
+</block>
+<block wx:if="{{!show}}">
+	<block></block>
+</block>
+<wsx src="/zhy/resource/wxs/time.wxs"  module="time" />
+

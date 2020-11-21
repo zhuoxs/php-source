@@ -1,0 +1,429 @@
+{template 'header'}
+<style>
+    .apply{
+        margin:20px 20px 10px;
+    }
+    #hook-hurry{
+        margin-top: 10px;
+    }
+    .finish{
+        margin-bottom: 10px;
+    }
+    .go-notify .wechat-notify-signel{
+        width: 100%;
+    }
+    .quick-select .yd-cell-right{
+        /*margin-right: .8rem;*/
+    }
+    #hook-app{
+        padding-bottom: 20px;
+    }
+    .yd-cell{
+        position: relative;
+    }
+    .q-select{
+        position: absolute;
+        background: #6699FF;
+        color: #ffffff;
+        right: 5px;
+        padding: 3px 5px;
+        bottom: .25rem;
+        border-top-left-radius:2px;
+        border-bottom-left-radius:2px;
+    }
+    .wechat-notify,.phone-notify{
+        color: rgb(4, 190, 2);
+        font-size: 0.28rem;
+        font-weight: bold;
+        font-weight: 300;
+    }
+    .go-notify{
+        margin-top: 18px;
+    }
+    .wechat-notify i,.phone-notify i{
+        display: inline-block;
+        margin-bottom: 5px;
+    }
+    .phone-notify{
+        color: #ffb400;
+    }
+    .liuer_hr{
+        background: none;
+        border: none;
+        margin-top:.5rem;
+        width: 100%;
+        height: 1px;
+        border-bottom:1px dashed #ececec;
+    }
+    .pingjia{
+        position: fixed;
+        top: 35%;
+        right: 0;
+        z-index:9999;
+    }
+    .tips{
+        color: #999999;
+    }
+    <?php if($config['qq_access']): ?>
+    .go-notify .phone-notify,.go-notify .wechat-notify{
+        width: 33.33%;
+    }
+    <?php endif;?>
+    .pingjia-wrap{
+        background: #f30;
+        color: #ffffff;
+        padding:5px;
+        border-radius:5px 0 0 5px;
+        font-size: 10px;
+    }
+    .go-notify .phone-notify,.go-notify .wechat-notify{
+        padding: 0 0 12px 0;
+    }
+    #hook-hurry span{
+        font-size: 12px;
+    }
+    #hook-hurry .yd-btn-block{
+        height: 0.8rem;
+        border-radius: 0;
+        border-style: dashed;
+        color: #999999;
+    }
+    .modal-wrap{
+        width: 100%;
+    }
+    .select-list li{
+        width: calc(33.33% - 0.3rem);
+    }
+    .dialog-wrap{
+        position: relative;
+    }
+    .yd-popup-content{
+        position: relative;
+        -webkit-overflow-scrolling:auto;
+    }
+
+    .dialog{
+        margin-top: 0px;
+        position: fixed;
+        z-index:99999999;
+        left: 50%;
+        transform: translate(-50%,-50%);
+        width: 1.2rem;
+        height: 1.2rem;
+    }
+    .dialog-success{
+        position: absolute;
+    }
+    .success-wrap{
+        background: #ffffff;
+        z-index:999999999;
+    }
+    .msg-do{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 80%;
+        margin: 40px auto;
+    }
+    .msg-do a{
+        display: block;
+        width: 100%;
+        font-size: 14px;
+        background: #1197ff;
+        color: #ffffff;
+        text-align: center;
+        padding: 10px 0px;
+        margin-bottom: 5px;
+    }
+    .msg-do a:last-child{
+        background: #ffffff;
+        color: #999999;
+    }
+</style>
+<body class="pageMovelog">
+<div id="hook-app">
+    <!--<div class="pingjia">
+        <div class="pingjia-wrap">
+            评价车主
+        </div>
+    </div>-->
+    <div class="scroll-img" style="margin-bottom: 15px;">
+        <yd-slider autoplay="5000">
+            {loop $banners $index $banner}
+            <yd-slider-item>
+                <a href="<?php echo $linkurls[$index]; ?>"><img src="{php echo tomedia($banner)}" width="100%"/></a>
+            </yd-slider-item>
+            {/loop}
+        </yd-slider>
+    </div>
+   <!-- <header>
+        <div class="avatar"><img src="{$_W['fans']['avatar']}" alt="" /></div>
+    </header>-->
+    <div class="step">
+        <yd-step theme="2" current="1" current-color="#4f7ff9">
+            <yd-step-item> <span slot="top">通知车主</span> </yd-step-item>
+            <yd-step-item> <span slot="top">评价车主</span> </yd-step-item>
+        </yd-step>
+    </div>
+    <yd-cell-group title="" class="apply">
+        <yd-cell-item>
+            <span slot="left"><i class="icon iconfont icon-paizhao"></i> 车牌号</span>
+            <span slot="right">{$owner['chepaihao']}</span>
+        </yd-cell-item>
+        <?php if($config['address_isshow']): ?>
+        <yd-cell-item>
+            <span slot="left"><i class="icon iconfont icon-weizhi-tianchong"></i> 位置</span>
+            <span slot="right">{{address}}</span>
+        </yd-cell-item>
+        <?php endif; ?>
+        <yd-cell-item class="quick-select">
+            <span slot="left"><i class="icon iconfont icon-quexianyuanyin"></i> 挪车原因</span>
+            <input slot="right" type="text" placeholder="想对车主说的话..." style="text-align:right;padding-right:40px;" v-model="remark" >
+        </yd-cell-item>
+        <div class="q-select" @click="quick">快选</div>
+    </yd-cell-group>
+    <div class="go-notify" @click.stop="hurryMobile">
+        <div class="phone-notify" style="color:#ff5a00;font-weight: bold;">
+            <span style="display: inline-block;margin-top:2px;margin-bottom: 10px;"><img src="/addons/liuer_mcar/assets/images/tel.png" alt="" style="width:0.8rem"></span>
+             <br />拨打电话
+        </div>
+        <?php if($config['qq_access']): ?>
+        <div class="phone-notify" @click.stop="hurryQq" style="color:#069cea;font-weight: bold;">
+            <span style="display: inline-block;margin-top:2px;margin-bottom: 10px;"><img src="/addons/liuer_mcar/assets/images/qq_notice.png" alt="" style="width:0.8rem"></span>
+            <br />语音短信
+        </div>
+        <?php endif; ?>
+        <div class="wechat-notify" @click.stop="hurryWechat" style="font-weight: bold;">
+            <span style="display: inline-block;margin-top:2px;margin-bottom: 10px;"><img src="/addons/liuer_mcar/assets/images/wechat.png" alt="" style="width:0.8rem"></span>
+            <br />微信通知
+        </div>
+    </div>
+    <div class="tips">
+        <i class="icon iconfont icon-tips"></i>
+        {php echo $config['want_tips'];}
+    </div>
+
+    <!--<div class="voice">
+        <div class="speak"><i class="icon iconfont icon-tianchongxing-"></i> 按住发送语音消息</div>
+    </div>-->
+    <!--<hr class="liuer_hr">-->
+    <div id="hook-hurry" class="hurry-btn">
+        <?php if($config['want']): ?>
+        <yd-button size="large" type="hollow" @click.native="apply" class="finish"><i class="fa fa-link"></i> {$config['want_text']}</yd-button>
+        <?php endif; ?>
+        <yd-button size="large" type="hollow" @click.native="finish" class="finish"><i class="fa fa-star"></i> 评价车主</yd-button>
+    </div>
+    <yd-popup v-model="quickShow" position="center" width="auto">
+        <div style="background-color:#fff;" class="modal-wrap">
+            <ul class="province-list select-list">
+                <li v-for="(item,index) in qlist" :key="index" @click="choseMe(index)" :class="{active:remark == item}">{{item}}</li>
+            </ul>
+        </div>
+    </yd-popup>
+
+    <yd-popup v-model="success" position="center" width="80%" class="success-modal" :close-on-masker="true">
+        <div class="success-wrap">
+            <div class="dialog">
+                <span class="dialog-success">
+                  <yd-icon name="checkoff" size=".7rem" color="#ffffff"></yd-icon>
+                </span>
+            </div>
+            <div style="background-color:#fff;padding-top: .6rem;" class="dialog-wrap">
+                <div class="wait"><span style="font-size: 20px;">通知车主成功</span></div>
+            </div>
+            <div class="msg" style="text-align: center;color: #999999;font-size: 14px;">
+                {php echo $config['success_text'] ? $config['success_text'] : '耐心等候一下'}
+            </div>
+            <div class="msg-do">
+                <a href="{$agent_shop}">我也要申请挪车码</a>
+                <a href="" @click.prevent="success = 0">暂不需要</a>
+            </div>
+        </div>
+    </yd-popup>
+
+    <?php if($config['hu_need_guanzhu'] && !$_W['fans']['follow']):?>
+    <yd-popup v-model="needGuanzhu" position="center" width="90%" class="guanzhu-modal" :close-on-masker="false">
+        <div style="background-color:#fff;padding-top: .4rem;">
+            <div class="header-tip">
+                <i class="fa fa-volume-up"></i> {$config['hu_wenan']}
+            </div>
+            <div class="qr_code"><img src="{$gz_img}" alt="" /></div>
+        </div>
+    </yd-popup>
+    <?php endif;?>
+</div>
+
+<script>
+    var unique = "{$uniqueSign}";
+    var code_id = "{$codeInfo['id']}";
+    var homeUrl = "{php echo $this->createMobileUrl('center',['id'=>$codeInfo['id']]);}";
+    var hurryUrl = "{php echo $this->createMobileUrl('hurry');}";
+    var applyUrl = "{$applyUrl}";
+    var doneUrl = "{php echo $this->createMobileUrl('done',['id'=>$codeInfo['id'],'unique'=>$uniqueSign]);}";
+    var apiUrl = "{$config['map_url']}";
+    var key = "{$config['map_key']}";
+    var needGuanzhu = parseInt("{$config['hu_need_guanzhu']}");
+    <?php if($config['address_isshow']):?>
+    wx.ready(function () {
+        wx.getLocation({
+            type : 'gcj02',
+            success : function(res) {
+                app.latitude = res.latitude;
+                app.longitude = res.longitude;
+                app.getAddress(res.latitude,res.longitude);
+            },
+            cancel : function(res) {
+                alert("用户拒绝授权获取地理位置");
+            }
+        });
+    })
+    <?php endif;?>
+    var app = new Vue({
+        el: '#hook-app',
+        data: {
+            address: "位置获取中...",
+            latitude: '',
+            longitude: '',
+            remark: '',
+            success: 0,
+            needGuanzhu: needGuanzhu,
+            quickShow : 0,
+            qlist: [
+                {$quick_text}
+            ]
+        },
+        methods: {
+            choseMe: function(index){
+                if(index == 5){
+                    this.remark = '';
+                    this.quickShow = 0;
+                }else{
+                    var val = this.qlist[index];
+                    this.remark = val;
+                    this.quickShow = 0;
+                }
+            },
+            quick: function(){
+                console.log('quick');
+                this.quickShow = 1;
+            },
+            hurryMobile: function(){
+                this.$dialog.loading.open('获取号码中，请稍后...');
+                $.post(hurryUrl,{
+                    unique:unique,
+                    code_id:code_id,
+                    address:this.address,
+                    latitude:this.latitude,
+                    longitude:this.longitude,
+                    remark:this.remark,
+                    type:1
+                }).then(function(resp) {
+                    app.$dialog.loading.close();
+                    resp = JSON.parse(resp);
+
+                    if(resp.error){
+                        app.message(resp.msg,'error');
+                        return false;
+                    }else{
+                        location.href = "tel:" + resp.xMobile;
+                        return false;
+                    }
+
+                });
+                return false;
+            },
+            hurryQq: function(){
+                this.$dialog.loading.open('加载中...');
+                $.post(hurryUrl,{
+                    unique:unique,
+                    code_id:code_id,
+                    address:this.address,
+                    latitude:this.latitude,
+                    longitude:this.longitude,
+                    remark:this.remark,
+                    type:8
+                }).then(function(resp){
+                    app.$dialog.loading.close();
+                    console.log(typeof resp);
+                    resp = JSON.parse(resp);
+                    if(resp.error){
+                        app.message(resp.msg,'error');
+                    }else{
+                        app.success = 1;
+//                        app.message(resp.msg);
+                    }
+                })
+                console.log('haha');
+                return false;
+            },
+            hurryWechat: function(){
+                this.$dialog.loading.open('微信通知中...');
+                $.post(hurryUrl,{
+                    unique:unique,
+                    code_id:code_id,
+                    address:this.address,
+                    latitude:this.latitude,
+                    longitude:this.longitude,
+                    remark:this.remark,
+                    type:2
+                }).then(function(resp){
+                    app.$dialog.loading.close();
+                    console.log(typeof resp);
+                    resp = JSON.parse(resp);
+                    if(resp.error){
+                        app.message(resp.msg,'error');
+                    }else{
+                        app.success = 1;
+//                        app.message(resp.msg);
+                    }
+                })
+            },
+            //获取地址
+            getAddress: function(lat,lng){
+                var data = {
+                    location:lat + ',' + lng,
+                    key: key,
+                    get_poi:0,
+                    output:'jsonp'
+                };
+                $.ajax({
+                    type: 'GET',
+                    dataType: 'jsonp',
+                    data: data,
+                    jsonp : "callback",
+                    jsonpCallback:"QQmap",
+                    url : apiUrl,
+                    success : function(resp){
+                        var address = resp['result']['address'];
+                        console.log(address);
+                        app.address = address;
+                    }
+                })
+            },
+            finish: function(){
+                $.post(hurryUrl,{unique:unique,code_id:code_id,type:4}).then(function(resp){
+                    resp = JSON.parse(resp);
+                    if(resp.error){
+                        location.href = homeUrl;
+                    }else{
+                        location.href = doneUrl;
+                    }
+                })
+
+            },
+            apply: function(){
+              location.href = applyUrl;
+            },
+            message:function(msg,icon){
+                icon = icon || 'success'
+                this.$dialog.toast({
+                    mes: msg,
+                    timeout: 1500,
+                    icon:icon
+                });
+            },
+        }
+    });
+</script>
+</body>
+</html>

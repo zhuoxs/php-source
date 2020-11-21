@@ -1,0 +1,416 @@
+<style>
+    .table>thead>tr>th,.table>tbody>tr>td {
+        vertical-align: middle;
+    }
+    .dropdown-menu {
+        min-width: 70px;
+    }
+</style>
+<div class="main">
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            筛选
+            <div class="pull-right" style="margin-top: -7px;">
+                <button class="btn btn-primary sync_btn" title="同步发布物品没有位置的">同步物品位置(待同步{$sync_count})</button>
+            </div>
+        </div>
+        <div class="panel-body">
+            <form action="" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site">
+                <input type="hidden" name="a" value="entry">
+                <input type="hidden" name="do" value="item">
+                <input type="hidden" name="act" value="display">
+                <input type="hidden" name="m" value="superman_hand2">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">物品标题</label>
+                    <div class="col-sm-8 col-md-8 col-xs-12">
+                        <input class="form-control" name="item_title" type="text" value="{$_GPC['item_title']}" placeholder="支持模糊搜索">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">卖家昵称</label>
+                    <div class="col-sm-8 col-md-8 col-xs-12">
+                        <input class="form-control" name="nickname" type="text" value="{$_GPC['nickname']}" placeholder="支持模糊搜索">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 control-label">物品分类</label>
+                    <div class="col-sm-8 col-md-8 col-lg-5 col-xs-12">
+                        <select name="cid" class="form-control">
+                            <option value="-1" {if !isset($_GPC['cid'])||$_GPC['cid']==-1}selected{/if}>全部</option>
+                            {if $category}
+                            {loop $category $cate}
+                            <option value="{$cate['id']}" {if isset($_GPC['cid'])&&$_GPC['cid']==$cate['id']}selected{/if}>{$cate['title']}</option>
+                            {/loop}
+                            {/if}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 control-label">状态</label>
+                    <div class="col-sm-8 col-md-8 col-lg-5 col-xs-12">
+                        <select name="status" class="form-control">
+                            <option value="all" {if $status == 'all'}selected{/if}>全部</option>
+                            <option value="0" {if $status !='all' && $status == 0}selected{/if}>待审核</option>
+                            <option value="-3" {if $status == -3}selected{/if}>审核拒绝</option>
+                            <option value="1" {if $status == 1}selected{/if}>已发布</option>
+                            <option value="2" {if $status == 2}selected{/if}>已交易</option>
+                            <option value="-1" {if $status == -1}selected{/if}>已下架</option>
+                        </select>
+                    </div>
+                    <div class="col-xs-12 col-sm-2 col-md-2 col-lg-2">
+                        <button class="btn btn-primary"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <form action="" method="post">
+        <div class="panel panel-default">
+            <div class="table-responsive panel-body" style="overflow: visible">
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th width="30">
+                            <input type="checkbox" class="form-control" name="checkall">
+                        </th>
+                        <th width="50">ID</th>
+                        <th width="300">标题</th>
+                        <th width="100">分类</th>
+                        <th>卖家昵称</th>
+                        <th width="80">价格</th>
+                        <th width="80">积分</th>
+                        <th width="80">状态</th>
+                        {if $this->plugin_module['plugin_ad']['module'] && !$this->plugin_module['plugin_ad']['module']['is_delete']}
+                        <th width="160">置顶</th>
+                        {/if}
+                        <th>发布时间</th>
+                        <th>浏览量</th>
+                        <th width="100">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {if !empty($list)}
+                    {loop $list $li}
+                    <tr>
+                        <td>
+                            <input type="checkbox" name="itemids[]" value="{$li['id']}">
+                        </td>
+                        <td>{$li['id']}</td>
+                        <td>
+                            <a href="#" style="color: #428bca;" data-id="{$li['id']}" data-toggle="modal" data-target=".item_detail_modal" title="物品详情" class="btn_item_detail" >
+                                {$li['title']}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="#" style="color: #428bca;" data-id="{$li['id']}" data-title="{$li['title']}" data-cid="{$li['cid']}" data-toggle="modal" data-target=".update_category_modal" class="btn_update_category" >
+                                {$li['category']['title']}
+                            </a>
+                        </td>
+                        <td>
+                            {$li['nickname']}
+                        </td>
+                        <td>
+                            {$li['price']}
+                        </td>
+                        <td>
+                            {$li['credit']}
+                        </td>
+                        <td>
+                            {if $li['status']==1}
+                            <span class="label label-success">已发布</span>
+                            {else if $li['status']==0}
+                            <span class="label label-warning">待审核</span>
+                            {else if $li['status']==2}
+                            <span class="label label-default">已交易</span>
+                            {else if $li['status']==-3}
+                            <span class="label label-danger">已拒绝</span>
+                            {else}
+                            <span class="label label-danger">已下架</span>
+                            {/if}
+                        </td>
+                        {if $this->plugin_module['plugin_ad']['module'] && !$this->plugin_module['plugin_ad']['module']['is_delete']}
+                        <td class="text-center" width="160">
+                            {$li['position_title']}
+                        </td>
+                        {/if}
+                        <td>{$li['createtime']}</td>
+                        <td>{$li['page_view']}</td>
+                        <td>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+                                    <span>审核</span>
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-right">
+                                    <li><a href="{php echo $this->createWebUrl('item', array('act' => 'post', 'id' => $li['id'], 'status' => 1))}">通过</a></li>
+                                    <li><a href="{php echo $this->createWebUrl('item', array('act' => 'post', 'id' => $li['id'], 'status' => -3))}">拒绝</a></li>
+                                </ul>
+                            </div>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default dropdown-toggle btn-sm" data-toggle="dropdown">更多
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu" role="menu" style="min-width:120px;text-align: center;cursor:pointer;">
+                                    <li>
+                                        <a href="{php echo $this->createWebUrl('item', array('act' => 'post', 'id' => $li['id']))}">进入审核</a>
+                                    </li>
+                                    {if $li['item_type'] == -1}
+                                    <li>
+                                        <a href="{php echo $this->createWebUrl('item', array('act' => 'add', 'id' => $li['id']))}">编辑</a>
+                                    </li>
+                                    {/if}
+                                    {if $this->plugin_module['plugin_ad']['module'] && !$this->plugin_module['plugin_ad']['module']['is_delete']}
+                                    {if $li['position_title'] == '否'}
+                                    <li>
+                                        <a href="{php echo $this->createWebUrl('item', array('act' => 'set_top', 'id' => $li['id']))}">置顶</a>
+                                    </li>
+                                    {else}
+                                    <li>
+                                        <a href="{php echo $this->createWebUrl('item', array('act' => 'cancel_set_top', 'id' => $li['id']))}">取消置顶</a>
+                                    </li>
+                                    {/if}
+                                    {/if}
+                                    <li>
+                                        <a href="{php echo $this->createWebUrl('item', array('act' => 'delete', 'id' => $li['id']))}" onclick="return confirm('此操作不可恢复，确认吗？'); return false;">删除</a>
+                                    </li>
+                                    <li>
+                                        <a href="#" data-itemid="{$li['id']}" data-uid="{$li['seller_uid']}" data-toggle="modal" data-target=".black_modal" class="add_black">加入黑名单</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {/loop}
+                    {/if}
+                    </tbody>
+                </table>
+            </div>
+            <div class="panel-footer">
+                总共 <strong>{$total}</strong> 条
+            </div>
+        </div>
+        <div class="bottom-row">
+            <div class="col-xs-4 text-left" style="padding: 0">
+                {if !empty($list)}
+
+                <input name="batch_submit" type="submit" onclick="return confirm('此操作不可恢复，确认吗？')" value="批量删除" class="btn btn-danger" />
+                <input name="batch_submit" type="submit" value="批量审核通过" class="btn btn-primary" />
+                <input type="hidden" name="token" value="{$_W['token']}" />
+                {/if}
+            </div>
+            <div class="col-xs-8 text-right" style="padding: 0">
+                {$pager}
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal fade item_detail_modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                <h4 class="modal-title">物品信息</h4>
+            </div>
+            <form action="" class="form-horizontal category_form" method="post">
+                <div class="modal-body">
+                    <div class="form-group" style="min-height: 35px; line-height: 35px;">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label text-right" style="padding-top: 0">图片</label>
+                        <div class="col-sm-8 col-md-8 col-xs-12">
+                            <div class="input-group multi-img-details item_album">
+                            </div>
+                            <span class=""></span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="min-height: 35px; line-height: 35px;">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label text-right" style="padding-top: 0">内容说明</label>
+                        <div class="col-sm-8 col-md-8 col-xs-12">
+                            <textarea disabled class="form-control item_content" name="item_content"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group" style="min-height: 35px; line-height: 35px;">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label text-right" style="padding-top: 0">位置</label>
+                        <div class="col-sm-8 col-md-8 col-xs-12">
+                            <span class="item_position"></span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="min-height: 35px; line-height: 35px;">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label text-right" style="padding-top: 0">发布时间</label>
+                        <div class="col-sm-8 col-md-8 col-xs-12">
+                            <span class="item_createtime"></span>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade update_category_modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                <h4 class="modal-title">更改物品分类</h4>
+            </div>
+            <form action="" class="form-horizontal category_form" method="post">
+                <div class="modal-body">
+                    <div class="form-group" style="min-height: 35px; line-height: 35px;">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label text-right" style="padding-top: 0">标题</label>
+                        <div class="col-sm-8 col-md-8 col-xs-12">
+                            <span class="title_show"></span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="min-height: 35px; line-height: 35px;">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label text-right" style="padding-top: 0">物品分类</label>
+                        <div class="col-sm-8 col-md-8 col-xs-12 category_wrap">
+                            <select class="form-control" multiple="multiple"  size="5" name="categoryid"></select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button name="update_category" type="submit" value="yes" class="btn btn-primary">确认更改</button>
+                    <input type="hidden" name="token" value="{$_W['token']}">
+                    <input type="hidden" name="itemid">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade black_modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                <h4 class="modal-title">封禁用户账号</h4>
+            </div>
+            <form action="" class="form-horizontal black_form" method="post">
+                <div class="modal-body">
+                    <div class="form-group text-day" style="min-height: 35px; line-height: 35px;">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label text-right" style="padding-top: 0">封禁天数</label>
+                        <div class="col-sm-8 col-md-8 col-xs-12">
+                            <input class="form-control" name="day" type="number" value="">
+                            <span class="help-block">填-1为永久</span>
+                        </div>
+                    </div>
+                    <div class="form-group text-remark" style="min-height: 35px; line-height: 35px;">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label text-right" style="padding-top: 0">封禁原因</label>
+                        <div class="col-sm-8 col-md-8 col-xs-12">
+                            <textarea class="form-control" name="remark"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button name="add_black" type="submit" value="yes" class="btn btn-primary">确定</button>
+                    <input type="hidden" name="token" value="{$_W['token']}">
+                    <input type="hidden" name="seller_uid">
+                    <input type="hidden" name="itemid">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    require(['jquery', 'util'], function($, util){
+        //全选
+        $('input[name=checkall]').click(function(){
+            if ($(this).prop('checked')) {
+                $('input[name="itemids[]"]').prop('checked', true);
+            } else {
+                $('input[name="itemids[]"]').prop('checked', false);
+            }
+        });
+        $('.footer').append('<a href="{php echo $this->createWebUrl("stat")}" style="position: absolute;left: 50%;bottom: 0;color: #b8b9b9;cursor:default;">stat</a>');
+        // 加入黑名单
+        $('.add_black').click(function () {
+            var uid = $(this).data('uid')
+            var id = $(this).data('itemid')
+            $('.black_form input[name=seller_uid]').val(uid);
+            $('.black_form input[name=itemid]').val(id);
+        })
+        $('.black_form').submit(function () {
+            var day = $('input[name=day]').val()
+            if (day == '') {
+                util.message('请输入封禁天数！', '', 'error');
+                return false
+            }
+            return true
+        })
+        //物品信息
+        $('.btn_item_detail').click(function () {
+            var t = this;
+            var id = $(t).attr('data-id');
+            var url = window.location.href;
+            $.ajax({
+                type: 'post',
+                url: url,
+                dataType: 'json',
+                data: 'itemid='+id+'&get_item=1',
+                success: function (resp) {
+                    var item_album = '';
+                    if (resp.album.length > 0) {
+                        for (var i=0; i<resp.album.length; i++) {
+                            var item = resp.album[i];
+                            item_album += '<div class="multi-item">';
+                            item_album += '<img src="'+item+'" onerror="" class="img-responsive img-thumbnail">';
+                            item_album += '</div>';
+                        }
+                        $('.item_detail_modal .item_album').html(item_album);
+                    }
+                    $('.item_detail_modal .item_content').html(resp.description);
+                    $('.item_detail_modal .item_position').html(resp.address);
+                    $('.item_detail_modal .item_createtime').html(resp.createtime);
+                }
+            });
+        });
+
+        //分类信息
+        $('.btn_update_category').click(function () {
+            var t = this;
+            var id = $(t).attr('data-id');
+            var cid = $(t).attr('data-cid');
+            var url = window.location.href;
+            var title = $(t).attr('data-title');
+            $.ajax({
+                type: 'post',
+                url: url,
+                dataType: 'json',
+                data: 'get_category=1',
+                success: function (resp) {
+                    if (resp.length > 0) {
+                        var html = '';
+                        for (var i=0; i<resp.length; i++) {
+                            item = resp[i];
+                            if (cid == item['id']) {
+                                selected = ' selected ';
+                            } else {
+                                selected = '';
+                            }
+                            html += '<option value='+item['id']+' '+selected+'>'+item['title']+'</option>';
+                        }
+                        $('select[name=categoryid]').html(html);
+                    }
+                }
+            });
+            $('.category_form .title_show').html(title);
+            $('.category_form input[name=itemid]').val(id);
+        });
+
+        //同步物品位置
+        $('.sync_btn').click(function () {
+            var t = this;
+            $(t).addClass('disabled').text('正在同步中...');
+            $.ajax({
+                url: "{php echo $this->createWebUrl('item',array('act' => 'sync_location'))}",
+                dataType: 'json',
+                success: function (resp) {
+                    if (resp.errno == 0) {
+                        util.message('同步成功', '', 'success');
+                    } else {
+                        util.message('同步失败', '', 'info');
+                    }
+                    window.location.reload();
+                },
+            });
+        });
+    });
+</script>

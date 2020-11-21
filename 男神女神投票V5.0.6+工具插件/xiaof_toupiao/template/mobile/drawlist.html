@@ -1,0 +1,165 @@
+{template 'common/header'}
+<div class="page-group">
+    <div id="superpage_drawlist" class="page page-current">
+        <div class="content native-scroll">
+            <div class="act-info act-describe">
+                <div class="act-describe-title custom-font-color">
+                    -&nbsp;&nbsp;收货地址&nbsp;&nbsp;-
+                </div>
+                <div class="act-describe-content">
+                    {if empty($setting['opendrawentry'])}
+                    <form id="address-form">
+                        <div class="list-block">
+                            <ul>
+                                <li>
+                                    <div class="item-content">
+                                        <div class="item-inner">
+                                            <div class="item-title label">
+                                                <div class="item-font">收货人</div>
+                                                <div class="item-need">必填*</div>
+                                            </div>
+                                            <div class="item-input">
+                                                <input type="text" name="name" {if !empty($address['name'])}value="{$address['name']}" disabled="disabled"{/if} placeholder="请输入收货人">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="item-content">
+                                        <div class="item-inner">
+                                            <div class="item-title label">
+                                                <div class="item-font">手机号</div>
+                                                <div class="item-need">必填*</div>
+                                            </div>
+                                            <div class="item-input">
+                                                <input type="text" name="phone" id="phone" {if !empty($address['phone'])}value="{$address['phone']}" disabled="disabled"{/if} placeholder="请输入手机号">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="item-content">
+                                        <div class="item-inner">
+                                            <div class="item-title label">
+                                                <div class="item-font">收货地址</div>
+                                            </div>
+                                            <div class="item-input" >
+                                                <textarea name="addrs" {if !empty($address['addrs'])}disabled="disabled"{/if} placeholder="您的收货地址" rows="3">{if !empty($address['addrs'])}{$address['addrs']}{/if}</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="address-submit custom-color" id="address-submit">
+                            确定
+                        </div>
+                        <div class="item-need address-submit-tips">*填写后不允许修改</div>
+                    </form>
+                    {/if}
+                </div>
+            </div>
+            <div class="my-prize-display-c">
+                <div class="my-prize-display-menu">
+                    <div class="my-prize-display-nav {if $_GPC['type'] !='2' && $_GPC['type'] !='1'}my-prize-display-nav-active{/if}">
+                        <a href="{php echo self::appUrl('drawlist','xiaof_toupiao','&type=2');}">
+                            全部
+                        </a>
+                    </div>
+                    <div class="my-prize-display-nav {if $_GPC['type'] =='2'}my-prize-display-nav-active{/if}">
+                        <a href="{php echo self::appUrl('drawlist','xiaof_toupiao','&type=2');}">
+                            待领取
+                        </a>
+                    </div>
+                    <div class="my-prize-display-nav">
+                        <a class="{if $_GPC['type'] =='1'}my-prize-display-nav-active{/if}" href="{php echo self::appUrl('drawlist');}">
+                            已领取
+                        </a>
+                    </div>
+                </div>
+                {if $list}
+                <div class="my-prize-display-detail">
+                    {loop $list $drawitems}
+                    <div class="my-prize-img-c-top"></div>
+                    <div class="my-prize-img-c">
+                        <img src="{php echo tomedia($drawitems['pic'])}" width="65">
+                    </div>
+                    <div class="my-prize-detail-c">
+                        <div class="my-prize-detail my-prize-detail-name">{$drawitems['name']}</div>
+                        <div class="my-prize-detail">抽中时间：{php echo date("m-d H:i", $drawitems['created_at'])}</div>
+                        <div class="my-prize-detail">{if !empty($drawitems['bdelete_at'])}核销时间：{php echo date("m-d H:i", $drawitems['bdelete_at'])}{/if}</div>
+                    </div>
+                    {if $drawitems['uses'] == '1'}
+                    <div class="prize-isget-tips">
+                        已领取
+                    </div>
+                    {else}
+                    <div class="prize-isget-tips custom-color">
+                        领取
+                    </div>
+                    {/if}
+                    {/loop}
+                </div>
+                {else}
+                <div class="no-prize-tips">~~(╯﹏╰)b  还没有奖品</div>
+                {/if}
+            </div>
+            {template 'common/copyright'}
+        </div>
+    </div>
+</div>
+{template 'common/nav'}
+{template 'common/footer'}
+
+
+
+
+{template 'weui/header'}
+
+<script type="text/javascript">
+    $(function () {
+        $("#address-submit").click(function(){
+            $.post("{$_W['siteurl']}", $("#address-form").serialize(), function(data){
+                var result = $.parseJSON(data);
+                if (result.errno == 0) {
+                    location.reload();
+                }else{
+                    $.alert(result.message);
+                }
+            });
+        });
+
+        var type="{$_GPC['type']}";
+        var page=1;
+        $(".more-drawhistory").click(function(){
+            page++;
+            $.get($.xiaof.appUrl("ajaxdrawlist"), {'type':type, 'page':page}, function(data){
+                var result = $.parseJSON(data);
+                if (result.errno == 0) {
+                    var drawlog = '';
+                    $.each(result.data, function(index, value){
+                        var bdelete = '';
+                        if (typeof(value.bdelete_at) != "undefined") {
+                            bdelete = '&nbsp;&nbsp;&nbsp;&nbsp;核销时间：'+value.bdelete_at+'</p>';
+                        }
+                        drawlog += '\t\t\t<a href="javascript:void(0);" class="weui-media-box weui-media-box_appmsg draw-log-list">\n' +
+                            '\t\t\t\t<div class="weui-media-box__hd">\n' +
+                            '\t\t\t\t\t<img class="weui-media-box__thumb" src="'+value.pic+'">\n' +
+                            '\t\t\t\t</div>\n' +
+                            '\t\t\t\t<div class="giving-log-info">\n' +
+                            '\t\t\t\t\t<h4 class="weui-media-box__title">'+value.name+'</h4>\n' +
+                            '\t\t\t\t\t<p class="weui-media-box__desc">抽中时间：'+value.created_at+bdelete+'\n' +
+                            '\t\t\t\t</div>\n' +
+                            '\t\t\t</a>';
+					});
+					$("#drawhistory-container").append(drawlog);
+                }else if(result.errno == 1){
+                    $(".more-drawhistory").unbind('click');
+                    $("#drawhistory-container").append('<p class="goving-logtips">'+result.message+'</p>');
+				}else{
+                    $.alert(result.message);
+				}
+			})
+		})
+    })
+</script>

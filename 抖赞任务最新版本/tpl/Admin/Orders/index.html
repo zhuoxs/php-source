@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>{~echo sp_cfg('website')}</title>
+    <bootstrapcss />
+</head>
+<body>
+<div class="bjy-admin-nav">
+    <i class="fa fa-home"></i> 首页
+    &gt;
+    后台管理
+    &gt;
+    订单管理
+</div>
+
+<ul id="myTab" class="nav nav-tabs">
+    <li <if condition="$get['stat'] eq ''"> class="active"</if> ><a href="{:U('index')}">全部订单</a></li>
+    <volist name="status_all" id="vo">
+        <li <if condition="$get['stat'] eq $key and $get['stat'] neq ''"> class="active"</if> ><a href="{:U('index',array('stat'=>$key))}">{$vo}</a></li>
+    </volist>
+</ul>
+
+<form id="form_1" class="form-search form-inline" method="get" action="" style="padding: 10px 0; ">
+
+    订单编号：
+    <div class="input-group">
+        <input type="text" name="order_no" value="{$get.order_no}" class="input-sm search-query" placeholder="订单编号">
+    </div>
+
+    &nbsp;&nbsp;
+    下单时间：
+    <div class="input-group">
+        <input type="text" name="start_date" value="{$get.start_date}" class="input-sm search-query date-picker" data-date-format="yyyy-mm-dd" placeholder="起始日期">
+        -
+        <input type="text" name="end_date" value="{$get.end_date}" class="input-sm search-query date-picker" data-date-format="yyyy-mm-dd" placeholder="截止日期">
+    </div>
+
+    订单状态：
+    <div class="input-group">
+        <select name="has_agent">
+            <option value="">全部</option>
+            <volist name="status_all" id="vo">
+                <option value="0" <if condition="$get['has_agent'] eq '0'"> selected</if> >未获取</option>
+            </volist>
+        </select>
+    </div>
+
+    订单类型：
+    <div class="input-group">
+        <select name="is_since">
+            <option value="">全部</option>
+            <option value="0" <if condition="$get['is_since'] eq '0'"> selected</if> >邮寄单</option>
+            <option value="1" <if condition="$get['is_since'] eq '1'"> selected</if>>自提单</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <button type="submit" class="btn btn-info btn-sm">
+            <span class="ace-icon fa fa-search icon-on-right bigger-110"></span>
+            搜索
+        </button>
+    </div>
+</form>
+
+<table class="table table-striped table-bordered table-hover">
+    <tr>
+        <th>订单号</th>
+        <th>用户名</th>
+        <th>产品名称</th>
+        <th>价格</th>
+        <th>数量</th>
+        <th>总金额</th>
+        <th>订单类型</th>
+        <th>订单状态</th>
+        <th>时间</th>
+        <th>发货</th>
+        <th>详情</th>
+    </tr>
+    <foreach name="list" item="vo">
+        <tr>
+            <td>{$vo.order_no}</td>
+            <td>{$vo.nickname}</td>
+            <td>{$vo.goods_name}</td>
+            <td>￥{$vo.sub_price}</td>
+            <td>{$vo.number}</td>
+            <td>￥{$vo.total_price}</td>
+            <td>
+                <if condition="$vo['since_id'] gt 0">
+                    <span style="color: red">自提单</span>
+                <else/>
+                    邮寄单
+                </if>
+            </td>
+            <td>{$vo.status_text}</td>
+            <td>{$vo.create_time|date='Y-m-d H:i',###}</td>
+            <td>
+                <if condition="$vo['status'] eq 1 and $vo['pay_status'] eq 1">
+                    <if condition="$vo['shipping_status'] eq 0">
+                        <a href="javascript:" class="btn btn-default btn-xs"
+                           data-id="{$vo.id}"
+                           data-order_no="{$vo.order_no}"
+                           data-goods_name="{$vo.goods_name}"
+                           data-address_name="{$vo.address_name}"
+                           data-address_phone="{$vo.address_phone}"
+                           data-address_city="{$vo.address_city}"
+                           data-address_area="{$vo.address_area}"
+                           data-address_province="{$vo.address_province}"
+                           data-address_address="{$vo.address_address}"
+                           data-shipping_status="{$vo.shipping_status}"
+                           data-shipping_name="{$vo.shipping_name}"
+                           data-shipping_no="{$vo.shipping_no}"
+                           onclick="edit(this)">
+                            发货
+                        </a>
+                    <else/>
+                        <a href="javascript:" class="btn btn-default btn-xs"
+                           data-id="{$vo.id}"
+                           data-order_no="{$vo.order_no}"
+                           data-goods_name="{$vo.goods_name}"
+                           data-address_name="{$vo.address_name}"
+                           data-address_phone="{$vo.address_phone}"
+                           data-address_city="{$vo.address_city}"
+                           data-address_area="{$vo.address_area}"
+                           data-address_province="{$vo.address_province}"
+                           data-address_address="{$vo.address_address}"
+                           data-shipping_status="{$vo.shipping_status}"
+                           data-shipping_name="{$vo.shipping_name}"
+                           data-shipping_no="{$vo.shipping_no}"
+                           onclick="edit(this)">
+                            已发货
+                        </a>
+                    </if>
+                </if>
+            </td>
+            <td>
+                <a href="{:U('show',array('id'=>$vo['id']))}" class="btn btn-default btn-xs">订单详情</a>
+            </td>
+        </tr>
+    </foreach>
+</table>
+
+{$Page}
+<br><br><br>
+
+<!-- 修改菜单模态框开始 -->
+<div class="modal fade" id="apply-edit" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <input type="hidden" name="id" value="0">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                    &times;
+                </button>
+                <h4 class="modal-title" id="myModalLabel">
+                    发货状态
+                </h4>
+            </div>
+            <div class="modal-body">
+                <form id="bjy-form" class="form-inline" action="{:U('shipping_status')}" method="post">
+                    <input type="hidden" name="id" >
+                    <table class="table table-striped table-bordered table-hover">
+                        <tr><th>订单编号</th>
+                            <td ><span class="order_no"></span></td>
+                        </tr>
+                        <tr><th>收货人</th>
+                            <td ><span class="address_name"></span></td>
+                        </tr>
+                        <tr><th>地址</th>
+                            <td ><span class="address"></span></td>
+                        </tr>
+                        <tr><th>电话</th>
+                            <td ><span class="address_phone"></span></td>
+                        </tr>
+                        <tr>
+                            <th>订单状态：</th>
+                            <td>
+                                <select name="shipping_status" id="shipping_status" onchange="changeStatus(this.value)" class="form-control">
+                                    <volist name="shipping_status" id="vo">
+                                        <option value="{$key}">{$vo}</option>
+                                    </volist>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr class="kd">
+                            <th>快递公司：</th>
+                            <td>
+                                <select name="shipping_name" id="shipping_name">
+                                    <option value="">请选择</option>
+                                    <volist name="shipping_list" id="vo">
+                                        <option value="{$vo}">{$vo}</option>
+                                    </volist>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr class="kd">
+                            <th>快递编号：</th>
+                            <td>
+                                <input type="text" name="shipping_no" id="shipping_no" class="form-control" value="">
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th></th>
+                            <td>
+                                <input class="btn btn-success" type="submit" value="修改">
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 修改菜单模态框结束 -->
+
+<bootstrapjs />
+</body>
+</html>
+
+<script>
+    function edit(obj){
+        var id = $(obj).attr('data-id');
+        var order_no = $(obj).attr('data-order_no');
+        var address_phone = $(obj).attr('data-address_phone');
+        var address_name = $(obj).attr('data-address_name');
+        var address = $(obj).attr('data-address_province') + $(obj).attr('data-address_city') + $(obj).attr('data-address_area') + $(obj).attr('data-address_address');
+        var shipping_name=$(obj).attr('data-shipping_name');
+        var shipping_no=$(obj).attr('data-shipping_no');
+
+        $('.order_no').html(order_no);
+        $('.address_name').html(address_name);
+        $('.address_phone').html(address_phone);
+        $('.address').html(address);
+        $('#shipping_name').val(shipping_name);
+        $('#shipping_no').val(shipping_no);
+        var shipping_status=$(obj).attr('data-shipping_status');
+        changeStatus(shipping_status);
+        $("#shipping_status").val(shipping_status);
+        $("input[name='id']").val(id);
+        $('#apply-edit').modal('show');
+    }
+
+    /**
+     *
+     */
+    function changeStatus(t)
+    {
+        if( t == 1 ) {
+            $('.kd').show();
+        } else {
+            $('.kd').hide();
+        }
+    }
+</script>

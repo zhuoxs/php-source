@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>{$_W['slwl']['lang']['sys_name']}</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="">
+	{template 'public/header'}
+
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+	{template 'public/top'}
+	{template 'public/left'}
+
+	<div class="layui-body">
+		<div class="layui-main">
+			<div class="layui-tab">
+				<ul class="layui-tab-title">
+					<li {if $operation == 'display'} class="layui-this" {/if}>
+						<a href="{php echo webUrl('',['do'=>'module/adact'])}">单页面</a>
+					</li>
+					{if empty($one['id']) && $operation == 'post'}
+					<li class="layui-this">
+						<a href="{php echo webUrl('',['do'=>'module/adact','op'=>'post'])}">添加</a>
+					</li>
+					{/if}
+					{if ($one['id']) && $operation == 'post'}
+					<li class="layui-this">
+						<a href="{php echo webUrl('',['do'=>'module/adact','op'=>'post','id'=>$one['id']])}">编辑</a>
+					</li>
+					{/if}
+				</ul>
+			</div>
+
+		{if $operation == 'display'}
+			<div class="layui-form">
+				<div class="box-tools">
+					<div class="box-search">
+						<div class="layui-input-inline">
+							<input type="text" name="keyword" value="{$keyword}" class="layui-input" placeholder="标题">
+						</div>
+						<div class="layui-input-inline">
+							<button class="layui-btn" lay-submit lay-filter="table-search" id="table-search">搜索</button>
+						</div>
+					</div>
+				</div>
+				<div class="box-list-img">
+					<table id="sl-table" lay-filter="sl-table"></table>
+				</div>
+			</div>
+
+			<div class="script">
+				<script type="text/html" id="toolbar">
+					<div class="layui-btn-container">
+						<button class="layui-btn layui-btn-sm" lay-event="add">添加</button>
+						<button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delete">批量删除</button>
+					</div>
+				</script>
+				<script type="text/html" id="thumb">
+					<div class="box-table-img">
+						<img src="{{d.out_thumb_url}}" data-url="{{d.out_thumb_url}}"
+							onerror="this.src='{MODULE_URL}template/public/image/nopic.png'">
+					</div>
+				</script>
+				<script type="text/html" id="operation">
+					<a href="javascript:;" class="layui-btn layui-btn-sm" lay-event="edit">编辑</a>
+					<a href="javascript:;" class="layui-btn layui-btn-sm layui-btn-danger" lay-event="del">删除</a>
+				</script>
+				<script>
+					layui.use(['laypage', 'layer', 'table', 'form'], function() {
+						my_laypage = layui.laypage;
+						my_layer = layui.layer;
+						my_table = layui.table;
+						my_form = layui.form;
+
+						url_post = "{php echo webUrl('', ['do'=>'module/adact', 'op'=>'post'])}";
+						url_list = "{php echo webUrl('', ['do'=>'module/adact', 'op'=>'display_table'])}";
+						url_delete = "{php echo webUrl('', ['do'=>'module/adact', 'op'=>'delete'])}";
+
+						table_list = my_table.render({
+							elem: '#sl-table'
+							, toolbar: '#toolbar'
+							, even: false
+							, url: url_list
+							, cols: [[
+								// type: 'numbers',
+								{type: 'checkbox'}
+								, {field: 'id', width: 60, title: 'ID', sort: true}
+								, {field: 'displayorder', title: '排序', width: '6%', sort: true}
+								, {field: 'title', title: '标题', width: '44%', sort: true}
+								, {field: 'thumb', title: '外链图片', templet: '#thumb'}
+								, {field: 'enabled_format', title: '状态', sort: true}
+								, {title: '操作', templet: '#operation'}
+							]]
+							, height: 'full-190'
+							, page: {
+								theme: '#1E9FFF'
+							}
+						});
+					});
+				</script>
+			</div>
+
+
+		{else if $operation == 'post'}
+			<form class="layui-form fixed" action="" method="post" enctype="multipart/form-data" id="data-form">
+				<input type="hidden" name="id" value="{$one['id']}" />
+				<div class="layui-tab-content">
+					<div class="layui-form-item">
+						<label class="layui-form-label">状态</label>
+						<div class="layui-input-block">
+							<input type="radio" name="enabled" value="1" title="启用"
+								{if $one['enabled']=='1' || empty($one['id']) }checked{/if}>
+							<input type="radio" name="enabled" value="0" title="禁用"
+								{if $one['enabled']=='0' && $one['id'] }checked{/if}>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label">排序</label>
+						<div class="layui-input-block">
+							<input type="text" name="displayorder" value="{$one['displayorder']}"
+								class="layui-input" placeholder="数字越大越靠前">
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label">标题</label>
+						<div class="layui-input-block">
+							<input type="text" name="title" lay-verify="required" value="{$one['title']}" class="layui-input">
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label">简介</label>
+						<div class="layui-input-block">
+							<textarea name="subtitle" placeholder="简介" class="layui-textarea">{$one['subtitle']}</textarea>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label">提示</label>
+						<div class="layui-input-block">
+							<div class="layui-form-mid layui-word-aux">
+								<span>小程序暂时不支持复杂的格式文本，如果发现前台显示空白，请把内容复制到文本文档里中转一下。</span>
+							</div>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label">文章内容</label>
+						<div class="layui-input-block box-act-body">
+							{php echo tpl_ueditor('detail',$one['detail'])}
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label">外链图片<br>(可选)</label>
+						<div class="layui-input-block">
+							{php echo slwl_tpl_form_field_image('out_thumb', $one['out_thumb'])}
+							<div class="layui-form-mid layui-word-aux">图片大小为宽度100%高度自适应，推荐 750 X 310 像素</div>
+						</div>
+					</div>
+					<div class="layui-form-item">
+						<label class="layui-form-label">动作(可选)</label>
+						<div class="layui-input-block">
+							{php echo slwl_tpl_form_show_link('out_link', $one['out_link']);}
+							<div class="layui-form-mid layui-word-aux">可手动输入带 https 链接，但小程序必需配置相关域名信息</div>
+						</div>
+					</div>
+				</div>
+				<div class="layui-tab-content fixed" id="data-submit">
+					<div class="layui-form-item">
+						<div class="layui-input-block">
+							<button class="layui-btn" lay-submit lay-filter="adact">保存</button>
+							<input type="hidden" name="token" value="{$_W['token']}" />
+						</div>
+					</div>
+				</div>
+			</form>
+
+			<script>
+				layui.use('form', function(){
+					var form = layui.form;
+
+					form.on('submit(adact)', function(data){
+						let url = "{php echo webUrl('', ['do'=>'module/adact', 'op'=>'post'])}";
+						var $obj = $(this);
+
+						if (!$obj.hasClass('lock')) {
+							$obj.addClass('lock'); // 不能再点击
+
+							$.ajax({
+								type: "POST",
+								url: url,
+								dataType: 'json',
+								data: data.field,
+								success: function (rs) {
+
+									if (rs && rs.code.toString() === '0') {
+										layer.msg('保存成功！' , {
+											time: 500
+										}, function () {
+											window.location.href = "{php echo webUrl('', ['do'=>'module/adact'])}";
+										});
+									} else {
+										layer.msg(rs.msg, {
+											offset: '20%',
+										});
+									}
+									$obj.removeClass('lock');
+								},
+								error: function () {
+									layer.msg('保存过程发生错误，请与管理员联系', {
+										offset: '20%',
+									});
+									$obj.removeClass('lock');
+								}
+							});
+						}
+
+						return false;
+					});
+				});
+			</script>
+		{/if}
+		</div>
+	</div>
+
+	{template 'public/copyright'}
+</div>
+
+{template 'public/footer'}
+</body>
+</html>

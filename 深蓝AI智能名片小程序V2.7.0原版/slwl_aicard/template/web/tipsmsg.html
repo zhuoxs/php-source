@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{$_W['slwl']['lang']['sys_name']}</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="">
+    {template 'public/header'}
+
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+    {template 'public/top'}
+    {template 'public/left'}
+
+    <div class="layui-body">
+        <div class="layui-main">
+            <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+                <legend>管理员短信通知设置</legend>
+            </fieldset>
+            <form class="layui-form" action="" method="post">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">短信平台</label>
+                    <div class="layui-input-block">
+                        {php $support_msgs = array("Close"=>'关闭', "Alidayu"=>'阿里大鱼', "Alidysmslite"=>'阿里云云通信'); }
+                        <select name="options[type]">
+                            {loop $support_msgs $index $item}
+                                {php $type_selected = ($messages['type'] == $index) ? 'selected' : ''; }
+                            <option value="{$index}" {php echo $type_selected; }>{$item}</option>
+                            {/loop}
+                        </select>
+                        <div class="layui-form-mid layui-word-aux">
+                            <span style="color: red;">15分钟内只会收到一条信息</span>
+                            <span>目前只支持阿里云云通信</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">短信Appkey</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="options[Alidayu][appkey]" value="{$messages[Alidayu]['appkey']}" class="layui-input">
+                        <div class="layui-form-mid layui-word-aux">此项填写Appkey</div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">短信secret</label>
+                    <div class="layui-input-block">
+                        <input type="password" name="options[Alidayu][secret]" value="{$messages[Alidayu]['secret']}" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">短信签名</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="options[Alidayu][sign]" value="{$messages[Alidayu]['sign']}" class="layui-input">
+                        <div class="layui-form-mid layui-word-aux">用于发送短信的签名，例如：微信科技</div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">短信模板ID</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="options[Alidayu][sms_id]" value="{$messages[Alidayu]['sms_id']}" class="layui-input">
+                        <div class="layui-form-mid layui-word-aux">例如SMS_9626548，模板DEMO（报告老板，在 ${time} 有新的预约，请及时处理。） ${time}=时间，${phone}=手机号</div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">接收短信号码</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="options[Alidayu][mobile]" value="{$messages[Alidayu]['mobile']}" class="layui-input">
+                        <div class="layui-form-mid layui-word-aux">例如 13579246810</div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">测试短信发送</label>
+                    <div class="layui-input-block">
+                        <input type="checkbox" name="test" value="1" lay-skin="primary" title="保存后测试短信">
+                        <div class="layui-word-aux" style="margin-top: 10px;">你可以指定一个电话, 系统将在保存参数成功后尝试发送一条测试性的短信, 来检测短信通知是否正常工作</div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit="" lay-filter="tipsmsg">提交</button>
+                        <input type="hidden" name="token" value="{$_W['token']}" />
+                    </div>
+                </div>
+            </form>
+
+            <script>
+                layui.use('form', function(){
+                    var form = layui.form;
+
+                    form.on('submit(tipsmsg)', function(data){
+                        let url = "{php echo webUrl('tipsmsg')}";
+                        var $obj = $(this);
+
+                        if (!$obj.hasClass('lock')) {
+                            $obj.addClass('lock'); // 不能再点击
+
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                dataType: 'json',
+                                data: data.field,
+                                success: function (rs) {
+                                    console.log(rs.message.errno);
+                                    if (rs.message.errno == '0') {
+                                        layer.msg('保存成功！' , {
+                                            time: 500
+                                        }, function () {
+                                            window.location.href = "{php echo webUrl('tipsmsg')}";
+                                        });
+                                    } else {
+                                        layer.msg(rs.message.message, {
+                                            offset: '20%',
+                                        });
+                                    }
+                                    $obj.removeClass('lock');
+                                },
+                                error: function () {
+                                    layer.msg('提交过程发生错误，请与管理员联系', {
+                                        offset: '20%',
+                                    });
+                                    $obj.removeClass('lock');
+                                }
+                            });
+                        }
+
+                        return false;
+                    });
+                });
+            </script>
+
+        </div>
+    </div>
+
+    {template 'public/copyright'}
+</div>
+
+{template 'public/footer'}
+</body>
+</html>

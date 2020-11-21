@@ -1,0 +1,84 @@
+{extend name="common/index" /}
+{block name="search_box"}
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入关键字..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="type" id="leader_id" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+{/block}
+{block name="tool_box"}
+{/block}
+{block name="table_config"}
+<script>
+    layui.use('table', function () {
+        var table = layui.table;
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_list')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {field:'leader_name', width:180, title: '团长',fixed:'left'},
+                {field:'name', width:180, title: '核销员'},
+                {field:'tel', width:120, title: '电话'},
+                {field:'create_time', width:200, title: '创建时间'},
+                {field:'update_time', width:200, title: '修改时间'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+
+        //        搜索
+        $('#btnSearch').unbind('click').click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    leader_id: $('#leader_id').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        leader_id: $('#leader_id').val(),
+                    }
+                });
+            }
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        $.get("{:adminurl('select','Cleader')}", function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: '', text: '请选择团长'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#leader_id').select2({
+                data: ret,
+            })
+        })
+    })
+</script>
+{/block}

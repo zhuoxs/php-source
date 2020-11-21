@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>充值-{$shop['name']}</title>
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/mui.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/money.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/font-awesome.css" />
+        <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/jquery-3.2.1.min.js" ></script>
+        {php echo register_jssdk(false);}
+    </head>
+    <body>
+        <div class="kuang">
+            <div class="jine">
+                充值金额（元）
+            </div>
+            <div class="shuru">
+                <div class="duo">
+                    ￥
+                </div>
+                <div class="inq">
+                    <input type="text" name="money" id="money"/>
+                </div>
+            </div>
+        </div>
+        {if $shop['other_fee']}
+        <div class="tips_two">
+            系统将扣除<span>{$shop['other_fee']}‰</span>的手续费!
+        </div>
+        {/if}
+        <div class="next">
+            马上充值
+        </div>
+        {template 'shop_footer'}
+        <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/mui.min.js" ></script>
+
+        <script type="text/javascript">
+            var other_fee = {$shop['other_fee']};
+            var money;
+            $("#money").change(function () {
+                if (other_fee) {
+                    var money_all = $("#money").val();
+                    var fix_amountTest = /^(([1-9]\d*)|\d)(\.\d{1,2})?$/;
+                    if (fix_amountTest.test(money_all) == false) {
+                        show_message(0, "请输入有效数据", 3000, 1);
+                        return false;
+                    }
+                    var money_fee = parseInt(money_all * other_fee / 10) / 100;
+                    var money_surplus = money_all - money_fee;
+                    $(".tips_two").html("手续费<span>" + money_fee + "</span>元，系统到账<span>" + money_surplus + "</span>元");
+                }
+
+            });
+
+
+            $('.next').click(function () {
+                money = $("#money").val();
+                if (money == "" || money < 1) {
+                    show_message(0, "充值金额不能小于1元", 3000, 1);
+                    return false;
+                }
+                var fix_amountTest = /^(([1-9]\d*)|\d)(\.\d{1,2})?$/;
+                if (fix_amountTest.test(money) == false) {
+                    show_message(0, "请输入有效数据", 3000, 1);
+                    return false;
+                }
+
+                var btnArray = ['充值', '取消'];
+                var run_confim = false;
+                mui.confirm('你确定要充值吗？', '充值提示', btnArray, function (e) {
+                    if (e.index == 0&&!run_confim) {
+                        run_confim = true;
+                        $.ajax({
+                            type: "POST",
+                            url: "{php echo $this->createMobileUrl('pay',array('token'=>$token, 'shopid' => $shopid))}",
+                            data: {money: $("#money").val()},
+                            dataType: "json",
+                            success: function (res) {
+                                if (res.sta == 0) {
+                                    show_message(0, res.error, 3000, 1);
+                                } else {
+                                    api_js_params = res;
+                                    if (typeof WeixinJSBridge == "undefined") {
+                                        if (document.addEventListener) {
+                                            document.addEventListener('WeixinJSBridgeReady', jsApiCall, false);
+                                        } else if (document.attachEvent) {
+                                            document.attachEvent('WeixinJSBridgeReady', jsApiCall);
+                                            document.attachEvent('onWeixinJSBridgeReady', jsApiCall);
+                                        }
+                                    } else {
+                                        jsApiCall();
+                                    }
+                                }
+                            },
+                            error: function (err) {
+                                show_message(0, '错误，刷新页面重试', 3000, 1);
+                            }
+                        });
+                    }
+                });
+
+            });
+            //调用微信JS api 支付
+            var api_js_params = {};
+            function jsApiCall()
+            {
+                WeixinJSBridge.invoke('getBrandWCPayRequest', api_js_params,
+                        function (res) {
+                            if (res.err_msg == "get_brand_wcpay_request:ok") { //支付成功
+                                show_message(1, '充值成功', 3000, 1);
+                                setTimeout(location.href = "{php echo $this->createMobileUrl('shop_charge',array('token'=>$token, 'shopid' => $shopid))}", 2000);
+                            } else if (res.err_msg == "get_brand_wcpay_request:cancel") {
+                                show_message(0, '已取消充值', 3000, 1);
+                                return false;
+                            } else if (res.err_msg == "get_brand_wcpay_request:fail") {
+                                show_message(0, '充值失败，请刷新页面重试', 3000, 1);
+                            }
+                        }
+                );
+            }
+        </script>
+
+    </body>
+</html>

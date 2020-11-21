@@ -1,0 +1,89 @@
+{php include wl_template('common/header');}
+<div class="page-group" >
+    <div class="page page-current" id="page-index">
+		<header class="bar bar-nav create-actions">
+			<a class="button button-link button-nav pull-left back" href="{php echo app_url('halfcard/halfcard_app/userhalfcard')}"><span class="icon icon-left"></span>返回</a>
+			<h1 class='title' class="">消费记录</h1>
+		</header>
+		<div class="content infinite-scroll">
+			<div class="list-block media-list mt10">
+				<ul class="allorder">
+					
+				</ul>
+			</div>
+			<div class="weui-loadmore loading_more" style="display: none;">
+	            <i class="weui-loading"></i>
+	            <span class="weui-loadmore__tips">正在加载</span>
+	        </div>
+	        <div class="weui-loadmore weui-loadmore_line" style="display: none;">
+	            <span class="weui-loadmore__tips" style="background-color: #EFEFF4;">暂无更多数据</span>
+	        </div>
+	    </div>
+	</div>
+</div>
+<style type="text/css">
+.allorder .item-after{color: #333;}
+.allorder .footertext{color: #888888!important;}
+.allorder .footertext .item-after{color: #888888!important;}
+.allorder .common-no-con{margin-top:0rem;}
+</style>
+<script type="text/html" id="orderlist">
+{{# for(var i = 0, len = d.data.length; i < len; i++){ }}
+	<li>
+      	<a href="{{ d.data[i].url }}" class="item-link item-content">
+	        <div class="item-inner">
+	          	<div class="item-title-row">
+	            	<div class="item-title">{{ d.data[i].title }}</div>
+	            	<div class="item-after">￥{{ d.data[i].ordermoney }}</div>
+	          	</div>
+	          	<div class="item-title-row footertext">
+	            	<div class="item-subtitle">{{ d.data[i].createtime }}</div>
+	            	<div class="item-after">{{# if(d.data[i].commentflag != 1){ }}待评价{{# }else{ }}已完成{{# } }}</div>
+	          	</div>
+	        </div>
+      	</a>
+    </li>
+{{# } }}
+</script>
+<script>
+	$(function() {
+		$(document).on("pageInit", "#page-index", function(e, id, page) {
+			var loading = false;
+			var pindex = 1;
+			function addItems(pindex) {
+				$.post("{php echo app_url('halfcard/halfcard_app/userecord',array('id'=>$cardid))}",{pindex:pindex},function(d){
+					if (d.data.length > 0) {
+						var gettpl1 = document.getElementById('orderlist').innerHTML;
+						laytpl(gettpl1).render(d, function(html){
+						   $(".allorder").append(html);
+						});
+					}else if(pindex == 1){
+						$(".allorder").html('<div class="common-no-con"><img src="{URL_APP_IMAGE}order_no_con.png" alt=""><p>暂无消费记录</p></div>');
+					}else{
+						$(".weui-loadmore_line").show();
+						$(".loading_more").remove();
+					}
+				}, 'json');
+			}
+			addItems(pindex);
+			$(page).on('infinite', function() {
+				if (loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+					loading = false;
+					pindex++;
+					addItems(pindex);
+					$(".loading_more").hide();
+					$.refreshScroller();
+				}, 1000);
+			});
+		});
+		$.init();
+	});
+	
+	function confirmsend(orderid){
+		location.href = "{php echo app_url('order/comment/add',array('plugin'=>'usehalf'))}&orderid="+orderid;
+	}
+</script>
+{php include wl_template('common/footer');}

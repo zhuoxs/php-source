@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{$_W['slwl']['lang']['sys_name']}</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="">
+    {template 'public/header'}
+
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+    {template 'public/top'}
+    {template 'public/left'}
+
+    <div class="layui-body">
+        <div class="layui-main">
+            <div class="layui-tab">
+                <ul class="layui-tab-title">
+                    <li {if $operation == 'display'} class="layui-this" {/if}>
+                        <a href="{php echo webUrl('oplog',array('op' =>'display'))}">操作日志</a>
+                    </li>
+                </ul>
+            </div>
+
+        {if $operation == 'display'}
+            <style type="text/css">
+                .word-break { word-break: break-all; }
+            </style>
+            <div class="layui-form">
+                <table class="layui-table" lay-even="" lay-skin="nob">
+                    <colgroup>
+                        <col width="50">
+                        <col width="10%">
+                        <col width="60%">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>域名</th>
+                            <th>内容</th>
+                            <th>操作人</th>
+                            <th>时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {php $this_statuses = array('0'=>'禁用','1'=>'启用'); }
+                        {loop $list $item}
+                        <tr>
+                            <td>{$item['id']}</td>
+                            <td>{$item['op_domain']}</td>
+                            <td class="word-break">{$item['op_txt_cn']}</td>
+                            <td>{$item['op_user']}</td>
+                            <td>{$item['addtime']}</td>
+                            <td style="text-align:left;">
+                                <a href="javascript:;" class="layui-btn layui-btn-danger btn-del" data-id="{$item['id']}" title="删除">删除</a>
+                            </td>
+                        </tr>
+                        {/loop}
+                    </tbody>
+                </table>
+                <div class="pager">
+                    {$pager}
+                </div>
+            </div>
+
+            <script>
+                // 分页
+                layui.use('laypage', function(){
+                    var laypage = layui.laypage;
+
+                    laypage.render({
+                        elem: $('.pager')
+                        ,limit: '{php echo $psize; }'
+                        ,count: '{php echo $total; }'
+                        ,theme: '#1E9FFF'
+                        ,curr:  '{php echo $pindex; }'
+                        ,hash: '{php echo $pindex; }'
+                        ,prev: 'prev'
+                        ,next: 'next'
+                        ,jump: function (obj, first) {
+                            if (first != true) {
+                                var currentPage = obj.curr; //获取点击的页码
+                                window.location.href = "{php echo webUrl('oplog')}&page=" + currentPage;
+                            }
+                        }
+                    });
+                });
+                $(function () {
+                    $('.pager').show();
+                });
+            </script>
+            <script>
+                layui.use('layer', function(){
+                    var layer = layui.layer;
+
+                    // 删除
+                    $(document).on('click', '.btn-del', function () {
+                        $obj = $(this);
+                        $del_id = $obj.data('id');
+                        layer.confirm('确定要删除吗？', {
+                            offset: '20%',
+                            btn: ['再想想', '删除'],
+                            scrollbar: false,
+                            closeBtn: 0,
+                        }, function (i) {
+                           layer.close(i);
+                        }, function (i) {
+                            let $url = "{php echo webUrl('oplog', array('op'=>'delete'))}";
+
+                            $.ajax({
+                                type: "POST",
+                                url: $url,
+                                dataType: 'json',
+                                data: {
+                                    id: $del_id
+                                },
+                                success: function (rs) {
+                                    console.log(rs);
+                                    if (rs.message.errno == '0') {
+                                        layer.msg('删除成功！', {
+                                            time: 500
+                                        },
+                                        function () {
+                                            $obj.closest('tr').fadeOut(200, function () {
+                                                $obj.remove();
+                                            });
+                                        });
+                                    } else {
+                                        layer.msg(rs.message.message, {
+                                            offset: '20%',
+                                        });
+                                        $obj.removeClass('lock');
+                                    }
+                                },
+                                error: function () {
+                                    layer.msg('提交过程发生错误，请与管理员联系', {
+                                        offset: '20%',
+                                    });
+                                    $obj.removeClass('lock');
+                                }
+                            });
+                        });
+                    });
+                });
+            </script>
+
+        {/if}
+        </div>
+    </div>
+
+    {template 'public/copyright'}
+</div>
+
+{template 'public/footer'}
+</body>
+</html>

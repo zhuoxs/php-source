@@ -1,0 +1,127 @@
+{{include file='common/head.html'}}
+<body bgcolor='#ffffff' text='#000000' leftmargin='0' topmargin='0'>
+<script language='javascript' src='{{$PSTATIC}}/style/common.js'></script>
+<script language='javascript'>
+var xmlhttp2=new Array();
+function changeNodeResult(id) { 
+	var recv_msg=false;
+	try{
+	 if (xmlhttp2[id].readyState==4) {
+		if(xmlhttp2[id].status==200){	
+			//alert(xmlhttp2[id].responseText);	
+			xxkf_obj('busy'+id).innerHTML = "";
+		 	var dataArray = xmlhttp2[id].responseXML.getElementsByTagName('result');
+		 	var code = dataArray[0].getAttribute('code');
+		 	if(code==2){
+			 	alert('更新主机失败，该主机上没有相应模板');
+		 	}else if(code==0){
+			 	alert('更新主机失败');
+		 	}		 		
+		}
+	  }
+	}catch(e){
+		alert(e);
+	}
+}
+function changeNode(id,templete)
+{
+	//alert('id='+id);
+	//alert(xxkf_obj('node'+id).selectedIndex);
+	var node = xxkf_obj('node'+id).value;
+	//alert(node_value);
+	var url='?c={{$smarty.request.c}}&a=ajaxChangeNode&id='+id + '&node=' + node + '&templete=' + templete;
+	xxkf_obj('busy'+id).innerHTML="<img src='{{$PSTATIC}}/style/busy.gif'/>";
+	xmlhttp2[id] = create_xmlhttp();	
+	xmlhttp2[id].open("GET",url,true);	
+	xmlhttp2[id].onreadystatechange=function (){
+		changeNodeResult(id);
+	};
+	xmlhttp2[id].send(null);
+}
+function updateView(id,product_id)
+{
+	xxkf_obj('updateView').innerHTML="";
+	var view=0;
+	if(document.getElementById(id).checked)	{
+		view=1;
+	}
+	var url='?c={{$smarty.request.c}}&a=ajaxUpdateProductView&id='+product_id+'&view='+view;
+	ajax_open_url2(url,updateViewResult);
+}
+function updateViewResult()
+{
+	var id='updateView';
+	try{
+	 if (xmlhttp2.readyState==4) {
+		if(xmlhttp2.status==200){	
+			//alert(xmlhttp2[id].responseText);	
+		 	var dataArray = xmlhttp2.responseXML.getElementsByTagName('result');
+		 	var ret = dataArray[0].getAttribute('ret');
+		 	if(ret==1)
+		 	{
+		 		xxkf_obj(id).innerHTML = "增加失败，请检查";
+		 	}	 		
+		}
+	  }
+	}catch(e){
+		alert(e);
+	}
+}
+</script>
+<div align="center">
+	<div class="wid_main mar_main" align="left">
+		<div class="block_top" align="left">当前位置：虚拟主机/cdn --> 产品列表</div>
+		<div id="updateView"></div>
+		<table class="table_main2" cellpadding="0" cellspacing="1">
+			  <form action='?c={{$smarty.request.c}}&a={{$smarty.request.a}}' method='post' name='product_form'>
+				<tr><td colspan="12" class="bg_main hg_main">
+					  <a href='?c=vhostproduct&a=flush'><b>[更新配置文件]</b></a>
+					  <a href="?c=vhostproduct&a=addProductForm" target='main'><b>[增加产品]</b></a>
+					  <select name='product_flag' onChange="javascript:product_form.submit();">
+					  <option value='0' {{if $product_flag==0}}selected{{/if}}>所有产品</option>
+					  <option value='1' {{if $product_flag==1}}selected{{/if}}>暂停产品</option>
+					  <option value='2' {{if $product_flag==2}}selected{{/if}}>可销售产品</option>
+					  </select></td></tr>
+				 </form>
+				<tr id="bg_yellow">
+					<td>操作</td>
+					<td>显示顺序</td>
+					<td>产品ID</td>
+					<td>产品名称</td>
+					<td>主机</td>
+					<td>空间/数据库(M)</td>
+					<td>数据库类型</td>
+					<td>价格(元/年)</td>	
+					<!--  <td>绑定域名</td>	-->
+					<td>流量限制</td>	
+					<td>模板</td>
+					<td>允许试用</td>		
+					<td>状态</td></tr>
+				{{foreach from=$list item=row}}
+				<tr><td>[<a href="javascript:if(confirm('确定删除{{$row.name}}?')){location='?c=vhostproduct&a=del&id={{$row.id}}';}" title="删除">删除</a>][<a href="?c=vhostproduct&a=editProductForm&id={{$row.id}}">更改</a>]</td>
+					<td><input type='checkbox' id='view{{$row.id}}' onClick="updateView(this.id,{{$row.id}})" name='view' value='{{$row.view}}' {{if $row.view}}checked{{/if}}>{{$row.view}}</td>
+					<td>{{$row.id}}</td>
+					<td>{{$row.name}}</td>
+					<td><select id='node{{$row.id}}' name='node' onChange="changeNode('{{$row.id}}','{{$row.templete}}')">
+						{{foreach from=$nodes item=node}}
+						<option value='{{$node.name}}' {{if $row.node==$node.name}}selected{{/if}} title='{{$node.nickname}}'>
+						{{$node.name}}
+						</option>
+						{{/foreach}}
+						</select>
+						<div id='busy{{$row.id}}'></div></td>
+					<td>{{if $row.cdn}}cdn/-{{else}}{{$row.web_quota}}&nbsp;/&nbsp;{{$row.db_quota}}{{/if}}</td>
+					<td>{{$row.db_type}}</td>
+					<td>{{$row.price/100}}</td>
+					<!-- <td>{{if $row.domain=='-1'}}不限{{else}}{{$row.domain}}{{/if}}</td> -->
+					<td>{{if $row.flow >0}}{{$row.flow}}G/月{{else}}不限{{/if}}</td>
+					<td>{{$row.templete}}{{if $row.subtemplete}}:{{$row.subtemplete}}{{/if}}</td>
+					<td>{{if $row.try_on !=0}}允许{{else}}否{{/if}}</td>
+					<td>{{if $row.pause_flag!=0}}暂停销售 {{/if}}{{if $row.month_flag!=0}}月付 {{/if}}</td></tr>
+			{{/foreach}}
+			<tr><td colspan="12" id="bg_yellow" align="right">共计 {{$sum}} 条记录&nbsp;</td></tr>
+    	</table>
+  </div>
+</div>
+</body>
+{{include file='common/foot.html'}}

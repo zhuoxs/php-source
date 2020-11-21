@@ -1,0 +1,186 @@
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>联系车主</title>
+    <link rel="stylesheet" type="text/css" href="//at.alicdn.com/t/font_1243209_tw88r3tabsb.css">
+    <link rel="stylesheet" href="{MODULE_URL}static/css/swiper.min.css">
+    {template 'jssdk'}
+    <script src="{MODULE_URL}static/js/swiper.min.js"></script>
+    <link rel="stylesheet" href="{MODULE_URL}static/css/movecar.css">
+    <script src="{MODULE_URL}template/static/js/layer_mobile/layer.js"></script>
+    <style>
+        .swiper-slide{
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+    <script>
+        var log = '';
+        wx.ready(function () {
+            wx.getLocation({
+                type: 'gcj02', // 默认为wgs84的gps坐标，如果要返回直接给openLocation用的火星坐标，可传入'gcj02'
+                success: function (res) {
+                    var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                    var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                    var url = document.location;
+
+                    var html = '<input id="latitude" type="hidden" value="'+latitude+'" ><input id = "longitude" type="hidden" value="'+ longitude +'">';
+                    $(".main").append(html);
+
+                    $.get(url+'&type=loc',{myj:latitude,myw:longitude},function (data,s) {
+                        console.log(data);
+                         log = data.province+data.address.recommend;
+                        $(".tips").html('<i class="iconfont icon-weizhi"></i> '+data.province+data.address.recommend)
+                    },'json')
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+
+    <div data-reactroot="" class="body" >
+            <div class="main">
+                <a class="ihave" href="{php echo $this->createMobileUrl('select_qrcode')}">申请同款挪车码</a>
+                <img class="movecar_tips" src="{MODULE_URL}/static/img/movecar_tips.png" />
+                <div class="carplate">
+                    <span style="letter-spacing:2vw">{php echo mb_substr($data['car'],0,2,"utf-8");}·{php echo mb_substr($data['car'],2,8,"utf-8");}</span>
+                    <div class="lt"></div>
+                    <div class="rt"></div>
+                    <div class="lb"></div>
+                    <div class="rb"></div>
+                </div>
+                <div class="call">
+                    {if $user_setting['wx_set']!='1'}<style> .phone{width: 100%}</style>{/if}
+                    {if $user_setting['phone_set']!='1' }<style> .weixin{width: 100%}</style>{/if}
+                    {if $user_setting['phone_set']=='1' }
+                    <div class="phone" {if $status=='0'}onclick="nosubscribe()"{else}onclick="tel('{$data[sn]}'){/if}"><i class="iconfont icon-dianhua"></i> 电话通知</div>
+                    {/if}
+
+                    {if $user_setting['wx_set']=='1'}
+                    <div class="weixin" {if $status=='0'}onclick="nosubscribe()"{else}onclick="weixin('{$data[sn]}'){/if}" ><i class="iconfont icon-weixin"></i> 微信通知</div>
+                    {/if}
+                </div>
+                <p class="tips">温馨提示：{if $setting['yinhao_set']=='1'}为保护隐私 本次通话将以隐私号码拨出。{else}车主正在附近游荡............{/if}</p>
+            </div>
+            <div class="ad">
+                <div class="swiper-container">
+                    <div class="swiper-wrapper">
+                        {loop $ad $row}
+                        <a class="swiper-slide" style="background: url('{php echo $_W[attachurl];}{$row['img']}');background-size: 100%;background-repeat:round" {if $row['link']!=""}href="{$row['link']}"{/if}>
+                        {if $row['title']}<p style="position: absolute;bottom: 0;background:#00000050;display: inline-block;margin: 0;padding: 0.3rem 0;width: 100%;color: #fff;text-align: center">{$row['title']}</p>{/if}
+                        </a>
+                        {/loop}
+                    </div>
+                    <!-- 如果需要分页器 -->
+                    <div class="swiper-pagination"></div>
+                </div>
+            </div>
+    </div>
+    <section class="footer">
+        <p>本服务由{$setting['site_name']}提供</p>
+    </section>
+<script>
+    var mySwiper = new Swiper ('.swiper-container', {
+        loop: true, // 循环模式选项
+        autoplay:true,
+        // 如果需要分页器
+
+    })
+
+</script>
+    <script>
+        var ua = navigator.userAgent.toLowerCase();//获取判断用的对象
+        var pingtai = 'other';
+        if (ua.match(/MicroMessenger/i) == "micromessenger") {
+            //在微信中打开
+            pingtai = "weixin";
+        }
+        if (ua.match(/Alipay/i) == "alipay") {
+            //在新浪微博客户端打开
+            pingtai = 'weibo';
+        }
+        if (ua.match(/tencenttraveler/) != null || ua.match(/qqbrowse/) != null) {
+            pingtai = 'QQ'
+        }
+        function tel(sn) {
+            lodding();
+
+            var lat = $('#latitude').val();
+            var lng = $('#longitude').val();
+            if(lat){
+
+            }
+
+            $.post("{php echo $this->createMobileUrl('tel')}",{'sn':sn,'lat':lat,'lng':lng,'pingtai':pingtai},function (data) {
+                if(data.error=='0'){
+                    window.location.href='tel:'+data.num;
+                    layer.closeAll();
+                }else if(data.error=='1'){
+                    layer.closeAll();
+                    layer.open({
+                        content: '失败：'+data.msg
+                        ,skin: 'msg'
+                        ,time: 5 //2秒后自动关闭
+                    });
+                }else{
+                    layer.closeAll()
+                    layer.open({
+                        content: '失败：AK有误<br>请联系管理员'
+                        ,skin: 'msg'
+                        ,time: 5 //2秒后自动关闭
+                    });
+                }
+            },'json');
+        }
+        function lodding() {
+            layer.open({
+                type: 2
+                ,content: '加载中',
+                shadeClose: false
+            });
+        }
+        function nosubscribe() {
+            layer.open({
+                content: '你需要关注公众号后才可以联系车主'
+                ,skin: 'msg'
+                ,time: 1 //2秒后自动关闭
+                ,shadeClose: false
+                ,end:function () {
+                    layer.open({
+                        content: '<img width="100%" src="{php echo $this->createMobileUrl('qr',['url'=>$content['url']])}"/><font color="red">你需要关注公众号后才可以联系车主<br>长按二维码关注公众号</font>'                    ,anim:'up'
+                        ,skin: 'centen',
+                        shadeClose: false
+                    })
+                }
+            });
+
+        }
+        function weixin(sn){
+
+            lodding();
+            var lat = $('#latitude').val();
+            var lng = $('#longitude').val();
+
+            $.post('{php echo $this->createMobileUrl("weixin")}',{sn:sn,openid:"{$data['openid']}",car_id:"{$data['car']}",log:log,'lat':lat,'lng':lng,'pingtai':pingtai},function (data) {
+                if(data.errno=='1'){
+                    layer.closeAll()
+                    layer.open({
+                        content:data.message
+                        ,skin: 'msg'
+                        ,time: 5 //2秒后自动关闭
+                    });
+                }else{
+                    layer.closeAll()
+                    layer.open({
+                        content: '通知失败：'+data.message
+                        ,skin: 'msg'
+                        ,time: 5 //2秒后自动关闭
+                    });
+                }
+            },'json');
+            }
+    </script>
+</body>
+</html>

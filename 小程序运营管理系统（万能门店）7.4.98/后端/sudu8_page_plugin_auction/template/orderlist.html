@@ -1,0 +1,375 @@
+{template 'common/header'}
+<style type="text/css">
+    .zzcc{
+        position: fixed;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #000000;
+        opacity: 0.4;
+        z-index: 100000;
+    }
+    .bbdd{
+        position: fixed;
+        z-index: 100001;
+        background-color: #ffffff;
+        width: 400px;
+        height: 220px;
+        top: 50%;
+        left: 50%;
+        margin-top: -200px;
+        margin-left: -110px;
+        padding: 10px;
+    }
+    .ddhh{
+        line-height: 30px;
+        position: relative;
+    }
+    .ddxx{
+        position: absolute;
+        right: 0;
+        top:0;
+        cursor:pointer
+    }
+    .messageview{
+      position: absolute;
+      border-radius: 10px;
+      left: calc( 50% - 300px );
+      top: calc( 50% - 250px );
+      background:rgba(236, 234, 234, 0.95);
+      box-shadow: 5px 5px 5px #aba7a7;
+    }
+    .order_ok{
+      border-radius: 6px;
+      background: rgb(77, 226, 226);
+      outline: none;
+      box-shadow: none;
+      display: block;
+      border:none;
+    }
+    .order_ok:active{
+      background: rgb(86, 207, 158)
+    }
+
+</style>
+<script type="text/javascript">
+$(document).ready(function(){
+
+     $('.pagination a').each(function(){
+
+        if(!$(this).parent().hasClass('active')){
+            var href = $(this).attr('href');
+            // alert($('#employee').val());
+            if(href.indexOf('&daili')>=0){
+                href = href.substring(0, href.indexOf('&daili'));
+            }
+            // alert(href);
+            $(this).attr('href', href + "&order_id={$order_id}");
+            // alert($('#employee').val());
+        }
+     })
+
+     var h = $('#excel').attr('href');
+$('#excel').attr('href', h + '&daili='+$('#daili').val()+'&shop=' + $('#shop').val() + '&sale_time_f=' + $('#datetimepicker1').val() + '&sale_time_e=' + $('#datetimepicker2').val());
+
+
+
+ });
+
+    function shoscc(id){
+        $("#orderfh").val(id);
+        $(".loader").show();
+        $(".la-ball-clip-rotate").hide();
+        $("#bbdd").show();
+    }
+    function ycc(){
+        $(".loader").hide();
+        $("#bbdd").hide();
+    }
+    function tijiao(){
+        var kuaidihao = $("#kuaidihao").val();
+        if(kuaidihao == 0){
+            alert("快递单号不能为空！");
+            return false;
+        }
+        var order = $("#orderfh").val();
+        var kuaidi = $("#kuaidi").val();
+
+        var newurl = document.URL+"&op=fahuo&orderid="+order+"&kuadi="+kuaidi+"&kuaidihao="+kuaidihao;
+        location.href = newurl;
+
+    }
+    function showstat(e){
+      $('.bbdd').slideDown(300);
+      $('.order_id').val($(e).attr('id'));
+      $('.ddxx').click(function(){
+        $('.bbdd').slideUp(300);
+      });
+      $('#order_ok').click(function(){
+        var id=$('.order_id').val();
+        var fast_order=$('#kuaidihao').val();
+        var test=/^[a-z,A-Z,\d,_,\u4e00-\u9fa5]{8,120}$/;
+        var fast_name=$("#kuaidi").find("option:selected").text()
+        //发送订单信息
+        if (!test.test(fast_order)) {
+          alert('请输入至少八位的快递号，或发货说明');
+        }else {
+          $.post(
+            "{php echo $this->createWebUrl('setorderstat')}",
+            {
+              orderid:id,
+              fastorder:fast_order,
+              fastname:fast_name
+            },
+            function(e){
+              if (e=='ok') {
+                $('.bbdd').slideUp(300);
+                alert('发货成功!');
+                location.reload();
+              }
+            }
+          );
+        }
+      });
+    }
+    function order_ok(e){
+    }
+</script>
+	<div style="height:80px">
+
+    	<h3 style="float: left;margin-top: 0;">{if $op == 'yh'}{$userinfo['nickname']}{/if}用户订单</h3>
+	</div>
+
+	<div class="form-horizontal">
+
+		<div style="margin-bottom: 15px; height: 50px;">
+            <form class="form-horizontal" action=""  method="post">
+		        <label for="" class="control-label col-sm-2" style="margin-left:70px; margin-right:20px;">请输入订单号</label>
+		        <div class="form-controls col-sm-5">
+		            <input type="text" name="order_id" id="order_id" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+		        </div>
+		        <div class="col-sm-1">
+		        	<input type="button" onclick="search()" value="搜索" class="btn btn-default btn-sm" style="padding:7px 20px">
+		        </div>
+            </form>
+            <div class="btn btn-primary" style="display: inline-block;font-size: 12px;margin-left: 20px" id="excel" onclick="window.location.href = window.location.href + '&opt=excel';" >excel导出</div>
+	    </div>
+
+    	<script type="text/javascript">
+
+	        function search(){
+	            var val = $("#order_id").val();
+	            if(!val){
+	                alert("定单号不能为空，请输入订单号！");
+	                return;
+	            }
+	            var url = GetQueryString("order_id");
+	            if(url=="null"){
+	                var newurl = document.URL+"&order_id="+val;
+	                location.href = newurl;
+	            }else{
+	                var newurl = document.URL.replace("&order_id="+url, "&order_id="+val);
+	                location.href = newurl;
+	            }
+	        }
+
+	        function GetQueryString(name){
+	            var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+	            var r = window.location.search.substr(1).match(reg);
+	            if(r!=null)return  unescape(r[2]); return "null";
+	        }
+
+	        function xiaofei(id){
+	            if(window.confirm('确定核销该订单？')){
+	                var newurl = document.URL+"&op=hx&order="+id;
+	                location.href = newurl;
+	            }
+	        }
+
+          function fahuo(id){
+              if(window.confirm('确定要结束该订单？')){
+                  var newurl = document.URL+"&op=fh&order="+id;
+                  location.href = newurl;
+              }
+          }
+
+        </script>
+
+    </div>
+
+
+<div>
+
+	<table class="table we7-table table-hover article-list vertical-middle">
+
+        <tbody id="shujl">
+
+        </tbody>
+
+    </table>
+
+	<table class="table table-responsive" style="table-layout: fixed;font-size: 12px">
+
+    <tbody><tr style="background:#f8f8f8;">
+
+        <td style="width:60px;border-left: 1px solid #ddd;">拍卖品</td>
+
+        <td style="width:150px;"></td>
+
+        <td style="width:70px;text-align: center;">价格</td>
+
+        <td style="width:100px;text-align: center;">购买人</td>
+
+        <td style="width:100px;text-align: center;">订单时间</td>
+
+        <td style="width:120px;text-align: center;">状态</td>
+
+        <td style="width:120px;text-align: center;border-right: 1px solid #ddd;">操作</td>
+
+</tr><tr><td colspan="7"></td></tr>
+
+
+
+{loop $d  $item}
+<tr class="trorder">
+
+    <td colspan="4" style="border-left:1px solid #dedede;">
+
+        订单编号:  {$item['id']}
+
+    </td>
+
+    <td colspan="3" style="text-align:right;font-size:12px;border-right:1px solid #dedede" class="aops">
+
+    <span style="float: right;">下单时间：{$item['created_at']} </span>
+
+    </td>
+
+</tr>
+<tr class="trbody">
+
+        <td style="overflow:hidden;border-left:1px solid #dedede;">
+        	<img src="{$item['img']}" style="width:50px;height:50px;border:1px solid #ccc; padding:1px;" onerror="">
+        </td>
+
+        <td style="text-align: left;overflow:hidden;border-left:none;">
+        	{$item['name']} <br>         </td>
+
+        <td style="text-align:center;border-left:none;">
+               </td>
+
+				<td style="text-align:center;border-left:none;" rowspan="1">
+        	总价：￥{$item['cost']}        </td>
+
+        <td colspan="2"  style="text-align:center;border-left:none;" rowspan="1">
+1111
+              {if $item['stat']==0}
+              <span class="btn btn-default btn-sm" id="{$item['id']}" >待付款</span>
+
+              {elseif $item['stat']==1}
+              <span class="btn btn-danger btn-sm" id="{$item['id']}" onclick="showstat(this)">待发货</span>
+
+              {elseif $item['stat']==2}
+              <span class="btn btn-primary btn-sm">已发货</span>
+
+              {elseif $item['stat']==3}
+              <span class="btn btn-success btn-sm" id="{$item['id']}" >已签收</span>
+
+              {elseif $item['stat']==4}
+              <span class="btn btn-warning btn-sm" id="{$item['id']}" >订单超时</span>
+              {/if}
+
+        </td>
+        <td colspan="1"  style="text-align:center;border-left:none;" rowspan="1">
+          <a onclick="deletes({$item['id']})" class="btn btn-danger">删除</a>
+        </td>
+   	</tr>
+    <style type="text/css">
+        .ssdd{
+            width: 200px;
+            border: 1px solid #dedede;
+            padding: 20px 10px;
+        }
+    </style>
+    <tr style="border-bottom:none;background:#f9f9f9;">
+      {if $item['fast']==1}
+      <td colspan="3" style="text-align:left;border-left:1px solid #dedede;color:rgb(204, 20, 20)">
+        用户催单！！！</td>
+        {else}
+        <td colspan="3" style="text-align:left;border-left:1px solid #dedede;color:rgb(204, 20, 20)">
+          </td>
+
+      {/if}
+        <td colspan="4" style="text-align:right;border-right:1px solid #dedede;">买家留言：{$item['userother']}</td>
+    </tr>
+    <tr>
+    	<td colspan="7" style="height:20px;padding:8px;border-top:none;border-left:1px solid #dedede;border-right:1px solid #dedede;border-bottom:1px solid #dedede;">
+    		姓名：{$item['nickname']}<br>
+    		电话：{$item['phone']}<br>
+    		地址：{$item['address']}{$item['address_more']}<br>
+    	</td>
+    </tr>
+    <tr>
+    	<td colspan="7" style="height:20px;padding:0;border-top:none;">&nbsp;</td>
+    </tr>
+   {/loop}
+</tbody>
+</table>
+
+	</div>
+  {$page}
+  <script>
+function deletes(id){
+  if(window.confirm('确定要删除该订单？删除后不可恢复！')){
+      var newurl = document.URL+"&opt=deletes&orderid="+id;
+      location.href = newurl;
+  }
+}
+  function close(){
+    alert("测试");
+  }
+  </script>
+  <div class="bbdd" hidden id="bbdd" style="box-shadow: 0px 0px 5px #888888;">
+          <div class="ddhh">
+              <span>请填写快递单号</span>
+              <div class="ddxx" >[关闭]</div>
+          </div>
+          <div>
+              <form class="form-horizontal" action="" method="post">
+                  <input type="hidden" id="orderfh" name="orderfh">
+                  <table class="table we7-table  vertical-middle" style="border:0">
+                      <tbody><tr>
+                          <td style="width:110px">快递：</td>
+                          <td>
+                              <select style="width:200px" id="kuaidi" name="kuaidi">
+                                  <option value="上门服务">上门服务</option>
+                                  <option value="商家配送">商家配送</option>
+                                  <option value="圆通">圆通</option>
+                                  <option value="申通">申通</option>
+                                  <option value="韵达">韵达</option>
+                                  <option value="中通">中通</option>
+                                  <option value="顺丰">顺丰</option>
+                                  <option value="天天">天天</option>
+                                  <option value="EMS">EMS</option>
+                                  <option value="其他">其他</option>
+                              </select>
+                          </td>
+                      </tr>
+                      <tr>
+                          <td style="width:95px">快递号/信息：</td>
+                          <td>
+                              <input type="text" id="kuaidihao" name="kuaidihao" value="" class="form-control ng-pristine ng-untouched ng-valid ng-empty">
+                          </td>
+                      </tr>
+                      <tr>
+                          <td style="width:95px"></td>
+                          <td>
+                              <a  id="order_ok" class="btn btn-success btn-sm">提交</a>
+                              <input class="order_id" hidden>
+                          </td>
+                      </tr>
+                  </tbody></table>
+              </form>
+          </div>
+      </div>
+      {template 'common/footer'}

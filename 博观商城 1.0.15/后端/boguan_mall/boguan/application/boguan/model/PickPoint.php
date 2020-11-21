@@ -1,0 +1,2 @@
+<?php
+ namespace app\boguan\model; class PickPoint extends BaseModel { public function getImageAttr($data) { goto grwNz; x1TF4: Pzdg2: goto p663Y; p663Y: return json_decode($data, true); goto eT2_R; grwNz: if (!empty($data)) { goto Pzdg2; } goto aPs7G; aPs7G: return null; goto x1TF4; eT2_R: } }

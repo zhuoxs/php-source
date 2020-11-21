@@ -1,0 +1,70 @@
+{template '_header'}
+<div class="page-header">  当前位置：<span class="text-primary">修复工具</span></div>
+<div class="page-content">
+    <form class="form-horizontal form-search">
+        <div class="form-group" >
+            <label class="col-lg control-label must">系统模板消息修复</label>
+            <div class="col-sm-9">
+                <input id="btn_submit" type="button"  value="立即修复" class="btn btn-primary "  onclick="formcheck()"/>
+                <div class="help-block"> 修复已开启的模板消息发送失败问题,并重新申请微信消息模板!  <span class="no-margins text-danger">请勿重复使用此工具，否则会造成公众号接口访问次数超限！！！</span></div>
+            </div>
+        </div>
+        <div class="form-group" >
+            <label class="col-lg control-label"></label>
+            <div class="col-sm-9">
+                <div id="message"> </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+
+<script type="text/javascript">
+    var len = 0;
+    var total = 0;
+    var tags = [];
+
+    function formcheck() {
+
+        $("#btn_submit").val("正修复中...").removeClass("btn-primary").attr("disabled", "true");
+        $.post("{php echo webUrl('sysset/templatetool/gettypecodes')}", {}, function (data) {
+            total = data.result.length;
+
+            tags = JSON.parse( data.result.typecodes );
+
+            $("#btn_submit").val("检测到一个有 " + total + " 个通知模板, 请等待开始....");
+            fetch_next();
+            return;
+        }, "json");
+
+    }
+
+    function fetch_next() {
+
+        var postdata =  {
+            tag: tags[len]
+        };
+
+        $.post("{php echo webUrl('sysset/templatetool/settemplateid')}", postdata, function (data) {
+
+            if(data.result.status==0)
+            {
+                $("#message").append(tags[len]+'修复失败 错误原因'+data.result.messages +'</br>');
+            }
+
+
+            len++;
+            $("#btn_submit").val("已经修复  " + len + " / " + total + " 个通知模板, 请等待....");
+            if (len >= total) {
+                $("#btn_submit").val("立即修复").addClass("btn-primary").removeAttr("disabled");
+                len = 0;
+                tip.msgbox.suc("修复完成!");
+            }
+            else {
+                fetch_next();
+            }
+        }, "json");
+    }
+</script>
+{template '_footer'}

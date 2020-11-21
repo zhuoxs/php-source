@@ -1,0 +1,141 @@
+{include file="common/head"}
+    <style>
+        .v .v-metadata{padding: 10px 0;}
+    </style>
+    <div class="tab-box">
+        <a href="{:url('member/collection_video')}" target="_self">视频</a>
+        <a href="{:url('member/collection_img')}" target="_self" class="cur">图片</a>
+        <a href="{:url('member/collection_novel')}" target="_self">资讯</a>
+    </div>
+    <ul class="content-list">
+        {notempty name="atlas_list"}
+        {volist name="atlas_list" id="v"}
+        <li class="v">
+            <a href="{:url('member/collection_pic',['imgid'=>$v['id']])}">
+                <div class="v-thumb">
+                    <div class="v-pic-real" style="background-image:url('{$v['first_img']}');"></div>
+                </div>
+            </a>
+            <div class="edit-box">
+                <i class="btn fn-down-bold"></i>
+                <div class="editBox" style="display: none;">
+                    <span onclick="atlas_edit({$v['id']},'{$v['title']}')"><i class="btn fn-bianji1"></i>编辑</span>
+                    <span onclick="delcolect({$v['id']},'user_atlas')"><i class="btn fn-shanchu" ></i>删除</span>
+                </div>
+            </div>
+            <div class="v-metadata">
+                <div class="v-title">{$v['title']}</div>
+            </div>
+        </li>
+        {/volist}
+        {else/}
+        <div class="not-comment not">您还没有收藏图片哦 ~</div>
+        {/notempty}
+    </ul>
+    <a target="_self" class="upload"><i class="btn fn-shangchuan1"></i>创建</a>
+</div>
+    <script>
+        $(function () {
+            /*点击图册上按钮效果*/
+            $(".edit-box .fn-down-bold").click(function () {
+                $(this).siblings().slideToggle();
+            });
+
+            /*创建图册*/
+            $(".upload").click(function () {
+                layer.open({
+                    title: '创建图册',
+                    btn: ['确定', '取消'],
+                    content: '<input type="text" class="layui-layer-input" id="imgname" value=""/>',
+                    yes: function(index){
+                        var imgnames = $('#imgname').val();
+                        var imgsname={name:imgnames,type:'2'};
+                        $.get('/api/control_imgs.html',imgsname,function(e){
+                            if(e.resultCode==4005){
+                                layer.open({content: e.error,skin: 'msg',time: 1});
+                            }else if(e.resultCode==5002){
+                                layer.open({content: e.error,skin: 'msg',time: 1});
+                            }else if(e.resultCode==0){
+                                layer.open({content: e.message,skin: 'msg',time: 1,end:function(){
+                                    window.location.reload();
+                                }});
+                            }
+                        },'json');
+                    }
+                });
+            });
+        });
+    </script>
+
+
+{include file="common/footer"}
+<script>
+    var status = 1;
+    var page  = 0;
+    var types = 'user_atlas';
+    var title = null;
+    $(window).scroll(function(){
+        var srollPos = $(window).scrollTop();
+        var data = {
+            "page" : page ,
+            "type" : types,
+            "offset" : 10,
+        };
+        if(srollPos+$(window).height() > $(document).height() - 80){
+            if(status == 1) {
+                status = 0;
+                $.ajax({
+                    type: "POST",
+                    data: data,
+                    dataType: "JSON",
+                    url: "{:url('Api/moreCollection')}",
+                    success: function (data) {
+                        if(data.resultCode == 0){
+                            var datas = data.data.list;
+                            if(datas){
+                                var html = '';
+                                datas.forEach(function(item) {
+                                    var  url =  '/member/collection_pic/imgid/'+item['id'];
+                                    title = item['title'];
+                                    html += '<li class="v">';
+                                    html += '    <a href="'+url+'">';
+                                    html += '    <div class="v-thumb">';
+                                    html += '    <div class="v-pic-real" style="background-image:url('+item['first_img']+');"></div>';
+                                    html += '    </div>';
+                                    html += '    </a>';
+                                    html += '    <div class="edit-box">';
+                                    html += '    <i class="btn fn-down-bold"></i>';
+                                    html += '    <div class="editBox" style="display: none;">';
+                                    html += '    <span  class="atlas_edit" val="'+item['id']+'" title="'+item['title']+'"  ><i class="btn fn-bianji1"></i>编辑</span>';
+                                    html += '    <span onclick="delcolect('+item['id']+',types)"><i class="btn fn-shanchu" ></i>删除</span>';
+                                    html += '    </div>';
+                                    html += '    </div>';
+                                    html += '    <div class="v-metadata">';
+                                    html += '    <div class="v-title">'+item['title']+'</div>';
+                                    html += '</div>';
+                                    html += '</li>';
+
+                                });
+                                $('.not-comment').remove();
+                                $('.content-list').append(html);
+                                $(".edit-box .fn-down-bold").unbind();
+                                $(".edit-box .fn-down-bold").on("click",function(){
+                                    $(this).siblings().slideToggle();
+                                });
+                                $('.atlas_edit').on('click',function(){
+                                    atlas_edit($(this).attr('val'),$(this).attr('title'));
+                                })
+                                page++;
+                                status = 1;
+                            }else{
+                                console.log('没有更多数据了！');
+                            }
+                        }else{
+                            console.log('没有更多数据了！');
+                        }
+                    }
+                });
+            }
+        }
+    })
+</script>

@@ -1,0 +1,110 @@
+{template 'common/header'}
+<style>
+	.label{line-height: 2}
+	.popover{max-width:420px;}
+</style>
+<ul class="nav nav-tabs">
+	<li {if $_GPC['a'] == 'mass'  && $do == 'list'}class="active"{/if}><a href="{php echo url('material/mass/')}">定时群发</a></li>
+	<li {if $_GPC['a'] == 'mass' && $do == 'send'}class="active"{/if}><a href="{php echo url('material/mass/send')}">发送记录</a></li>
+	<li {if $type == 'image'}class="active"{/if}><a href="{php echo url('material/display/list', array('type' => 'image'));}">图片</a></li>
+	<li {if $type == 'voice'}class="active"{/if}><a href="{php echo url('material/display/list', array('type' => 'voice'));}">语音</a></li>
+	<li {if $type == 'video'}class="active"{/if}><a href="{php echo url('material/display/list', array('type' => 'video'));}">视频</a></li>
+	<li {if $type == 'news'}class="active"{/if}><a href="{php echo url('material/display/list', array('type' => 'news'));}">图文</a></li>
+	<li {if $action == 'post' && $do == 'news'}class="active"{/if}><a href="{php echo url('material/post/edit');}">新增图文素材</a></li>
+</ul>
+
+<v class="clearfix">
+	<form action="?{$_SERVER['QUERY_STRING']}" method="post" id="form1">
+		<div class="panel panel-default">
+			<div class="panel-body table-responsive">
+				<table class="table table-hover" cellspacing="0" cellpadding="0">
+					<thead class="navbar-inner">
+					<tr>
+						<th>消息详情</th>
+						<th>发送用户组</th>
+						<th>发送人数</th>
+						<th>状态</th>
+						<th width="250">发送时间</th>
+						<th>添加时间</th>
+						<th width="170"></th>
+					</tr>
+					</thead>
+					<tbody>
+					{loop $list $li}
+					<tr>
+						<td>
+							<a href="{php echo url('material/display/list', array('type' => $li['msgtype'], 'id' => $li['attach_id']));}" target="_blank">{$types[$li['msgtype']]}</a>
+						</td>
+						<td>{$li['groupname']}</td>
+						<td>{if $li['groupid'] == '-1'}全部粉丝{else}{$li['fansnum']}{/if}</td>
+						<td>
+							{if !$li['status']}
+								<span class="label label-success">已发送</span>
+							{elseif $li['status'] == 1}
+								<span class="label label-warning">未发送</span>
+							{elseif $li['status'] == 2}
+								<span class="label label-danger">发送失败</span>
+							{/if}
+						</td>
+						<td>
+							{if !$li['type']}
+								{php echo date('Y-m-d H:i:s', $li['createtime']);}
+							{else}
+								<span class="label label-info">计划发送时间:{php echo date('Y-m-d H:i', $li['sendtime']);}</span> <br>
+								{if !$li['status']}
+									<span class="label label-success">实际发送时间:{php echo date('Y-m-d H:i', $li['finalsendtime']);}</span>
+								{elseif $li['status'] == 2}
+									<span class="label label-danger">实际发送时间:{php echo date('Y-m-d H:i', $li['finalsendtime']);}</span>
+								{/if}
+							{/if}
+						</td>
+						<td>{php echo date('Y-m-d H:i', $li['createtime']);}</td>
+						<td align="right">
+							{if $li['type'] == 1}
+								{if !$li['cron_id'] && $li['sendtime'] > TIMESTAMP}
+								<a href="{php echo url('material/mass/cron', array('id' => $li['id']));}" class="btn btn-danger btn-sm">同步到云服务</a>
+								{/if}
+								<a href="javascript:;" title="" data-tid="{$li['id']}" data-type="mass" data-module="task" class="btn btn-default mass-log">日志</a>
+							{/if}
+						</td>
+					</tr>
+					{/loop}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</form>
+</div>
+
+<script>
+	require(['bootstrap'], function(){
+		$('.tip').hover(function(){
+			$(this).tooltip();
+		});
+		$('.mass-log').hover(function(){
+			obj = $(this);
+			$.post("{php echo url('utility/cron/log');}", {tid: $(this).data('tid'), type: $(this).data('type'), module: $(this).data('module')}, function(data) {
+				data = $.parseJSON(data);
+				var html = '';
+				if(data.message.items.length == 0) {
+					html = '<tr><td class="text-center"><i class="fa fa-info-circle"></i> 暂无数据</td></tr>';
+				} else{
+					$.each(data.message.items, function(k, v){
+						html += '<tr><td>' + v.createtime + ' ' + v.note + '</td></tr>';
+					});
+				}
+				obj.popover({
+					'html':true,
+					'placement':'left',
+					'trigger':'manual',
+					'title':'触发日志',
+					'content':'<table class="table-cron table">' + html + '</table>'
+				});
+				obj.popover('toggle');
+			});
+		}, function(){
+			$(this).popover('toggle');
+		});
+	});
+</script>
+{template 'common/footer'}

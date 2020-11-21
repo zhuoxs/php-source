@@ -1,0 +1,153 @@
+{include file="common/header"}
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/mobile/static/css/v-list.css">
+<style>
+    .panel{margin-top: 0;}
+</style>
+<!--对联-左-->
+<div class="ads_dl ads-box" id="ads_dl" style="width:30%;float:left;position:fixed;left:0;z-index:1000;top:40%;padding-bottom: 0;border-radius: 0;">
+  <span class="ads-close"><a style="width:12px;height:12px;display:block;" onclick="document.getElementById('ads_dl').style.display='none'" href="javascript:void(0);"></a></span>
+  <script language="javascript" src="{:url('/poster/index',array('pid'=>2))}"></script>
+</div>
+<!--对联-右-->
+<div class="ads_dr ads-box" id="ads_dr" style="width:30%;float:right;position:fixed;right:0;z-index:1000;top:40%;padding-bottom: 0;border-radius: 0;">
+  <span class="ads-close"><a style="width:12px;height:12px;display:block;" onclick="document.getElementById('ads_dr').style.display='none'" href="javascript:void(0);"></a></span>
+  <script language="javascript" src="{:url('/poster/index',array('pid'=>3))}"></script>
+</div>
+<!--底部-->
+<div class="ads_b ads-box" id="ads_b" style="position:fixed;z-index:1000;bottom:51px;background:#000000ba;width:100%;text-align:center;padding-bottom: 0;border-radius: 0;">
+  <span class="ads-close"><a style="width:12px;height:12px;display:block;" onclick="document.getElementById('ads_b').style.display='none'" href="javascript:void(0);"></a></span>
+  <script language="javascript" src="{:url('/poster/index',array('pid'=>4))}"></script>
+</div>
+<div class="item" style="border-bottom: 1px solid #eee;">
+    <label>排序：</label>
+    <ul id="orderCode">
+        <li id="lastTime"  {if condition="$orderCode eq 'lastTime'"}class="current"{/if} ><a href="#">最新</a></li>
+        <li id="hot" {if condition="$orderCode eq 'hot'"}class="current"{/if}  ><a href="#">最热</a></li>
+        <li id="reco" {if condition="$orderCode eq 'reco'"}class="current"{/if} ><a href="#">推荐</a></li>
+    </ul>
+</div>
+        <div class="panel">
+            <ul class="content-list">
+                {notempty name="list"}
+                {volist name="list" id="v"}
+                <li>
+                    <a class="v" href="{:url('video/play',array('id'=>$v['id']))}">
+                        <div class="v-thumb">
+                            <div class="v-pic-real" style="background-image:url('{$v['thumbnail']}');"></div>
+                            <div class="v-tagrb"><span class="vv-time">{$v['play_time']}</span></div>
+                        </div>
+                        <div class="v-metadata">
+                            <div class="v-title">
+                                <?php
+                                    $regex  = '/('.$key_word.')/i';
+                                    preg_match_all($regex,$v['title'],$rs);
+                                    foreach($rs[1] as $val){
+                                        $keywords =$val;
+                                          $v['title'] = str_replace( $keywords,"<font>$keywords</font>",$v['title']);
+                                }
+                                ?>
+                                {$v['title']}
+                            </div>
+                            <div class="v-desc">
+                                <i class="btn fn-bofang" title="播放"></i>
+                                <span class="v-num">{$v['click']}</span>&nbsp;
+                                <i class="btn fn-jinbi1" title="金币"></i>
+                                <span class="v-num">{$v['gold']}</span>
+                                <var style="float: right;">
+                                    <i class="btn fn-time" title="上传时间"></i>
+                                    <span class="v-num">{:date('m-d',$v['update_time'])}</span>
+                                </var>
+                            </div>
+                        </div>
+                    </a>
+                </li>
+                {/volist}
+                {else/}
+                <div class="not-comment not">暂时没有数据 ~</div>
+                {/notempty}
+            </ul>
+        </div>
+        <form action="" method="get" id="forms">
+            <input type="hidden" id="current_orderCodes"  name="orderCode" value="{$orderCode|default='0'}" >
+            <input type="hidden" id="key_word" name="key_word" value="{$key_word|default=''}" >
+            <input type="hidden"  name="type" value="{$type|default='video'}" >
+        </form>
+{include file="common/footer"}
+<script type="text/javascript">
+    $(function () {
+        $('#orderCode').find('li').click(function(){
+            $('#current_orderCodes').val($(this).attr('id'));
+            $('#forms').submit();
+        })
+    })
+    var status = 1;
+    var page  = 0;
+    $(window).scroll(function(){
+        var srollPos = $(window).scrollTop();
+        var orderCode = $('#current_orderCodes').val();
+        var key_word =  $('#key_word').val();
+        var where =" and title like '%"+$('#key_word').val()+"%'";
+        var data = {
+            "page" : page ,
+            "orderCode" : orderCode,
+            "offset" : 20,
+            "where" :where,
+        };
+        if(srollPos+$(window).height() > $(document).height() - 80){
+            if(status == 1) {
+                status = 0;
+                $.ajax({
+                    type: "POST",
+                    data: data,
+                    dataType: "JSON",
+                    url: "{:url('Api/moreData')}",
+                    success: function (data) {
+                        if(data.resultCode == 0){
+                            var datas = data.data.list;
+                            if(datas){
+                                var html = '';
+                                datas.forEach(function(item) {
+                                    var update_time = item['update_time'];
+                                    var newDate = new Date(update_time * 1000);
+                                    var url = '/video/play/id/'+item['id'];
+                                    var reg = '/'+key_word+'/g';
+                                    reg=eval(reg);
+                                    item['title'] = item['title'].replace(reg, "<font>"+key_word+"</font>");
+                                     html += '<li>';
+                                     html += '<a class="v" href="+url+">';
+                                     html += '    <div class="v-thumb">';
+                                     html += '    <div class="v-pic-real" style="background-image:url('+item['thumbnail']+');"></div>';
+                                     html += '    <div class="v-tagrb"><span class="vv-time">'+item['play_time']+'</span></div>';
+                                     html += '    </div>';
+                                     html += '    <div class="v-metadata">';
+                                     html += '    <div class="v-title">'+item['title']+'</div>';
+                                     html += '<div class="v-desc">';
+                                     html += '    <i class="btn fn-bofang" title="播放"></i>';
+                                     html += '    <span class="v-num">'+item['click']+'</span>&nbsp;';
+                                     html += '<i class="btn fn-jinbi1" title="金币"></i>';
+                                     html += '    <span class="v-num">'+item['gold']+'</span>';
+                                     html += '    <var style="float: right;">';
+                                     html += '    <i class="btn fn-time" title="上传时间"></i>';
+                                     html += '    <span class="v-num">'+(newDate.getMonth() + 1)+'-'+newDate.getDate()+'</span>';
+                                     html += '</var>';
+                                     html += '</div>';
+                                     html += '</div>';
+                                     html += '</a>';
+                                     html += '</li>';
+                                });
+                                $('.not-comment').remove();
+                                $('.content-list').append(html);
+                                page++;
+                                status = 1;
+                            }else{
+                                console.log('没有更多数据了！');
+                            }
+                        }else{
+                            console.log('没有更多数据了！');
+                        }
+                    }
+                });
+            }
+        }
+    })
+</script>

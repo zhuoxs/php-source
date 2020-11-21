@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/css/main.css" media="all">
+</head>
+<body>
+
+<style>
+    .layui-table-cell {
+        height: auto;
+    }
+</style>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">客户管理</div>
+                <div class="layui-card-body">
+                    <!--搜索-->
+                    <div class="test-table-reload-btn layui-inline" style="margin-bottom: 10px;">
+
+                        <form class="layui-form" action="" onsubmit="return false">
+                            跟进状态：
+                            <div class="layui-input-inline">
+                                <select name="mark" id="mark">
+                                    <option value=""></option>
+                                    {loop $mark_arr $item}
+
+                                    {if $item['id'] == $mark_value}
+                                    <option value="{$item['id']}" selected>{$item['value']}</option>
+                                    {else}
+                                    <option value="{$item['id']}">{$item['value']}</option>
+                                    {/if}
+
+                                    {/loop}
+                                </select>
+                            </div>
+                            成交状态：
+                            <div class="layui-input-inline">
+                                <select name="deal" id="deal">
+                                    <option value=""></option>
+                                    {loop $deal_arr $item}
+                                    {if $item['id'] == $deal_value}
+                                    <option value="{$item['id']}" selected>{$item['value']}</option>
+                                    {else}
+                                    <option value="{$item['id']}">{$item['value']}</option>
+                                    {/if}
+                                    {/loop}
+                                </select>
+                            </div>
+                            微信昵称：
+                            <div class="layui-inline">
+                                <input class="layui-input" name="title" id="test-table-demoReload" autocomplete="off"
+                                       value="{$keyword}">
+                            </div>
+                            <div class="layui-inline">
+                                <label class="layui-form-label">授权手机号</label>
+                                <div class="layui-input-block">
+                                    <input type="checkbox" name="auth_phone" title="已授权" id="auth_phone">
+                                </div>
+                            </div>
+                            <button class="layui-btn" data-type="reload">搜索</button>
+                        </form>
+
+                        <br>
+                        <button class="layui-btn" onclick="importClient()"><i class="layui-icon">&#xe608;</i> 导入客户
+                        </button>
+
+                        <button id="btnImportExcel" class="layui-btn btnImportExcel"><i class="layui-icon">&#xe608;</i>
+                            从excel中导入
+                        </button>
+                        <br>
+                        <br>
+                        <blockquote style="letter-spacing: 1px" class="layui-elem-quote">excel文件中的数据格式请参考本页面下方图片说明, 请谨慎操作, 该操作不可以回退</blockquote>
+
+                    </div>
+
+                    <table class="layui-hide" id="test-table-autowidth" lay-filter="test-table-autowidth"></table>
+                    <!--行内操作按钮  设置为会员   禁用   删除（测试用）-->
+                    <script type="text/html" id="test-table-autowidth-barDemo">
+
+
+                        <button type="button" class="layui-btn layui-btn-xs btn-edit"
+                                itemId="{$item['id']}" lay-event="fp">
+                            分配客户
+                        </button>
+
+                        <button type="button" class="layui-btn layui-btn-xs btn-question layui-btn-normal"
+                                itemId="{$item['id']}" lay-event="question">
+                            查看问卷
+                        </button>
+
+
+                    </script>
+
+
+                    <blockquote style="letter-spacing: 1px" class="layui-elem-quote">
+                        excel表格中的数据结构如下: 表格中不需要有表头, 第一行开始就是需要导入的用户数据
+                    </blockquote>
+                    <blockquote style="letter-spacing: 1px" class="layui-elem-quote">
+                        第一列为用户名, 第二列为用户头像, 并且用户头像必须为完整的url链接, 第三列为用户的手机号, 手机号可以为空, 但是用户名不能为空
+                    </blockquote>
+                    <blockquote style="letter-spacing: 1px" class="layui-elem-quote">
+                        导入数据请谨慎操作, 操作无法撤回
+                    </blockquote>
+                    <img src="https://retail.xiaochengxucms.com/XD3%25OJGCUM%281E%29RJ%28JA%7B%5BMC.png" alt="">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{template 'common/footer'}
+
+<style>
+    .friend-link{
+        text-align: center;
+    }
+    .copyright{
+        text-align: center;
+        padding-bottom: 20px;
+    }
+</style>
+
+<input type="hidden" name="itemId">
+
+<script src="../../../addons/{$module_name}/images/layuiadmin/layui/layui.js"></script>
+<script>
+    var src = '{$src}';
+    var src_upload = '{$src_upload}';
+    var g_$ = '';
+    var $ = '';
+    layui.use(['table', 'form', 'upload'], function () {
+        g_$ = layui.$;
+        $ = layui.$;
+        var table = layui.table;
+        var layer = layui.layer
+            , admin = layui.admin
+            , upload = layui.upload
+            , form = layui.form;
+
+        upload.render({ //允许上传的文件后缀
+            elem: '#btnImportExcel'
+            , url: src_upload//上传地址
+            , data: {"type": "cert", "file_name": 'apiclient_cert.pem'}
+            , accept: 'file' //普通文件
+            , exts: 'csv|CSV|xls|xlsx' //只允许的文件后缀
+            , choose: function () {
+                layer.load();
+            }
+            , done: function (res) {
+                layer.closeAll();
+                if (res.code == 0) {
+                    layer.msg('上传成功', {
+                        offset: '15px'
+                        , icon: 1
+                        , time: 1000
+                    });
+                    setTimeout(function () {
+                        layer.load();
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    layer.msg(res.msg);
+                }
+            },
+            error: function(index, upload){
+                layer.closeAll(); //关闭loading
+                layer.msg('导入失败')
+            }
+        });
+
+        //获取参数group_id
+
+        layer.load();
+        table.render({
+            elem: '#test-table-autowidth'
+            // ,url: 'manage_base/company/index'//数据接口
+            , url: src//数据接口
+            // ,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+            , page: true
+            , toolbar: true
+            , cols: [[
+                {field: 'nickName', title: '微信昵称'},
+                {field: 'user_name', title: '姓名'},
+                {
+                    field: 'avatarUrl', title: '微信头像'
+                    , style: 'height:100px'
+                    , templet: function (d) {
+                        return '<img width="64px" src="' + d.avatarUrl + '"/>'
+                    }
+                },
+                {field: 'phone', title: '授权手机号'},
+                {field: 'create_time', title: '加入时间'},
+                {field: 'mark', title: '跟进状态'},
+                {field: 'mark_staff', title: '跟进员工'},
+                {field: 'rate', title: 'AI成交率'},
+                {field: 'deal_time', title: '成交时间'},
+                {field: 'import', title: '导入客户'},
+                {align: 'center', width: 200, toolbar: '#test-table-autowidth-barDemo', title: '操作'}
+            ]]
+            , done: function (res, curr, count) {
+                layer.closeAll();
+            }
+        });
+        form.render();
+
+
+        //监听工具条
+        table.on('tool(test-table-autowidth)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'self') {
+                var id = data.id;
+                if (!id) {
+                    layer.msg('获取信息失败!');
+                    return false;
+                }
+                //禁用（
+                layer.confirm('客户是否已到店提货该商品?一旦确认提货订单就会自动完成', function (index) {
+                    var url = "{php echo $this->createWebUrl('manage/orders')}";
+                    var data = {
+                        action: 'self',
+                        id: id,
+                    };
+                    $.post(url, data, function (data) {
+                        layer.closeAll();
+                        data = JSON.parse(data);
+                        if (!data.type) {
+                            layer.msg('服务器错误!');
+                            return false;
+                        }
+                        if (data.type == 'success') {
+                            layer.msg(data.message);
+                        }
+                        setTimeout(function () {
+                            layer.load();
+                            window.location.reload();
+                        }, 1500)
+                    });
+                });
+            } else if (obj.event === 'send') {
+                var id = data.id;
+                if (!id) {
+                    layer.msg('获取信息失败!');
+                    return false;
+                }
+                $("input[name='itemId']").val(id);
+                layer.confirm('是否确认发货', function (index) {
+                    layer.open({
+                        type: 1,
+                        title: false,
+                        closeBtn: 0,
+                        shadeClose: true,
+                        skin: 'yourClass',
+                        content: '<div style="padding: 20px; width: 260px; height: 210px;">' +
+                            '<input type="text" autocomplete="off" class="layui-input" value="" id="courier_number" placeholder="请输入快递单号">' +
+                            '<input type="text" autocomplete="off" class="layui-input" value="" id="express_company" placeholder="请输入快递公司" style="margin-top: 10px">' +
+                            '<input type="text" autocomplete="off" class="layui-input" value="" id="express_phone" placeholder="请输入快递查询电话" style="margin-top: 10px">' +
+                            '<button class="layui-btn" style="margin-top: 30px" onclick="btnSub()">立即提交</button>' +
+                            '</div>'
+                    });
+                });
+            } else if (obj.event === 'fp') {
+                var id = data.id;
+                if (!id) {
+                    layer.msg('获取信息失败!');
+                    return false;
+                }
+                layer.load();
+                var url = "{php echo $this->createWebUrl('manage/distributionClient')}" + "&id=" + id;
+                window.location.href = url;
+            } else if (obj.event === 'question') {
+                var id = data.id;
+                if (!id) {
+                    layer.msg('获取信息失败!');
+                    return false;
+                }
+                layer.load();
+                var url = "{php echo $this->createWebUrl('manage/questionClient')}" + "&id=" + id;
+                window.location.href = url;
+            }
+
+        });
+
+
+
+
+        var active = {
+            reload: function () {
+                var keyword = $('#test-table-demoReload');
+                var mark = $('#mark');
+                var deal = $("#deal");
+                var auth_phone = $("#auth_phone");
+                auth_phone = auth_phone[0].checked;
+
+                //执行重载
+                table.reload('test-table-autowidth', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    , where: {
+                        key: {
+                            keyword: keyword.val(),//传入input里面的值
+                            mark: mark.val(),//传入input里面的值
+                            deal: deal.val(),//传入input里面的值
+                            auth_phone: auth_phone,//传入input里面的值
+                        }
+                    }
+                });
+            }
+        };
+
+        $('.test-table-reload-btn .layui-btn').on('click', function () {
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+
+    });
+
+
+    //  导入客户
+    function importClient() {
+        layer.load();
+        window.location.href = "{php echo $this->createWebUrl('manage/importClient')}";
+        return false;
+    }
+
+    //  分配客户
+    function fpclient(obj) {
+        var id = $(obj).attr('itemId');
+        if (!id) {
+            layer.msg('获取id失败!');
+            return false;
+        }
+        layer.load();
+        var url = "{php echo $this->createWebUrl('manage/distributionClient')}" + "&id=" + id;
+        window.location.href = url;
+    }
+
+    //  提交
+    function btnSub() {
+        layer.load();
+        var courier_number = $('#courier_number').val();
+        var express_company = $('#express_company').val();
+        var express_phone = $('#express_phone').val();
+        var id = $("input[name='itemId']").val();
+
+        if (!id) {
+            id = 0;
+        }
+
+        if (!courier_number || !express_company || !express_phone) {
+            layer.closeAll();
+            return false;
+        }
+
+        var url = "{php echo $this->createWebUrl('manage/orders')}";
+
+        var data = {
+            action: 'send',
+            id: id,
+            courier_number: courier_number,
+            express_company: express_company,
+            express_phone: express_phone
+        };
+
+        $.post(url, data, function (data) {
+            layer.closeAll();
+            data = JSON.parse(data);
+            if (!data.type) {
+                layer.msg('服务器错误!');
+                return false;
+            }
+            if (data.type == 'success') {
+                layer.msg(data.message);
+            }
+            setTimeout(function () {
+                layer.load();
+                window.location.reload();
+            }, 1500)
+        });
+
+        return false;
+    }
+
+
+</script>
+</body>
+</html>

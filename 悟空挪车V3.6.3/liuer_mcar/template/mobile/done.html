@@ -1,0 +1,103 @@
+{template 'header'}
+<body class="pageMovelog">
+<div id="hook-app">
+    <!--<header>
+        <div class="avatar"><img src="{$_W['fans']['avatar']}" alt="" /></div>
+    </header>-->
+    <div class="scroll-img" style="margin-bottom: 15px;">
+        <yd-slider autoplay="5000">
+            {loop $banners $index $banner}
+            <yd-slider-item>
+                <a href="<?php echo $linkurls[$index]; ?>"><img src="{php echo tomedia($banner)}" width="100%"/></a>
+            </yd-slider-item>
+            {/loop}
+        </yd-slider>
+    </div>
+    <div class="step">
+        <yd-step theme="2" current="2" current-color="#4f7ff9">
+            <yd-step-item> <span slot="top">通知车主</span> </yd-step-item>
+            <yd-step-item> <span slot="top">评价车主</span> </yd-step-item>
+        </yd-step>
+    </div>
+    <div class="star-wrapper">
+        <div class="star">
+            <yd-rate slot="left" v-model="star" active-color="#f9ca01" size="0.7rem"></yd-rate>
+        </div>
+        <div class="star-tips">
+            <span>{{ starInfo }}</span>
+        </div>
+    </div>
+    <ul class="good-feed">
+        <li :class="{'current':selected == index}" v-for="(item,index) in quickFeed" @click="selected = index">
+            {{ item }}
+        </li>
+    </ul>
+    <yd-cell-group title="我要反馈">
+        <yd-cell-item>
+            <yd-textarea slot="right" placeholder="吐槽车主要反馈给平台的写在这里..." maxlength="100" v-model="content"></yd-textarea>
+        </yd-cell-item>
+    </yd-cell-group>
+    <div id="hook-hurry" class="hurry-btn">
+        <yd-button size="large" type="primary" @click.native="feedback">立即提交</yd-button>
+    </div>
+</div>
+
+<script>
+    var feedbackUrl = "{php echo $this->createMobileUrl('feedback',['id'=>$movelogInfo['id']]);}";
+
+    var app = new Vue({
+        el: '#hook-app',
+        data: {
+            star: 0,
+            selected: 0,
+            quickFeed: [
+                '很快打通',
+                '挪车如闪电',
+                '车主很nice',
+                '都不用催促',
+                '找车主很快',
+                '平台很好用'
+            ],
+            content: '',
+            starMap: ['很差', '还行', '一般', '挺好', '非常好']
+        },
+        computed: {
+            starInfo: function() {
+                return this.star > 0 ? this.starMap[this.star - 1] : '';
+            }
+        },
+        methods: {
+            feedback: function(){
+                if(this.star == 0){
+                    this.message('请选择星星评分','error');
+                    return false;
+                }
+                this.$dialog.loading.open('提交中...');
+                $.post(feedbackUrl,{star:this.star,title:this.quickFeed[this.selected],content:this.content})
+                    .then(function(resp) {
+                        app.$dialog.loading.close();
+                        resp = JSON.parse(resp);
+                        if(resp.error){
+
+                        }else{
+                            app.message(resp.msg);
+                            setTimeout(function(){
+                                location.href = resp.url;
+                            },1500)
+                        }
+                        //感谢您的反馈
+                    });
+            },
+            message:function(msg,icon){
+                icon = icon || 'success'
+                this.$dialog.toast({
+                    mes: msg,
+                    timeout: 1500,
+                    icon:icon
+                });
+            },
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<style>
+    #map {
+        width: 660px;
+        height: 500px;
+        -webkit-transition: all 0.5s ease-in-out;
+        transition: all 0.5s ease-in-out;
+    }
+</style>
+<div class="main">
+    <form action="" method="post" class="form-horizontal form">
+        <div class="panel panel-default">
+            <div class="panel-heading">{if !empty($_GPC['id'])}编辑{else}添加{/if}</div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">排序</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" name="displayorder" value="{$notice['displayorder']}" placeholder="0">
+                        <span class="help-block">由大到小</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label"><span class="color-red">*</span>显示位置</label>
+                    <div class="col-sm-9">
+                        <div class="input-group">
+                            <label class="radio-inline">
+                                <input class="check_position" type="checkbox" name="position[]" value="home" {if is_array($notice['position']) && in_array('home', $notice['position'])}checked{/if}>首页
+                            </label>
+                            <label class="radio-inline">
+                                <input class="check_position" type="checkbox" name="position[]" value="detail" {if is_array($notice['position']) && in_array('detail', $notice['position'])}checked{/if}>详情页
+                            </label>
+                        </div>
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label"><span class="color-red">*</span> 标题</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" name="title" value="{$notice['title']}" placeholder="">
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">标题颜色</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_color('title_color', $notice['title_color'])}
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">
+                        <span class="color-red">*</span>内容
+                    </label>
+                    <div class="col-sm-9">
+                        {php echo tpl_ueditor('content', $notice['content'])}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">状态</label>
+                    <div class="col-sm-9">
+                        <div class="input-group">
+                            <label class="radio-inline">
+                                <input type="radio" name="status" value="1" {if !isset($notice['status'])||$notice['status']==1}checked{/if}> 显示
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="status" value="0" {if isset($notice['status'])&&$notice['status']==0}checked{/if}> 隐藏
+                            </label>
+                        </div>
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">时间设置</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_daterange('exprietime', $exprietime, true);}
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input type="hidden" name="area_points" value="">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">展示地区</label>
+                    <div class="col-sm-9">
+                        <div id="map"></div>
+                        <div class="help-block">
+                            <button type="button" class="btn btn-success btn_start_draw">开始画线</button>
+                            <button type="button" class="btn btn-danger btn_clear_draw">清除画线</button>
+                        </div>
+                        <div class="help-block">
+                            单击鼠标左键移动开始画线，双击鼠标左键结束画线（结束后可移动边线微调），画线形状为一个完整的空间，如：正方形、矩形、多边形等，用户地理位置在坐标点范围内时显示，否则不显示，注：获取不到用户地理位置时默认显示
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group col-sm-12">
+            <button type="submit" class="btn btn-primary" name="submit" value="提交">提交</button>
+            <input type="hidden" name="token" value="{$_W['token']}" />
+        </div>
+    </form>
+</div>
+<script>
+    require(['jquery', 'util'], function($, util){
+        $('form').submit(function(){
+            var title = $('input[name=title]');
+            if (title.val() == '') {
+                util.message('请输入标题！', '', 'error');
+                return false;
+            }
+            var position = false;
+            $('.check_position').each(function () {
+                if ($(this).prop('checked')) {
+                    position = true;
+                    return false;
+                }
+            });
+            if (!position) {
+                util.message('请选择显示位置！', '', 'error');
+                return false;
+            }
+            //兑换限制坐标点
+            if (overlays.length > 0) {
+                var points = new Array();
+                for (var i = 0; i < overlays.length; i++) {
+                    var overlay = overlays[i].getPath();
+                    for (var j = 0; j < overlay.length; j++) {
+                        var grid = overlay[j];
+                        var poi = {
+                            lng: grid.lng.toString(),
+                            lat: grid.lat.toString()
+                        };
+                        points.push(poi);
+                    }
+                }
+                points = base64_encode(JSON.stringify(points));
+                $('input[name=area_points]').val(points);
+            }
+            return true;
+        });
+    });
+</script>

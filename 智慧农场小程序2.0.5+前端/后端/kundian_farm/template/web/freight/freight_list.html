@@ -1,0 +1,111 @@
+{template 'web/common/common'}
+{template 'web/system/navbar'}
+<blockquote class="layui-elem-quote layui-text">
+  运费规则
+</blockquote>
+<div class="layui-card">
+    {if in_array('freight.freight_edit',$perm)}
+    <a class="layui-btn layui-btn-sm" href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'freight_edit','action'=>'freight')}">
+        <i class="layui-icon">&#xe608;</i>添加新规则
+    </a>
+    {/if}
+    <form class="layui-form">
+        <div class="layui-form">
+            <table class="layui-table" lay-skin="line">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>规则名称</th>
+                        <th>是否默认</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {loop $data['list'] $index $item}
+                    <tr>
+                    <td>{$item['id']}</td>
+                    <td>{$item['name']}</td>
+                    <td>
+                        {if $item['status']==1}
+                            <div class="layui-form-item" style="margin-bottom: 0">
+                                <div class="layui-input-block" style="margin-left: 1px;">
+                                    <label class="radio-inline">
+                                      <input type="radio" name="status" data-id="{$item['id']}" value="1" title='是' checked="">
+                                  </label>
+                                </div>
+                            </div>
+                        {else}
+                            <div class="layui-form-item" style="margin-bottom: 0">
+                                <div class="layui-input-block"  style="margin-left: 1px;">
+                                    <label class="radio-inline">
+                                        <input type="radio" name="status"  data-id="{$item['id']}" value="0" title="否">
+                                    </label>
+                                </div>
+                            </div>
+                        {/if}
+                    </td>
+                    <td>
+                        {if in_array('freight.freight_edit',$perm)}
+                        <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'freight_edit','id'=>$item['id'],'action'=>'freight')}" >
+                            <button class="layui-btn layui-btn-xs" type="button"><i class="layui-icon">&#xe642;</i>修改</button></a>
+                        {/if}
+                        {if in_array('freight.delete_freight',$perm)}
+                        <a class="delete" data-id="{$item['id']}"><button   class="layui-btn layui-btn-xs layui-btn-danger" type="button"><i class="layui-icon">&#x1006;</i>删除</button></a>
+                        {/if}
+                    </td>
+                    </tr>
+                    {/loop}
+                </tbody>
+            </table>
+            <div style="text-align: right;">
+                {$data['pager']}
+            </div>
+        </div>
+    </form>
+</div>
+{template 'common/footer'}
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form,layer = layui.layer;
+        $(".delete").click(function(){
+            var that=$(this);
+            var id=$(this).attr('data-id');
+            var url="{url 'site/entry/admin',array('m'=>$_GPC['m'],'op'=>'delete_freught','action'=>'freight')}";
+            updateData(url,{id:id},'确认删除吗？');
+        });
+
+        $("input[name='status']").click(function(){
+            var that=$(this);
+            var status=$(this).val();
+            var id=$(this).attr("data-id");
+            $.ajax({
+                type:"post",
+                url:"{url 'site/entry/admin',array('m'=>$_GPC['m'],'op'=>'changeDefault','action'=>'freight')}",
+                data:{id:id,status:status},
+                dataType:'json',
+                success:function(res){
+                    if(res.code==0){
+                        layer.open({
+                            type: 1
+                            ,offset: 'auto' //具体配置参考：http://www.layui.com/doc/modules/layer.html#offset
+                            ,id: 'layerDemo' //防止重复弹出
+                            ,content: '<div style="padding: 20px 100px;">操作成功</div>'
+                            ,btn: '关闭'
+                            ,btnAlign: 'c' //按钮居中
+                            ,shade: 0 //不显示遮罩
+                            ,yes: function(){
+                                layer.closeAll();
+                                location.reload();
+                            }
+                        });
+
+                    }else{
+                       layer.msg('操作失败');
+                    }
+                }
+            })
+
+        })
+    });
+</script>

@@ -1,0 +1,132 @@
+{template 'common/header'}
+
+<ul class="nav nav-tabs">
+    <li class="active"><a href="{php echo $this->createWebUrl('tasklist');}">任务列表</a></li>
+    <li><a href="{php echo $this->createWebUrl('addvote');}">添加任务</a></li>
+</ul>
+
+<div class="main">
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site">
+                <input type="hidden" name="a" value="entry">
+                <input type="hidden" name="m" value="xiaof_toupiaot">
+                <input type="hidden" name="do" value="tasklist">
+				
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">活动期数</label>
+                    <div class="col-xs-12 col-sm-8 col-lg-9">
+                        <select name="sid" id="sid" class="form-control">
+                            <option {if $_GPC['sid'] == ''} selected{/if} value="">不限</option>
+                            {loop $settinglists $items}
+								<option {if $_GPC['sid'] === $items['id']} selected{/if} value="{$items['id']}">{$items['tit']}</option>
+							{/loop}
+                        </select>
+                    </div>               
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">状态</label>
+                    <div class="col-xs-12 col-sm-8 col-lg-8">
+                        <select name="status1" class="form-control">
+                            <option {if $_GPC['status1'] == 0} selected{/if} value="0">不限</option>
+                            <option {if $_GPC['status1'] == 1} selected{/if} value="1">进行中</option>
+                            <option {if $_GPC['status1'] == 2} selected{/if} value="2">暂停</option>
+                        </select>
+                    </div>
+                    <div class="col-xs-12 col-sm-2 col-lg-2">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>                    
+                </div>
+
+            </form>
+        </div>
+    </div>
+	
+	<p class="bg-success" style="padding: 15px;">提示：添加任务后，打开“开始任务”页面执行任务，并保持“开始任务”页面不关闭。工具模块只为添加测试数据使用</p>
+	
+    <form action="?{$_SERVER['QUERY_STRING']}" method="post" id="form1">
+        <table class="table table-hover"  style="width:100%;z-index:-10;" cellspacing="0" cellpadding="0">
+            <thead class="navbar-inner">
+            <tr>
+                <th style="width:3%;">删？</th>
+                <th style="width:5%;">活动编号</th>
+                <th style="width:5%;">选手UID</th>
+                <th style="width:10%;">票数目标</th>
+				<th style="width:10%;">完成数</th>
+                <th style="width:10%;">类型</th>
+				<th style="width:10%;">状态</th>
+                <th style="width:15%;">开始时间</th>
+                <th style="width:15%;">结束时间</th>			
+                <th style="width:20%;" class="text-right">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $list $item}
+			{php $item['data'] = iunserializer($item['data']);}
+            <tr>
+                <td><input type="checkbox" name="delete[]" value="{$item['id']}" /></td>
+                <td>{$item['sid']}</td>
+                <td>{$item['uid']}</td>
+                <td>{$item['goodnum']} </td>
+				<td>{$item['complete']}</td>
+                <td>{if $item['type'] == '0'}<span class="label label-success">普通</span>{elseif $item['type'] == '1'}<span class="label label-info">礼物</span>{/if}</td>
+                <td>{if $item['status'] == '0'}<span class="label label-success">进行中</span>{elseif $item['status'] == '2'}<span class="label label-info">已完成</span>{else}<span class="label label-danger">暂停</span>{/if}</td>
+				<td>{if $item['starttime'] < time()}<span class="label label-success">{else}<span class="label label-danger">{/if}{php echo date("Y-m-d H:i", $item['starttime']);}</span></td>
+                <td>{if $item['stoptime'] > time()}<span class="label label-success">{else}<span class="label label-danger">{/if}{php echo date("Y-m-d H:i", $item['stoptime']);}</span></td>
+				
+				<td class="text-right" style="overflow:visible;">
+						<div class="btn-group">
+							<div class="btn-group">
+                                {if $item['status'] == '0'}
+                                <!--<a href="{php echo $this->createWebUrl('tasklist', array('act' => 'detail','tid'=>$item['id']));}" >
+                                <button type="button" class="btn btn-default">
+                                    做任务
+                                </button>
+                                </a>-->
+                                {else}
+                                <!--<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" disabled="disabled">
+                                    已完成
+                                </button>-->
+                                {/if}
+							<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							状态 <span class="caret"></span>
+							</button>
+							<ul class="dropdown-menu">
+								<li><a href="{php echo $this->createWebUrl('tasklist', array('status'=>'1','tid'=>$item['id']));}" >暂停</a></li>
+								<li><a href="{php echo $this->createWebUrl('tasklist', array('status'=>'0','tid'=>$item['id']));}" >继续</a></li>							
+							</ul>
+							</div>
+						</div>				
+                </td>
+            </tr>
+            {/loop}
+            </tbody>
+        </table>
+
+        <table class="table table-hover">
+            <tr>
+                <td width="30">
+                    <input type="checkbox" onclick="var ck = this.checked;$(':checkbox').each(function(){this.checked = ck});" />
+                </td>
+                <td class="text-left">
+                    <input name="token" type="hidden" value="{$_W['token']}" />
+					<input type="submit" class="btn btn-primary span2" name="del" value="删除" />
+                </td>
+            </tr>
+        </table>
+        {$pager}
+    </form>
+</div>
+<script>
+    $('#form1').submit(function(){
+        if($(":checkbox[name='delete[]']:checked").size() > 0){
+            return confirm('确定执行该操作吗？');
+        }
+        alert('没有选择选手');
+        return false;
+    });
+</script>
+{template 'common/footer'}

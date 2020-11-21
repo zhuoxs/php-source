@@ -1,0 +1,189 @@
+{if $op == 'display'}
+<style>
+    td {
+        vertical-align: middle !important;
+    }
+    .category_img {
+        width: 40px;
+        height: 40px;
+    }
+    .category_childs_none {
+        display: none;
+    }
+    .toggle_collapse_null i {
+        color: #ccc;
+    }
+</style>
+<form method="post">
+    <div class="panel panel-default ">
+        <div class="table-responsive panel-body">
+            <table class="table table-hover">
+                <thead class="navbar-inner">
+                <tr>
+                    <th width="40"></th>
+                    <th width="80">排序</th>
+                    <th width="400">分类图/名称</th>
+                    <th width="60">状态</th>
+                    <th class="text-right">操作</th>
+                </tr>
+                </thead>
+                <tbody id="category_body">
+                {if $list}
+                {loop $list $li}
+                <tr>
+                    <td>
+                        <a href="javascript:;" class="{if !empty($li[children])}toggle_collapse{else}toggle_collapse_null{/if}">
+                            <i class="fa fa-plus"></i>
+                        </a>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control text-center" name="displayorder[{$li['id']}]" value="{$li['displayorder']}">
+                    </td>
+                    <td>
+                        <!--<img class="category_img" src="{php echo tomedia($li['cover'])}" onerror="this.src='./resource/images/nopic-small.jpg'"/>-->
+                        {$li['title']}
+                    </td>
+                    <td>
+                        {if $li['isshow'] == 1}
+                        <span class="label label-success">显示</span>
+                        {else}
+                        <span class="label label-danger">隐藏</span>
+                        {/if}
+                    </td>
+                    <td class="text-right">
+                        <a href="{php echo $this->createWebUrl('recycle', array('act' => 'category', 'op' => 'post', 'id' => $li['id'], 'pid' => 0, 'level' => 1))}"><i class="fa fa-pencil"></i> 编辑</a>
+                        <a href="{php echo $this->createWebUrl('recycle', array('act' => 'category', 'op' => 'delete', 'id' => $li['id']))}" class="text-danger"  style="padding: 0 .5rem" onclick="return confirm('确认删除此分类吗？\n删除分类后该分类下子分类将一并删除');return false;"><i class="fa fa-remove"></i> 删除</a>
+                        <a href="{php echo $this->createWebUrl('recycle', array('act' => 'category', 'op' => 'post', 'pid' => $li['id']))}" class="text-warning"><i class="fa fa-plus"></i> 添加子分类</a>
+                    </td>
+                </tr>
+                </tbody>
+                <tbody class="category_childs_none">
+                {if !empty($li[children])}
+                {loop $li['children'] $child}
+                <tr>
+                    <td>
+                    </td>
+                    <td>
+                    </td>
+                    <td>
+                        <div class="row">
+                            <div class="col-xs-3" style="width:16%; padding: 0">
+                                <input type="text" class="form-control text-center" name="displayorder[{$child['id']}]" value="{$child['displayorder']}" >
+                            </div>
+                            <div class="col-xs-9" style="width: 84%">
+                                <div>
+                                    <img class="category_img" src="{php echo tomedia($child['cover'])}" onerror="this.src='./resource/images/nopic-small.jpg'"/>
+                                    {$child['title']}（{if $child['isPrice']}&yen;{$child['price']}/{$child['unit']}{else}{$child['price']}{/if}）
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {if $child['isshow'] == 1}
+                        <span class="label label-success">显示</span>
+                        {else}
+                        <span class="label label-danger">隐藏</span>
+                        {/if}
+                    </td>
+                    <td class="text-right">
+                        <a href="{php echo $this->createWebUrl('recycle', array('act' => 'category', 'op' => 'post', 'id' => $child['id'], 'pid' => $li['id'], 'level' => 2))}"><i class="fa fa-pencil"></i> 编辑</a>
+                        <a href="{php echo $this->createWebUrl('recycle', array('act' => 'category', 'op' => 'delete', 'id' => $child['id']))}"  class="text-danger" style="padding: 0 .5rem" onclick="return confirm('确认删除此子分类吗？\n该分类下商品将初始化为无分类状态');return false;"><i class="fa fa-remove"></i> 删除</a>
+                    </td>
+                </tr>
+                {/loop}
+                {/if}
+                </tbody>
+                {/loop}
+                {/if}
+            </table>
+        </div>
+    </div>
+    {if $list}
+    <input name="submit" type="submit" value="更新排序" class="btn btn-primary col-lg-1" />
+    <input type="hidden" name="token" value="{$_W['token']}" />
+    {/if}
+</form>
+<script>
+    require(['jquery', 'util'], function($, u){
+        $('.toggle_collapse').click(function(){
+            if ($('i', this).hasClass('fa-plus')) {
+                $('i', this).removeClass('fa-plus').addClass('fa-minus');
+                $(this).parent().parent().parent().next().fadeIn();
+
+            } else if ($('i', this).hasClass('fa-minus')) {
+                $('i', this).removeClass('fa-minus').addClass('fa-plus');
+                $(this).parent().parent().parent().next().fadeOut();
+            }
+        });
+    })
+</script>
+{else if $op == 'post'}
+<form class="form-horizontal form" action="" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="id" value="{$item['id']}">
+    <div class="panel panel-default">
+        <div class="panel-heading">编辑</div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">分类名称</label>
+                <div class="col-sm-8 col-xs-12">
+                    <input type="text" class="form-control" placeholder="" name="title" value="{$item['title']}">
+                </div>
+            </div>
+            {if $pid > 0}
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">分类图</label>
+                <div class="col-sm-8 col-xs-12">
+                    {php echo tpl_form_field_image('cover', $item['cover'])}
+                    <span class="help-block">推荐尺寸：100*100</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">价格</label>
+                <div class="col-sm-8 col-xs-12">
+                    <input type="text" class="form-control" placeholder="0.00" name="price" value="{$item['price']}">
+                    <span class="help-block">价格字段支持字符串填写，如：面议</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">单位</label>
+                <div class="col-sm-8 col-xs-12">
+                    <input type="text" class="form-control" placeholder="公斤" name="unit" value="{$item['unit']}">
+                    <span class="help-block">设置价格后，价格展示时自动显示单位，否则不显示</span>
+                </div>
+            </div>
+            {/if}
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">是否显示</label>
+                <div class="col-sm-6 col-md-8 col-xs-12">
+                    <div class="input-group">
+                        <label class="radio-inline">
+                            <input type="radio" name="isshow" value="1" {if !isset($item['isshow'])||$item['isshow']==1}checked{/if}> 是
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" name="isshow" value="0" {if isset($item['isshow'])&&$item['isshow']==0}checked{/if}> 否
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-sm-12">
+            <input name="submit" type="submit" value="提交" class="btn btn-primary col-lg-1">
+            <input type="hidden" name="token" value="{$_W['token']}" />
+        </div>
+    </div>
+</form>
+<script>
+    require(['jquery', 'util'], function($, u){
+        $('form').submit(function(){
+            var title = $('input[name=title]');
+            if (title.val() == '') {
+                u.message('请输入分类名称！', '', 'error');
+                return false;
+            }
+            return true;
+        });
+    })
+</script>
+{/if}

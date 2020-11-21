@@ -1,0 +1,170 @@
+{php include wl_template('common/header');}
+<div class="page-group" >
+    <div class="page page-current" id="page-index">
+		{php include wl_template('common/menu');}
+    	<div class="buttons-tab" style="z-index: 100;">
+	      <a href="{php echo app_url('wlcoupon/coupon_app/couponList',array('status'=>1))}" class="button {if $status=='1'}active{/if}" >未使用</a>
+	      <a href="{php echo app_url('wlcoupon/coupon_app/couponList',array('status'=>2))}" class="button {if $status=='2'}active{/if}" >已使用</a>
+	      <a href="{php echo app_url('wlcoupon/coupon_app/couponList',array('status'=>3))}" class="button {if $status=='3'}active{/if}" >已过期</a>
+	    </div>
+		<div class="content infinite-scroll">
+			<div class="list-block media-list">
+				<ul style="background-color: transparent;" class="list-container">
+				</ul>
+			</div>
+			<div class="infinite-scroll-preloader">
+				<div  class="weui-loadmore">
+			        <i class="weui-loading"></i>
+			        <span class="weui-loadmore__tips">正在加载</span>
+			    </div>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="notused">
+	{{# for(var i = 0, len = d.length; i < len; i++){ }}
+	<li class="notused-i">
+		<div class="notused-i-card">
+			<div class="notused-i-card-t1">
+				<div class="notused-i-card-t1-l">{{d[i].title}}</div>
+				{{#  if(d[i].usetimes > 0 && d[i].applyrefund == 0) { }}
+				<div class="notused-i-card-t1-r"><a href="{{d[i].url}}">去使用</a></div>
+				{{# }else if(d[i].applyrefund == 1){ }} 
+				<div class="notused-i-card-t1-r"><a href="javascript:;">申请退款中</a></div>
+				{{# } }}
+			</div>
+			<div class="notused-i-card-t2">
+				<h1>使用条件：{{d[i].sub_title}}</h1>
+				<p>有效期至：{{d[i].endtime}}</p>
+			</div>
+			<div class="notused-i-card-line">
+				<div class="dot-line">
+					{{# for(var j = 0, lenj = 100; j < lenj; j++){ }}
+						<span></span>
+					{{# } }}
+				</div>
+			</div>
+			<div class="notused-i-card-t3">
+				适用门店：{{d[i].storename}}
+				<div class="notused-i-card-t1-r" style="display: inline;float: right;"><a href="{{d[i].storeurl}}">进店</a></div>
+			</div>
+		</div>
+	</li>
+	{{# } }}
+</script>
+<script>
+	var page = 1,
+	    pagesize = 8,
+	    endmark = 1,
+	    loading = 1;
+	asd();
+	function asd(){
+		$('.infinite-scroll-preloader').show();
+		$.post("{php echo app_url('wlcoupon/coupon_app/getcoupons',array('status'=>$status))}",{},function(d){
+			$('.infinite-scroll-preloader').hide();
+			if(d.data.length){
+				sessionStorage.setItem("demokey",JSON.stringify(d.data));
+				var contentdata = d.data.slice(0,pagesize);
+				addItems(contentdata);
+			}else{
+				if({$status} == 1) {
+					var xx = "<div onclick='tolist()' class='nulltips'>您没有未使用卡券<br/>去看看~</div>";
+				}else if({$status} == 2){
+					var xx = "<div onclick='tolist()' class='nulltips'>您没有已使用卡券<br/>去看看~</div>";
+				}else{
+					var xx = "<div onclick='tolist()' class='nulltips'>您没有已过期卡券<br/>去看看~</div>";
+				}
+				$('.list-container').html(xx);
+			}
+		}, 'json');
+	}
+	
+	function rule(sgin){
+		var id = $(sgin).attr('ruleid');
+		var flag = $(sgin).attr('sflag');
+		if (flag == 1) {
+			$('#rule'+id).show();
+			$(sgin).attr('sflag','2');
+		}else{
+			$('#rule'+id).hide();
+			$(sgin).attr('sflag','1');
+		}
+	}
+
+	$('.content').scroll(function(){
+		var scr = $('.content').scrollTop();
+		var height = $('.coupon').height();
+		if((height-scr)<600){
+			if(endmark && loading){
+			loading = 0;	
+			$('.infinite-scroll-preloader').show();
+			setTimeout(function() {
+				var dt = JSON.parse(sessionStorage.getItem("demokey"));
+				var xxx = dt.slice((page-1)*pagesize ,(page-1)*pagesize+pagesize);
+				addItems(xxx);
+			}, 800);}
+		}
+	});
+	function addItems(cont){
+		if(cont.length){
+			$('.infinite-scroll-preloader').hide();
+			var gettpl1 = document.getElementById('notused').innerHTML;
+			laytpl(gettpl1).render(cont, function(html){
+				$(".list-container").append(html);
+			});
+			page++;loading = 1;
+		}else{
+			$('.infinite-scroll-preloader').hide();
+			var nothing_html = "<li><div style='padding-top:1px'>" +
+			'<div class="weui-loadmore weui-loadmore_line"><span style="background-color: #efeff4;" class="weui-loadmore__tips">暂无更多数据</span></div></div></li>';
+			$(".list-container").append(nothing_html);
+			endmark = 0;
+		}
+	}
+	function tolist(){
+		location.href = "{php echo app_url('wlcoupon/coupon_app/couponslist')}";
+	}
+</script>
+<style>
+	.content{margin-top: 2rem;overflow-x: hidden;}
+	.storedetail{margin-top: 0.8rem;padding: 0.3rem 0.8rem;color:white;border-radius: 10px;border: 2px solid white;}
+	.nulltips{text-align:center;position:relative;top:5rem;color:#06C1AE}
+	.list-block ul:before{background-color:transparent ;}
+	.list-block ul:after{background-color:transparent ;}
+	body{background-color: bisque;}
+	.card{margin-top: 10px;background-color: #fff;font-family: "黑体";border-radius: 3px;overflow: hidden;}
+	.card:after{clear: left;}
+	.card:after,.card:before{display: table;content: " ";}
+	.card-item{float: left;}
+	.card-icon{position: relative;width: 20%;padding: .5rem;}
+	.card-icon>img{width: 45px;height: 45px;border-radius: 100%;}
+	.card-title{color: #222;font-size: 1.2rem;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;position: absolute;width: 80%;top: .8rem;left: 2.7rem;}
+	.card-title span{padding-left: 20px;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;}
+	.card-bottom{position: relative;width: 100%;color: #ccc;background-color: #FBFBFB;border-top: 1px solid silver;}
+	.dot-line{position: absolute;width: 300%;top: -2px;left: 0;}
+	.dot-line span{float: left;width: 8px;height: 8px;background-color: #FBFBFB;border-radius: 100%;margin-left: 8px;border-top: 1px solid silver;position: relative;top: -2px;}
+	.time,.name{line-height: 38px;font-size: .65rem;box-sizing: border-box;}
+	.time{padding-left: 5px;width: 70%;color: #8e8e8e;}
+	.time img{margin: -9px 10px;width: 18px;height: 18px;}
+	.name{padding-right: 5px;color: #929292;width: 30%;text-align: right;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;position: absolute;bottom: 0;right: 0;}
+	.buttons-tab .button {-webkit-flex: 1;flex: 1;}
+	.buttons-tab .button.active {color: #FF433F;border-color: #FF433F;}
+	.notused-i {}
+	.notused-i-card {margin: .3rem;padding: .5rem .75rem;background-color: #fff;-webkit-border-radius: 5px;border-radius: 5px;}
+	.notused-i-card-t1 {display: -webkit-flex;display: flex;justify-content: space-between;}
+	.notused-i-card-t1-l {width: 80%;height: 1.5rem;line-height: 1.5rem;color: #df231c;font-size: 1rem;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;}
+	.notused-i-card-t1-r {display: -webkit-flex;display: flex;align-items: center;}
+	.notused-i-card-t1-r a {color: #df231c;font-size: .7rem;padding: .1rem .4rem;border: 1px solid #df231c;-webkit-border-radius: 2px;border-radius: 2px;}
+	.notused-i-card-t2 {margin-top: .5rem;}
+	.notused-i-card-t2 h1 {height: 1.05rem;line-height: 1.05rem;color: #333;font-weight: normal;font-size: .65rem;margin: 0;}
+	.notused-i-card-t2 p {height: 1.05rem;line-height: 1.05rem;color: #999;font-size: .65rem;}
+	.notused-i-card-line {height: .1rem;margin-top: .5rem;position: relative;}
+	.notused-i-card-line-d {width: 100%;border-top: .1rem dashed #efeff4;position: absolute;top: 0;left: 0;}
+	.notused-i-card-line:before {content: "";width: 1.3rem;height: 1.3rem;background-color: #efeff4;display: inline-block;position: absolute;top: -0.55rem;left: -1.45rem;-webkit-border-radius: 50%;border-radius: 50%;}
+	.notused-i-card-line:after {content: "";width: 1.3rem;height: 1.3rem;background-color: #efeff4;display: inline-block;position: absolute;top: -0.55rem;right: -1.45rem;-webkit-border-radius: 50%;border-radius: 50%;}
+	.notused-i-card-t3 {height: 1.05rem;line-height: 1.05rem;color: #333;font-size: .65rem;margin-top: .5rem;}
+	.notused-i-card-line .dot-line {height: 3px;top: 0;left: -8px;overflow: hidden;}
+	.notused-i-card-line .dot-line span {height: 3px;top: 0;background-color: #eee;border-top: none;}
+	
+</style>		
+{php include wl_template('common/footer');}

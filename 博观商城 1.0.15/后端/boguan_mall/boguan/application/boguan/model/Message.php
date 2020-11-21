@@ -1,0 +1,2 @@
+<?php
+ namespace app\boguan\model; class Message extends BaseModel { public function admin() { return $this->hasOne("\101\144\x6d\x69\x6e", "\151\144", "\x61\144\155\151\156\137\x69\x64"); } public function user() { return $this->hasOne("\125\163\x65\162", "\x69\x64", "\x75\x73\145\x72\x5f\151\144")->field("\x69\144\54\156\x69\143\153\x6e\x61\155\145\54\x61\166\x61\x74\x61\x72"); } public function refund() { return $this->hasOne("\x4f\x72\x64\145\x72\122\145\x66\x75\x6e\x64", "\x69\144", "\157\x72\x64\x65\162\137\151\144"); } }

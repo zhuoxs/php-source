@@ -1,0 +1,226 @@
+{extend name="common/index" /}
+{block name="search_box"}
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入订单号查询" autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="goods_id" id="goods_id" style="width: 200px;" class="select2" lay-ignore></select>
+        </div>
+        <div class="layui-inline">
+            <select name="type" id="type" style="width: 200px;" class="select2" lay-ignore></select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+{/block}
+{block name="tool_box"}
+<!--工具栏-->
+
+{/block}
+{block name="tool_template"}
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    {{# if(d.order_status == 1){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnSend">发货/取货</a>
+    {{# } }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnSeee">查看详情</a>
+
+</script>
+{/block}
+{block name="table_config"}
+<script type="text/html" id="sincetype">
+    {{# if(d.sincetype == 1){ }}物流{{# } }}
+    {{# if(d.sincetype == 2){ }}到店自取{{# } }}
+</script>
+<script type="text/html" id="orderstatus">
+    {{# if(d.order_status == 0){ }}未付款{{# } }}
+    {{# if(d.order_status == 1){ }}待配送{{# } }}
+    {{# if(d.order_status == 2){ }}配送中{{# } }}
+    {{# if(d.order_status == 3){ }}已完成{{# } }}
+</script>
+<script>
+    layui.use(['table','form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_order_list')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'gname', width:100, title: '商品名称'},
+                {field:'user_id', width:100, title: '用户id',sort:true},
+                {field:'order_amount', width:100, title: '订单金额',sort:true},
+                {field:'distribution', width:100, title: '运费',sort:true},
+                {field:'total_integral', width:100, title: '消耗积分',sort:true},
+                {field:'total_num', width:100, title: '总数量',sort:true},
+                {field:'sincetype', width:100, title: '配送方式',sort:true,templet:'#sincetype'},
+                // {field:'name', width:100, title: '姓名'},
+                // {field:'phone', width:100, title: '手机'},
+                // {field:'address', width:100, title: '地址'},
+                // {field:'remark', width:100, title: '留言'},
+                {field:'dh_time', width:200, title: '下单时间',sort:true},
+                {field:'out_trade_no', width:200, title: '订单号'},
+                // {field:'transaction_id', width:100, title: '微信单号'},
+                {field:'order_status', width:100, title: '订单状态',sort:true,templet:'#orderstatus'},
+                // {field:'pay_time', width:100, title: '支付时间',sort:true},
+                // {field:'fahuo_time', width:200, title: '发货时间',sort:true},
+                // {field:'queren_time', width:200, title: '确认收货时间',sort:true},
+                // {field:'express_delivery', width:200, title: '快递公司'},
+                // {field:'express_orderformid', width:200, title: '快递单号'},
+                {field:'o',fixed:'right',width:200, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+        //        搜索
+        $('#btnSearch').unbind('click').click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    goods_id: $('#goods_id').val(),
+                    type: $('#type').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        goods_id: $('#goods_id').val(),
+                        type: $('#type').val(),
+                    }
+                });
+            }
+        })
+        //查看详情
+        $(document).on('click','.btnSeee',function(e){
+            var id = $(this).data('id')
+            var index = layer.open({
+                type: 2,
+                title: '查看详情',
+                shadeClose: true,
+                shade: false,
+                maxmin: true, //开启最大化最小化按钮
+                area: ['900px', '600px'],
+                content: "{:adminurl('see')}&id="+id,
+            });
+            // layer.full(index);
+            return false;
+        })
+        //发货/取货
+        $(document).on('click','.btnSend',function(e){
+            var id = $(this).data('id')
+            var index = layer.open({
+                type: 2,
+                title: '发货/取货',
+                shadeClose: true,
+                shade: false,
+                maxmin: true, //开启最大化最小化按钮
+                area: ['900px', '600px'],
+                content: "{:adminurl('send')}&id="+id,
+            });
+            // layer.full(index);
+            return false;
+        })
+        // 批量删除
+        $('#btnBatchDeletec').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                layer.confirm('即将删除 '+data.length+' 条记录', {
+                    btn: ['确定','取消'] //按钮
+                }, function(){
+                    var url = "{:adminurl('deletegoods')}";
+                    $.post(url, {ids:ids.join(',')}, function(data){
+                        if (typeof data == 'string'){
+                            data = $.parseJSON(data);
+                        }
+                        if (data.code == 0) {
+                            layer.msg('删除成功',{icon: 6,anim: 6});
+                            table.reload('laytable',{});
+                        }else{
+                            layer.msg(data.msg,{icon: 5,anim: 6});
+                        }
+                    });
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+        // 删除
+        $(document).on('click','.btnDeletec',function(e){
+            var id = $(this).data('id')
+            layer.confirm('即将删除 1 条记录', {
+                btn: ['确定','取消'] //按钮
+            }, function(){
+                var url = "{:adminurl('deletegoods')}";
+                $.post(url, {ids:id}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('删除成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            });
+            return false;
+        })
+
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        $.get("{:adminurl('allgoods')}", function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: '', text: '请选择商品'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#goods_id').select2({
+                data: ret,
+            })
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        var ret = [
+            {"id":0,"text":"全部订单"},
+            {"id":1,"text":"待付款"},
+            {"id":2,"text":"待配送"},
+            {"id":3,"text":"配送中"},
+            {"id":4,"text":"已完成"},
+        ];
+        ret.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            return obj;
+        });
+        $('#type').select2({
+            data: ret,
+        })
+
+    })
+</script>
+{/block}

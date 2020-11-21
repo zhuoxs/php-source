@@ -1,0 +1,732 @@
+{extend name="common/index" /}
+{block name="search_box"}
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入关键字..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="cat_id" id="cat_id" style="width: 200px;" class="select2" lay-ignore></select>
+        </div>
+        <div class="layui-inline">
+            <select name="state" id="state" style="width: 200px;" class="select2" lay-ignore></select>
+        </div>
+        <div class="layui-inline">
+            <select name="store_id" id="store_id" style="width: 200px;" class="select2" lay-ignore></select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+        <button class="layui-btn" id="btnSearchHideGoods">搜索隐藏商品</button>
+    </div>
+</div>
+{/block}
+{block name="tool_box"}
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnAdd" class="layui-btn layui-btn-primary layui-btn-sm">新增</a>
+        <a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchEnable" class="layui-btn layui-btn-primary layui-btn-sm">启用</a>
+        <a href="javascript:;" id="btnBatchUnEnable" class="layui-btn layui-btn-primary layui-btn-sm">禁用</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchMandatoryOn" class="layui-btn layui-btn-primary layui-btn-sm">强制上架</a>
+        <a href="javascript:;" id="btnBatchMandatoryOff" class="layui-btn layui-btn-primary layui-btn-sm">强制下架</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchAdminShow" class="layui-btn layui-btn-primary layui-btn-sm">批量显示</a>
+        <a href="javascript:;" id="btnBatchAdminHide" class="layui-btn layui-btn-primary layui-btn-sm">批量隐藏</a>
+    </div>
+    {if(!$_SESSION['admin']['store_id'])}
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchHot" class="layui-btn layui-btn-primary layui-btn-sm">推荐</a>
+        <a href="javascript:;" id="btnBatchUnHot" class="layui-btn layui-btn-primary layui-btn-sm">取消推荐</a>
+    </div>
+    {/if}
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchBeginTime" class="layui-btn layui-btn-primary layui-btn-sm">修改活动开始时间</a>
+        <a href="javascript:;" id="btnBatchEndTime" class="layui-btn layui-btn-primary layui-btn-sm">修改活动结束时间</a>
+        <a href="javascript:;" id="btnBatchSendTime" class="layui-btn layui-btn-primary layui-btn-sm">修改计划配送时间</a>
+        <a href="javascript:;" id="btnBatchReceiveTime" class="layui-btn layui-btn-primary layui-btn-sm">修改预计送达时间</a>
+    </div>
+</div>
+{/block}
+{block name="tool_template"}
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnEdit">编辑</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDelete">删除</a>
+    {{# if(d.zny_auth==1&&d.upload_zny_goods_id==0){ }}
+    {{# if(d.is_upload_zny == 0){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" data-isupload="{{d.is_upload_zny}}" class="layui-btn layui-btn-primary layui-btn-xs btnUploadZny">上传至挚能云 </a>
+    {{# } }}
+    {{# if(d.is_upload_zny >0){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" data-isupload="{{d.is_upload_zny}}" class="layui-btn layui-btn-primary layui-btn-xs btnUploadZny">同步至挚能云 </a>
+    {{# } }}
+    {{# } }}
+</script>
+{/block}
+{block name="table_config"}
+<script type="text/html" id="dataCheckState">
+    {{# if(d.check_state == 1){ }}
+    <span class="layui-badge layui-bg-orange">待审核</span>
+    {{# } }}
+    {{# if(d.check_state == 2){ }}
+    审核通过
+    {{# } }}
+    {{# if(d.check_state == 3){ }}
+    <span class="layui-badge layui-bg-blue">审核失败</span>
+    {{# } }}
+</script>
+<script type="text/html" id="storeName">
+    {{# if(d.store_name){ }}
+    {{d.store_name}}
+    {{# } }}
+    {{# if(!d.store_name){}}
+    平台
+    {{# } }}
+
+</script>
+<script type="text/html" id="force">
+    <input type="checkbox" name="mandatory" value="{{d.id}}" lay-skin="switch" lay-text="启用|禁用" lay-filter="mandatory" {{ d.mandatory == 1 ? 'checked' : '' }}>
+</script>
+<script type="text/html" id="dataHide">
+    <input type="checkbox" name="is_show" value="{{d.id}}" lay-skin="switch" lay-text="显示|隐藏" lay-filter="is_show" {{ d.is_show == 1 ? 'checked' : '' }}>
+</script>
+<script>
+    layui.use(['table','form','laydate'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        var laydate = layui.laydate;
+        laydate.render({
+            elem: '.date'
+        });
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_list')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'store_name', width:100, title: '商家名称',fixed:'left',templet:"#storeName"},
+                {field:'id', width:100, title: '商品id',fixed:'left',sort:true},
+                {field:'name', width:180, title: '名称',fixed:'left',sort:true},
+                {field:'cat_name', width:180, title: '分类'},
+                {field:'stock', width:180, title: '库存',sort:true},
+                {field:'price', width:180, title: '销售价',sort:true},
+                {field:'sales_num', width:180, title: '销售量',sort:true},
+                {field:'virtual_num', width:180, title: '虚拟销售量',sort:true},
+                {field:'index', width:180, title: '排序',sort:true,edit:true},
+                {field:'begin_time', width:200, title: '活动开始时间',sort:true},
+                {field:'end_time', width:200, title: '活动结束时间',sort:true},
+                {field:'send_time', width:200, title: '计划配送时间',sort:true},
+                {field:'receive_time', width:200, title: '预计送达时间',sort:true},
+                {field:'state', width:120, title: '审核状态',sort:true,templet:"#dataCheckState"},
+                {field:'fail_reason', width:180, title: '失败原因',sort:true},
+                {field:'create_time', width:200, title: '创建时间',sort:true},
+                {field:'update_time', width:200, title: '修改时间',sort:true},
+                {field:'mandatory',fixed:'right', width:100, title: '强制上架',sort:true,templet: '#force'},
+                {field:'is_show',fixed:'right', width:100, title: '后台显示',sort:true,templet: '#dataHide'},
+                {field:'state',fixed:'right', width:100, title: '启用状态',sort:true,templet: '#dataState'},
+                {if(!$_SESSION['admin']['store_id'])}
+                {field:'is_hot',fixed:'right', width:100, title: '推荐状态',sort:true,templet: '#dataHot'},
+                {/if}
+                {field:'o',fixed:'right',width:260, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+        $('#btnSearchHideGoods').click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    cat_id: $('#cat_id').val(),
+                    state: $('#state').val(),
+                    show_hide_goods: 1,
+                }
+            });
+        });
+        //        搜索
+        $('#btnSearch').unbind('click').click(function () {
+            //执行重载
+            console.log($('#store_id').val());
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    cat_id: $('#cat_id').val(),
+                    state: $('#state').val(),
+                    store_id:$('#store_id').val(),
+                    show_hide_goods: 0,
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                    }
+                });
+            }
+        })
+        //开始时间
+        $('#btnBatchBeginTime').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            // if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                layer.open({
+                    type: 1,
+                    shade: false,
+                    title: false,
+                    content: '<div style="padding: 20px 20px 0 20px;"><input autocomplete="off" type="text" class="layui-input date" placeholder="请输入活动开始时间"></div>',
+                    btn: ['确定','取消'],
+                    yes: function(index, layero){
+                        var date = $('.date',layero).val();
+
+                        var url = "{:adminurl('batchBeginTime')}";
+                        var p = {
+                            key: $('#key').val(),
+                            cat_id: $('#cat_id').val(),
+                            state: $('#state').val(),
+                            ids:ids.join(','),
+                            date:date
+                        }
+                        $.post(url, p, function(data){
+                            if (typeof data == 'string'){
+                                data = $.parseJSON(data);
+                            }
+                            if (data.code == 0) {
+                                layer.msg('修改成功',{icon: 6,anim: 6});
+                                table.reload('laytable',{});
+                            }else{
+                                layer.msg(data.msg,{icon: 5,anim: 6});
+                            }
+                        });
+
+                        layer.close(index);
+                    }
+                });
+                laydate.render({
+                    elem: '.date',
+                    type: 'datetime'
+                });
+
+            // }else{
+            //     layer.msg('请选择记录');
+            // }
+        })
+
+        //结束时间
+        $('#btnBatchEndTime').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            // if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                layer.open({
+                    type: 1,
+                    shade: false,
+                    title: false,
+                    content: '<div style="padding: 20px 20px 0 20px;"><input autocomplete="off" type="text" class="layui-input date" placeholder="请输入活动结束时间"></div>',
+                    btn: ['确定','取消'],
+                    yes: function(index, layero){
+                        var date = $('.date',layero).val();
+
+                        var url = "{:adminurl('batchEndTime')}";
+                        var p = {
+                            key: $('#key').val(),
+                            cat_id: $('#cat_id').val(),
+                            state: $('#state').val(),
+                            ids:ids.join(','),
+                            date:date
+                        }
+                        $.post(url, p, function(data){
+                            if (typeof data == 'string'){
+                                data = $.parseJSON(data);
+                            }
+                            if (data.code == 0) {
+                                layer.msg('修改成功',{icon: 6,anim: 6});
+                                table.reload('laytable',{});
+                            }else{
+                                layer.msg(data.msg,{icon: 5,anim: 6});
+                            }
+                        });
+
+                        layer.close(index);
+                    }
+                });
+                laydate.render({
+                    elem: '.date',
+                    type: 'datetime'
+                });
+
+            // }else{
+            //     layer.msg('请选择记录');
+            // }
+        })
+
+        //配送时间
+        $('#btnBatchSendTime').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            // if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                layer.open({
+                    type: 1,
+                    shade: false,
+                    title: false,
+                    content: '<div style="padding: 20px 20px 0 20px;"><input autocomplete="off" type="text" class="layui-input date" placeholder="请输入计划配送时间"></div>',
+                    btn: ['确定','取消'],
+                    yes: function(index, layero){
+                        var date = $('.date',layero).val();
+
+                        var url = "{:adminurl('batchSendTime')}";
+                        var p = {
+                            key: $('#key').val(),
+                            cat_id: $('#cat_id').val(),
+                            state: $('#state').val(),
+                            ids:ids.join(','),
+                            date:date
+                        }
+                        $.post(url, p, function(data){
+                            if (typeof data == 'string'){
+                                data = $.parseJSON(data);
+                            }
+                            if (data.code == 0) {
+                                layer.msg('修改成功',{icon: 6,anim: 6});
+                                table.reload('laytable',{});
+                            }else{
+                                layer.msg(data.msg,{icon: 5,anim: 6});
+                            }
+                        });
+
+                        layer.close(index);
+                    }
+                });
+                laydate.render({
+                    elem: '.date',
+                    type: 'datetime'
+                });
+
+            // }else{
+            //     layer.msg('请选择记录');
+            // }
+        })
+
+        //送达时间
+        $('#btnBatchReceiveTime').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            // if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                layer.open({
+                    type: 1,
+                    shade: false,
+                    title: false,
+                    content: '<div style="padding: 20px 20px 0 20px;"><input autocomplete="off" type="text" class="layui-input date" placeholder="请输入预计送达时间"></div>',
+                    btn: ['确定','取消'],
+                    yes: function(index, layero){
+                        var date = $('.date',layero).val();
+
+                        var url = "{:adminurl('batchReceiveTime')}";
+                        var p = {
+                            key: $('#key').val(),
+                            cat_id: $('#cat_id').val(),
+                            state: $('#state').val(),
+                            ids:ids.join(','),
+                            date:date
+                        }
+                        $.post(url, p, function(data){
+                            if (typeof data == 'string'){
+                                data = $.parseJSON(data);
+                            }
+                            if (data.code == 0) {
+                                layer.msg('修改成功',{icon: 6,anim: 6});
+                                table.reload('laytable',{});
+                            }else{
+                                layer.msg(data.msg,{icon: 5,anim: 6});
+                            }
+                        });
+
+                        layer.close(index);
+                    }
+                });
+                laydate.render({
+                    elem: '.date',
+                    type: 'datetime'
+                });
+
+            // }else{
+            //     layer.msg('请选择记录');
+            // }
+        })
+        //快速购买
+        $('#btnBatchQuick').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                var url = "{:adminurl('batchquick')}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('设置成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+        //取消快速购买
+        $('#btnBatchUnQuick').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                var url = "{:adminurl('batchunquick')}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('取消成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+        //监听强制上架状态切换操作
+        form.on('switch(mandatory)', function(obj){
+            if (obj.elem.checked){
+                var url = "{:adminurl('mandatory')}";
+                var value=1;
+                var msg = "上架";
+            }else{
+                var url = "{:adminurl('mandatory')}";
+                var value=0;
+                var msg = "下架";
+            }
+            $.post(url, {ids:obj.value,value:value}, function(data){
+                if (typeof data == 'string'){
+                    data = $.parseJSON(data);
+                }
+                if (data.code == 0) {
+                    layer.msg(msg+'成功',{icon: 6,anim: 6});
+                    // table.reload('laytable',{});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        });
+        // 批量上架
+        $('#btnBatchMandatoryOn').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                layer.confirm('即将上架 '+data.length+' 条记录', {
+                    btn: ['确定','取消'] //按钮
+                }, function(){
+                    var url = "{:adminurl('mandatory')}";
+                    $.post(url, {ids:ids.join(','),value:1}, function(data){
+                        console.log(data);
+                        if (typeof data == 'string'){
+                            data = $.parseJSON(data);
+                        }
+                        if (data.code == 0) {
+                            layer.msg('上架成功',{icon: 6,anim: 6});
+                            table.reload('laytable',{});
+                        }else{
+                            layer.msg(data.msg,{icon: 5,anim: 6});
+                        }
+                    });
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+        // 批量下架
+        $('#btnBatchMandatoryOff').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                layer.confirm('即将下架 '+data.length+' 条记录', {
+                    btn: ['确定','取消'] //按钮
+                }, function(){
+                    var url = "{:adminurl('mandatory')}";
+                    $.post(url, {ids:ids.join(','),value:0}, function(data){
+                        if (typeof data == 'string'){
+                            data = $.parseJSON(data);
+                        }
+                        if (data.code == 0) {
+                            layer.msg('下架成功',{icon: 6,anim: 6});
+                            table.reload('laytable',{});
+                        }else{
+                            layer.msg(data.msg,{icon: 5,anim: 6});
+                        }
+                    });
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+        //监听后台显示状态切换操作
+        form.on('switch(is_show)', function(obj){
+            if (obj.elem.checked){
+                var url = "{:adminurl('batchadminshow')}";
+                var value=1;
+                var msg = "显示";
+            }else{
+                var url = "{:adminurl('batchadminhide')}";
+                var value=0;
+                var msg = "隐藏";
+            }
+            $.post(url, {ids:obj.value,value:value}, function(data){
+                if (typeof data == 'string'){
+                    data = $.parseJSON(data);
+                }
+                if (data.code == 0) {
+                    layer.msg(msg+'成功',{icon: 6,anim: 6});
+                    // table.reload('laytable',{});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        });
+        // 批量显示
+        $('#btnBatchAdminShow').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                layer.confirm('即将显示 '+data.length+' 条记录', {
+                    btn: ['确定','取消'] //按钮
+                }, function(){
+                    var url = "{:adminurl('batchadminshow')}";
+                    $.post(url, {ids:ids.join(',')}, function(data){
+                        console.log(data);
+                        if (typeof data == 'string'){
+                            data = $.parseJSON(data);
+                        }
+                        if (data.code == 0) {
+                            layer.msg('显示成功',{icon: 6,anim: 6});
+                            table.reload('laytable',{});
+                        }else{
+                            layer.msg(data.msg,{icon: 5,anim: 6});
+                        }
+                    });
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+        // 批量隐藏
+        $('#btnBatchAdminHide').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                layer.confirm('即将隐藏 '+data.length+' 条记录', {
+                    btn: ['确定','取消'] //按钮
+                }, function(){
+                    var url = "{:adminurl('batchadminhide')}";
+                    $.post(url, {ids:ids.join(',')}, function(data){
+                        if (typeof data == 'string'){
+                            data = $.parseJSON(data);
+                        }
+                        if (data.code == 0) {
+                            layer.msg('隐藏成功',{icon: 6,anim: 6});
+                            table.reload('laytable',{});
+                        }else{
+                            layer.msg(data.msg,{icon: 5,anim: 6});
+                        }
+                    });
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+        //上传至挚能云
+        var isAjaxIng = false;
+        $(document).on('click','.btnUploadZny',function(e){
+            var id = $(this).data('id');
+            var isupload = $(this).data('isupload');
+            if(isupload==0){
+                var text='即将上传至挚能云商品';
+            }else{
+                var text='即将同步至挚能云商品';
+            }
+
+
+
+            layer.open({
+                type: 1,
+                content: '<div style="padding: 20px 20px 0 20px;">'+text+'</div>',
+                btn: ['确定','取消'],
+                yes: function(index, layero){
+                    if (isAjaxIng) return false;
+                    isAjaxIng = true;
+                    var indexSend = layer.load(2);
+                    var url = "{:adminurl('uploadZny')}";
+                    $.post(url, {id:id}, function(data){
+                        if (typeof data == 'string'){
+                            data = $.parseJSON(data);
+                        }
+                        if (data.code == 0) {
+                            layer.msg('上传成功',{icon: 6,anim: 6});
+                            table.reload('laytable',{});
+                        }else{
+                            layer.msg(data.msg,{icon: 5,anim: 6});
+                        }
+                        layer.close(indexSend);
+                        layer.close(index);
+                        isAjaxIng = false;
+                    });
+                },
+                function(index){
+                    layer.close(index);
+                    isAjaxIng = false;
+                }
+            });
+
+
+        })
+        //监听推荐状态切换操作
+        form.on('switch(quick)', function(obj){
+            if (obj.elem.checked){
+                var url = "{:adminurl('batchquick')}";
+                var msg = "设置";
+            }else{
+                var url = "{:adminurl('batchunquick')}";
+                var msg = "取消";
+            }
+            $.post(url, {ids:obj.value}, function(data){
+                if (typeof data == 'string'){
+                    data = $.parseJSON(data);
+                }
+                if (data.code == 0) {
+                    layer.msg(msg+'成功',{icon: 6,anim: 6});
+                    // table.reload('laytable',{});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        });
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        $.get("{:adminurl('select','ccategory')}", function (ret) {
+            console.log(JSON.stringify(ret));
+            //销售中（包含启用和未到期）和已下架（包含禁用和已到期）
+            // var item = {"id":"-1","text":"销售中"};
+            // ret.push(item);
+            // var item = {"id":"-2","text":"已经下架"};
+            // ret.push(item);
+            // console.log(ret);
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: '', text: '请选择分类'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#cat_id').select2({
+                data: ret,
+            })
+        })
+    })
+    require(['select2'], function () {
+        //销售中（包含启用和未到期）和已下架（包含禁用和已到期）
+        var ret=[];
+        var item = {"id":"-1","text":"销售中"};
+        ret.push(item);
+        var item = {"id":"-2","text":"已经下架"};
+        ret.push(item);
+        var item = {"id":"-3","text":"已经过期"};
+        ret.push(item);
+        var item = {"id":"-4","text":"未开始"};
+        ret.push(item);
+        //
+        ret.unshift({id: '', text: '请选择'});
+        ret.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            return obj;
+        });
+        $('#state').select2({
+            data: ret,
+        })
+
+        $.post("{:adminurl('select','cstore')}", {}, function(ret){
+            ret.unshift({id:0,text:'平台'}); 
+            ret.unshift({id:-1, text: '请选择商家'});
+            ret.map(function (obj) {
+                if(obj.text)
+                    obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#store_id').select2({
+                data: ret,
+            })
+        });
+
+
+    })
+</script>
+{/block}

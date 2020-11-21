@@ -1,0 +1,125 @@
+{php include wl_template('common/header');}
+<link rel="stylesheet" href="{URL_MODULE}plugin/wlfightgroup/app/resource/css/orderdetail.css"></link>
+<style>li{list-style: none;}</style>
+<div class="page-group" >
+    <div class="page page-current" id="page-goods-list" >
+    	{php include wl_template('common/rightnav');}
+    	<header class="bar bar-nav">
+		    <a class="button button-link button-nav pull-left back" href="{php echo app_url('wlfightgroup/fightapp/fightindex')}" >
+		      <span class="icon icon-left"></span>
+		      返回
+		    </a>
+		    <h1 class="title">{$name}</h1>
+		</header>
+		<div class="content infinite-scroll" style="padding-bottom: 10px;">
+			<!--推荐商品-->
+			<style>
+			.pp_state::after{width: 94%;left: 3%;}
+			</style>
+			<div class="list" style="padding-bottom: 0px;">
+			    <div class="listCon">
+				    <ul class="ul_1">
+				    	
+				    </ul>
+				</div>
+			</div>
+			<div class="infinite-scroll-preloader">
+				<div  class="weui-loadmore">
+			        <i class="weui-loading"></i>
+			        <span class="weui-loadmore__tips">正在加载</span>
+			    </div>
+			</div>
+		</div>
+	</div>	
+</div>
+<script id="storetemid" type="text/html">
+{{# for(var i = 0, len = d.length; i < len; i++){ }} 
+	<li class="gli">
+		<a href="{{d[i].href}}" class="external">
+			<div class="img" >
+				{{# if(d[i].vipdiscount > 0){ }}
+			    	<span style="display: inline-block;background-color: orange;color: white;border-radius: 3px;padding-left:2px;padding-right: 2px;position: absolute;">vip减{{d[i].vipdiscount}}元</span>
+			   	{{# } }}
+				<img src="{{ d[i].logo }}" alt="" style="opacity: 1;min-height: 112px;border-radius: 3px;" id="goodimg">
+			</div>
+			<div class="txt" style="position: absolute;top: 3%;left: 43%;padding-right: .3rem;">
+				<h5>{{d[i].name}}</h5>
+			</div>
+			{{# if(d[i].head){ }}
+			<div style="position: absolute;left: 43%;top: 2.3rem;">
+				{{# for(var w = 0, len2 = d[i].head.length; w < len2; w++){ }} 
+				<img style="width: 1.5rem;height: 1.5rem;border-radius: 50%;" src="{{ d[i].head[w] }}"/>
+				{{# } }}
+				<span class="jointip">{{d[i].tip}}</span>
+			</div>
+			{{# } }}
+			<div style="color: #9C9C9C;position: absolute;left: 43%;bottom: 2rem;">
+				已团{{d[i].salenum}}{{d[i].unit}}
+			</div>
+			<div class="fnWrap" style="position: absolute;bottom: .5rem;left:43%;">
+				<div class="fnZone">
+					<span>
+						<b class="price">￥{{d[i].price}}</b>
+						<b class="people">{{d[i].peoplenum}}人团</b>
+					</span>
+					<span class="btn">去开团 &gt;</span>
+				</div>
+			</div>
+		</a>
+	</li>
+{{# } }}
+</script>
+<script>
+	asd();
+	var page = 1,pagesize = 10,loading = false,endmark =1;
+	function asd(){
+		$.post("{php echo app_url('wlfightgroup/fightapp/getindexgoods',array('cateid'=>$id))}",{},function(d){
+			$('.infinite-scroll-preloader').hide();
+			loading = false;
+		//	alert(JSON.stringify(d));
+			if(JSON.stringify(d).length>40){
+				sessionStorage.setItem("demokey",JSON.stringify(d));
+				var contentdata = d.slice(0,pagesize);
+				addItems(contentdata);
+			}else{
+				var nothing_html = "<li><div style='background-color: white;padding-top:1px'>" +
+				'<div class="weui-loadmore weui-loadmore_line"><span class="weui-loadmore__tips">暂无更多数据</span></div></div></li>';
+				$(".content").append(nothing_html);
+			}
+		}, 'json');
+	}
+	function addItems(data) {
+		var html = '';
+		//当数据库数据小于number时，改变number
+			$('.infinite-scroll-preloader').css({
+				"display": "none"
+			});
+		var gettpl = document.getElementById('storetemid').innerHTML;
+		laytpl(gettpl).render(data, function(html) {
+			$('.ul_1').append(html);
+			loading = false;
+		});
+		if(data.length == 0) {
+			var nothing_html = "<li><div style='background-color: white;padding-top:1px'>" +
+				'<div class="weui-loadmore weui-loadmore_line"><span class="weui-loadmore__tips">暂无更多数据</span></div></div></li>';
+				$(".content").append(nothing_html);
+				endmark = 0;
+		}
+		page++;
+		common.squareImage('#goodimg');
+	}
+	
+	$(document).on('infinite', '.infinite-scroll', function() {
+		if(loading) return;
+		loading = true;
+		if(endmark){
+		$('.infinite-scroll-preloader').show();
+		setTimeout(function() {
+			var dt = JSON.parse(sessionStorage.getItem("demokey"));
+			var xxx = dt.slice((page-1)*pagesize ,(page-1)*pagesize+pagesize);
+			addItems(xxx);
+		}, 800);}
+	});
+	$.init();
+</script>
+{php include wl_template('common/footer');}

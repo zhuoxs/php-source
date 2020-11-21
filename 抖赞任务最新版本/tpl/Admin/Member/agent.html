@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>{~echo sp_cfg('website')}</title>
+    <bootstrapcss />
+    <bootstrapjs />
+
+    <style>
+        .status0{}
+        .status1{color: #39B9E4}
+        .status-1{color: red}
+
+        .vip0{}
+        .vip1{color: #8b693d}
+        .vip2{color: #bcbcbc}
+        .vip3{color: #e09806}
+        .vip4{color: #fe4e67}
+    </style>
+</head>
+<body>
+<div class="bjy-admin-nav">
+    <i class="fa fa-home"></i> 首页
+    &gt;
+    后台管理
+    &gt;
+    用户列表
+</div>
+<ul id="myTab" class="nav nav-tabs">
+   <li <if condition="$get['role_rz'] neq '0' "> class="active"</if>>
+       <a href="{:U('agent')}">用户列表</a>
+   </li>
+    <li <if condition="$get['role_rz'] eq '0' and $get['shenqing_rz'] neq '1' "> class="active"</if> >
+        <a href="{:U('agent', array('role'=>1,'role_rz'=>'0'))}" >未认证[<span style="color: red">{$dsh_num}</span>]</a>
+    </li>
+    <li <if condition="$get['shenqing_rz'] eq '1' "> class="active"</if> >
+    <a href="{:U('agent', array('role'=>1,'role_rz'=>'0','shenqing_rz'=>1))}" >待认证[<span style="color: red">{$shenqing_num}</span>]</a>
+    </li>
+    <!--<li>
+        <a href="{:U('area')}">地区分布</a>
+    </li>-->
+</ul>
+
+<form id="form_1" class="form-search form-inline" method="get" action="" style="padding: 10px 0; ">
+    <!--角色：
+    <div class="input-group">
+        <select name="role">
+            <option value="">所有角色</option>
+            <option value="0" <if condition="$get['role'] eq '0'"> selected</if> >普通会员</option>
+            <option value="1" <if condition="$get['role'] eq '1'"> selected</if>>信贷员</option>
+        </select>
+    </div>-->
+
+    实名认证：
+    <div class="input-group">
+        <select name="role_rz">
+            <option value="">所有</option>
+            <option value="0" <if condition="$get['role_rz'] eq '0'"> selected</if> >未认证</option>
+            <option value="1" <if condition="$get['role_rz'] eq '1'"> selected</if>>已认证</option>
+            <option value="-1" <if condition="$get['role_rz'] eq '-1'"> selected</if>>认证不通过</option>
+        </select>
+    </div>
+
+    申请认证：
+    <div class="input-group">
+        <select name="shenqing_rz">
+            <option value="">所有</option>
+            <option value="0" <if condition="$get['shenqing_rz'] eq '0'"> selected</if> >未申请</option>
+            <option value="1" <if condition="$get['shenqing_rz'] eq '1'"> selected</if>>等待认证</option>
+        </select>
+    </div>
+
+    VIP等级：
+    <div class="input-group">
+        <select name="level">
+            <option value="">所有</option>
+            <volist name=":C('LEVEL_NAME')" id="vo">
+                <option value="{$key}" <if condition="$key eq $get['level'] and $get['level'] neq ''"> selected</if> >{$vo}</option>
+            </volist>
+        </select>
+    </div>
+
+    关键词：
+    <div class="input-group">
+        <input type="hidden" name="keytype" value="nickname,phone" />
+        <input type="text" name="keywords" value="{$get.keywords}" class="input-sm search-query" placeholder="昵称/电话">
+    </div>
+
+    地区搜索
+    <div class="input-group">
+        <input type="checkbox" value="1" name="is_area" id="is_area" <if condition="intval($get['is_area']) eq 1"> checked</if> >
+    </div>
+
+    <if condition="intval($get['is_area']) eq 1">
+        地区：{:W('Area/index',array($get['province'],$get['city'],$get['area'],'selectArea'))}
+    </if>
+
+    <div class="input-group">
+        <button type="submit" class="btn btn-info btn-sm">
+            <span class="ace-icon fa fa-search icon-on-right bigger-110"></span>
+            搜索
+        </button>
+    </div>
+</form>
+
+
+<table class="table table-striped table-bordered table-hover table-condensed">
+    <tr>
+        <th width="60">编号</th>
+        <th>头像</th>
+        <th>昵称</th>
+        <th>电话</th>
+        <th>角色</th>
+        <th>VIP等级</th>
+        <th>是否认证</th>
+        <th>国家地区</th>
+        <th>最近访问时间</th>
+        <th>操作</th>
+    </tr>
+    <foreach name="list" item="vo">
+        <tr>
+            <td>{$vo.id}</td>
+            <td><if condition="$vo['head_img'] neq ''"><img src="{$vo.head_img}" style="height: 50px; -webkit-border-radius: 50%; -moz-border-radius: 50%; border-radius: 50%;" /> </if></td>
+            <td>{$vo.nickname}</td>
+            <td>{$vo.phone}</td>
+            <td>
+                <if condition="$vo['role'] eq 1">
+                    信贷员
+                    <else/>
+                    普通用户
+                </if>
+            </td>
+            <td>
+                <span class="vip{$vo.level}">{$vo.level|sp_level_name}</span>
+            </td>
+            <td>
+                <span class="status{$vo.role_rz}">
+                    <if condition="$vo['role_rz'] eq 1">
+                        已认证
+                    </if>
+                    <if condition="$vo['role_rz'] eq 0">
+                        未认证
+                    </if>
+                    <if condition="$vo['role_rz'] eq -1">
+                        认证不通过
+                    </if>
+                </span>
+            </td>
+            <td>{$vo.country} {$vo.province} {$vo.city}</td>
+            <td>
+                {$vo.last_login_time|date="Y-m-d H:s", ###}
+            </td>
+            <td>
+                <a href="{:U('handle',array('id'=>$vo['id'],'role'=>1))}" class="btn btn-default btn-xs">详细</a>
+                | &nbsp;
+                <a href="javascript:;" class="btn btn-default btn-xs" data-id="{$vo.id}" data-nickname="{$vo.nickname}" onclick="edit(this)">发送消息</a>
+            </td>
+        </tr>
+    </foreach>
+</table>
+{$Page}
+
+<!-- 修改菜单模态框开始 -->
+<div class="modal fade" id="apply-edit" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <input type="hidden" name="id" id="id" value="0">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                    &times;
+                </button>
+                <h4 class="modal-title" id="myModalLabel">
+                    发送消息
+                </h4>
+            </div>
+            <div class="modal-body">
+                <form id="bjy-form" class="form-inline" action="" method="post">
+                    <input type="hidden" name="id">
+                    <table class="table table-striped table-bordered table-hover table-condensed">
+                        <tr>
+                            <th>发送给：</th>
+                            <td>
+                                <input class="form-control" type="text" name="nickname" readonly>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>消息内容：</th>
+                            <td>
+                                <textarea class="form-control" name="msg" id="msg"></textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <td>
+                                <input class="btn btn-success" id="send_smg" type="button" value="确定">
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 修改菜单模态框结束 -->
+
+<bootstrapjs />
+</body>
+</html>
+
+<script>
+    function edit(obj){
+        var id=$(obj).attr('data-id');
+        var nickname=$(obj).attr('data-nickname');
+        $("input[name='id']").val(id);
+        $("input[name='nickname']").val(nickname);
+        $('#apply-edit').modal('show');
+    }
+
+    $(function(){
+        $('#send_smg').click(function(){
+            var id = $('#id').val();
+            var msg = $('#msg').val();
+            var url = "{:U('Notice/add')}";
+            $.post(url, {member_id:id,msg:msg},function(data){
+                if( data.status == 1 ) {
+                    alert('发送成功');
+                    $('#apply-edit').modal('hide');
+                } else {
+                    alert(data.info);
+                }
+            },'json')
+        })
+
+        $('#is_area').click(function(){
+            $('#form_1').submit();
+        })
+    })
+</script>

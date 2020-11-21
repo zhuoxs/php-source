@@ -1,0 +1,212 @@
+{template 'common/header'}
+<style>
+.select_one_b{display: block; margin-bottom:5px;}
+.hide{display: none;}
+.label-xcx{background: #605AB0}
+</style>
+<ul class="nav nav-tabs">
+    <li {if $op == 'display'}class="active"{/if}><a href="{php echo $this->createWebUrl('reply', array('op' => 'display'))}">客服自动回复列表</a></li>
+    <li {if $op == 'post'}class="active"{/if}><a href="{php echo $this->createWebUrl('reply', array('op' => 'post'))}">添加自动回复</a></li>
+</ul>
+{if $op == 'display'}
+<form class="form-horizontal" action="" method="post">
+    <div class="alert alert-danger" role="alert">
+        <p>受小程序限制，用户初次进入客服对话界面，仅能收到一条自动回复</p>
+    </div>
+    <table class="table we7-table table-hover article-list vertical-middle">
+        <tr>
+            <td style="width:100px">类型</td>
+            <td>内容</td>
+            <td>状态/参数</td>
+            <td class="text-right">操作</td>
+        </tr>
+        {loop $reply $cateP}
+        <tr>
+            <td>
+                {if $cateP['type'] ==1}文本{/if}
+                {if $cateP['type'] ==2}图片{/if}
+                {if $cateP['type'] ==3}小程序卡片{/if}
+                {if $cateP['type'] ==4}图文{/if}
+            </td>
+
+            <td>
+                {$cateP['content']}
+            </td>
+            <td>
+{if $cateP['flag'] ==1}
+<span class="btn btn-success">启用</span> 
+{/if}
+                {if $cateP['flag'] ==2}
+                <span class="btn btn-danger">关闭</span> 
+                
+                {/if}
+            </td>
+  
+            <td class="text-right">
+                <a class="btn btn-default btn-sm" href="{php echo $this->createWeburl('reply', array('id' => $cateP['id'], 'op' =>'post'))}" >编辑</a>
+                <a class="btn btn-default btn-sm" onclick="return confirm('此操作不可恢复，确认吗？'); return false;" href="{php echo $this->createWeburl('reply', array('id' => $cateP['id'], 'op' => 'delete'))}">删除</a>
+            </td>
+        </tr>
+
+        {/loop}
+    </table>
+</form>
+{elseif $op == 'post'}
+<form class="form-horizontal" action="" method="post">
+
+        <div class="panel panel-default">
+		<div class="panel-heading">
+			 <h3 class="panel-title">回复添加</h3>
+		</div>
+        <div class="panel-body">
+        <input type="hidden" name="id" value="{$item['id']}"/>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">启用</label>
+                <div class="form-controls col-sm-5" style="padding-right: 30px;">
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="flag" value="1" {if $item['flag'] == '1'} checked{/if} />
+                        启用
+                    </label>
+                    <label style="margin-right: 20px">
+                        <input type="radio" name="flag" value="0" {if $item['flag'] == '2'} checked{/if} />
+                        不启用
+                    </label>
+                </div>
+                <div class="form-controls col-sm-4 help-block">启用后，自动回复方可生效(不选默认不启动)</div>
+            </div>
+     
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">回复类型</label>
+                <div class="form-controls col-sm-5" style="padding-right: 30px;">
+                    <select name="type" class="form-control"  id="catetype" onchange="change_catetype()">
+                        <option value="1" {if $item['type']=='1'}selected{/if} >文本</option>
+                        <option value="2" {if $item['type']=='2'}selected{/if} >图片</option>
+                        <option value="3" {if $item['type']=='3'}selected{/if} >小程序卡片</option>
+                        <option value="4" {if $item['type']=='4'}selected{/if}>图文链接</option>
+                    </select>
+                </div>
+
+            </div>
+            <div class="form-group" id="content_d" style="{if $item != null}{if $item['type'] !=1}display: none{/if}{/if}">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">文本回复内容</label>
+                <div class="form-controls col-sm-5" style="padding-right: 30px;">
+                    <textarea class="form-control" rows="5" name="content" placeholder="">{$item['content']}</textarea>
+                </div>
+                <span class="help-block">纯文本</span>
+            </div>
+            <div class="form-group" id="picurl1_d" style="{if $item['type'] !=2}display: none{/if}">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">图片MediaId</label>
+                <div class="form-controls col-sm-5" style="padding-right: 30px;">
+                    <textarea class="form-control" rows="5" name="picurl1" placeholder="">{$item['picurl1']}</textarea>
+                </div>
+                <span class="help-block"></span>
+            </div>
+            <div class="form-group" id="title_d" style="{if $item ==null }display: none{/if}{if $item != null}{if $item['type'] ==1 || $item['type'] ==2}display: none{/if}{/if}">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">标题</label>
+                <div class="form-controls col-sm-5" style="padding-right: 30px;">
+                    <input class="form-control"  name="title" placeholder="" value="{$item['title']}"/>
+                </div>
+                <span class="help-block"></span>
+            </div>
+            <div class="form-group" id="pagepath_d" style="{if $item['type'] !=3}display: none{/if}">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">小程序页面路径</label>
+                <div class="form-controls col-sm-5" style="padding-right: 30px;">
+                    <textarea class="form-control" rows="5" name="pagepath" placeholder="">{$item['pagepath']}</textarea>
+                </div>
+                <span class="help-block"></span>
+            </div>
+            <div class="form-group" id="picurl2_d" style="{if $item['type'] !=3}display: none{/if}">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">卡片封面图片MediaId</label>
+                <div class="form-controls col-sm-5" style="padding-right: 30px;">
+                    <textarea class="form-control" rows="5" name="picurl2" placeholder="">{$item['picurl2']}</textarea>
+                </div>
+                <span class="help-block"></span>
+            </div>
+            <div class="form-group" id="desc_d" style="{if $item['type'] !=4}display: none{/if}">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">描述</label>
+                <div class="form-controls col-sm-5" style="padding-right: 30px;">
+                    <textarea class="form-control" rows="5" name="desc" placeholder="">{$item['desc']}</textarea>
+                </div>
+                <span class="help-block"></span>
+            </div>
+            <div class="form-group" id="url_d" style="{if $item['type'] !=4}display: none{/if}">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">图文链接</label>
+                <div class="form-controls col-sm-5" style="padding-right: 30px;">
+                    <textarea class="form-control" rows="5" name="url" placeholder="">{$item['url']}</textarea>
+                </div>
+                <span class="help-block"></span>
+            </div>
+            <div class="form-group" id="thumb_url_d" style="{if $item['type'] !=4}display: none{/if}">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">门店背景</label>
+
+                <div class="form-controls col-sm-5">
+
+                    {php echo tpl_form_field_image('thumb_url', $item['thumb_url'])}
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">建议750x330,不填有默认</div>
+
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+	
+    <div class="form-group">
+        <div class="col-sm-12">
+            <input name="token" type="hidden" value="{$_W['token']}" />
+            <input type="submit" class="btn btn-primary col-lg-1" name="submit" value="提交" />
+        </div>
+    </div>
+</form>
+<script>
+	function change_catetype(){
+		var p1=$('#catetype').children('option:selected').val();
+		if(p1 == 1){
+			$('#content_d').show();
+            $('#picurl1_d').hide();
+            $('#title_d').hide();
+            $('#pagepath_d').hide();
+            $('#picurl2_d').hide();
+            $('#url_d').hide();
+            $('#desc_d').hide();
+            $('#thumb_url_d').hide();
+		}else if(p1 == 2){
+            $('#content_d').hide();
+            $('#picurl1_d').show();
+            $('#title_d').hide();
+            $('#pagepath_d').hide();
+            $('#picurl2_d').hide();
+            $('#url_d').hide();
+            $('#desc_d').hide();
+            $('#thumb_url_d').hide();
+		}else if(p1 == 3){
+            $('#content_d').hide();
+            $('#picurl1_d').hide();
+            $('#title_d').show();
+            $('#pagepath_d').show();
+            $('#picurl2_d').show();
+            $('#url_d').hide();
+            $('#desc_d').hide();
+            $('#thumb_url_d').hide();
+        }else if(p1 == 4){
+            $('#content_d').hide();
+            $('#picurl1_d').hide();
+            $('#title_d').show();
+            $('#pagepath_d').hide();
+            $('#picurl2_d').hide();
+            $('#url_d').show();
+            $('#desc_d').show();
+            $('#thumb_url_d').show();
+        }
+	}
+</script>
+{/if}
+{template 'common/footer'}

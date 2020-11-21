@@ -1,0 +1,302 @@
+{template 'common/header'} 
+{if $operation == 'memberManager'}
+<style type="text/css">
+.table td,
+.table th {
+    text-align: center;
+}
+</style>
+<div class="panel panel-info">
+    <div class="panel-heading">筛选</div>
+    <div class="panel-body">
+        <form method="post" class="form-horizontal" role="form" id="form1">
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-2 col-md-3 col-lg-2 control-label">用户信息</label>
+                <div class="col-sm-8 col-lg-9 col-xs-12">
+                    <input class="form-control" name="member" id="" type="text" value="{$_GPC['member']}" placeholder="可查询手机号/ 微信号 /真实姓名 /用户昵称">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-2 col-md-3 col-lg-2 control-label">代理</label>
+                <div class="col-sm-8 col-lg-9 col-xs-12">
+                    <select class="form-control" name="level">
+                        <option value="0">请选择</option>
+                        <option value="99" {if $_GPC[ 'level']== 99}selected="selected" {/if}>所有代理</option>
+                        {loop $member_levels $level}
+                        <option value="{$level['level']}" {if $_GPC[ 'level']== $level[ 'level']}selected="selected" {/if}>{$level['levelname']}</option>
+                        {/loop}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-8 col-md-offset-1">
+                    <button class="btn btn-primary"><i class="fa fa-search"></i> 搜索</button>&nbsp;&nbsp;
+                    <a href="{php echo $this->createWebUrl('members',array('op'=>'tuandui','memberid'=>0))}" class="btn btn-danger">全部团队</a>
+                    <button class="btn">共{$total}人</button>
+                </div>
+            </div </form>
+    </div>
+</div>
+<div class="panel panel-default">
+    <div class="panel-body table-responsive">
+        <table class="table table-hover">
+            <thead class="navbar-inner">
+                <tr>
+                    <th>id</th>
+                    <th>昵称</th>
+                    <th>推荐人</th>
+                    <th>积分</th>
+                    <th>代理</th>
+                    <th>级别</th>
+                    <th>消费</th>
+                    <th>订单数</th>
+                    <th>已支付</th>
+                    <th style="text-align:right; width:24%;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {loop $list $item}
+                <tr>
+                    <td>
+                        {$item['id']}
+                    </td>
+                    <td style="text-align:left">
+                        <img src="{$item['avatar']}" style="width:25px;height:25px" /> {$item['nickname']}
+                    </td>
+                    <td>
+                        {if $item['parent_id']==0}
+                        系统
+                        {else}
+                         {php $parent = $this->getMyInfo($item['parent_id']);}
+                         {$parent['nickname']}
+                        {/if}
+                   
+                    </td>
+                    <td>
+                        <a href="{php echo $this->createWebUrl('members',array('op'=>'jifenmingxi','memberid'=>$item['id']))}">{$item['jifen']}分</a>
+                    </td>
+                    <td>
+                        {if $item['isagent'] == 1}是{else}否{/if}
+                    </td>
+                    <td>
+                        {$item['agentlevel']}
+                    </td>
+                    <td>
+                        {$item['consume']}
+                    </td>
+                    <td>
+                        {$item['order_num']}
+                    </td>
+                    <td>
+                        {$item['commission_pay']}元
+                    </td>
+                    <td >
+                        <a href="{php echo $this->createWebUrl('members', array('memberid' => $item['id'], 'op' => 'memberUpdate'))}" class="btn btn-success btn-sm">编辑</a>
+                        <a href="{php echo $this->createWebUrl('members', array('memberid' => $item['id'], 'op' => 'tuandui'))}" class="btn btn-default btn-sm">团队</a>
+                        <a href="{php echo $this->createWebUrl('orders', array('tuandui_id' => $item['id']))}" class="btn btn-default btn-sm">团队订单</a>
+                    </td>
+                </tr>
+                {/loop}
+            </tbody>
+        </table>
+        {$pager}
+    </div>
+</div>
+{elseif $operation == 'tuandui'}
+<style type="text/css">
+    .tree {
+        min-height:20px;
+        padding:19px;
+        margin-bottom:20px;
+        background-color:#fff;
+        -webkit-border-radius:4px;
+        -moz-border-radius:4px;
+        border-radius:4px;
+        -webkit-box-shadow:inset 0 1px 1px rgba(0, 0, 0, 0.05);
+        -moz-box-shadow:inset 0 1px 1px rgba(0, 0, 0, 0.05);
+        box-shadow:inset 0 1px 1px rgba(0, 0, 0, 0.05)
+    }
+    .tree li {
+        list-style-type:none;
+        margin:0;
+        padding:10px 5px 0 5px;
+        position:relative
+    }
+    .tree li::before, .tree li::after {
+        content:'';
+        left:-20px;
+        position:absolute;
+        right:auto
+    }
+    .tree li::before {
+        border-left:1px solid #999;
+        bottom:50px;
+        height:100%;
+        top:0;
+        width:1px
+    }
+    .tree li::after {
+        border-top:1px solid #999;
+        height:20px;
+        top:25px;
+        width:25px
+    }
+    .tree li span {
+        -moz-border-radius:5px;
+        -webkit-border-radius:5px;
+        border:1px solid #999;
+        border-radius:5px;
+        display:inline-block;
+        padding:3px 8px;
+        text-decoration:none
+    }
+    .tree li.parent_li>span {
+        cursor:pointer
+    }
+    .tree>ul>li::before, .tree>ul>li::after {
+        border:0
+    }
+    .tree li:last-child::before {
+        height:26px
+    }
+    .tree li.parent_li>span:hover, .tree li.parent_li>span:hover+ul li span {
+        background:#eee;
+        border:1px solid #94a0b4;
+        color:#000
+    }
+</style>
+<div class="panel panel-info">
+    <div class="panel-heading"><h3 class="panel-title">{if $memberid != 0}{php echo $myinfo['nickname'] }{else}系统{/if}&nbsp;的团队</h3>
+    </div>
+    <div class="panel-body tree">
+        {$html}
+    </div>
+</div>
+<a href="{php echo $this->createWebUrl('members')}" class="btn btn-info">返回会员列表</a>
+
+<script type="text/javascript">
+    require(['jquery'], function($) {
+        $(function () {
+            $('.tree li:has(ul)').addClass('parent_li').find(' > span').attr('title', '折叠此节点');
+            $('.tree li.parent_li > span').on('click', function (e) {
+                var children = $(this).parent('li.parent_li').find(' > ul > li');
+                if (children.is(":visible")) {
+                    children.hide('fast');
+                    $(this).attr('title', '展开此节点').find(' > i').addClass('glyphicon-plus-sign').removeClass('glyphicon-minus-sign');
+                } else {
+                    children.show('fast');
+                    $(this).attr('title', '折叠此节点').find(' > i').addClass('glyphicon-minus-sign').removeClass('glyphicon-plus-sign');
+                }
+                e.stopPropagation();
+            });
+        });
+    });
+</script>
+{elseif $operation == 'jifenmingxi'}
+<div class="panel panel-default">
+    <div class="panel-heading">积分明细</div>
+    <div class="panel-body table-responsive">
+        <table class="table table-hover table-striped">
+            <thead class="navbar-inner">
+                <tr>
+                    <th style="width:100px">id</th>
+                    <th style="width:100px;">积分</th>
+                    <th>说明</th>
+                    <th style="width:150px">时间</th>
+                </tr>
+            </thead>
+            <tbody>
+                {loop $list $item}
+                <tr>
+                    <td>{$item['id']}</td>
+                <td>{$item['jifen']}</td>
+                <td>{$item['shuoming']}</td>
+                <td>{php echo date('Y-m-d',$item['createtime'])}</td>
+                </tr>
+                {/loop}
+            </tbody>
+        </table>
+    </div>
+</div>
+{$pager}
+{elseif $operation == 'memberUpdate'}
+<div class="main">
+    <form action="" method="post" class="form-horizontal form"  >
+        <div class="panel panel-default">
+            <div class="panel-heading">
+               编辑会员信息
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">会员昵称</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <input type="text" name="nickname" class="form-control" value="{$memberinfo['nickname']}" disabled/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">openid</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <input type="text" id='openid' name="openid" class="form-control" value="{$memberinfo['openid']}" disabled/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">真实姓名</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <input type="text" id='username' name="username" class="form-control" value="{$memberinfo['username']}"/>
+                    </div>
+                </div>
+                 <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">手机号</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <input type="text" name="mobile" class="form-control" value="{$memberinfo['mobile']}" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">总佣金</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <input style="    border-color: #ffffff;" type="text" name="commission" class="form-control" value="{$memberinfo['commission']}"/>
+                    </div>
+                </div>
+                 <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">推荐人id</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <input type="text" name="parent_id" class="form-control" value="{$memberinfo['parent_id']}" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">是否代理</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <select class="form-control" name="isagent">
+                            <option value="0" {if $memberinfo['isagent'] ==0 }selected="selected" {/if}>不是代理</option>
+                            <option value="1" {if $memberinfo['isagent'] ==1 }selected="selected" {/if}>是代理</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">代理级别</label>
+                    <div class="col-sm-9 col-xs-12">
+                        {$memberinfo['agentlevel']}
+                    </div>
+                </div>
+                 <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">积分</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <input type="text" name="jifen" class="form-control" value="{$memberinfo['jifen']}" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">已支付佣金</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <input type="text" name="commission_pay" class="form-control" value="{$memberinfo['commission_pay']}" />
+                    </div>
+                </div>
+            </div>
+        </div>
+<div class="form-group col-sm-12">
+    <input type="submit" name="submit" value="提交" class="btn btn-primary col-lg-1" />
+    <input type="hidden" name="token" value="{$_W['token']}" />
+    </div>
+    </form>
+</div>
+{/if}
+{template 'common/footer'}

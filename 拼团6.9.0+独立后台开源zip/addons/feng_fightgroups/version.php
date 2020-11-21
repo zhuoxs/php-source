@@ -1,0 +1,1 @@
+<?php if(!defined('IN_IA')) {exit('Access Denied');}if(!defined('WELIAM_VERSION')) {define('WELIAM_VERSION', '6.9.0');}

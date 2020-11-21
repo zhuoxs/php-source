@@ -1,0 +1,150 @@
+{php include wl_template('common/header');}
+<script src="{URL_MODULE}plugin/wlfightgroup/app/resource/js/light7-city-picker.js" type="text/javascript" charset="utf-8"></script>
+<link rel="stylesheet" href="{URL_MODULE}plugin/wlfightgroup/app/resource/css/orderdetail.css"></link>
+<div class="page-group">
+    <div class="page page-current" id="page-createadd">
+    	<header class="bar bar-nav">
+            <!--返回按钮-->
+            <div class="hm_view_nav" style="z-index: 1000">
+                <a href="{php echo app_url('member/user/addresslist')}">
+                    <i class="icon iconfont icon-back" style="top: 5px;left: -10px;padding: .2rem .0rem;background: RGBA(0,0,0,0);color: #000;font-size: 1.1rem;"></i>
+                </a>
+            </div>
+			<h1 class="title">编辑地址</h1>
+		</header>
+		<div class="content native-scroll">
+			<div class="list-block">
+		      <ul>
+		        <!-- Text inputs -->
+		        <li>
+		          <div class="item-content">
+		            <div class="item-inner">
+		              <div class="item-title label">姓名</div>
+		              <div class="item-input">
+		                <input type="text" placeholder="请输入您的姓名" id="myname" value="{$addres['name']}">
+		              </div>
+		            </div>
+		          </div>
+		        </li>
+		        <li>
+		          <div class="item-content">
+		            <div class="item-inner">
+		              <div class="item-title label">电话</div>
+		              <div class="item-input">
+		                <input type="tel" placeholder="请输入您的电话号码" id="myphone" value="{$addres['tel']}">
+		              </div>
+		            </div>
+		          </div>
+		        </li>
+		        <li>
+		          <div class="item-content">
+		            <div class="item-inner">
+		              <div class="item-title label">选择地区</div>
+		              <div class="item-input">
+		                <input type="text" id='city-picker' value="{$addres['province']} {$addres['city']} {$addres['county']}" readonly>
+		              </div>
+		            </div>
+		          </div>
+		        </li>
+		        <li>
+		          <div class="item-content">
+		            <div class="item-inner">
+		              <div class="item-title label">详细地址</div>
+		              <div class="item-input">
+		                <input type="text" placeholder="请输入详细地址" id="detailed_address" value="{$addres['detailed_address']}">
+		              </div>
+		            </div>
+		          </div>
+		        </li>
+		        <li>
+		          <div class="item-content">
+		            <div class="item-inner">
+		              <div class="item-title label">是否默认</div>
+		              <div class="item-input">
+		                <input type="radio" name="moren" value="1" {if $addres['status'] == 1} checked {/if} />是
+		                <input type="radio" name="moren" value="0" {if $addres['status'] == 0} checked {/if}/>否
+		              </div>
+		            </div>
+		          </div>
+		        </li>
+		      </ul>
+		    </div>
+		    <div class="content-block">
+		      <div class="row">
+		        <div style="padding:.5rem .5rem .5rem .5rem;background-color: orangered;color: white;text-align: center;border-radius: 5px;" class="col-50"><a id="wetaddress" href="javascript:;" class="weui_btn weui_btn_warn external">使用微信地址</a></div>
+		        <div style="padding:.5rem .5rem .5rem .5rem;background-color: limegreen;color: white;text-align: center;border-radius: 5px;" class="col-50"><a href="javascript:;" id="addrsub" class="weui_btn weui_btn_primary">保存地址</a></div>
+		      </div>
+		    </div>
+		</div>
+	</div>
+</div>
+<script>
+	$('#wetaddress').click(function(){
+		wx.openAddress({
+			success : function(res){
+				$("#myname").val(res.userName);
+		        $('#myphone').val(res.telNumber);
+		        $('#detailed_address').val(res.detailInfo);
+		        var city = res.provinceName+" "+res.cityName+" "+res.countryName;
+		        $('#city-picker').val(city);
+			},
+			fail: function (res) {
+				$.toast('已取消');
+			}
+		});	
+	});
+	$(function() {
+		'use strict';
+		//编辑地址页
+		$(document).on("pageInit", "#page-createadd", function(e, id, page) {
+			var $content = $(page).find('.content');
+			$("#city-picker").cityPicker({
+			    toolbarTemplate: '<header class="bar bar-nav">\
+			    <button class="button button-link pull-right close-picker">确定</button>\
+			    <h1 class="title">选择收货地址</h1>\
+			    </header>'
+			});
+			$content.on('click','#addrsub',function () {
+		    	var myname = $('#myname').val();
+				var myphone = $('#myphone').val();
+				var citys= $('#city-picker').val();
+				var detailed = $('#detailed_address').val();
+				var status = $("input[name='moren']:checked").val();
+				if(!myname){
+				 	$.toast("请输入你的姓名");
+				 	return false;
+				}
+				if(!myphone){
+				 	$.toast("请输入你的电话");
+				 	return false;
+				}
+				 if(!(/^1[345789]\d{9}$/.test(myphone))){ 
+			        $.toast("请输入正确的手机号");  
+			        return false; 
+			    } 
+				if(citys.length == 2){
+				 	$.toast("请选择您的地区");
+				 	return false;
+				}
+				if(!detailed){
+				 	$.toast("请输入详细地址");
+				 	return false;
+				}
+				if(!(/^[a-zA-Z0-9\u4e00-\u9fa5]+$/.test(detailed))){
+						$.toast("详细地址不能有特殊符号");return false;
+					}
+				$.post("{php echo app_url('member/user/createaddress',array('id'=>$id))}",{myname:myname,myphone:myphone,citys:citys,detailed:detailed,status:status},function(d){
+					if(d.status == 1){
+						$.alert('地址编辑成功', function () {
+					        location.href = "{$reurl}";
+					    });
+					}else{
+						$.toast(d.result);
+					}
+				},"json");
+		    });
+		});
+		$.init();
+	});
+</script>
+{php include wl_template('common/footer');}

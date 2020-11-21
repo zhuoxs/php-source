@@ -1,0 +1,2 @@
+<?php
+ namespace app\boguan\model; class PublicTemplate extends BaseModel { public function getTemplateById($tplId, $uniacid) { goto nvMJA; cPtd3: return $template["\164\160\154"]; goto Dod7H; FXoPF: $where["\164\160\x6c\137\151\144"] = $tplId; goto Kk0UA; jwMob: xTYjY: goto FXoPF; gNTJE: return ''; goto jwMob; Kk0UA: $where["\165\156\151\141\143\x69\144"] = $uniacid; goto oLBJT; nvMJA: if (!($tplId == '')) { goto xTYjY; } goto gNTJE; oLBJT: $template = self::where($where)->field("\164\160\154")->find(); goto cPtd3; Dod7H: } }

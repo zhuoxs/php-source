@@ -1,0 +1,2 @@
+<?php
+ defined("\111\x4e\137\x49\x41") or exit("\x41\143\x63\145\163\163\40\x44\x65\156\x69\145\144"); class Ewei_shopping_plugin_noticeModuleHook extends WeModuleHook { public function hookMobileNotice() { goto x6lP3; D0Bp4: include $this->template("\156\x6f\164\x69\143\145"); goto LDI5b; jAHLY: $notice = pdo_getcolumn("\x73\x68\x6f\160\160\151\156\147\x5f\x6e\x6f\164\x69\x63\x65", array("\x75\156\151\141\x63\151\x64" => $_W["\165\156\x69\141\x63\151\x64"]), "\x63\157\x6e\x74\x65\156\x74"); goto D0Bp4; x6lP3: global $_W; goto jAHLY; LDI5b: } }

@@ -1,0 +1,272 @@
+
+<div class="form-group">
+    <label class="col-sm-2 control-label must">任务标题</label>
+    <div class="col-sm-9 col-xs-12">
+        {ifp 'lottery.edit'}
+        <input type="text" name="title" class="form-control" value="{$item['title']}" data-rule-required="true" />
+        {else}
+        <div class='form-control-static'>{if !empty($item['title'])}{$item['title']}{else}暂无标题{/if}</div>
+        {/if}
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="col-sm-2 control-label must">任务有效期</label>
+    <div class="col-sm-9 col-xs-12">
+        {ifp 'lottery.edit'}
+        {php echo tpl_form_field_eweishop_daterange('time', array('starttime'=>date('Y-m-d H:i', $starttime),'endtime'=>date('Y-m-d H:i', $endtime)),true);}
+        <span class='help-block'>任务进行时间段</span>
+        {else}
+        <div class='form-control-static'>{php echo date('Y-m-d H:i', $starttime).'-'.date('Y-m-d H:i', $endtime);}</div>
+        {/if}
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="col-sm-2 control-label">场景设置</label>
+        {ifp 'lottery.edit'}
+        <div class="col-sm-3 col-xs-12">
+            <select class="input-sm form-control input-s-sm inline" id="task_select" onchange="task_change(this);">
+                <option value="0">请选择场景</option>
+                <option value="1">消费场景</option>
+                <option value="2">签到场景</option>
+                <option value="3">任务场景</option>
+                <option value="4">其他场景</option>
+            </select>
+        </div>
+        <div class="col-sm-3 col-xs-12">
+            <a class="btn btn-primary" onclick="add_task();">添加场景</a>
+        </div>
+        {/if}
+</div>
+<div class="form-group">
+    <label class="col-sm-2 control-label">场景条件</label>
+    {ifp 'lottery.edit'}
+    <div class="col-sm-9 col-xs-12" id="task_show">
+
+    </div>
+    {/if}
+</div>
+<div class="form-group">
+    <label class="col-sm-2 control-label">活动设置</label>
+    {ifp 'lottery.edit'}
+        <div class="col-sm-3 col-xs-12">
+            <select class="input-sm form-control input-s-sm inline" id="active_select" >
+                <option value="0">请选择活动</option>
+                {loop $lotterylist $key $lottery}
+                <option value="{$lottery['lottery_id']}">{$lottery['lottery_title']}</option>
+                {/loop}
+            </select>
+        </div>
+        <div class="col-sm-3" col-xs-12><a class="btn btn-primary" onclick="add_active();">添加&修改活动</a></div>
+    {/if}
+</div>
+<div class="form-group">
+    <label class="col-sm-2 control-label"></label>
+    {ifp 'lottery.edit'}
+    <div class="col-sm-6 col-xs-12" id="task">
+        {if !empty($item['task_data'])}
+        {loop $item['task_data'] $key $value}
+        {if $value['type']==1}
+            {if $value['paytype']==0}
+            {php $name='[全部消费][满'.$value['money'].'元][抽'.$value['lottery'].'次]';}
+            {/if}
+            {if $value['paytype']==1}
+            {php $name='[付款后][满'.$value['money'].'元][抽'.$value['lottery'].'次]';}
+            {/if}
+            {if $value['paytype']==2}
+            {php $name='[完成订单][满'.$value['money'].'元][抽'.$value['lottery'].'次]';}
+            {/if}
+        <div class="panel {if $key==0} panel-primary{else} panel-default {/if} " data-task="{$key}" data-type="{$value['type']}" data-lottery="{$value['lottery']}" data-paytype="{$value['paytype']}"  data-money="{$value['money']}"  onclick="taskclick(this);">
+            <div class="panel-heading">{$name}<span class="glyphicon glyphicon-remove pull-right" onclick="deltask(this);"></span></div>
+            <div class="panel-body" id="selected_task{$key}">
+                <p><button class="btn btn-success btn-xs active_data" type="button" data-task="{$key}" data-value="{$value['active']['id']}" data-active="{$value['active']['active']}">{$value['active']['active']} <span class="badge pull-right"  onclick="del_data(this);">x</span></button></p>
+            </div>
+        </div>
+        {/if}
+        {if $value['type']==2}
+        {php $name='[满'.$value['day'].'天][抽'.$value['lottery'].'次]';}
+        <div class="panel {if $key==0} panel-primary{else} panel-default {/if}" data-task="{$key}" data-type="{$value['type']}" data-lottery="{$value['lottery']}" data-day="{$value['day']}" onclick="taskclick(this);">
+            <div class="panel-heading">{$name}<span class="glyphicon glyphicon-remove pull-right" onclick="deltask(this);"></span></div>
+            <div class="panel-body" id="selected_task{$key}">
+                <p><button class="btn btn-success btn-xs active_data" type="button" data-task="{$key}" data-value="{$value['active']['id']}" data-active="{$value['active']['active']}">{$value['active']['active']} <span class="badge pull-right"  onclick="del_data(this);">x</span></button></p>
+            </div>
+        </div>
+        {/if}
+        {if $value['type']==3}
+        {php $name='['.$value['taskname'].'][抽'.$value['lottery'].'次]';}
+        <div class="panel {if $key==0} panel-primary{else} panel-default {/if} " data-task="{$key}" data-type="{$value['type']}" data-lottery="{$value['lottery']}" data-taskid="{$value['taskid']}" data-taskname="{$value['taskname']}"  onclick="taskclick(this);">
+            <div class="panel-heading">{$name}<span class="glyphicon glyphicon-remove pull-right" onclick="deltask(this);"></span></div>
+            <div class="panel-body" id="selected_task{$key}">
+                <p><button class="btn btn-success btn-xs active_data" type="button" data-task="{$key}" data-value="{$value['active']['id']}" data-active="{$value['active']['active']}">{$value['active']['active']} <span class="badge pull-right"  onclick="del_data(this);">x</span></button></p>
+            </div>
+        </div>
+        {/if}
+        {if $value['type']==4}
+        {php $name='['.$value['content'].'][抽'.$value['lottery'].'次]';}
+        <div class="panel {if $key==0} panel-primary{else} panel-default {/if} " data-task="{$key}" data-type="{$value['type']}" data-lottery="{$value['lottery']}" data-content="{$value['content']}"  onclick="taskclick(this);">
+            <div class="panel-heading">{$name}<span class="glyphicon glyphicon-remove pull-right" onclick="deltask(this);"></span></div>
+            <div class="panel-body" id="selected_task{$key}">
+                <p><button class="btn btn-success btn-xs active_data" type="button" data-task="{$key}" data-value="{$value['active']['id']}" data-active="{$value['active']['active']}">{$value['active']['active']} <span class="badge pull-right"  onclick="del_data(this);">x</span></button></p>
+            </div>
+        </div>
+        {/if}
+        {/loop}
+        {/if}
+    </div>
+    {/if}
+</div>
+<script type="text/javascript">
+    {if !empty($item['task_data'])}
+    var curtask = 0;
+    var taskcount = {php echo count($item['task_data'])-1;};
+    {else}
+    var curtask = 0;
+    var taskcount = 0;
+    {/if}
+    function task_change(obj) {
+        var task_type = $('#task_select').val();
+        var task_div = '';
+        var option_div = '';
+        if(task_type==1){
+            task_div = '<div class="row"><div class="col-sm-4 col-xs-4 "><div class="input-group"><span class="input-group-addon">满</span><input type="number" class="form-control" name="pay_money" placeholder="0"> <span class="input-group-addon">元</span></div>'
+                    +'</div><div class="col-sm-4 col-xs-4 "><div class="input-group"><span class="input-group-addon">抽</span><input type="number" class="form-control" name="pay_num" placeholder="0"> <span class="input-group-addon">次</span></div></div>'
+                    +'<div class="col-sm-4 col-xs-4 "><div class="input-group"><select class="input-sm form-control input-s-sm inline" id="pay_select"><option value="0" >全部消费</option><option value="1">付款后</option><option value="2">完成订单后</option></select></div></div></div>';
+        }
+        if(task_type==2){
+            task_div = '<div class="row"><div class="col-sm-4 col-xs-4"><div class="input-group"><span class="input-group-addon">满</span><input type="number" class="form-control" name="sign_day" placeholder="0"><span class="input-group-addon">天</span></div>'
+                    +'</div><div class="col-sm-4 col-xs-4"><div class="input-group"><span class="input-group-addon">抽</span><input type="number" class="form-control" name="sign_num" placeholder="0"><span class="input-group-addon">次</span></div></div></div>';
+        }
+        if(task_type==3){
+            option_div = '<option value="0">所有任务</option>{loop $tasklist $key $task}<option value="{$task['id']}">{$task['title']}</option>{/loop}';
+            task_div = '<div class="row"><div class="col-sm-4 col-xs-4"><div class="input-group"><span class="input-group-addon">抽</span><input type="number" class="form-control" name="task_num" placeholder="0"><span class="input-group-addon">次</span></div></div><div class="col-sm-4 col-xs-4"><select id="poster_select" class="input-sm form-control input-s-sm inline">'+option_div+'</select></div></div>';
+        }
+        if(task_type==4){
+            task_div = '<div class="row"><div class="col-sm-4 col-xs-4"><div class="input-group"><span class="input-group-addon">抽</span><input type="number" class="form-control" name="other_num" placeholder="0"><span class="input-group-addon">次</span></div></div><div class="col-sm-4 col-xs-4"><input type="text" class="form-control" name="other_content"></div></div>';
+        }
+        $('#task_show').empty();
+        $('#task_show').append(task_div);
+        return;
+    }
+    //添加场景
+    function add_task() {
+        var task_type = $('#task_select').val();
+        if(task_type==1){
+            //消费
+            taskcount++;
+            var pay_type = $('#pay_select').val();
+            var pay_money = $('input[name="pay_money"]').val();
+            if(pay_money==''){
+                pay_money = 0;
+            }
+            var pay_num = $('input[name="pay_num"]').val();
+            if(pay_num==''){
+                pay_num=0;
+            }
+            var name = '';
+            if(pay_type==0) {
+                name='[全部消费][满'+pay_money+'元][抽'+pay_num+'次]'
+            }
+            if(pay_type==1) {
+                name='[付款后][满'+pay_money+'元][抽'+pay_num+'次]'
+            }
+            if(pay_type==2) {
+                name='[订单完成][满'+pay_money+'元][抽'+pay_num+'次]'
+            }
+            curtask = taskcount;
+            var task_div = '<div class="panel panel-primary " data-task="'+curtask+'" data-type="'+task_type+'" data-lottery="'+pay_num+'" data-paytype="'+pay_type+'"  data-money="'+pay_money+'"  onclick="taskclick(this);">' +
+                    '<div class="panel-heading">'+name+'<span class="glyphicon glyphicon-remove pull-right" onclick="deltask(this);"></span></div><div class="panel-body" id="selected_task'+curtask+'"> </div> </div>';
+            $('#task .panel').attr('class','panel panel-default');
+            $('#task').append(task_div);
+            return;
+
+        }
+        if(task_type==2){
+            //签到
+            taskcount++;
+            var sign_num = $('input[name="sign_num"]').val();
+            if(sign_num==''){
+                sign_num=0;
+            }
+            var sign_day = $('input[name="sign_day"]').val();
+            if(sign_day==''){
+                sign_day=0;
+            }
+            var name='[签到][满'+sign_day+'天][抽'+sign_num+'次]';
+            curtask = taskcount;
+            var task_div = '<div class="panel panel-primary " data-task="'+curtask+'" data-type="'+task_type+'" data-lottery="'+sign_num+'"   data-day="'+sign_day+'"  onclick="taskclick(this);">' +
+                    '<div class="panel-heading">'+name+'<span class="glyphicon glyphicon-remove pull-right" onclick="deltask(this);"></span></div><div class="panel-body" id="selected_task'+curtask+'"> </div> </div>';
+            $('#task .panel').attr('class','panel panel-default');
+            $('#task').append(task_div);
+            return;
+        }
+        if(task_type==3){
+            //任务
+            taskcount++;
+            var task_id = $('#poster_select').val();
+            var task_name = $('#poster_select option:selected').text();
+            var task_num = $('input[name="task_num"]').val();
+            if(task_num==''){
+                task_num=0;
+            }
+            var name='['+task_name+'][抽'+task_num+'次]';
+            curtask = taskcount;
+            var task_div = '<div class="panel panel-primary " data-task="'+curtask+'" data-type="'+task_type+'" data-taskid="'+task_id+'" data-taskname="'+task_name+'"  data-lottery="'+task_num+'"  onclick="taskclick(this);">' +
+                    '<div class="panel-heading">'+name+'<span class="glyphicon glyphicon-remove pull-right" onclick="deltask(this);"></span></div><div class="panel-body" id="selected_task'+curtask+'"> </div> </div>';
+            $('#task .panel').attr('class','panel panel-default');
+            $('#task').append(task_div);
+            return;
+
+        }
+        if(task_type==4){
+            //其他
+            taskcount++;
+            var other_content = $('input[name="other_content"]').val();
+            var other_num = $('input[name="other_num"]').val();
+            if(other_num==''){
+                other_num=0;
+            }
+            var name='['+other_content+'][抽'+other_num+'次]';
+            curtask = taskcount;
+            var task_div = '<div class="panel panel-primary " data-task="'+curtask+'" data-type="'+task_type+'" data-lottery="'+other_num+'" data-content="'+other_content+'"  onclick="taskclick(this);">' +
+                    '<div class="panel-heading">'+name+'<span class="glyphicon glyphicon-remove pull-right" onclick="deltask(this);"></span></div><div class="panel-body" id="selected_task'+curtask+'"> </div> </div>';
+            $('#task .panel').attr('class','panel panel-default');
+            $('#task').append(task_div);
+            return;
+        }
+    }
+
+    function taskclick(obj) {
+        $('#task .panel').attr('class','panel panel-default');
+        $(obj).attr('class','panel panel-primary');
+        curtask = $(obj).data('task');
+        return;
+    }
+
+    function deltask(obj) {
+        $(obj).parent().parent().remove();
+        return ;
+    }
+    //选择活动
+    function add_active(){
+        var cur_task = $('div[data-task="'+curtask+'"]');
+        if(cur_task.length<=0){
+            tip.msgbox.err('请先选中要修改的场景模块');
+            return;
+        }
+        var active_id = $('#active_select').val();
+        var active_name = $('#active_select option:selected').text();
+        if(active_id==0){
+            tip.msgbox.err('请选择要添加的活动');
+            return;
+        }
+        var btn_data = '<p><button class="btn btn-success btn-xs active_data" type="button" data-task="'+curtask+'" data-value="'+active_id+'" data-active="'+active_name+'">'+active_name+' <span class="badge pull-right"  onclick="del_data(this);">x</span></button></p>';
+        $('#selected_task'+curtask).empty();
+        $('#selected_task'+curtask).append(btn_data);
+        return;
+    }
+    function del_data(obj) {
+        $(obj).parent().parent().remove();
+        return;
+    }
+</script>

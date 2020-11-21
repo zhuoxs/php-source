@@ -1,0 +1,108 @@
+{php include wl_template('common/header');}
+<div class="page-group">
+    <div class="page page-current" id="page-index">
+    	<header class="bar bar-nav">
+		    <a class="button button-link button-nav pull-left back" href="{php echo app_url('distribution/disappbase/index')}">
+		      <span class="icon icon-left"></span>返回
+		    </a>
+		    <h1 class="title">推广订单</h1>
+		</header>
+		<div class="content infinite-scroll">
+			<div class="buttons-tab">
+			   <a href="{php echo app_url('distribution/disappbase/disorder',array('type'=>'pay'))}" class=" {if $type == 'pay'}active{/if} button">已结算</a>
+			   <a href="{php echo app_url('distribution/disappbase/disorder',array('type'=>'over'))}" class="{if $type == 'over'}active{/if} button">未结算</a>
+                <a href="{php echo app_url('distribution/disappbase/disorder',array('type'=>'refund'))}" class="{if $type == 'refund'}active{/if} button">已退款</a>
+			</div>
+			<div class="allorder">
+				<!--全部订单表-->
+			</div>
+			<div class="weui-loadmore loading_more" style="display: none;">
+	            <i class="weui-loading"></i>
+	            <span class="weui-loadmore__tips">正在加载</span>
+	        </div>
+	        <div class="weui-loadmore weui-loadmore_line" style="display: none;">
+	            <span class="weui-loadmore__tips" style="background-color: #EFEFF4;">暂无更多数据</span>
+	        </div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="orderlist">
+{{# for(var i = 0, len = d.length; i < len; i++){ }}
+<div class="field">
+	<div class="field-head">
+	<span class="field-head-name"><i class="icon iconfont icon-emoji"></i> {{ d[i].nickname }}</span>
+		<span class="field-head-status field-head-status-light">
+		【{{ d[i].pluginname }}】
+  		</span>
+  		<span class="field-head-status field-head-status-light">
+   		{{# if(d[i].ranklevel == 1){ }}
+  			<span style="color: orangered;">一级订单</span>	
+  		{{# } else if(d[i].ranklevel == 2) { }}
+  			<span style="color: yellowgreen;">二级订单</span>	
+  		{{# } else if(d[i].ranklevel == 3) { }}
+  			<span style="color: gray;">三级订单</span>	
+  		{{# } }}
+  		</span>
+    </div>
+    <a class="field-item" href="{{ d[i].ga }}">
+     	<div class="avatar">
+      		<img src="{{ d[i].gimg }}" class="j-avatar-img avatar-img">
+        </div>
+        <div class="contentt">
+	        <p class="delivery_tip">{{ d[i].name }}</p>
+	        <p class="order-time">{{ d[i].date }}</p>
+			{{# if(d[i].leadmoney > 0){ }}
+        	<p class="price">{$yjtext} + ￥{{ d[i].leadmoney }}</p>
+        	{{# } else { }}
+        	<p class="price">无佣金资格</p>
+        	{{# } }}
+        </div>
+        <i class="field-arrow icon-arrow-right"></i>
+    </a>
+</div>
+{{# } }}
+</script>
+<script>
+	$(function() {
+		$(document).on("pageInit", "#page-index", function(e, id, page) {
+			var loading = false;
+			var pagenum = 1,
+			    pagesize = 8,
+			    endmark = 0;
+			function addItems() {
+				$.post("{php echo app_url('distribution/disappbase/getdisorder',array('type'=>$type))}",{pindex:pagenum},function(d){
+//					alert(JSON.stringify(d));
+					if (d.list.length > 0) {
+						var gettpl1 = document.getElementById('orderlist').innerHTML;
+						laytpl(gettpl1).render(d.list, function(html){
+						   $(".allorder").append(html);
+						});
+						loading = false;
+						$(".loading_more").hide();
+					}else{
+						if(pagenum == 1){
+							$(".allorder").html('<div class="common-no-con"><img src="{URL_APP_IMAGE}order_no_con.png" alt=""><p>您还没有{$xxtext}订单</p></div>');
+							endmark = 1;
+						}else{
+							$(".loading_more").hide();
+							$(".weui-loadmore_line").show();
+							endmark = 1;
+						}
+					}
+				}, 'json');
+			}
+			addItems();
+			$(page).on('infinite', function() {
+				if (endmark || loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+					pagenum++;
+					addItems();
+				}, 500);
+			});
+		});
+		$.init();
+	});
+</script>
+{php include wl_template('common/footer');}

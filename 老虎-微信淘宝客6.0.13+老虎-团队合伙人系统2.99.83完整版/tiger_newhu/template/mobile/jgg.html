@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>快乐九宫格</title>
+<link href="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/css/bootstrap.min.css" rel="stylesheet">
+<link href="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/css/swiper.min.css" rel="stylesheet">
+<link href="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/css/common.css" rel="stylesheet">
+<link href="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/css/index.css" rel="stylesheet">
+<script src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/js/jquery-1.11.3.min.js"></script>
+<script src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/js/swiper.min.js"></script>
+<script src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/js/jQueryRotate.2.2.js"></script>
+<script src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/js/jquery.easing.min.js"></script>
+<script src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/js/common.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+var lottery={
+	index:0,	//当前转动到哪个位置
+	count:9,	//总共有多少个位置
+	timer:0,	//setTimeout的ID，用clearTimeout清除
+	speed:200,	//初始转动速度
+	times:0,	//转动次数
+	cycle:21,	//转动基本次数：即至少需要转动多少次再进入抽奖环节
+	prize:4,	//中奖位置
+	init:function(id){
+		if ($("#"+id).find(".lottery-unit").length>0) {
+			$lottery = $("#"+id);
+			$units = $lottery.find(".lottery-unit");
+			this.obj = $lottery;
+			this.count = $units.length;
+			$lottery.find(".lottery-unit-"+this.index).addClass("active");
+		};
+	},
+	roll:function(){
+		var index = this.index;
+		var count = this.count;
+		var lottery = this.obj;
+		$(lottery).find(".lottery-unit-"+index).removeClass("active");
+		index += 1;
+		if (index>count-1){
+			index = 0;
+		};
+		$(lottery).find(".lottery-unit-"+index).addClass("active");
+		this.index=index;
+		return false;
+	},
+	stop:function(index){
+		this.prize=index;
+		return false;
+	}
+};
+
+function roll(){
+	lottery.times += 1;
+	lottery.roll();
+	if (lottery.times > lottery.cycle+10 && lottery.prize==lottery.index) {
+		$('#giftname').html(p);
+		$('#giftimg').attr('src','{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/images/jgift0'+n+'.png');
+		showgiftbox();
+		//alert(lottery.prize+' / '+lottery.index);
+		clearTimeout(lottery.timer);
+		//lottery.prize=4;
+		lottery.times=0;
+		click=false;
+	}else{
+		if (lottery.times<lottery.cycle) {
+			lottery.speed -= 10;
+		}else if(lottery.times==lottery.cycle) {
+			//var index = Math.random()*(lottery.count)|0;
+			//lottery.prize = index;		
+		}else{
+			if (lottery.times > lottery.cycle+10 && ((lottery.prize==0 && lottery.index==7) || lottery.prize==lottery.index+1)) {
+				lottery.speed += 110;
+			}else{
+				lottery.speed += 20;
+			}
+		}
+		if (lottery.speed<40) {
+			lottery.speed=40;
+		};
+		//console.log(lottery.times+'^^^^^^'+lottery.speed+'^^^^^^^'+lottery.prize);
+		lottery.timer = setTimeout(roll,lottery.speed);
+	}
+	return false;
+}
+var click = false;
+var n = 6;
+var p = '五等奖';
+$(function(){
+	$('#start').click(function(){
+	   if(click){ return false; }
+	   var cjjh=$("#cjcs").html();
+//	   if(cjjh){
+//	   	 showgiftbox();
+//	   }
+	   $.ajax({
+		  url : "{php echo $this->createMobileUrl('jggpost',array('uid'=>$uid))}",
+		  type : "POST",
+		  dataType:'json',
+		  error : function(){
+		     alert('出错了');
+		  },
+		  success : function(d){
+		  	//{"prize":"五等奖","giftid":6,"stoped":2}
+		  	if(d.error==1){
+		  		//showgiftbox();
+		  		alert(d.msg);
+		  	}else{
+		  		 var a = d.angle;
+				 p = d.prize;
+				 n = d.giftid;
+				 var s = d.stoped;
+				 lottery.init('lottery');
+				 lottery.speed=100;
+				 lottery.prize=s;
+				 click=true;
+				 roll();
+		  	}
+		    
+		  }   
+	   });
+	});	
+	
+	$('.getgift').click(function(){
+	   if($(this).hasClass('notread')){
+	      $(this).removeClass('notread');
+		  $('.giftfm').removeClass('hidden');
+	   }else{
+	      hidegiftbox();
+	   }
+	});
+	//关闭
+	$('.closegift').click(function(){
+	   hidegiftbox();
+	});
+	//规则
+	$('.showrolebox').click(function(){
+	   showrolebox();
+	});
+	$('.closerolebox').click(function(){
+	   hiderolebox();
+	});
+});
+function showgiftbox(){
+   $('.giftfm').addClass('hidden');
+   $('.getgift').addClass('notread');
+   $('.cover').fadeIn(200,function(){
+      $('.giftout,.giftbg,.giftclose').show();
+   });
+}
+function hidegiftbox(){
+   $('.giftout,.giftbg,.giftclose').hide(function(){
+      $('.cover').fadeOut();
+   });
+}
+function showrolebox(){
+   $('.cover').fadeIn();
+   $('.rolebox').show();
+}
+function hiderolebox(){
+   $('.rolebox').hide(function(){
+      $('.cover').fadeOut();
+   });
+}
+</script>
+
+<div class="kljgg"><img src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/images/kljgg.png" class="img-responsive"><a href="javascript:void(0);" class="rolebtn showrolebox">活动规则</a></div>
+<div class="jggbox">
+   <div class="clearfix"><img src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/images/jgg.png" class="img-responsive"></div>
+   <div class="cont" id="lottery">
+      <table width="100%" height="100%">
+         <tr>
+             <td height="33%" class="lottery-unit lottery-unit-0 active"><div class="prv"><img src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/images/jgift06.png" class="img-responsive"><div class="toum"></div></div></td>
+             <td class="lottery-unit lottery-unit-1"><div class="prv"><img src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/images/jgift05.png" class="img-responsive"><div class="toum"></div></div></td>
+             <td class="lottery-unit lottery-unit-2"><div class="prv"><img src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/images/jgift06.png" class="img-responsive"><div class="toum"></div></div></td>
+         </tr>
+         <tr>
+             <td height="33%" class="lottery-unit lottery-unit-7"><div class="prv"><img src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/images/jgift02.png" class="img-responsive"><div class="toum"></div></div></td>
+             <td><a href="javascript:void(0);" id="start"><img src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/images/jgo.png" class="img-responsive"></a></td>
+             <td class="lottery-unit lottery-unit-3"><div class="prv"><img src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/images/jgift03.png" class="img-responsive"><div class="toum"></div></div></td>
+         </tr>
+         <tr>
+             <td height="33%" class="lottery-unit lottery-unit-6"><div class="prv"><img src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/images/jgift04.png" class="img-responsive"><div class="toum"></div></div></td>
+             <td class="lottery-unit lottery-unit-5"><div class="prv"><img src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/images/jgift05.png" class="img-responsive"><div class="toum"></div></div></td>
+             <td class="lottery-unit lottery-unit-4"><div class="prv"><img src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/images/jgift01.png" class="img-responsive"><div class="toum"></div></div></td>
+         </tr>
+      </table>
+   </div>
+</div>
+<div class="clearfix text-center wihte f-sm">
+
+</div>
+<div class="cover"></div>
+<div class="rolebox">
+   <div class="title">活动规则<a href="javascript:void(0);" class="icon closerolebox icon-close"></a></div>
+   <div class="cont">
+      {$cfg['cjddgz']}
+      <a href="javascript:void(0);" class="btns closerolebox">我知道了</a>
+   </div>
+</div>
+<div class="giftbg"><img src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/images/giftbg.png" class="img-responsive"></div>
+<div class="giftout">
+   <div class="text-center org pad-v f-md"><span id="giftname">暂无抽奖机会！<br>购物获得更多抽奖机会！</span></div>
+   <div class="clearfix">
+      <div class="pad-h" style="padding-bottom: 20px;"><img src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/jgg/images/no.png" id="giftimg" class="img-responsive"></div>
+   </div>
+   <!--<div class="clearfix giftfm hidden">
+      <div class="clearfix text-center mar-v-sm f-sm wihte pad-h-sm">记得留下您的联系方式，我们会尽快和您确认把奖品快递给您噢（瞄币和现金将会自动归入账户）</div>
+      <div class="clearfix">
+         <ul>
+            <li><input type="text" class="form-control" placeholder="姓名"></li>
+            <li class="mar-v-sm"><input type="text" class="form-control" placeholder="手机"></li>
+            <li><input type="text" class="form-control" placeholder="地址"></li>
+         </ul>
+      </div>
+   </div>-->
+   <!--<div class="clearfix mar-v"><a href="javascript:void(0);" class="btns getgift notread">立即领取</a></div>-->
+</div>
+<div class="avbottom">
+	<div class="avleft"><img src="{$share['avatar']}"> &nbsp;&nbsp;{if $cfg['hztype']}{$cfg['hztype']}{else}积分{/if}：{if $share['credit1']}{php echo intval($share['credit1'])}{else}0{/if}&nbsp;&nbsp; {if $cfg['yetype']}{$cfg['yetype']}{else}余额{/if}：{if $share['credit2']}{php echo intval($share['credit2'])}{else}0.00{/if}</div>
+	<div class="avright">剩余抽奖：<span id="cjcs">{if $ordersum}{$ordersum}{else}0{/if}</span>次</div>
+</div>
+<div class="giftclose"><a href="javascript:void(0);" class="icon closegift icon-close"></a></div>
+
+<style>
+	.avbottom{position: fixed;bottom:0;width:100%;height: 40px;line-height: 40px;vertical-align: middle;background:rgba(97, 0, 158, 0.6)!important;color: #ffffff;}
+	.avbottom img{height: 30px;width:30px;border-radius: 3px;}
+	.avbottom .avleft{float: left;padding-left: 10px;}
+	.avbottom .avright{float: right;padding-right: 10px;}
+</style>
+</body>
+</html>

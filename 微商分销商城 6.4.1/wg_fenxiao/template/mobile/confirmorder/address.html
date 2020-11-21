@@ -1,0 +1,142 @@
+<style>
+    .mui-btn-blue, .mui-btn-primary{
+        color: #fff;
+        background-color: #04be02;
+        border: 1px solid #04be02;
+    }
+</style>
+<div id="addressList" class="address_list" style="display: <?php if($show_list){echo 'block';}else{echo 'none';}?>">
+    <?php foreach($address as $key=>$value){?>
+    <div class="address change-address" data-id="{$value['id']}">
+        <ul class="<?php if($key==0){echo 'selected';}?>">
+            <li class="address-detail"><?php echo $value['province']. $value['city']. $value['district']. $value['address'];?></li>
+            <li class="address-user"><strong><?php echo $value['username'];?><?php echo $value['mobile'];?></strong></li>
+            <li class="edit" onclick="location='{php echo $this->createMobileUrl('address',array('op'=>'add','id' => $value['id']))}';">编辑</li>
+
+            {if $address['isdefault'] > 0}
+            <span class="default-marker">默认</span>
+            {/if}
+        </ul>
+    </div>
+    <?php } ?>
+    <div class="address_list_link" id="addressLink">
+        <a href="{php echo $this->createMobileUrl('address',array('op'=>'add'))}" class="item item_new" style="">新增收货地址</a>
+        <!--<a id="addAddressFromWx" href="javascript:void(0);" class="item item_wx" style="display: none;">从微信选择地址</a>-->
+    </div>
+</div>
+<!-- add address s-->
+<div id="pageAddAddress" class="address_new" style="display:<?php if($edit){echo 'block';}else{echo 'none';} ?>; padding-bottom: 10px;">
+    <p>
+        <label>
+            <input id="id" type="hidden"  value="{$detail['id']}">
+            <span class="tit">收货人</span>
+            <input id="username" type="text" value="{$detail['username']}" placeholder="姓名">
+        </label>
+    </p>
+    <p class="label_flex">
+        <label>
+            <span class="tit">联系方式</span>
+            <span class="foreign_prefix" id="areaCode" style="display:none;"></span>
+            <input id="mobile" value="{$detail['mobile']}" type="tel" placeholder="手机号码" maxlength="17">
+        </label>
+    </p>
+    <p class="street_detail selAddr">
+        <label>
+            <span class="tit">所在地区</span>
+            <input class="mui-district-picker-address" placeholder="请选择地区" type="text" readonly="" value="{$detail['province']} {$detail['city']} {$detail['district']}">
+            <input id="province" type="hidden"  value="{$detail['province']}">
+            <input id="city" type="hidden"  value="{$detail['city']}">
+            <input id="district" type="hidden" value="{$detail['district']}">
+        </label> <i class="arrow"></i>
+    </p>
+    <p class="street_detail" id="adinfoP">
+        <label>
+            <span class="tit">详细地址</span>
+            <textarea name="address" placeholder="详细地址需填写楼栋楼层或房间号信息" id="address" rows="2">{$detail['address']}</textarea>
+        </label>
+    </p>
+    <div class="mod_btns">
+        <a href="javascript:void(0);" class="mod_btn bg_1" id="submitAddress">确认</a>
+    </div>
+    <?php if($detail){?>
+    <div class="mod_btns">
+        <a href="javascript:void(0);" class="mod_btn " id="deleteAddress">删除</a>
+    </div>
+    <?php } ?>
+</div>
+<!-- add address e-->
+<?php if(0){?>
+{template 'confirmorder/address_other'}
+<?php } ?>
+<div id="bottomConfirmBar" class="mod_btns fixed" style="display: none;">
+    <a href="javascript:history.back();" class="mod_btn bg_1" id="btnBottomConfirmBar">确认</a>
+</div>
+
+<div id="totalPromo3" class="mod_btns fixed" style="display: none;">
+    <a href="javascript:void(0);" id="confirmPromot3" class="mod_btn bg_1">确认</a>
+</div>
+
+<script type="text/javascript">
+    var address_url  = "{php echo $this->createMobileUrl('address',array('op'=>'add'))}";
+    var address_del  = "{php echo $this->createMobileUrl('address',array('op'=>'del'))}";
+    var address_list = "{php echo $this->createMobileUrl('address')}";
+
+    $(document).on("tap", ".mui-district-picker-address", function(){
+        var $this = $(this);
+        util.districtpicker(function(item){
+            $this.val(item[0].text+" "+item[1].text+" "+item[2].text)
+                .next().val(item[0].text)
+                .next().val(item[1].text)
+                .next().val(item[2].text);
+        }, {province : "", city : "", district : ""});
+    });
+    
+    $('#deleteAddress').click(function () {
+        var id       = $('#id').val();
+        if(!confirm('确认删除此地址？')) {
+            return false;
+        }
+        $.post(address_del,{
+            id:id
+        },function (data) {
+            if(data.code != 0) {
+                showNotice(data.msg);
+            }else {
+                location = address_list;
+            }
+        },'JSON');
+    });
+    $('#submitAddress').click(function () {
+        var id       = $('#id').val();
+        var username = $('#username').val();
+        var mobile   = $('#mobile').val();
+        var province = $('#province').val();
+        var city     = $('#city').val();
+        var district = $('#district').val();
+        var address  = $('#address').val();
+        if(username == '' || mobile == '' ||
+            province == ''|| city == ''|| district == ''|| address == '' ) {
+            if(address=='') {
+                showNotice('请填写详细地址');
+            }else{
+                showNotice('地址填写有误');
+            }
+            return false;
+        }
+        $.post(address_url,{
+            id:id,
+            username:username,
+            mobile:mobile,
+            province:province,
+            city:city,
+            district:district,
+            address:address
+        },function (data) {
+            if(data.code != 0) {
+                showNotice(data.msg);
+            }else {
+                location = address_list;
+            }
+        },'JSON');
+    });
+</script>

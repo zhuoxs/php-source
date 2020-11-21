@@ -1,0 +1,2 @@
+<?php
+ namespace Qiniu\Http; final class Request { public $url; public $headers; public $body; public $method; public function __construct($method, $url, array $headers = array(), $body = null) { goto UxVOf; UxVOf: $this->method = strtoupper($method); goto droVU; droVU: $this->url = $url; goto Gstkk; Gstkk: $this->headers = $headers; goto bnqoD; bnqoD: $this->body = $body; goto ZJJZq; ZJJZq: } }

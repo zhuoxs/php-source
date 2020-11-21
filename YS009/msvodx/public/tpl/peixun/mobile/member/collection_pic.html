@@ -1,0 +1,107 @@
+{include file="common/head"}
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/mobile/static/css/i-list.css">
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/mobile/static/css/touchTouch.css">
+
+<script src="__ROOT__/tpl/peixun/mobile/static/js/jquery-1.10.2.js"></script>
+<script src="__ROOT__/tpl/peixun/mobile/static/js/touchTouch.jquery.js"></script>
+
+
+<div class="my-gallery">
+    <ul class="thumbnails" id="gallery">
+        {notempty name="img_list"}
+        {volist name="img_list" id="v"}
+        <li  id="figure_{$v['image_id']}" class="span3">
+            <a href="{$v['url']}">
+                <img src="{$v['url']}" alt="" />
+            </a>
+            <span class="btn fn-shanchu" val="{$v['id']}" image_id="{$v['image_id']}"></span>
+        </li>
+        {/volist}
+        {else/}
+        <div class="not-comment not" id="not-comment">当前相册暂无图片 ~</div>
+        {/notempty}
+    </ul>
+</div>
+
+
+</div>
+
+{include file="common/footer"}
+<script>
+    $(function () {
+        $(".span3 a").touchTouch();
+
+        /*设置图片宽高*/
+        var _height = $(".my-gallery .span3").width();
+        $(".my-gallery .span3").height(_height);
+        $(".my-gallery .span3").css("line-height",_height +"px");
+    });
+
+    $('.fn-shanchu').on('click',function(e){
+        delcolect($(this).attr('image_id'),'image',$(this).attr('val'),"figure_"+$(this).attr('image_id'));
+        if ( e && e.stopPropagation )
+            e.stopPropagation();
+        else
+            window.event.cancelBubble = true;
+    });
+    var status = 1;
+    var page  = 0;
+    var types = 'image';
+    var title = null;
+    $(window).scroll(function(){
+        var srollPos = $(window).scrollTop();
+        var  atlas_id =  "{$atlas_info['id']}";
+        var data = {
+            "imgid" : atlas_id,
+            "page" : page ,
+            "type" : 'image',
+            "offset" : 20,
+            "limit" : 20,
+        };
+        if(srollPos+$(window).height() > $(document).height() - 80){
+            if(status == 1) {
+                status = 0;
+                $.ajax({
+                    type: "POST",
+                    data: data,
+                    dataType: "JSON",
+                    url: "{:url('Api/moreCollection')}",
+                    success: function (data) {
+                        if(data.resultCode == 0){
+                            var datas = data.data.list;
+                            if(datas){
+                                var html = '';
+                                datas.forEach(function(item) {
+                                    var  url =  '/member/collection_pic/imgid/'+item['id'];
+                                    title = item['title'];
+
+                                     html += '<figure itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">';
+                                     html += '    <a href="'+item['url']+'" itemprop="contentUrl" data-size="1024x768">';
+                                     html += '    <img src="'+item['url']+'" itemprop="thumbnail" alt="Image description"/>';
+                                     html += '    </a>';
+                                     html += '    <span class="btn fn-shanchu" val="'+item['id']+'" image_id="'+item['image_id']+'"></span>';
+                                     html += '</figure>';
+                                });
+                                $('.not-comment').remove();
+                                $('.my-gallery').append(html);
+                                $('.fn-shanchu').on('click',function(e){
+                                    delcolect($(this).attr('image_id'),'image',$(this).attr('val'));
+                                    if ( e && e.stopPropagation )
+                                        e.stopPropagation();
+                                    else
+                                        window.event.cancelBubble = true;
+                                });
+                                page++;
+                                status = 1;
+                            }else{
+                                console.log('没有更多数据了！');
+                            }
+                        }else{
+                            console.log('没有更多数据了！');
+                        }
+                    }
+                });
+            }
+        }
+    })
+</script>

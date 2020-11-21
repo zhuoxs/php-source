@@ -1,0 +1,692 @@
+{template 'public/header'}
+{template 'public/comhead'}
+{if $operation == 'display'}
+<link rel="stylesheet" type="text/css" href="{$_W['siteroot']}addons/weisrc_dish/template/css/main.css"/>
+<div class="main" style="margin-top: 0px;">
+    <ul class="nav nav-tabs" role="tablist">
+        <li>
+            <a href="{php echo $this->createWebUrl('tablezones', array('op' => 'display', 'storeid' => $storeid))}">餐桌类型</a>
+        </li>
+        <li class="active">
+            <a href="{php echo $this->createWebUrl('tables', array('op' => 'display', 'storeid' => $storeid))}">餐桌管理</a>
+        </li>
+    </ul>
+    <div class="lastest-notification alert alert-info">
+        <div class="notification-label">
+            温馨提示:<br/>
+            1.删除桌台请先切换二维码模式,再点击垃圾桶标志删除.<br/>
+            2.桌台的二维码请切换二维码模式.<br/>
+			3.本^^模^^块^^来^^自^^新^^睿^^社^^区^^！
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div class="header">
+                <h3>桌台 列表</h3>
+            </div>
+            <div class="form-group">
+                <a class="btn btn-success btn-sm" href="{php echo $this->createWebUrl('tables', array('op' => 'display', 'storeid' => $storeid, 'type' => 'state'))}"><i class="fa fa-circle-o"></i> 桌台状态</a>
+                <a class="btn btn-success btn-sm" href="{php echo $this->createWebUrl('tables', array('op' => 'display', 'storeid' => $storeid, 'type' => 'qrcode'))}"><i class="fa fa-qrcode"></i> 普通二维码</a>
+                {if $this->_accountlevel == 4}
+                <a class="btn btn-success btn-sm" href="{php echo $this->createWebUrl('tables', array('op' => 'display', 'storeid' => $storeid, 'type' => 'followqrcode'))}"><i class="fa fa-qrcode"></i> 可关注二维码</a>
+                {/if}
+                <a class="btn btn-success btn-sm" href="{php echo $this->createWebUrl('tables', array('op' => 'display', 'storeid' => $storeid, 'type' => 'savewine'))}"><i class="fa fa-qrcode"></i> 寄存二维码</a>
+                <!--<a class="btn btn-success btn-sm" href="{php echo $this->createWebUrl('tables', array('op' => 'display', 'storeid' => $storeid, 'type' => 'wxqrcode'))}"><i class="fa fa-qrcode"></i> 小程序二维码</a>-->
+                <a class="btn btn-primary btn-sm" href="{php echo $this->createWebUrl('tables', array('op' => 'post', 'storeid' => $storeid))}">新建 桌台</a>
+                <a class="btn btn-primary btn-sm" href="{php echo $this->createWebUrl('tables', array('op' => 'batch', 'storeid' => $storeid))}">批量新建</a>
+                <a class="btn btn-warning btn-sm" href="{php echo $this->createWebUrl('tables', array('op' => 'clear', 'storeid' => $storeid))}" onclick="return confirm('确认操作吗？');return false;">一键清台</a>
+                <div class="form-group inline-form" style="display: inline-block;margin-bottom: 0px;">
+                    <form accept-charset="UTF-8" action="./index.php" class="form-inline" id="diandanbao/table_search" method="get" role="form">
+                        <div style="margin:0;padding:0;display:inline">
+                            <input name="utf8" type="hidden" value="✓"></div>
+                        <input type="hidden" name="c" value="site" />
+                        <input type="hidden" name="a" value="entry" />
+                        <input type="hidden" name="m" value="weisrc_dish" />
+                        <input type="hidden" name="do" value="tables" />
+                        <input type="hidden" name="storeid" value="{$storeid}" />
+                        <div class="form-group">
+                            <label class="sr-only" for="q_name">名字(桌台号)</label>
+                            <input class="form-control" id="keyword" name="keyword" placeholder="名字(桌台号)" type="search">
+                        </div>
+                        <div class="form-group">
+                            <label class="sr-only" for="q_table_zone_id_eq">Table zone 等于</label>
+                            <select id="tablezonesid" name="tablezonesid" class="form-control-excel">
+                                <option value="">桌台类型</option>
+                                {loop $tablezones $row}
+                                <option value="{$row['id']}" {if $row['id'] == $item['tablezonesid'] || $row['id'] == $tablezonesid} selected="selected"{/if}>{$row['title']}</option>
+                                {/loop}
+                            </select>
+                        </div>
+                        <input class="btn btn-sm btn-success" name="commit" type="submit" value="搜索">
+                        <!--<a class="btn btn-success btn-sm" data-remote="true" href="">批量导出桌子二维码供打印(横版)</a>-->
+                        <!--<a class="btn btn-primary btn-sm" data-remote="true" href="">批量导出桌子二维码供打印(竖版)</a>-->
+                    </form>
+                </div>
+            </div>
+            <div id="queue-setting-index-body">
+                {if $type == 'state'}
+                <div class="table-state-tables">
+                    <div class="col-xs-12">
+                        {loop $list $item}
+                        {if $item['status']==0}
+                        {php $status = 'idle';}
+                        {php $title = '空闲';}
+                        {elseif $item['status']==1}
+                        {php $status = 'opened';}
+                        {php $title = '已开台';}
+                        {elseif $item['status']==2}
+                        {php $status = 'ordered';}
+                        {php $title = '已下单';}
+                        {elseif $item['status']==3}
+                        {php $status = 'paid';}
+                        {php $title = '已支付';}
+                        {/if}
+                        <div class="state-table" data-id="{$item['id']}">
+                            <a class="{$status} round" href="{php echo $this->createWebUrl('tables', array('op' => 'detail', 'storeid' => $storeid, 'tablesid' => $item['id']))}" data-remote="" title="点击查看订单详情">
+                                <div class="state">{$title}</div>
+                            </a>
+                            <div style="color:green;font-size:12px;text-align:center">
+                                {php $ishavelabel = 0;}
+                                {loop $table_label $v}
+                                {if $v['id']==$item['print_label']}
+                                标签：{$v['title']}{php $ishavelabel=1}{/if}
+                                {/loop}
+                                {if $ishavelabel==0}
+                                标签：无
+                                {/if}
+                            </div>
+                            <div class="name overflow-ellipsis">
+                                <span><a href="{php echo $this->createWebUrl('tables', array('op' => 'detail', 'storeid' => $storeid, 'tablesid' => $item['id']))}">{$item['title']}</a></span>
+                                <br/>
+                                <form accept-charset="UTF-8" action="{php echo $this->createWebUrl('tables', array('op' => 'updatestate', 'storeid' => $storeid, 'tablesid' => $item['id']))}" data-remote="true" method="post" style="display:inline-block;">
+                                    <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓">
+                                        <input name="_method" type="hidden" value="PUT">
+                                    </div>
+                                    <select id="workflow_state" name="workflow_state" onchange="$(this.form).submit();">
+                                        <option value="0" {if $item['status']==0}selected="selected"{/if}>空闲</option>
+                                        <option value="1" {if $item['status']==1}selected="selected"{/if}>已开台</option>
+                                        <option value="2" {if $item['status']==2}selected="selected"{/if}>已下单</option>
+                                        <!--<option selected="selected" value="check_outing">结帐中</option>-->
+                                        <option value="3" {if $item['status']==3}selected="selected"{/if}>已支付</option>
+                                    </select>
+                                </form>
+                            </div>
+                        </div>
+                        {/loop}
+                    </div>
+                    <div class="col-xs-4">
+                        <div class="table-order"></div>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+                {else}
+                <div class="alert alert-success">
+                    将如下桌台二维码打印并分别贴在对应桌台上，即可实现扫码下单的功能。微信用户到店后只需拿起微信轻轻一扫，即可实现全自动点菜下单。
+                </div>
+                <div class="qr-code-table">
+                    {loop $list $item}
+                    {if $item['status']==0}
+                    {php $status = 'idle';}
+                    {php $title = '空闲';}
+                    {elseif $item['status']==1}
+                    {php $status = 'opened';}
+                    {php $title = '已开台';}
+                    {elseif $item['status']==2}
+                    {php $status = 'ordered';}
+                    {php $title = '已下单';}
+                    {elseif $item['status']==3}
+                    {php $status = 'paid';}
+                    {php $title = '已支付';}
+                    {/if}
+                    <div class="qr-code-item">
+                        <div class="qr-code-op">
+                            <a data-rel="tooltip" href="{php echo $this->createWebUrl('tables', array('id' => $item['id'], 'storeid' => $storeid, 'op' => 'post'))}" title="编辑"><icon class="fa fa-edit"></icon>修改</a>
+                            <a data-confirm="确定删除?" data-method="delete" data-rel="tooltip" href="{php echo $this->createWebUrl('tables', array('id' => $item['id'], 'storeid' => $storeid, 'op' => 'delete'))}" onclick="return confirm('确认操作吗？');return false;" rel="nofollow" title="删除"><icon class="fa fa-trash-o"></icon>删除</a>
+                        </div>
+                        <a href="{php echo $this->createWebUrl('tables', array('op' => 'detail', 'storeid' => $storeid, 'tablesid' => $item['id']))}">
+                            <div class="qr-code-box">
+                                <div class="qr-code-item-image">
+                                    {if $type == 'followqrcode'}
+                                    <!-- 店内-->
+                                    <img alt="{$item['title']}" src="{php echo $this->getTablesQrcode($item['id']);}" width="100%">
+                                    {elseif $type == 'wxqrcode'}
+                                    <!-- 小程序-->
+                                    <img alt="{$item['title']}" src="{php echo $this->getQrcodeData('wxtables_' . $item['id']);}"  width="100%">
+                                    {elseif $type == 'savewine'}
+                                    <!-- 存酒-->
+                                    <img alt="{$item['title']}" src="{php echo $this->getTablesQrcode($item['id'], 2);}" width="100%">
+                                    {else}
+                                    <img alt="{$item['title']}" src="{php echo $this->fm_qrcode($_W['siteroot'] . 'app/index.php?i=' . $_W['uniacid'] . '&c=entry&mode=1&storeid=' . $storeid . '&tablesid=' . $item['id'] . '&do=waplist&m=weisrc_dish', 'qrcode_' . $item['id'], '', $logo);}" width="100%">
+                                    {/if}
+                                </div>
+                                <div class="qr-code-item-info">
+                                    {if $type == 'savewine'}
+                                    (寄存)
+                                    {/if}
+                                    {$item['title']}
+                                </div>
+                            </div>
+                            {if $type != 'savewine'}
+                            <div class="qr-code-item-footer">
+                                扫描次数: {if empty($tablesorder[$item['id']]['count'])}0{else}{$tablesorder[$item['id']]['count']}{/if}
+                                <br>
+                                当前状态
+                                :
+                                <span class="label label-info">{$title}</span>
+                                <br>
+                                桌台类型: {$tablezones[$item['tablezonesid']]['title']}
+                            </div>
+                            {/if}
+                        </a>
+                    </div>
+                    {/loop}
+                    <div class="space"></div>
+                </div>
+                {/if}
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{elseif $operation == 'batch'}
+<div class="main">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <a class="btn btn-warning" href="{php echo $this->createWebUrl('tables', array('op' => 'display', 'storeid' => $storeid))}">返回餐桌管理
+            </a>
+        </div>
+    </div>
+    <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+        <input type="hidden" name="storeid" value="{$storeid}" />
+        <input type="hidden" name="id" value="{$item['id']}" />
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                批量创建桌台
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">起始桌台号</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="title" class="form-control" value="{$item['title']}"  placeholder=""/>
+                        <span class="help-block">例如：C001<code>注意:填的时候台号要4位至少</code></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">可供就餐人数</label>
+                    <div class="col-sm-9">
+                        <input type="number" name="user_count" class="form-control" value="{$item['user_count']}" placeholder=""/>
+                        <span class="help-block">
+                            设置为自动排号时，当排号客户的用餐人数少于等于此人数时，系统将自动为排号客户分配此队列
+                        </span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">桌台类型</label>
+                    <div class="col-sm-9">
+                        <select class="form-control" style="margin-right:15px;" name="tablezonesid" autocomplete="off" class="form-control">
+                            {loop $tablezones $row}
+                            <option value="{$row['id']}" {if $row['id'] == $item['tablezonesid'] || $row['id'] == $tablezonesid} selected="selected"{/if}>{$row['title']}</option>
+                            {/loop}
+                        </select>
+                        <div class="help-block">
+                            还没有分类，点我 <a href="{php echo $this->createWebUrl('tablezones', array('op' => 'post', 'storeid' => $storeid))}"><i class="fa fa-plus-circle"></i> 添加分类</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">桌台标签</label>
+                    <div class="col-sm-9">
+                        <select class="form-control" style="margin-right:15px;" name="table_label_id" autocomplete="off" class="form-control">
+                            <option value="0" selected="selected">无</option>
+                            {loop $table_label $v}
+                            <option value="{$v['id']}" {if $v['id'] == $item['print_label']} selected="selected"{/if}>{$v['title']}</option>
+                            {/loop}
+                        </select>
+                        <div class="help-block">
+                            还没有标签，点我 <a href="{php echo $this->createWebUrl('printlabel', array('op' => 'post', 'storeid' => $storeid))}"><i class="fa fa-plus-circle"></i> 添加标签</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">创建桌台数量</label>
+                    <div class="col-sm-9">
+                        <input type="number" name="table_count" class="form-control" value="{$item['table_count']}" placeholder=""/>
+                        <span class="help-block">
+                            根据创建的桌台数量，系统会自动依据起始桌台号依次递增,<br/> 例如C001, C002, C003, C004.....,一次最多创建10张桌台
+                        </span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">排序</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="displayorder" class="form-control" value="{$item['displayorder']}" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group col-sm-12">
+            <input type="submit" name="submit" value="创建" class="btn btn-primary col-lg-1" />
+            <input type="hidden" name="token" value="{$_W['token']}" />
+        </div>
+    </form>
+</div>
+{elseif $operation == 'post'}
+<div class="main">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <a class="btn btn-warning" href="{php echo $this->createWebUrl('tables', array('op' => 'display', 'storeid' => $storeid))}">返回餐桌管理
+            </a>
+        </div>
+    </div>
+    <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+        <input type="hidden" name="storeid" value="{$storeid}" />
+        <input type="hidden" name="id" value="{$item['id']}" />
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                桌台 详情
+            </div>
+            <div class="panel-body">
+                {if $item['id']>0}
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">编号</label>
+                    <div class="col-sm-9">
+                        <p class="form-control-static">
+                            {$item['id']}
+                        </p>
+                    </div>
+                </div>
+                {/if}
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">名字(桌台号)</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="title" class="form-control" value="{$item['title']}"  placeholder=""/>
+                        <span class="help-block">例如：C001</span>
+                    </div>
+                </div>
+                {if $item['scene_str']}
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">scene_str</label>
+                    <div class="col-sm-9">
+                        <p class="form-control-static">
+                            {$item['scene_str']}
+                        </p>
+                    </div>
+                </div>
+                {/if}
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">可供就餐人数</label>
+                    <div class="col-sm-9">
+                        <input type="number" name="user_count" class="form-control" value="{$item['user_count']}" placeholder=""/>
+                        <span class="help-block">
+                            设置为自动排号时，当排号客户的用餐人数少于等于此人数时，系统将自动为排号客户分配此队列
+                        </span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">主题图片</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_image('thumb', $item['thumb'])}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">桌台类型</label>
+                    <div class="col-sm-9">
+                        <select class="form-control" style="margin-right:15px;" name="tablezonesid" autocomplete="off" class="form-control">
+                            {loop $tablezones $row}
+                            <option value="{$row['id']}" {if $row['id'] == $item['tablezonesid'] || $row['id'] == $tablezonesid} selected="selected"{/if}>{$row['title']}</option>
+                            {/loop}
+                        </select>
+                        <div class="help-block">
+                            还没有分类，点我 <a href="{php echo $this->createWebUrl('tablezones', array('op' => 'post', 'storeid' => $storeid))}"><i class="fa fa-plus-circle"></i> 添加分类</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">标签</label>
+                    <div class="col-sm-9">
+                        <select class="form-control" style="margin-right:15px;" name="table_label_id" autocomplete="off" class="form-control">
+                            <option value="0" selected="selected">无</option>
+                            {loop $table_label $v}
+                            <option value="{$v['id']}" {if $v['id'] == $item['print_label']} selected="selected"{/if}>{$v['title']}</option>
+                            {/loop}
+                        </select>
+                        <div class="help-block">
+                            还没有标签，点我 <a href="{php echo $this->createWebUrl('printlabel', array('op' => 'post', 'storeid' => $storeid))}"><i class="fa fa-plus-circle"></i> 添加标签</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">排序</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="displayorder" class="form-control" value="{$item['displayorder']}" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group col-sm-12">
+            <input type="submit" name="submit" value="保存设置" class="btn btn-primary col-lg-3" />
+            <input type="hidden" name="token" value="{$_W['token']}" />
+        </div>
+    </form>
+</div>
+{elseif $operation == 'detail'}
+<link rel="stylesheet" type="text/css" href="{$_W['siteroot']}addons/weisrc_dish/template/css/main.css"/>
+<div class="main">
+    <div class="alert alert-info">
+        <i class="fa fa-info-circle"></i>提示：取消和完成的订单不会列入统计
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <div class="row-fluid">
+                <div style="width:300px;">
+                    总金额:<strong class="text-danger">{$totalprice}</strong>
+                    ,已支付:<strong class="text-danger">{$payprice}</strong>
+                    ,未支付:<strong class="text-danger">{$notprice}</strong>
+                </div>
+                <div>
+                    <select id="paytype" name="paytype" class="form-control-excel">
+                        <option value="0">请选择支付方式</option>
+                        <option value="8"{if $_GPC['paytype'] == 8} selected="selected"{/if}>微信(线下)</option>
+                        <option value="9"{if $_GPC['paytype'] == 9} selected="selected"{/if}>支付宝(线下)</option>
+                        <option value="10"{if $_GPC['paytype'] == 10} selected="selected"{/if}>pos刷卡</option>
+                        <option value="11"{if $_GPC['paytype'] == 11} selected="selected"{/if}>挂帐</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="panel-body">
+            <form action="" method="post" class="form-horizontal form" >
+                <input type="hidden" name="storeid" value="{$storeid}" />
+                <div class="table-responsive panel-body">
+                    <table class="table table-hover">
+                        <thead class="navbar-inner">
+                        <tr>
+                            <th class='with-checkbox' style="width:2%;"><input type="checkbox" class="check_all" checked="checked"/></th>
+                            <th style="width:5%;">编号</th>
+                            <th style="width:16%;">订单号</th>
+                            <th style="width:10%;">订单总额</th>
+                            <th style="width:15%;">联系信息</th>
+                            <th style="width:8%;">状态</th>
+                            <th style="width:10%;">支付状态</th>
+                            <th style="width:10%;">下单时间</th>
+                            <th style="width:12%; text-align:right;"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {loop $orderlist $row}
+                        <tr>
+                            <td class="with-checkbox"><input type="checkbox" name="check" value="{$row['id']}" checked="checked"></td>
+                            <td>
+                                {$row['id']}
+                            </td>
+                            <td>
+                                {$row['ordersn']}
+                                {php $br = 0}
+                                {if $row['is_append']==1}
+                                <br/>
+                                <span class="label label-success">加单</span>
+                                {php $br = 1}
+                                {/if}
+                                {if $row['append_dish']==1}
+                                {if $br == 0}<br/>{/if}
+                                <span class="label label-danger">加菜</span>
+                                {php $br = 1}
+                                {/if}
+                                {if $row['isvip']==1}
+                                {if $br == 0}<br/>{/if}
+                                <span class="label label-success">会员</span>
+                                {/if}
+                                {if $row['ismerge']==1}
+                                <br/>
+                                <span class="label label-success">并单</span>
+                                {/if}
+                            </td>
+                            <td>
+                                <span class="label label-warning" style="font-weight:bold;">￥{$row['totalprice']}</span>
+                            </td>
+                            <td>
+                                <a href="{php echo $this->createWebUrl('fans', array('id' => $row['fansid'], 'op' => 'post'))}">
+                                    <img src="{php echo tomedia($row['headimgurl']);}" style="width:30px;height:30px;padding:1px;border:1px solid #ccc"/>
+                                    </br>{$row['nickname']}
+                                </a>
+                            </td>
+                            <td>
+                                {if $row['status'] == 0}<span class="label label-info">待处理</span>{/if}
+                                {if $row['status'] == 1}<span class="label label-warning">已确认</span>{/if}
+                                {if $row['status'] == 2}<span class="label label-success">已并台</span>{/if}
+                                {if $row['status'] == 3}<span class="label label-success">已完成</span>{/if}
+                                {if $row['status'] == -1}<span class="label label-danger">已取消</span>{/if}
+                            </td>
+                            <td>
+                                {if $row['paytype']}
+                                {if $row['paytype'] == 1}
+                                <span class="label label-success"><i class="fa fa-money">&nbsp;余额支付</i></span>
+                                {/if}
+                                {if $row['paytype'] == 2}
+                                <span class="label label-success"><i class="fa fa-check-circle">&nbsp;微信支付</i></span>
+                                {/if}
+                                {if $row['paytype'] == 3}
+                                <span class="label label-success"><i class="fa fa-money">&nbsp;现金支付</i></span>
+                                {/if}
+                                {if $row['paytype'] == 4}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;支付宝</i></span>
+                                {/if}
+                                <!--5现金，6银行卡，7会员卡，8微信，9支付宝-->
+                                {if $row['paytype'] == 5}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;现金</i></span>
+                                {/if}
+                                {if $row['paytype'] == 6}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;银行卡</i></span>
+                                {/if}
+                                {if $row['paytype'] == 7}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;会员卡</i></span>
+                                {/if}
+                                {if $row['paytype'] == 8}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;微信</i></span>
+                                {/if}
+                                {if $row['paytype'] == 9}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;支付宝</i></span>
+                                {/if}
+                                {if $row['paytype'] == 10}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;pos刷卡</i></span>
+                                {/if}
+                                {if $row['paytype'] == 11}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;挂帐</i></span>
+                                {/if}
+                                <br/>
+                                {/if}
+                                {if $row['ispay'] == 0}<span class="label label-warning">未支付</span>{/if}
+                                {if $row['ispay'] == 1}<span class="label label-success"><i class="fa fa-cloud">已支付</i></span>{/if}
+                                {if $row['ispay'] == 2}<span class="label label-info">待退款</span>{/if}
+                                {if $row['ispay'] == 3}<span class="label label-danger">已退款</span>{/if}
+                                {if $row['ispay'] == 4}<span class="label label-danger">退款失败</span>{/if}
+                            </td>
+                            <td>
+                                {php echo date("Y-m-d", $row['dateline'])}<br/>
+                                {php echo date("H:i:s", $row['dateline'])}
+                            </td>
+                            <td style="text-align:left;">
+                                <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('order', array('op' => 'detail', 'id' => $row['id'], 'storeid' => $storeid))}" title="详情">详情</a>
+                                {if $row['dining_mode']==2}
+                                <a class="btn btn-warning btn-sm btn_table_show" href="javascript:void(0);" title="配送" data-value="{$row['id']}">配送</a>{/if}
+
+                                {if $row['status'] != 3 && $row['ispay'] != 3}
+                                {if $row['ispay'] == 1 || $row['ispay'] == 2 || $row['ispay'] == 4}
+                                <a class="btn btn-danger btn-sm" href="{php echo $this->createWebUrl('order', array('op' => 'refund', 'id' => $row['id'], 'storeid' => $storeid))}" title="退款" onclick="return confirm('此操作不可恢复，确认退款？');return false;">退款</a>
+                                {/if}
+                                {/if}
+                            </td>
+                        </tr>
+                        {/loop}
+                        </tbody>
+                    </table>
+                    {$pager}
+                </div>
+                <div style="height: 50px;"></div>
+            </form>
+        </div>
+        <div class="shop-preview col-xs-12 col-sm-9 col-lg-10">
+            <div class="text-left alert alert-info">
+                <div style="margin-top: 0px;">
+                    <input type="button" class="btn btn-success" name="btn_printall" value="前台打印" />
+                    <input type="button" class="btn btn-warning" name="btn_finishall" value="结账并清台" />
+                </div>
+            </div>
+        </div>
+        <style>
+            .shop-preview {
+                position: fixed;
+                padding: 0 15px;
+                bottom: 0;
+                right: 0;
+                z-index: 10000;
+                width: 83.33333333%;
+            }
+
+            .shop-preview div {
+                /*background: rgba(255, 254, 220, 0.8);*/
+                filter:alpha(opacity=20);
+                /*opacity: 0.8;*/
+            }
+        </style>
+    </div>
+</div>
+<div class="main">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div class="header">
+                <h3>桌台 详情 <a class="btn btn-primary btn-sm" href="{php echo $this->createWebUrl('tables', array('op' => 'post', 'storeid' => $storeid, 'id' => $tablesid))}">编辑</a>
+                    <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('tables', array('op' => 'display', 'storeid' => $storeid))}">返回</a></h3>
+            </div>
+            <div class="model-show">
+                <p>
+                    <b>
+                        名字(桌台号)
+                        :
+                    </b>
+                    {$item['title']}{if !empty($label)}&nbsp;&nbsp;(<span style="color:green">标签：{$label['title']}</span>){/if}
+                </p>
+                <p>
+                    <b>
+                        桌台类型
+                        :
+                    </b>
+                    {$cate['title']}
+                </p>
+                <p>
+                    <b>
+                        可供就餐人数
+                        :
+                    </b>
+                    {$item['user_count']}
+                </p>
+                <p>
+                    <b>
+                        当前状态
+                        :
+                    </b>
+                    {if $item['status']==0}空闲{elseif $item['status']==1}已开台{elseif $item['status']==2}已下单{elseif $item['status']==3}已支付{/if}
+                </p>
+                <p>
+                    <b>
+                        扫描人数
+                        :
+                    </b>
+                    {if empty($tablesorderuser)}0{else}{$tablesorderuser}{/if}
+                </p>
+                <p>
+                    <b>
+                        所属门店
+                        :
+                    </b>
+                    {$store['title']}
+                </p>
+                <p>
+                    <b>
+                        扫描次数
+                        :
+                    </b>
+                    {if empty($tablesorder)}0{else}{$tablesorder}{/if}
+                </p>
+                <p>
+                    <b>
+                        排序
+                        :
+                    </b>
+                    {$item['displayorder']}
+                </p>
+                <p>
+                    <b>
+                        二维码图片
+                        :
+                    </b>
+                    <img alt="" src="{php echo $this->fm_qrcode($_W['siteroot'] . 'app/index.php?i=' . $_W['uniacid'] . '&c=entry&mode=1&storeid=' . $storeid . '&tablesid=' . $tablesid . '&do=waplist&m=weisrc_dish', 'qrcode_' . $tablesid, '', $logo);}">
+                </p>
+                <div class="space"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script type="text/javascript">
+    $(function () {
+        $(".check_all").click(function () {
+            var checked = $(this).get(0).checked;
+            $("input[type=checkbox]").attr("checked", checked);
+        });
+
+        $("input[name=btn_printall]").click(function () {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if (check.length < 1) {
+                alert('请选择要打印的订单!');
+                return false;
+            }
+//            if (confirm("确认要打印选择的订单?")) {
+                var id = new Array();
+                check.each(function (i) {
+                    id[i] = $(this).val();
+                });
+                var url = "{php echo $this->createWebUrl('tables', array('op' => 'printall', 'storeid' => $storeid, 'position_type' => 1))}";
+                $.post(
+                        url,
+                        {idArr: id},
+                        function (data) {
+                            alert(data.error);
+                            location.reload();
+                        }, 'json'
+                );
+//            }
+        });
+
+        $("input[name=btn_finishall]").click(function () {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if (check.length < 1) {
+                alert('请选择要结账的订单!');
+                return false;
+            }
+            if (confirm("确定要结账选择的订单?")) {
+                var paytype = $("#paytype").val();
+                var id = new Array();
+                check.each(function (i) {
+                    id[i] = $(this).val();
+                });
+                var url = "{php echo $this->createWebUrl('tables', array('op' => 'finishall', 'storeid' => $storeid))}";
+                $.post(
+                        url,
+                        {
+                            idArr: id,
+                            paytype:paytype
+                        },
+                        function (data) {
+                            alert(data.error);
+//                            location.reload();
+                            window.location.href = window.location.href + '&paytype=' + paytype;
+                        }, 'json'
+                );
+            }
+        });
+    });
+</script>
+{/if}
+{template 'public/footer'}

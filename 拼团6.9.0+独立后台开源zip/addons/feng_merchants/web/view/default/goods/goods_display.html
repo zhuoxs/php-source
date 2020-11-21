@@ -1,0 +1,252 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+	<li {if intval($_GPC['status']) == 1}class="active"{/if}><a href="{php echo web_url('goods/goods/display/',array('status' => '1'));}">出售中商品</a></li>
+	<li {if intval($_GPC['status']) == 3}class="active"{/if}><a href="{php echo web_url('goods/goods/display/',array('status' => '3'));}">已售罄商品</a></li>
+	<li {if intval($_GPC['status']) == 2}class="active"{/if}><a href="{php echo web_url('goods/goods/display/',array('status' => '2'));}">下架的商品</a></li>
+	<li {if intval($_GPC['status']) == 4}class="active"{/if}><a href="{php echo web_url('goods/goods/display/',array('status' => '4'));}">商品回收站</a></li>
+	<li><a href="{php echo web_url('goods/goods/post');}">发布商品</a></li>
+</ul>
+<div class="panel panel-info">
+	<div class="panel-heading">筛选</div>
+	<div class="panel-body">
+		<form action="./index.php" method="get" class="form-horizontal" role="form">
+			<input type="hidden" name="c" value="site" />
+            <input type="hidden" name="a" value="entry" />
+            <input type="hidden" name="m" value="feng_merchants" />
+            <input type="hidden" name="do" value="goods" />
+			<input type="hidden" name="ac" value="goods" />
+			<input type="hidden" name="op" value="display" />
+			<input type="hidden" name="status" value="{$_GPC['status']}">
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">所属商家</label>
+				 <div class="col-xs-12 col-sm-4 col-md-4 col-lg-4">
+					<select name="merchantid" class="form-control">
+						{loop $merchants $row}
+				            <option value="{$row['id']}" {if $_GPC['merchantid']==$row['id']}selected="selected"{/if}>{$row['name']}</option>
+						{/loop}
+			        </select>
+				</div>
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">商品名称</label>
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-4">
+                    <input class="form-control" name="keyword" id="" type="text" value="{$_GPC['keyword']}" placeholder="可模糊查询商品名称">
+                </div>
+			</div>
+			<div class="form-group">
+				<label class="col-md-1 control-label">商品分类</label>
+				<div class="col-md-8">
+					{php echo wl_tpl_form_field_category_2level('category', $category, $childs, $goods['category_parentid'], $goods['category_childid'])}
+				</div>
+				<div class="pull-right col-md-3">
+					<button class="btn btn-default min-width"><i class="fa fa-search"></i> 搜索</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="panel panel-default">
+	<div class="table-responsive">
+		<table class="table table-hover">
+			<thead>
+			<tr>
+				<th style="width:40px;">
+					<input type="checkbox" name="checkall" value="" id="checkall" onclick="var ck = this.checked; $(':checkbox').each(function(){this.checked = ck});"/>
+				</th>
+				<th style="width:80px;">商品图</th>
+				<th style="width:180px;">商品名</th>
+				<th class="text-center" style="width:120px;">所属商家</th>
+				<th class="text-center" style="width:80px;">参团人数</th>
+				<th class="text-center" style="width:120px;">价格</th>
+				<th class="text-center" style="width:100px;">总销量</th>
+				<th class="text-center" style="width:70px;">排序</th>
+				<th class="text-center" style="width:160px;">操作</th>
+			</tr>
+			</thead>
+			<tbody>
+			{loop $goodses $goods}
+			<tr data-toggle="popover" data-trigger="hover" data-placement="left" class="js-goods-img">
+				<td><input type="checkbox" name="items[]" value="{$goods['id']}" class="items" /></td>
+				<td><img class="scrollLoading" src="{IMAGE_PIXEL}" data-url="{$goods['gimg']}" onerror="this.src='{IMAGE_NOPIC_SMALL}'" height="50" width="50"/></td>
+				<td class="line-feed">
+					{php echo cutstr($goods['gname'], 30, true);}
+					<!--<br />
+					<label data='{$goods['isnew']}' class='label label-default {if $goods['isnew']==1}label-info{else}{/if}' onclick="setProperty(this,{$goods['id']},'new')">{if $this->module['config']['tag1']}{php echo $this->module['config']['tag1'];}{else}上新{/if}</label>
+					<label data='{$goods['ishot']}' class='label label-default {if $goods['ishot']==1}label-info{/if}' onclick="setProperty(this,{$goods['id']},'hot')">{if $this->module['config']['tag2']}{php echo $this->module['config']['tag2'];}{else}疯抢{/if}</label>
+					<label data='{$goods['isrecommand']}' class='label label-default {if $goods['isrecommand']==1}label-info{/if}' onclick="setProperty(this,{$goods['id']},'recommand')">{if $this->module['config']['tag3']}{php echo $this->module['config']['tag3'];}{else}推荐{/if}</label>
+					<label data='{$goods['isdiscount']}' class='label label-default {if $goods['isdiscount']==1}label-info{/if}' onclick="setProperty(this,{$goods['id']},'discount')">{if $this->module['config']['tag4']}{php echo $this->module['config']['tag4'];}{else}优惠{/if}</label>-->
+				</td>
+				<td class="text-center">
+					<span class="">{if empty($goods['merchantname'])}{$_W['account']['name']}{else}{$goods['merchantname']}{/if}</span>
+				</td>
+				<td class="text-center">
+					<span>{$goods['groupnum']}人</span>
+				</td>
+				<td class="text-center" style="line-height:25px;">
+					<span class="label label-success">￥{php echo number_format($goods['gprice'], 2)}</span><br>
+					<span class="del text-muted small">￥{php echo number_format($goods['oprice'], 2)}</span>
+				</td>
+				<td class="text-center">
+					<span>{$goods['salenum']}</span>
+				</td>
+				<td class="text-center"><input type="text" class="form-control js-displayorder" value="{php echo $goods['displayorder'];}" data-id="{$goods['id']}"/> </td>
+				<td class="text-center">
+					<a href="{php echo web_url('goods/goods', array('op' => 'post','id' => $goods['id']))}" class="">编辑</a>
+					-<a href="javascript:;" class="js-sellout-goods" goods-id="{$goods['id']}">售罄</a> 
+					{if intval($_GPC['status']) == 1}
+					 - <a href="javascript:;" class="js-off-shelves-goods" goods-id="{$goods['id']}">下架</a> 
+					{/if}
+					{if intval($_GPC['status']) == 2}
+					 - <a href="javascript:;" class="js-on-shelves-goods" goods-id="{$goods['id']}">上架</a>
+					 - <a href="javascript:;" class="js-delete-goods" goods-id="{$goods['id']}">删除</a> 
+					{/if}
+					{if intval($_GPC['status']) == 4}
+					 - <a href="javascript:;" class="js-off-shelves-goods" goods-id="{$goods['id']}">下架</a> 
+					 - <a href="javascript:;" class="js-remove-goods" goods-id="{$goods['id']}">彻底删除</a>
+					{/if}
+				</td>
+			</tr>
+			{/loop}
+			<tr>
+				<td><input type="checkbox" name="checkall" value="" id="checkall" onclick="var ck = this.checked; $(':checkbox').each(function(){this.checked = ck});" /></td>
+				<td colspan="8">
+					{if intval($_GPC['status']) != 2}
+					<a href="javascript:;" class="btn btn-success min-width js-batch js-off-shelves">下架</a>
+					{/if}
+					{if intval($_GPC['status']) != 1}
+					<a href="javascript:;" class="btn btn-primary min-width js-batch js-on-shelves">上架</a>
+					{/if}
+					{if intval($_GPC['status']) != 4}
+					<a href="javascript:;" class="btn btn-danger min-width js-batch js-delete">删除</a>
+					{/if}
+					{if intval($_GPC['status']) == 4}
+					<a href="javascript:;" class="btn btn-danger min-width js-batch js-remove">彻底删除</a>
+					{/if}
+				</td>
+			</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
+{$pager}
+<script>
+	function setProperty(obj,id,type){
+		$(obj).html($(obj).html() + "...");
+		$.post("{php echo web_url('goods/goods/setgoodsproperty')}"
+			,{id:id,type:type, data: obj.getAttribute("data")}
+			,function(d){
+				
+				$(obj).html($(obj).html().replace("...",""));
+				if(type=='isshow'){
+				 $(obj).html( d.data=='1'?'上架':'下架');
+				}
+				$(obj).attr("data",d.data);
+				if(d.result==1){
+					$(obj).toggleClass("label-info");
+				}
+			}
+			,"json"
+		);
+	}
+	$(function(){
+		$(".scrollLoading").scrollLoading();
+		$(".js-displayorder").blur(function(e){
+			e.stopPropagation();
+			var $this = $(this);
+			var good_id = $this.data("id");
+			var displayorder = parseInt($this.val());
+			if (isNaN(displayorder)) {
+				$this.parent().addClass('has-error');
+				util.tips('必须为数字', 2000);
+				return false;
+			};
+			$.post("{php echo url('goods/goods/display/displayorder');}", {good_id : good_id, displayorder : displayorder}, function(data){
+				$this.parent().removeClass('has-error');
+				util.tips(data.message, 2000);
+			},'json');
+		});
+
+		$('.js-batch').click(function(e){
+			e.stopPropagation();
+			var goods_ids = [];
+			var $checkboxes = $('.items:checkbox:checked');
+			$checkboxes.each(function() {
+				if (this.checked) {
+					goods_ids.push(this.value);
+				};
+			});
+
+			if (goods_ids.length == 0) {
+				util.tips('请选择要操作的商品!', 2000);
+				return false;
+			}
+			var op = '';
+			var html = '';
+			if ($(this).hasClass('js-on-shelves')) {
+				op = 'on_shelves';
+				html = '确认上架?';
+			} else if ($(this).hasClass('js-off-shelves')) {
+				op = 'off_shelves';
+				html = '确认下架?';
+			} else if ($(this).hasClass('js-delete')) {
+				op = 'delete';
+				html = '确认删除?';
+			} else if ($(this).hasClass('js-remove')) {
+				op = 'remove';
+				html = '确认选中彻底删除?';
+			}
+			var $this = $(this);
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				$.post("{php echo web_url('goods/goods/batch');}", {funcop : op, goods_ids : goods_ids}, function(data){
+					if(!data.errno){
+						$checkboxes.each(function() {
+							$(this).parent().parent().remove();
+						});
+					};
+					util.tips(data.message, 2000);
+				}, 'json');
+			}, {html: html});
+		});
+
+		$('.js-delete-goods, .js-off-shelves-goods, .js-on-shelves-goods, .js-remove-goods,.js-sellout-goods').click(function(e) {
+			e.stopPropagation();
+			var id = $(this).attr('goods-id');
+			var _this = $(this).parent().parent();
+			if ($(this).hasClass('js-on-shelves-goods')) {
+				op = 'on_shelves';
+				html = '确认上架?';
+			} else if ($(this).hasClass('js-off-shelves-goods')) {
+				op = 'off_shelves';
+				html = '确认下架?';
+			} else if ($(this).hasClass('js-delete-goods')) {
+				op = 'delete';
+				html = '确认删除?';
+			} else if ($(this).hasClass('js-remove-goods')) {
+				op = 'remove';
+				html = '确认选中彻底删除?';
+			} else if ($(this).hasClass('js-sellout-goods')) {
+				op = 'sellout';
+				html = '确认设置售罄?';
+			}
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				$.post("{php echo web_url('goods/goods/single_op')}", {funcop : op, id : id}, function(data){
+					if(!data.errno){
+						_this.remove();
+					};
+					util.tips(data.message, 2000);
+				}, 'json');
+			}, {html: html});
+		});
+		var $pop = null;
+		$('.scrollLoading').hover(function(){
+			var img = $(this).attr('src');
+			var obj = this;
+			var $pop = util.popover(obj, function($popover, obj){
+				obj.$popover = $popover;
+			}, '<div><img src="'+img+'" style="max-width:200px; max-height:200px;"></div>');
+		}, function(){
+			this.$popover.remove();
+		});
+	});
+</script>
+{php include wl_template('common/footer');}

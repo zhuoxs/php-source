@@ -1,0 +1,96 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+	<li class="active"><a href="#">客户概况</a></li>
+</ul>
+<div class="app-content">
+	<div class="panel panel-stat">
+		<div class="panel-heading">
+			<h3>客户概括</h3>
+		</div>
+		<div class="panel-body">
+			<div class="col-md-3">
+				<div class="title">今日新增(人)</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">{$stat['today_num']}</a>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="title">昨日新增(人)</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">{$stat['yesterday_num']}</a>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="title">本月新增(人)</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">{$stat['month_num']}</a>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="title">总客户(人)</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">{$stat['total_num']}</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="panel panel-trend">
+		<div class="panel-heading">
+			<h3>客户增长趋势</h3>
+		</div>
+		<form action="" id="trade">
+			{php echo tpl_form_field_daterange('time', array('start' => date('Y-m-d', $start),'end' => date('Y-m-d', $end)), '')}
+		</form>
+		<div class="panel-body">
+			<div id="chart-container" style="margin: 20px 0 -60px -25px;height: 500px;"></div>
+		</div>
+	</div>
+</div>
+<script>
+require(['daterangepicker'], function() {
+	myrequire(['g2','data-set'], function(){
+		
+		$('.daterange').on('apply.daterangepicker', function(ev, picker) {
+			refresh();
+		});
+
+		function refresh() {
+			$('#chart-container').html('');
+			var url = location.href + '&#aaaa';
+			var params = {
+				'start': $('#trade input[name="time[start]"]').val(),
+				'end': $('#trade input[name="time[end]"]').val()
+			};
+			$.post(url, params, function(data){
+				var data = $.parseJSON(data)
+				var chart = new G2.Chart({
+				 	container: 'chart-container',
+				  	forceFit: true,
+				  	height: 500
+				});
+				chart.source(data);
+				chart.scale('新增客户', {
+				  	min: 0
+				});
+				chart.scale('day', {
+				  	range: [0, 1]
+				});
+				chart.tooltip({
+				  	crosshairs: {
+				    	type: 'line'
+				  	}
+				});
+				chart.area().position('day*新增客户').shape('smooth');
+				chart.line().position('day*新增客户').shape('smooth');
+				chart.point().position('day*新增客户').size(4).shape('circle').style({
+				  	stroke: '#fff',
+				  	lineWidth: 1
+				});
+				chart.render();
+			});
+		}
+		refresh();
+	});
+});
+</script>
+{php include wl_template('common/footer');}

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>用户信息登记</title>
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/register.css" />
+        <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/jquery-3.2.1.min.js" ></script>
+        {php echo register_jssdk(false);}
+        <script>
+
+            $(document).ready(function () {
+                /*input、textarea等输入框被输入法遮罩的解决方法*/
+                var clientHeight = document.body.clientHeight;
+                var focusElem = null;  //输入框的焦点
+                //利用捕获事件来监听输入框等的focus
+                document.body.addEventListener('focus', function (e) {
+                    focusElem = e.target || e.srcElement;
+                }, true);
+                //因存在软键盘显示而屏幕大小还没改变，所以以屏幕大小改变为准
+                window.addEventListener('resize', function () {
+                    if (focusElem && document.body.clientHeight < clientHeight) {
+                        //焦点元素滚动到可视范围底部（false为底部）
+                        focusElem.scrollIntoView(true);
+                    }
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <script>
+            {if $activity['image_body']}
+            var back_image = "{php echo tomedia($activity['image_body'])}";
+            $("body").css("background-image", "url(" + back_image + ")");
+            {else}
+            $("body").css("background-image", "url(../addons/crad_qrcode_red/template/mobile/img/bj.png)");
+            {/if}  
+        </script>
+    </head>
+    <div class="total">
+        <div class="pocket">
+            <form  action="" method="post" enctype="multipart/form-data" id='user_edit'>
+                <div class="inputs">
+                    <input type="text" name="realname" id="realname" value="{$user['realname']}" placeholder="请输入姓名"/>
+                </div>
+                <div class="inputs">
+                    <input type="text" name="tel" id="tel" value="{$user['tel']}" placeholder="请输入手机号码"/>
+                </div>
+                {if $activity['other_field']}
+                <div class="inputs">
+                    <input type="text" name="other_info" id="other_info" value="{$user['other_info']}" placeholder="请输入{$activity['other_field']}"/>
+                </div>
+                {/if}
+                <div class="texts">
+                    <textarea placeholder="请输入您的描述" name="comment" id="comment">{$user['comment']}</textarea>
+                </div>
+                <div class="btn">
+                    <!--		   	 <div class="btn_one">
+                                                    重置
+                                             </div>-->
+                    <div class="btn_two">
+                        提交
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        {if $cfg['copyright']}
+        <div class="copy">
+
+            {$cfg['copyright']}
+
+        </div>
+        {/if}
+
+    </div>
+    <script type="text/javascript">
+
+        $('.btn_two').click(function () {
+            var tel = $('#tel').val();
+            var realname = $('#realname').val();
+            if (tel == '' || realname == '') {
+                alert('姓名和手机号码不能为空');
+                return false;
+            }
+            var tel = $('#tel').val();
+            if (tel.search(/^([0-9]{11})?$/) == -1) {
+                alert('手机号码格式错误');
+                return false;
+            }
+            var sendurl = "{php echo $this->createMobileUrl('ajax_info',array('op'=>'user_info','aid'=>$aid))}";
+            var form = $('#user_edit').serialize();
+            $.post(sendurl, form, function (ret) {
+                if (ret.sta == 1) {
+                    alert("恭喜您,信息保存成功，请等待审核");
+                    return;
+                }
+                alert(ret.error);
+            }, 'json');
+        });
+
+    </script>
+    <script>
+        wx.ready(function () {
+           
+            wx.hideMenuItems({
+                menuList: [
+                    'menuItem:share:appMessage'
+                            , 'menuItem:share:timeline'
+                ],
+                success: function (res) {
+                },
+                fail: function (res) {
+                }
+            });
+        });
+    </script>
+</body>
+</html>

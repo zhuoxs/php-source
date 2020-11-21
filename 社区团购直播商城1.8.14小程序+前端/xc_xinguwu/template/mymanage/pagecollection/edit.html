@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {template 'common/edithead'}
+    <!--微擎 -->
+    <!--这个放在最后一切平白安全-->
+    <script type="text/javascript" src="./resource/js/require.js?v=20170915"></script>
+    <style>
+        #contnets li{
+            display: inline;
+            border: 1px solid #428BCA;
+            padding: 2px 6px;
+        }
+    </style>
+</head>
+<body class="nav-md" style="min-width: 800px">
+<div>
+    <div class="container xc_edit_from">
+        <div class="main_container" style="overflow-x: hidden;min-height: 100vh;background-color: white;width: 100%;">
+            <div class="col-md-12 col-xs-12">
+                <div class="x_panel">
+
+                    <div class="page-header">
+                        <h3>网站数据采集</h3>
+                    </div>
+
+
+                    <div class="x_content">
+                        <br/>
+                        <form action="{php echo $this->createWebUrl($_GPC['do'], array('op'=>'save'));}"
+                              method="post"
+                              class="form-horizontal form" id="form">
+
+
+                            <div class="form-group">
+                                <label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">网址</label>
+                                <div class="col-xs-12 col-sm-8">
+                                    <div class="input-group">
+                                        <input type="text" name="xc[weburl]" class="form-control" />
+                                        <span class="input-group-btn">
+                                            <button type="button" class="btn btn-info" id="weburl_btn">采集</button>
+                                        </span>
+                                    </div>
+
+                                </div>
+                            </div>
+
+
+                            <div class="form-group">
+                                <label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">输入编码方式</label>
+                                <div class="col-xs-12 col-sm-2">
+                                    <input type="text" name="xc[intEncoding]" class="form-control" />
+                                    <span class="help-block">正常情况下不用填</span>
+                                </div>
+
+                                <label class="col-xs-12 col-sm-3 col-md-2 col-lg-1 control-label">输出编码方式</label>
+                                <div class="col-xs-12 col-sm-2">
+                                    <input type="text" name="xc[outEncoding]" class="form-control" />
+                                    <span class="help-block">正常情况下不用填</span>
+                                </div>
+
+                            </div>
+
+                            <div id="contnets" style="display: none">
+
+                                <div class="page-header">
+                                    <h3>采集结果</h3>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">名称</label>
+                                    <div class="col-xs-12 col-sm-8">
+                                        <p class="form-control-static" id="title">12333</p>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">价格(元)</label>
+                                    <div class="col-xs-12 col-sm-8">
+                                        <p class="form-control-static" id="price">12333</p>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">图片</label>
+                                    <div class="col-xs-12 col-sm-8" id="imgs">
+
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">属性</label>
+                                    <div class="col-xs-12 col-sm-8"  id="attrs">
+
+                                    </div>
+                                </div>
+
+
+                            </div>
+
+
+
+
+
+
+
+
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{template 'common/editfoot'}
+
+<script>
+
+
+    $('#weburl_btn').click(function () {
+        if ($('#weburl').val() == ''){
+            return;
+        }
+        xajaxfrom($('#form'));
+    });
+
+
+
+    function xajaxfrom(form) {
+        var $postdate = {};
+        $postdate['weburl'] = $('input[name="xc[weburl]"]').val();
+        $postdate['intEncoding'] = $('input[name="xc[intEncoding]"]').val();
+        $postdate['outEncoding'] = $('input[name="xc[outEncoding]"]').val();
+        xpagecss.xload();
+
+
+        $.ajax({
+            type: $(form).attr("method"),
+            url: $(form).attr("action"),
+            dataType: "json",
+            data: $postdate,
+            success: function (msg) {
+                xpagecss.close();
+                $('#contnets').show();
+                $('#title').text(msg.title);
+                $('#price').text(msg.price);
+                $('#imgs').empty();
+                if (msg.imgs.length > 0 ){
+                    var  html= '';
+                    $.each(msg.imgs,function (i,n) {
+                        html +=' <img src="'+change_img_x(n['img'])+'">'
+                    });
+
+                    $('#imgs').append(html);
+                }
+
+                $('#attrs').empty();
+                if (msg.attrs.length > 0){
+                    var html = '';
+                    $.each(msg.attrs,function (i,n) {
+                        html +=' <div class="form-group"> <div class="col-xs-12 col-sm-3 col-md-2 col-lg-1 form-control-static">'+n.name+':</div> <div class="col-xs-12 col-sm-8 col-md-8 col-lg-8 form-control-static"> <ul> ';
+                        $.each(n.list,function (j,m) {
+                            html +='<li>'+m.value+'</li>'
+                        });
+                        html +='</ul> </div> </div>';
+                    });
+
+                    $('#attrs').append(html);
+                }
+            }
+        });
+    }
+
+    function change_img_x($str) {
+        $str =$str.replace('50x50','200x200');
+        return $str;
+    }
+
+</script>
+
+</body>
+</html>

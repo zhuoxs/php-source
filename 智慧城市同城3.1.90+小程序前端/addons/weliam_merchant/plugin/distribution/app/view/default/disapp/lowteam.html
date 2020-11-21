@@ -1,0 +1,125 @@
+{php include wl_template('common/header');}
+<style>
+	.search-header{color: #fff;position: absolute;top: 0;left: 0;z-index: 998;width: 100%;padding: 6px 0;margin-bottom: 5px;}
+	.search-header .our-input{margin: 2px auto;width: 100%;height: 30px;line-height: 30px;border: none;border-radius: 20px;background-color: #fff;}
+	.search-header .our-input span{color: #999999;font-size: 13px;word-break:keep-all;}
+	.search-header .our-input .icon-search{color: #333;font-size: 14px;margin-left: 8px;}
+	.search-header .search-btn{width: 100%;padding-left:5px;padding-right:5px;}
+	.search-tips li{margin: .2rem .4rem;list-style-type: none;float: left;}
+</style>
+<div class="page-group">
+    <div class="page page-current" id="page-index">
+    	<header class="bar bar-nav">
+		    <a class="button button-link button-nav pull-left back" href="{php echo app_url('distribution/disappbase/index')}">
+		      <span class="icon icon-left"></span>返回
+		    </a>
+		    <h1 class="title">我的团队</h1>
+		</header>
+		<div class="content native-scroll  infinite-scroll">
+			<div class="searchbar search-header" style="position:relative;">
+				<div class="search-input search-btn">
+					<div class="our-input">
+						<span class="icon iconfont icon-search"></span>
+						<input type="text"  id="sear" style="margin-left: 40px;border: 0;width: 80%;"  placeholder="请输入下级昵称"  />
+					</div>
+				</div>
+			</div>
+			{if $_W['wlsetting']['distribution']['ranknum']>1}
+			<div class="buttons-tab">
+				<a href="{php echo app_url('distribution/disappbase/lowteam',array('level'=>'one'))}" class="button {if $level=='one'}active{/if}">一级（{$onenum}）</a>
+				<a href="{php echo app_url('distribution/disappbase/lowteam',array('level'=>'two'))}" class="button {if $level=='two'}active{/if}">二级（{$twonum}）</a>
+			</div>
+			{/if}
+		  	<div class="allorder">
+				<div class="list-block media-list">
+					<ul id="myteam">
+						<!--全部用户表-->
+					</ul>
+				</div>
+			</div>
+			<div class="weui-loadmore loading_more" style="display: block;">
+	            <i class="weui-loading"></i>
+	            <span class="weui-loadmore__tips">正在加载</span>
+	        </div>
+	        <div class="weui-loadmore weui-loadmore_line" style="display: none;">
+	            <span class="weui-loadmore__tips" style="background-color: #EFEFF4;">暂无更多数据</span>
+	        </div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="orderlist">
+{{# for(var i = 0, len = d.length; i < len; i++){ }}
+<li class="item-content">
+	<div class="item-media">
+		<img src="{{d[i].avatar}}" width="40" style="border-radius: 50%;height: 2.5rem;width: 2.5rem;">
+	</div>
+	<div class="item-inner">
+		<div class="item-title-row">
+			<div class="item-title" style="font-size: .7rem">
+				{{d[i].nickname}} {{# if(d[i].mobile){ }} - <span style="font-size: .7rem;color: gray;">{{d[i].mobile}}</span>{{# } }}
+			</div>
+			{{# if(d[i].lockflag > 0){ }}
+			<div class="item-after" style="font-size: .6rem">未锁定</div>
+			{{# } else { }}
+			<div class="item-after" style="font-size: .6rem">{{d[i].levelname}}</div>
+			{{# } }}
+		</div>
+		<div class="item-subtitle">
+			<span style="font-size: .6rem;">总佣金:<span style="color: orangered;">￥{{d[i].dismoney}}</span> 下级:<span style="color: orangered;">{{d[i].lownum}}</span>人</span>
+		</div>
+	</div>
+</li>
+{{# } }}
+</script>
+<script>
+	$(function() {
+		$(document).on("pageInit", "#page-index", function(e, id, page) {
+			var loading = false;
+			var pagenum = 1,
+			    endmark = 0;
+			function addItems(pagenum){
+				var sear = $('#sear').val();
+				$.post("{php echo app_url('distribution/disappbase/getlowpeople',array('level'=>$level))}",{pindex:pagenum,sear:sear},function(d){
+					if (d.length > 0) {
+						var gettpl1 = document.getElementById('orderlist').innerHTML;
+						laytpl(gettpl1).render(d, function(html){
+						   $("#myteam").append(html);
+						});
+						$('.loading_more').hide();
+						loading = false;
+					}else{
+						$('.loading_more').hide();
+						$('.weui-loadmore_line').show();
+						endmark = 1;
+					}
+				}, 'json');
+			}
+			addItems(pagenum);
+			
+			$(page).on('infinite', function() {
+				if (endmark || loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+				pagenum++;
+				addItems(pagenum);
+				}, 500);
+			});
+
+			$('#sear').change(function (){
+				loading = false;
+				pagenum = 1;
+				endmark = 0;
+				$("#myteam").html('');
+				$('.loading_more').show();
+				$('.weui-loadmore_line').hide();
+				addItems(1);
+			});
+
+		});
+		$.init();
+	});
+</script>
+
+
+{php include wl_template('common/footer');}

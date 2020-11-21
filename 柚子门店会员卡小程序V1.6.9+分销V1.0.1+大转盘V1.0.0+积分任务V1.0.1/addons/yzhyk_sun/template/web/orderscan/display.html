@@ -1,0 +1,103 @@
+{template 'public/header'}
+
+<!--标题-->
+<div class="title">
+    <blockquote class="layui-elem-quote">扫码购列表</blockquote>
+</div>
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入关键字..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="store_id" id="store_id" style="width: 200px;" class="select2 layui-form-select" lay-ignore></select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+
+<!--数据表-->
+<script type="text/html" id="dataDate">
+    {{# if(d.time){ }}
+    {{# var date = new Date(d.time * 1000) }}
+    {{ date.getFullYear() }}-{{ date.getMonth()+1<10?'0'+(date.getMonth()+1):date.getMonth()+1 }}-{{ date.getDate()<10 ? '0' + date.getDate():date.getDate() }}
+    {{# } }}
+</script>
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnSee">查看</a>
+</script>
+<div class="table-box">
+    <table class="layui-hide" id="laytable"></table>
+</div>
+
+<script type="text/javascript">
+    layui.use('table', function () {
+        var table = layui.table;
+//        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{php echo $this->createWebUrl('orderscan',array('op'=>query));}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {field:'order_number', width:230, title: '订单号',fixed:'left',sort:true},
+                {field:'store_name', width:180, title: '门店名称',sort:true},
+                {field:'user_name', width:180, title: '用户名称',sort:true},
+                {field:'amount', width:100, title: '总金额',sort:true},
+                {field:'pay_amount', width:100, title: '支付金额',sort:true},
+                {field:'pay_time', width:130, title: '支付日期',sort:true,templet: '#dataDate'},
+                {field:'pay_type', width:100, title: '支付方式',sort:true},
+                {field:'time', width:200, title: '下单时间',sort:true,templet: '#dataDate'},
+                {field:'o',fixed:'right',width:200, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true,
+            foot:true,
+            height:'full-300',
+        });
+//        搜索
+        $('#btnSearch').unbind().click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    store_id: $('#store_id').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        store_id: $('#store_id').val(),
+                    }
+                });
+            }
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        $.get("{php echo $this->createWebUrl('store',array('op'=>select));}", function (ret) {
+            console.log(ret);
+            ret = JSON.parse(ret);
+            ret.unshift({id: '', text: '请选择门店'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#store_id').select2({
+                data: ret,
+            })
+        })
+    });
+</script>
+
+{template 'public/footer'}

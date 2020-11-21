@@ -1,0 +1,150 @@
+{template '_header'}
+
+
+<div class="panel panel-default panel-class" style="padding:10px;margin-top:20px;">
+    <div class="panel-heading">
+        收银台订单
+    </div>
+    <div class="panel-body" >
+        <form action="./cashier.php" method="get" class="form-horizontal" role="form" id="form1">
+            <input type="hidden" name="i" value="{$_GPC['i']}" />
+            <input type="hidden" name="r" value="order" />
+            <div class='row  m-b-sm m-t-sm moresearch' style='overflow: hidden;'>
+                <div class="page-toolbar row m-b-sm m-t-sm ">
+                    <div class="col-sm-5">
+
+                        <button class="btn btn-default btn-sm"  type="button" data-toggle='refresh' style='float:left;'><i class='fa fa-refresh'></i></button>
+
+                        {php echo tpl_daterange('time', array('sm'=>true, 'placeholder'=>'支付时间'),true);}
+                    </div>
+
+
+                    <div class="col-sm-6 pull-right">
+
+                        <select name='operatorid'  class='form-control  input-sm select-sm'   style="width:120px;"  >
+
+                            <option value=''>选择操作员</option>
+                            {loop $operator $op}
+                            <option value='{$op["id"]}' {if $_GPC['operatorid']===(string)$op["id"]}selected{/if}>{$op["title"]}</option>
+                            {/loop}
+
+                        </select>
+
+                        <select name='paytype'  class='form-control  input-sm select-sm'   style="width:120px;"  >
+
+                            <option value=''>支付方式</option>
+                            {loop  CashierModel::$paytype $kpay $pay}
+                            <option value='{$kpay}' {if $_GPC['paytype']===(string)$kpay}selected{/if}>{$pay}</option>
+                            {/loop}
+                        </select>
+
+                        <select name='status'  class='form-control  input-sm select-sm'   style="width:140px;"  >
+
+                            <option value=''>付款状态</option>
+                            <option value='0' {if $_GPC['status']=='0'}selected{/if}>未支付</option>
+                            <option value='1' {if $_GPC['status']=='1'}selected{/if}>已支付</option>
+                            <option value='-1' {if $_GPC['status']=='-1'}selected{/if}>已关闭/已退款</option>
+
+                        </select>
+
+                        <div class="input-group">
+                                                <span class="input-group-btn">
+                                                    <button class="btn btn-sm" disabled> 流水金额</button>
+                                                </span>
+                            <input type="text" class="form-control input-sm" value="{$total_money}元" placeholder="" disabled/>
+                            <span class="input-group-btn">
+                                                    <button class="btn btn-sm" type="submit"> 查询</button>
+                                                </span>
+                            <span class="input-group-btn">
+                                                    <button class="btn btn-sm" type="submit" name="export" value="1"> 导出</button>
+                                                </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <table class="table table-hover no-margins">
+            <thead>
+            <tr>
+                <th class="col-sm-1">状态</th>
+                <th class="col-sm-2">订单号</th>
+                <th class="col-sm-1">日期</th>
+                <th class="col-sm-1">操作员</th>
+                <th class="col-sm-1">支付方式</th>
+                <th class="col-sm-1">金额</th>
+                <th class="col-sm-1">商品金额<br/>商城商品</th>
+                <th class="col-sm-1">随机减<br/>满额减</th>
+                <th class="col-sm-1">余额抵扣<br/>固定折扣</th>
+                <th class="col-sm-1">优惠券减免<br/>赠送积分</th>
+                <th class="col-sm-1" style="width: 13%">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $list $key $value}
+            <tr data-status="{$value['status']}">
+                <td id="{$value['id']}">{if $value['status'] == '1'}<span class="label label-primary">已支付</span>{elseif $value['status'] == '-1'}<span class="label label-warning">已关闭/已退款</span>{else}<span class="label label-default">未支付</span>{/if}</td>
+                <td title="{$value['logno']}">{$value['logno']}</td>
+                <td title="{php echo date('Y-m-d H:i',$value['createtime'])}">{php echo date('Y-m-d',$value['createtime'])}<br>{php echo date('H:i',$value['createtime'])}</td>
+                <td>{if empty($value['operatorid'])}管理员{else}{php echo isset($operator[$value['operatorid']]) ? $operator[$value['operatorid']]['title'] : ''}{/if}</td>
+                <td>{php echo CashierModel::$paytype[$value['paytype']]}</td>
+                <td>{php echo $value['money'] + $value['deduction']}</td>
+                <td>
+                    <span {if floatval($value['goodsprice'])>0}class="text-white label label-primary"{/if}>{$value['goodsprice']}</span>
+                    <br/>
+                    <span {if floatval($value['orderprice'])>0}class="text-white label label-primary"{/if}>{$value['orderprice']}</span>
+                </td>
+                <td>
+                    <span {if floatval($value['randommoney'])>0}class="text-white label label-danger"{/if}>{$value['randommoney']}</span>
+                    <br/>
+                    <span {if floatval($value['enough'])>0}class="text-white label label-danger"{/if}>{$value['enough']}</span>
+                </td>
+                <td>
+                    <span {if floatval($value['deduction'])>0}class="text-white label label-danger"{/if}>{$value['deduction']}</span>
+                    <br/>
+                    <span {if floatval($value['discountmoney'])>0}class="text-white label label-danger"{/if}>{$value['discountmoney']}</span>
+                </td>
+                <td>
+                    <span {if floatval($value['usecouponprice'])>0}class="text-white label label-danger"{/if}>{$value['usecouponprice']}</span>
+                    <br/>
+                    <span {if floatval($value['present_credit1'])>0}class="text-white label label-danger"{/if}>{$value['present_credit1']}</span>
+                </td>
+                <td>
+                    {if $value['status'] == 1 && ($value['money'] + $value['deduction'])>0}
+                    {if time()< $value['paytime']+$payday*3600*24&&$value['is_applypay']==0}
+                    <button class="btn btn-sm refund" type="submit" data-toggle='ajaxPost' data-confirm="确认退款?" data-href="{php echo cashierUrl('order/refund',array('id'=>$value['id']))}"> 退款</button>
+                    {else}
+                    <button class="btn btn-sm  disabled"  data-toggle="tooltip" title="交易完成之后{$payday}天内可申请退款" data-placement="right">退款</button>
+                    {/if}
+                    {/if}
+                    {if $value['status'] == -1}
+                    <span> 退款人<br>{if !empty($operator[$value['refunduser']]['title'])}{$operator[$value['refunduser']]['title']}{else}管理员{/if}</span>
+                    {/if}
+                </td>
+            </tr>
+            {/loop}
+            <tr><td colspan="11" class="page">{$pager}</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+<script>
+    $(function () {
+        $("table tbody tr").each(function (index,item) {
+            var $itme = $(item);
+            var td = $itme.find('td').eq(0);
+            if ($.trim(td.text()) == '已支付' || $itme.data('status') == -1){
+                return;
+            }
+            var id = td.attr('id');
+            if (typeof id != 'undefined'){
+                $.getJSON("{php echo cashierUrl('index/orderquery')}"+"&orderid="+id,function (order) {
+                    if (order.status == 1){
+                        td.html('<span class="label label-primary">已支付</span>');
+                    }
+                })
+            }
+        });
+    });
+</script>
+{template '_footer'}

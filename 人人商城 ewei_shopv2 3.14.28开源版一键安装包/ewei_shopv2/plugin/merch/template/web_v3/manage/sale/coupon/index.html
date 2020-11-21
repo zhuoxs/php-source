@@ -1,0 +1,222 @@
+{template '_header'}
+<div class='page-header'>
+	当前位置：<span class="text-primary">优惠券管理 </span>
+</div>
+<!--<div class='page-heading'>
+    <span class='pull-right'>
+            {ifp 'sale.coupon.add'}
+					 <a class='btn btn-primary btn-sm' href="{php echo merchUrl('sale/coupon/add')}"><i class='fa fa-plus'></i> 添加购物优惠券</a>
+				       {/if}
+    </span>
+    <h2>优惠券管理 <small>总数: <span class='text-danger'>{$total}</span> 排序数字越大越靠前显示</small></h2></div>-->
+
+<div class="page-content">
+   <form action="./merchant.php" method="get" class="form-horizontal table-search" role="form" id="form1">
+		<input type="hidden" name="c" value="site" />
+		<input type="hidden" name="a" value="entry" />
+		<input type="hidden" name="m" value="ewei_shopv2" />
+		<input type="hidden" name="do" value="web" />
+		<input type="hidden" name="r" value="sale.coupon" />
+		<div class="page-toolbar">
+			<span class='col-sm-4'>
+				{ifp 'sale.coupon.add'}
+					<a class='btn btn-primary' href="{php echo merchUrl('sale/coupon/add')}"><i class='fa fa-plus'></i> 添加购物优惠券</a>
+				{/if}
+			</span>
+			<div class="col-sm-8 pull-right">
+				<div class='input-group input-group-sm' style='float:left;'   >
+					{php echo tpl_daterange('time', array('placeholder'=>'创建时间'),true);}
+				</div>
+				<div class="input-group">
+					<span class="input-group-select">
+						<select name='gettype'  class='form-control  input-sm select-md'   style="width:100px;padding:0 5px;"  >
+							<option value=''>领券中心</option>
+							<option value='0' {if $_GPC['gettype']=='0'}selected{/if}>不显示</option>
+							<option value='1' {if $_GPC['gettype']=='1'}selected{/if}>显示</option>
+						</select>
+					</span>
+					<span class="input-group-select">
+						<select name='type' class='form-control  input-sm select-md'   style="width:100px;"  >
+							<option value=''>类型</option>
+							<option value='0' {if $_GPC['type']=='0'}selected{/if}>购物</option>
+							<option value='1' {if $_GPC['type']=='1'}selected{/if}>充值</option>
+						</select>
+					</span>
+					<span class="input-group-select">
+						<select name='catid' class='form-control  input-sm select-md'   style="width:100px;"  >
+							<option value=''>分类</option>
+							{loop $category $k $c}
+							<option value='{$k}' {if $_GPC['catid']==$k}selected{/if}>{$c['name']}</option>
+							{/loop}
+						</select>
+					</span>
+					<input type="text" class="input-sm form-control" name='keyword' value="{$_GPC['keyword']}" placeholder="优惠券名称"> <span class="input-group-btn">
+				 	<button class="btn btn-primary" type="submit"> 搜索</button> </span>
+				</div>
+			</div>
+
+			<!--<div class="page-toolbar row m-b-sm m-t-sm">
+				<div class="col-sm-1">
+				 
+				  <div class="input-group-btn">
+						<button class="btn btn-default btn-sm"  type="button" data-toggle='refresh'><i class='fa fa-refresh'></i></button>
+
+
+
+
+				   </div>
+			
+				   </div>-->
+
+		</div>
+   </form>
+    
+	{if count($list)>0}
+	<div class="page-table-header">
+		<input type="checkbox">
+		<span class="btn-group">
+			{ifp 'sale.coupon.delete'}
+				<button class="btn btn-default btn-sm dropdown-toggle btn-operation" type="button" data-toggle='batch-remove' data-confirm="确认要删除?" data-href="{php echo merchUrl('sale/coupon/delete')}"><i class='fa fa-trash'></i> 删除</button>
+			{/if}
+		</span>
+	</div>
+	<table class="table table-hover table-responsive">
+		<thead class="navbar-inner" >
+                <tr>
+                    <th style="width:25px;"></th>
+                     <th style="width:50px;">排序</th>
+                     <th style="">优惠券名称</th>
+                     <th style="" >使用条件</th>
+                     <th style="" >优惠</th>
+                     <th style="" >剩余数量</th>
+	    			<th style="">领取中心</th>
+                    <th style="width:150px;">创建时间</th>
+                    <th style="text-align: center;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {loop $list $row}
+                <tr>
+                      	<td>
+									<input type='checkbox'   value="{$row['id']}"/>
+							</td>
+					  <td>
+			  {ifp 'sale.coupon.edit'}
+				<a href='javascript:;' data-toggle='ajaxEdit' data-href="{php echo merchUrl('sale/coupon/displayorder',array('id'=>$row['id']))}" >{$row['displayorder']}</a>
+				{else}
+				{$row['displayorder']} 
+				{/if}
+						</td>
+                
+		    <td>{if $row['coupontype']==0}
+				  <label class='label label-success'>购物</label>
+						  {else}
+						  <label class='label label-warning'>充值</label>
+					 {/if}
+					 {if !empty($row['catid'])}
+					 <label class='label label-primary'>{$category[$row['catid']]['name']}</label>
+					 {/if}
+					 <br/>{$row['couponname']}
+					  </td>
+					  <td>
+						  {if $row['enough']>0}
+						  <span class="text-danger">满{$row['enough']}可用</span>
+						  {else}
+						    <span class="text-warning">不限</span>
+						  {/if}
+					 </td>
+					 <td>
+						 {if $row['backtype']==0}
+						 	立减 {$row['deduct']} 元
+						 {else if $row['backtype']==1}
+						 	打 {$row['discount']} 折
+						 {else if $row['backtype']==2}
+							 {if $row['backmoney']>0}返 {$row['backmoney']} 余额;{/if}
+							 {if $row['backcredit']>0}返 {$row['backcredit']} 积分;{/if}
+							 {if $row['backredpack']>0}返 {$row['backredpack']} 红包;{/if}
+						 {/if}
+					 </td>
+					 <td>
+						 {ifp 'coupon.log.view'}
+						 <a href="{php echo merchUrl('sale/coupon/log',array('couponid'=>$row['id']))}"
+							data-toggle='popover'
+							data-html='true'
+							data-trigger='hover'
+							data-content="已使用: {$row['usetotal']} <br/> 已发出: {$row['gettotal']}">
+							 {if $row['total']==-1}无限{else}{php echo $row['total'] -  $row['gettotal']}{/if} <i class='fa fa-question-circle'></i>
+						 </a>
+						 {else}
+						 <span>{if $row['total']==-1}无限{else}{php echo $row['total'] -  $row['gettotal']}{/if}</span>
+						 {/if}
+					 </td>
+                                      
+                     <td>{if $row['gettype']==0}
+						 <span class="text-default">不显示</span>
+						 {else}
+						 
+						 {if $row['credit']>0 || $row['money']>0}
+						 {if $row['credit']>0}<label class='label label-primary'>{$row['credit']} 积分</label><br/>{/if}
+						 {if $row['money']>0}<label class='label label-danger'>{$row['money']} 现金</label><br/>{/if}
+						 {else}
+						 <span class='text-warning'>免费</span>
+						 {/if}
+					 {/if}
+					 </td>
+                      <td>{php echo date('Y-m-d H:i',$row['createtime'])}</td>
+					<td style="text-align: center;">
+						{ifp 'sale.coupon.edit'}
+						<a class='btn btn-default btn-operation btn-op' href="{php echo merchUrl('sale/coupon/edit',array('id' => $row['id']));}">
+						 <span data-toggle="tooltip" data-placement="top" title="" data-original-title="{ifp 'sale.coupon.edit'}编辑{else}查看{/if}">
+								<i class='icow icow-bianji2'></i>
+						   </span>
+						</a>
+
+						{/if}
+						<a href="javascript:;" data-url="{php echo mobileUrl('sale/coupon/detail', array('id' => $row['id']),true)}"  class="btn btn-default js-clip btn-operation btn-op">
+						 <span data-toggle="tooltip" data-placement="top"  data-original-title="复制链接">
+							   <i class='icow icow-lianjie2'></i>
+						   </span>
+						</a>
+						{ifp 'sale.coupon.delete'}
+						<a class='btn btn-default btn-operation btn-op' data-toggle='ajaxRemove' href="{php echo merchUrl('sale/coupon/delete',array('id' => $row['id']));}" data-confirm="确定要删除该优惠券吗？">
+						 <span data-toggle="tooltip" data-placement="top" title="" data-original-title="删除">
+								<i class='icow icow-shanchu1'></i>
+						   </span>
+						</a>
+
+						{/if}
+						<a href="javascript:void(0);" class="btn btn-default btn-operation btn-op" data-toggle="popover" data-trigger="hover" data-html="true"
+						   data-content="<img src='{$row['qrcode']}' width='130' alt='链接二维码'>" data-placement="auto right">
+							<i class="icow icow-erweima3"></i>
+						</a>
+                    </td>
+                </tr>
+                {/loop}
+            </tbody>
+		<tfoot>
+		<tr>
+			<td colspan="4">
+				<input type="checkbox">
+				<span class="btn-group">
+					{ifp 'sale.coupon.delete'}
+					<button class="btn btn-default btn-sm dropdown-toggle btn-operation" type="button" data-toggle='batch-remove' data-confirm="确认要删除?" data-href="{php echo merchUrl('sale/coupon/delete')}">
+						<i class='icow icow-shanchu1'></i>删除
+					</button>
+					{/if}
+				</span>
+			</td>
+			<td colspan="5" style="text-align: right">{$pager}</td>
+		</tr>
+		</tfoot>
+          
+        </table>
+    {else}
+	<div class='panel panel-default'>
+		<div class='panel-body' style='text-align: center;padding:30px;'>
+			暂时没有任何优惠券!
+		</div>
+	</div>
+{/if}
+	 </form>
+</div>
+{template '_footer'}

@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{$_W['sys_name']}</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="">
+    {template 'public/header'}
+    <script src="{MODULE_URL}template/public/js/jquery-ui-1.10.3.min.js"></script>
+    <link href="{MODULE_URL}template/public/css/iconfont.css" rel="stylesheet">
+
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+    {template 'public/top'}
+    {template 'public/left'}
+
+    <div class="layui-body">
+        <div class="layui-main">
+            <div class="layui-tab">
+                <ul class="layui-tab-title">
+                    <li {if $operation == 'display'} class="layui-this" {/if}><a href="{php echo $this->createWebUrl('store_goods',array('op' =>'display'))}">商品管理</a></li>
+                    <li {if empty($one['id']) && $operation == 'post'} class="layui-this" {/if}><a href="{php echo $this->createWebUrl('store_goods',array('op' =>'post'))}">添加</a></li>
+                    {if !empty($one['id']) && $operation == 'post'}<li class="layui-this"><a href="{php echo $this->createWebUrl('store_goods',array('op' =>'post','id'=>$one['id']))}">编辑</a></li>{/if}
+                </ul>
+            </div>
+
+        {if $operation == 'display'}
+            <div class="layui-form">
+                <table class="layui-table" lay-even="" lay-skin="nob">
+                    <colgroup>
+                        <col width="50">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>排序</th>
+                            <th>商品标题</th>
+                            <th>库存</th>
+                            <th>销量</th>
+                            <th>价格</th>
+                            <th>商品属性(点击可编辑)</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {php $this_statuses = array('0'=>'禁用','1'=>'启用'); }
+                        {loop $list $item}
+                        <tr>
+                            <td>{$item['id']}</td>
+                            <td>{$item['displayorder']}</td>
+                            <td>{$item['title']}</td>
+                            <td>{$item['inventory']}</td>
+                            <td>{$item['sales']}</td>
+                            <td>{$item['price_format']}</td>
+                            <td>
+                                <!-- <button class="layui-btn {if $item['isrecommand']==1}layui-btn-normal{else}layui-btn-primary{/if} layui-btn-sm btn-proerty" data-data="{$item['isrecommand']}" data-id="{$item['id']}" data-type="recommand">首推</button> -->
+                                <button class="layui-btn {if $item['isnew']==1}layui-btn-normal{else}layui-btn-primary{/if} layui-btn-sm btn-proerty" data-data="{$item['isnew']}" data-id="{$item['id']}" data-type="new">新品</button>
+                                <button class="layui-btn {if $item['ishot']==1}layui-btn-normal{else}layui-btn-primary{/if} layui-btn-sm btn-proerty"  data-data="{$item['ishot']}" data-id="{$item['id']}" data-type="hot">人气</button>
+                                <!-- <button class="layui-btn {if $item['isdiscount']==1}layui-btn-normal{else}layui-btn-primary{/if} layui-btn-sm btn-proerty" data-data="{$item['isdiscount']}" data-id="{$item['id']}" data-type="discount">折扣</button> -->
+                                <button class="layui-btn {if $item['enabled']==1}layui-btn-normal{else}layui-btn-primary{/if} layui-btn-sm btn-proerty" data-data="{$item['enabled']}" data-id="{$item['id']}" data-type="enabled">{if $item['enabled']==1}上架{else}下架{/if}</button>
+                            </td>
+                            <td style="text-align:left;">
+                                <a href="{php echo $this->createWebUrl('store_goods', array('op' => 'post', 'id' => $item['id']))}" class="layui-btn layui-btn-normal" title="编辑">编辑</a>
+                                <a href="javascript:;" class="layui-btn layui-btn-danger btn-del" data-id="{$item['id']}" title="删除">删除</a>
+                            </td>
+                        </tr>
+                        {/loop}
+                    </tbody>
+                </table>
+                <div class="pager">
+                    {$pager}
+                </div>
+            </div>
+
+            <script>
+                layui.use(['laypage', 'layer'], function(){
+                    var laypage = layui.laypage;
+                    var layer = layui.layer;
+
+                    // 删除
+                    $('.btn-del').click(function () {
+                        $obj = $(this);
+                        $del_id = $obj.data('id');
+                        layer.confirm('确定要删除吗？', {
+                            offset: '30%',
+                            btn: ['再想想', '删除'],
+                            scrollbar: false,
+                            closeBtn: 0,
+                        }, function (i) {
+                            layer.close(i);
+                        }, function (i) {
+                            let $url = "{php echo $this->createWebUrl('store_goods', array('op'=>'delete'))}";
+
+                            $.ajax({
+                                type: "POST",
+                                url: $url,
+                                dataType: 'json',
+                                data: {
+                                    id: $del_id
+                                },
+                                success: function (rs) {
+                                    console.log(rs);
+                                    if (rs.message.errno == '0') {
+                                        layer.msg('删除成功！', {
+                                            time: 500
+                                        },
+                                        function () {
+                                            $obj.closest('tr').fadeOut(200, function () {
+                                                $obj.remove();
+                                            });
+                                        });
+                                    } else {
+                                        layer.alert(rs.message.message);
+                                    }
+                                },
+                                error: function () {
+                                    layer.alert('提交过程发生错误，请与管理员联系！');
+                                }
+                            });
+                        });
+                    });
+
+                    // 设置属性
+                    $('.btn-proerty').click(function () {
+                        $obj = $(this);
+                        $type = $obj.data('type');
+                        $id = $obj.data('id');
+                        $data = $obj.data('data');
+
+                        let $url = "{php echo $this->createWebUrl('store_goods', array('op'=>'goods_property'))}";
+
+                        $.ajax({
+                            type: "POST",
+                            url: $url,
+                            dataType: 'json',
+                            data: {
+                                type: $type,
+                                id: $id,
+                                data: $data
+                            },
+                            success: function (rs) {
+                                console.log(rs);
+                                if (rs.result == '0') {
+                                    layer.msg('设置成功！', {
+                                        time: 500
+                                    },
+                                    function () {
+                                        $obj.data('data', rs.data);
+
+                                        if (rs.data == 0) {
+                                            $obj.removeClass('layui-btn-normal').addClass('layui-btn-primary');
+
+                                            if ($type == 'enabled') {
+                                                $obj.text('下架');
+                                            }
+
+                                        } else {
+                                            $obj.removeClass('layui-btn-primary').addClass('layui-btn-normal');
+
+                                            if ($type == 'enabled') {
+                                                $obj.text('上架');
+                                            }
+                                        }
+
+                                        if ($type == 'type') {
+                                            if (rs.data == 1) {
+                                                $obj.removeClass('layui-btn-primary').addClass('layui-btn-normal');
+                                                $obj.text('实体物品');
+                                            } else {
+                                                $obj.removeClass('layui-btn-normal').addClass('layui-btn-primary');
+                                                $obj.text('虚拟物品');
+                                            }
+                                        }
+                                    });
+                                } else {
+                                    layer.alert(rs.message.message);
+                                }
+                            },
+                            error: function () {
+                                layer.alert('提交过程发生错误，请与管理员联系！');
+                            }
+                        });
+                    });
+
+                    // 分页
+                    laypage.render({
+                        elem: $('.pager')
+                        ,limit: '{php echo $psize; }'
+                        ,count: '{php echo $total; }'
+                        ,theme: '#1E9FFF'
+                        ,curr:  '{php echo $pindex; }'
+                        ,hash: '{php echo $pindex; }'
+                        ,jump: function (obj, first) {
+                            if (first != true) {
+                                var currentPage = obj.curr;
+                                window.location.href = "{php echo $this->createWebUrl('store_goods')}&page=" + currentPage;
+                            }
+                        }
+                    });
+
+                    $('.pager').show();
+                });
+
+                function setProperty(obj,id,type){
+                    $(obj).html($(obj).html() + "...");
+                    $.post("{php echo $this->createWebUrl('store_goods', array('op'=>'goods_property'))}"
+                        ,{
+                            id:id,
+                            type:type,
+                            data: obj.getAttribute("data")
+                        }
+                        ,function(d){
+                            $(obj).html($(obj).html().replace("...",""));
+                            if(type=='type'){
+                             $(obj).html( d.data=='1'?'实体物品':'虚拟物品');
+                            }
+                            if(type=='enabled'){
+                             $(obj).html( d.data=='1'?'上架':'下架');
+                            }
+                            $(obj).attr("data",d.data);
+                            if(d.result==1){
+                                $(obj).toggleClass("label-info");
+                            }
+                        }
+                        ,"json"
+                    );
+                }
+            </script>
+
+
+        {elseif $operation == 'post'}
+            <style type="text/css">
+                #param-items .btn-trun { display: inline-block; }
+                #param-items tr .control{width: 110px;}
+                #param-items .icon-addon { font-size: 20px; display: inline-block;  color: #666; }
+                #add-param { line-height: 20px; }
+                #add-param .icon-addon { font-size: 20px; display: inline-block;  color: #666; vertical-align: middle; }
+
+                .input-group-addon .layui-form-checkbox[lay-skin=primary] { margin-top: 0; }
+
+                .mb-10 { margin-bottom: 10px; }
+
+                /* 多规格 */
+                .info { background: #d9edf7; }
+                .success { background: #dff0d8; }
+                .warning { background: #fcf8e3; }
+                .danger { background: #f2dede; }
+                .top-title { padding-bottom: 10px; text-align: center; font-size: 16px; }
+                .flex { display: flex; }
+
+                /* 规格项 */
+                .guige .input-group { display: flex; }
+                .guige .input-group input.form-control { width: 100px; }
+                .guige .input-group .input-group-btn.box { display: flex; width: 130px; }
+                .guige .input-group .input-group-btn.box > a.btn { line-height: 38px; padding: 0 10px; border-right: 0; }
+                .layui-form-item.flex.title>.layui-input-block { margin: 0; width: 100%; }
+                .title .layui-btn { border-radius: 0; }
+                .title .layui-btn+.layui-btn { margin: 0; font-size: 25px; color: #fff; background: red; }
+                .guige .input-group .input-group-btn.box .select { position: absolute; left: 0; width: 38px; height: 100%; z-index: 1; opacity: 0; overflow: hidden; }
+                .guige .input-group .input-group-btn.box .btn img { width: 36px; height: 26px; }
+                .guige .layui-input-block.gd-item-panel { display: flex; flex-wrap: wrap; }
+                .guige .img-thumb-box { width: 37px; height: 36px; text-align: center; border: 1px solid #e7e7eb; border-left: 0; border-right: 0; background: #fff; display: inline-block; line-height: 36px; }
+                .guige .img-thumbnail { border-radius: 0; border: 0; margin: 0; padding: 0; max-width: 100%; max-height: 100%; }
+                .guige .input-group .input-group-btn.box > a.btn:last-child { border-right: 1px solid #e7e7eb; }
+                .group-goods-table { margin-left: 110px; border: 1px solid #ddd; }
+                table#group-goods-table { width: 100%; text-align: center; background: #f2f2f2; }
+                table#group-goods-table td { line-height: 45px; padding: 0 8px; }
+
+                /* table#group-goods-table td.input{width: 200px;} */
+                table#group-goods-table td input { border: 1px solid #eee; line-height: 30px; text-indent: 6px; width: 175px; }
+                #group-goods-table .group-name { text-align: left; text-indent: 10px; }
+                table#group-goods-table td:nth-child(1) { text-align: right; }
+                table#group-goods-table tr.control td input { width: 145px; }
+                tr.control td i { width: 30px; line-height: 30px; display: inline-block; cursor: pointer; text-align: center; border: 1px solid #e7e7eb; position: relative; top: 1px; background: #fff; border-left: 0; }
+                .layui-form-item.flex.title .layui-form-item.flex a.btn-item-trun { height: 38px; border-radius: 0; border: 1px solid #ddd; border-left: 0; }
+                table#group-goods-table .head td { line-height: 50px; border-bottom: 1px solid #ddd; }
+                #specs .layui-elem-quote .layui-form-item.flex.title { margin-bottom: 0; }
+                .group-goods-table { display: none }
+                #specs .layui-elem-quote, #specs .layui-form-item.guige { padding-bottom: 0; }
+                .flex-main { display: flex; width: 100%; align-items: center; }
+            </style>
+            <form class="layui-form fixed" action="" method="post" enctype="multipart/form-data" id="data-form">
+                <input type="hidden" name="id" value="{$one['id']}" />
+                <div class="layui-tab layui-tab-brief" lay-filter="tab">
+                    <ul class="layui-tab-title">
+                        <li class="layui-this">基本信息</li>
+                        <li>商品描述</li>
+                        <li>自定义属性</li>
+                        <li>商品规格</li>
+                        <!-- <li>其他设置</li> -->
+                    </ul>
+                    <div class="layui-tab-content">
+                        <!-- 基本信息 -->
+                        <div class="layui-tab-item layui-show">
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">是否上架</label>
+                                <div class="layui-input-block">
+                                    <input type="radio" name="enabled" value="1" title="上架" {if $one['enabled']==1 || empty($one['id'])}checked{/if}>
+                                    <input type="radio" name="enabled" value="0" title="下架" {if $one['enabled']==0 && !empty($one['id'])}checked{/if}>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">排序</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="displayorder" value="{$one['displayorder']}" class="layui-input" placeholder="数字越大，排名越靠前">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">商品名称</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="title" lay-verify="required" value="{$one['title']}" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">副标题</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="intro" lay-verify="required" value="{$one['intro']}" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">商品单位</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="unit" value="{$one['unit']}" class="layui-input">
+                                    <div class="layui-form-mid layui-word-aux">如: 个/件/包</div>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">商品属性</label>
+                                <div class="layui-input-block">
+                                    <!-- <input type="checkbox" lay-skin="primary" name="isrecommand" value="1" title="名片推荐" {if $one['isrecommand']==1}checked{/if}> -->
+                                    <input type="checkbox" lay-skin="primary" name="isnew" value="1" title="新品推荐" {if $one['isnew']==1}checked{/if}>
+                                    <input type="checkbox" lay-skin="primary" name="ishot" value="1" title="人气推荐" {if $one['ishot']==1}checked{/if}>
+                                    <!-- <input type="checkbox" lay-skin="primary" name="isdiscount" value="1" title="折扣商品" {if $one['isdiscount']==1}checked{/if}> -->
+                                    <!-- <input type="checkbox" lay-skin="primary" name="istime" value="1" title="限时购" {if $one['istime']==1}checked{/if}> -->
+                                    <!-- <input type="checkbox" lay-skin="primary" name="isfreeshopping" value="1" title="包邮" {if $one['isfreeshopping']==1}checked{/if}> -->
+                                </div>
+                            </div>
+                            <!-- <div class="layui-form-item">
+                                <div class="layui-inline">
+                                    <label class="layui-form-label">限时购时间</label>
+                                    <div class="layui-input-inline">
+                                        <input type="text" class="layui-input" name="timestart" id="timestart" placeholder="yyyy-MM-dd HH:mm">
+                                    </div>
+                                    <div class="layui-input-inline">
+                                        <input type="text" class="layui-input" name="timeend" id="timeend" placeholder="yyyy-MM-dd HH:mm">
+                                    </div>
+                                </div>
+                            </div> -->
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">分类</label>
+                                <div class="layui-input-block">
+                                    <div class="layui-input-inline">
+                                        <select name="category[parentid]" lay-verify="required" lay-filter="province">
+                                            <option></option>
+                                            {loop $parent $item}
+                                                <option value="{$item['id']}" {if $one['pcate']==$item['id']}selected{/if}>{$item['title']}</option>
+                                            {/loop}
+                                        </select>
+                                    </div>
+                                    <div class="layui-input-inline">
+                                        <select name="category[childid]" lay-verify="required" class="cate-child" lay-filter="cateChild">
+                                            <option></option>
+                                            {loop $children $index $item}
+                                                {if $one['pcate'] == $item['parentid']}
+                                                    <option value="{$item['id']}" class="one" data-parentid="{$item['parentid']}" {if $one['ccate']==$item['id']}selected{/if}>{$item['title']}</option>
+                                                {/if}
+                                            {/loop}
+                                        </select>
+                                        <div class="select-clone-cate-child none">
+                                            {loop $children $item}
+                                            <option value="{$item['id']}" class="one" data-parentid="{$item['parentid']}">{$item['title']}</option>
+                                            {/loop}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">商品图</label>
+                                <div class="layui-input-block">
+                                    {php echo slwl_tpl_form_field_image('pic', $one['thumb'])}
+                                    <div class="layui-form-mid layui-word-aux">图片大小为1:1正方形，推荐 600 X 600 像素</div>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">其他图片</label>
+                                <div class="layui-input-block">
+                                    {php echo slwl_tpl_form_field_multi_image('thumbs', $thumbs)}
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">商品编号</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="goodsn" value="{$one['goodsn']}" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">商品条码</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="barcode" value="{$one['barcode']}" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">商品价格</label>
+                                <div class="layui-input-block">
+                                    <div class="input-group">
+                                        <span class="input-group-addon pad-trim-10">销售价</span>
+                                        <input type="text" name="price" class="layui-input center" value="{$one['price']}" />
+                                        <span class="input-group-addon pad-trim-10">元</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label"></label>
+                                <div class="layui-input-block">
+                                    <div class="input-group">
+                                        <span class="input-group-addon pad-trim-10">市场价</span>
+                                        <input type="text" name="original_price" class="layui-input center" value="{$one['original_price']}" />
+                                        <span class="input-group-addon pad-trim-10">元</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">库存</label>
+                                <div class="layui-input-block">
+                                    <div class="input-group">
+                                        <input type="text" name="inventory" class="layui-input left" value="{$one['inventory']}" />
+                                        <span class="input-group-addon pad-trim-10">件</span>
+                                    </div>
+                                    <div class="layui-form-mid layui-word-aux">当前商品的库存数量</div>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">库存状态</label>
+                                <div class="layui-input-block">
+                                    <input type="radio" name="inventory_status" value="0" title="拍下减库存" {if $one['inventory_status'] == 0}checked{/if}>
+                                    <input type="radio" name="inventory_status" value="1" title="付款减库存" {if $one['inventory_status'] == 1}checked{/if}>
+                                    <input type="radio" name="inventory_status" value="2" title="永不减库存" {if $one['inventory_status'] == 2}checked{/if}>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">已出售数</label>
+                                <div class="layui-input-block">
+                                    <div class="input-group">
+                                        <input type="text" name="sales" class="layui-input left" value="{$one['sales']}" />
+                                        <span class="input-group-addon pad-trim-10">件</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <script>
+                                layui.use('laydate', function(){
+                                    var laydate = layui.laydate;
+
+                                    laydate.render({
+                                        elem: '#timestart'
+                                        ,type: 'datetime'
+                                        ,format: 'yyyy-MM-dd HH:mm'
+                                        ,value: "{php echo date('Y-m-d H:i',$one['timestart']?$one['timestart']:time()); }"
+                                    });
+
+                                    laydate.render({
+                                        elem: '#timeend'
+                                        ,type: 'datetime'
+                                        ,format: 'yyyy-MM-dd HH:mm'
+                                        ,value: "{php echo date('Y-m-d H:i',$one['timeend']?$one['timeend']:time()); }"
+                                    });
+                                });
+
+                                layui.use('form', function(){
+                                    var form = layui.form;
+
+                                    form.on('select(province)', function(data){
+                                        $panel = $('.cate-child');
+                                        $panel.empty();
+                                        $html = '<option value="0">请选择二级分类</option>';
+                                        $panel.append($html);
+
+                                        $.each($('.select-clone-cate-child .one'), function (i, item) {
+                                            if (data.value == $(item).data('parentid')) {
+                                                console.log(item);
+                                                $panel.append(item);
+                                            }
+                                        });
+                                        form.render('select');
+                                        // console.log(data.elem); //得到select原始DOM对象
+                                        // console.log(data.value); //得到被选中的值
+                                        // console.log(data.othis); //得到美化后的DOM对象
+                                    });
+
+                                });
+                            </script>
+                        </div>
+
+                        <!-- 商品描述 -->
+                        <div class="layui-tab-item">
+
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">商品详情</label>
+                                <div class="layui-input-block box-act-body">
+                                    {php echo tpl_ueditor('content', $one['content'])}
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- 自定义属性 -->
+                        <div class="layui-tab-item">
+
+                            <table class="layui-table" lay-even="" lay-skin="nob">
+                                <thead>
+                                    <tr>
+                                        <th style='width:50px;'></th>
+                                        <th>属性名称</th>
+                                        <th>属性值</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="param-items">
+                                    {loop $one_param $p}
+                                    <tr class="tr-item">
+                                        <td class="control">
+                                            <a href="javascript:;" class="btn btn-trun" title="拖动排序" ><i class="icon iconfont icon-addon icon-move"></i></a>
+                                            <a href="javascript:;" class="btn btn-delete" title="删除"><i class="icon iconfont icon-addon icon-close"></i></a>
+                                        </td>
+                                        <td><input name="param_tv[title][]" type="text" class="layui-input param-title" value="{$p['title']}" /></td>
+                                        <td><input name="param_tv[value][]" type="text" class="layui-input param-value" value="{$p['value']}" /></td>
+                                    </tr>
+                                    {/loop}
+                                </tbody>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="3">
+                                            <a href="javascript:;" id='add-param' title="添加属性">
+                                                <span>添加属性</span><i class="icon iconfont icon-fnav icon-add"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="table-clone" style="display: none;">
+                                <table>
+                                    <tr class="tr-item">
+                                        <td class="control">
+                                            <a href="javascript:;" class="btn btn-trun" title="拖动排序" ><i class="icon iconfont icon-addon icon-move"></i></a>
+                                            <a href="javascript:;" class="btn btn-delete" title="删除"><i class="icon iconfont icon-addon icon-close"></i></a>
+                                        </td>
+                                        <td><input type="text" class="layui-input param-title" /></td>
+                                        <td><input type="text" class="layui-input param-value" /></td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <script>
+                                var sub_num = 9000;
+
+                                $(function () {
+                                    $("#param-items").sortable({handle:'.btn-trun'});
+
+                                    // 添加属性
+                                    $('#add-param').click(function () {
+                                        $obj = $('.table-clone .tr-item').clone(true);
+                                        $obj.find('.param-title').attr('name', 'param_tv[title][' + sub_num + ']');
+                                        $obj.find('.param-value').attr('name', 'param_tv[value][' + sub_num + ']');
+                                        $('#param-items').append($obj);
+                                        sub_num += 1;
+                                    });
+
+                                    // 删除
+                                    $(document).on('click', '.btn-delete', function () {
+                                        var $obj = $(this);
+                                        $obj.closest('.tr-item').remove();
+                                    });
+                                });
+                            </script>
+
+                        </div>
+
+                        <!-- 商品规格 -->
+                        <div class="layui-tab-item">
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">商品规格</label>
+                                <div class="layui-input-block">
+                                    <div>
+                                        <input type="checkbox" name="spec_status" value="1" title="启用" lay-skin="primary" lay-filter="spec_status" {if $one['spec_status']==1}checked{/if}>
+                                    </div>
+                                    <div class="layui-form-mid layui-word-aux">
+                                        <blockquote class="layui-text">
+                                            启用商品规格后，商品的价格 (商品的价格+规格价格) 及库存 (商品库存+规格库存)
+                                        </blockquote>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-form-item tboption" {if $one['spec_status']!=1}style="display:none"{/if}>
+                                <div class="layui-input-block">
+                                    <div id="specs">
+                                        {loop $spec_items $index $item}
+                                        <blockquote class="layui-elem-quote">
+                                            <div class="layui-form-item flex title">
+                                                <label class="layui-form-label">规格名</label>
+                                                <div class="layui-input-block">
+                                                    <input type="text" name="spec[spec][{$index}][title]" value="{$item['title']}" class="layui-input spid" placeholder="比如: 颜色">
+                                                </div>
+                                                <div class="layui-form-item flex">
+                                                    <a href="javascript:;" class="btn btn-item-trun" title="拖动排序"><i class="icon iconfont icon-addon icon-move"></i></a>
+                                                    <button type="button" class="layui-btn btn-gd-item-add">添加规格项</button>
+                                                    <button type="button" class="layui-btn btn-gd-item-delete">×</button>
+                                                </div>
+                                            </div>
+                                            <div class="layui-form-item guige">
+                                                <label class="layui-form-label">规格项</label>
+                                                <div class="layui-input-block gd-item-panel n{$index}" data-ggindex="{$index}">
+                                                    {php $idx = 0;}
+                                                    {loop $item['items'] $sp}
+                                                    <div class="gd-item mb-10">
+                                                        <div class="input-group mb-10">
+                                                            <input type="text" class="layui-input title" name="spec[spec][{$index}][items][{$idx}][title]" value="{$sp['title']}" placeholder="比如：红色"/>
+                                                            <span class="input-group-btn box">
+                                                                {php echo slwl_tpl_form_field_image_spec('spec[spec]['.$index.'][items]['.$idx.'][thumb]', $sp['thumb']);}
+                                                                <a href="javascript:;" class="btn btn-item-trun" title="拖动排序" ><i class="icon iconfont icon-addon icon-move"></i></a>
+                                                                <a href="javascript:;" class="btn btn-item-delete" title="删除"><i class="icon iconfont icon-addon icon-close"></i></a>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    {php $idx += 1;}
+                                                    {/loop}
+                                                </div>
+                                            </div>
+                                        </blockquote>
+                                        {/loop}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="layui-form-item tboption" {if $one['spec_status']!=1}style="display:none"{/if}>
+                                <div class="layui-input-block">
+                                    <button type="button" class="layui-btn btn-spec-add" id="addguige">添加规格</button>
+                                    <button type="button" class="layui-btn btn-spec-refresh" id="shuaxingg">刷新规格项目表</button>
+                                    <span style="color: red;">(上面的规格如有任何变动都需点击"刷新规格项目表"按钮进行刷新规格项目表)</span>
+
+                                </div>
+                            </div>
+
+                            <div class="spec-clone none">
+                                <!-- 规格 -->
+                                <blockquote class="layui-elem-quote gd-item-spec-one">
+                                    <div class="layui-form-item flex title">
+                                        <label class="layui-form-label">规格名</label>
+                                        <div class="layui-input-block">
+                                            <input type="text" class="layui-input spid" placeholder="(比如: 颜色)">
+                                        </div>
+                                        <div class="layui-form-item flex">
+                                            <a href="javascript:;" class="btn btn-item-trun" title="拖动排序"><i class="icon iconfont icon-addon icon-move"></i></a>
+                                            <button type="button" class="layui-btn btn-gd-item-add">添加规格项</button>
+                                            <button type="button" class="layui-btn btn-gd-item-delete">×</button>
+                                        </div>
+                                    </div>
+                                    <div class="layui-form-item guige">
+                                        <label class="layui-form-label">规格项</label>
+                                        <div class="layui-input-block gd-item-panel">
+                                            <div class="gd-item mb-10">
+                                                <div class="input-group mb-10">
+                                                    <input type="text" class="layui-input title" />
+                                                    <span class="input-group-btn box">
+                                                        {php echo slwl_tpl_form_field_image_spec('thumb');}
+                                                        <a href="javascript:;" class="btn btn-item-trun" title="拖动排序" ><i class="icon iconfont icon-addon icon-move"></i></a>
+                                                        <a href="javascript:;" class="btn btn-item-delete" title="删除"><i class="icon iconfont icon-addon icon-close"></i></a>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </blockquote>
+
+                                <!-- 规格项 -->
+                                <div class="sc-one">
+                                    <div class="gd-item mb-10">
+                                        <div class="input-group mb-10">
+                                            <input type="text" class="layui-input title" />
+                                            <span class="input-group-btn box">
+                                                {php echo slwl_tpl_form_field_image_spec('thumb');}
+                                                <a href="javascript:;" class="btn btn-item-trun" title="拖动排序" ><i class="icon iconfont icon-addon icon-move"></i></a>
+                                                <a href="javascript:;" class="btn btn-item-delete" title="删除"><i class="icon iconfont icon-addon icon-close"></i></a>
+                                            </span>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 刷新规格表格时的初始dom -->
+                            <table class="table-init" style="display:none" id="tableInitDom">
+                                <tbody>
+                                    <tr class="head">
+                                        <td class="group-name input"></td>
+                                        <td class="input">库存</td>
+                                        <td class="input">销售价</td>
+                                        <td class="input">市场价</td>
+                                        <td class="input">编码</td>
+                                        <td class="input">条码</td>
+                                    </tr>
+                                    <tr class="control">
+                                        <td>快捷设置</td>
+                                        <td><input /><i class="icon iconfont icon-addon icon-down"></i></td>
+                                        <td><input /><i class="icon iconfont icon-addon icon-down"></i></td>
+                                        <td><input /><i class="icon iconfont icon-addon icon-down"></i></td>
+                                        <td><input /><i class="icon iconfont icon-addon icon-down"></i></td>
+                                        <td><input /><i class="icon iconfont icon-addon icon-down"></i></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <!-- 商品规格表格 -->
+                            <div class="group-goods-table">
+                                <table id="group-goods-table">
+                                </table>
+                            </div>
+
+                            <!-- 商品规格价格明细一个项目的模板 -->
+                            <table id="group-goods-tr" style="display:none">
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <span class="name"></span>
+                                            <input type="hidden" class="option-ids" />
+                                            <input type="hidden" class="option-title" />
+                                        </td>
+                                        <td><input class="inventory" /></td>
+                                        <td><input class="price" /></td>
+                                        <td><input class="original_price" /></td>
+                                        <td><input class="goodsn" /></td>
+                                        <td><input class="barcode" /></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <input type="hidden" value='{$list_goods_option_json}' id="listGoodsOption">
+
+                            <script>
+
+
+                                $(function () {
+
+                                    //
+                                    var results = [];
+                                    var result = [];
+                                    var itemsLength = 0;
+
+                                    // 获取之前保存的规格项目数据
+                                    var initTableData = JSON.parse($('#listGoodsOption').val());
+
+                                    // 根据上面设置的规格计算出规格项目明细分组
+                                    function getGroups(arr, depth){
+                                        for (var i = 0; i < arr[depth].length; i++) {
+                                            result[depth] = arr[depth][i];
+                                            if (depth != arr.length - 1) {
+                                                getGroups(arr, depth + 1)
+                                            } else {
+                                                results.push([...result])
+                                            }
+                                        }
+                                    }
+
+                                    // 传入设置的规格数组数据计算出个规格项目明细分组
+                                    function setGroups(arr) {
+                                        results = [];
+                                        result = [];
+                                        getGroups(arr, 0);
+                                        return results;
+                                    }
+
+                                    // 刷新规格项目表
+                                    function updataGoodsTable(isinit) {
+                                        var $table = $('#group-goods-table');
+                                        var $oldTable = $('#group-goods-table').clone();
+                                        var $initTbody = $('#tableInitDom').html();
+                                        $('#group-goods-table').html($initTbody);
+                                        var $list = $('#specs'), str = '', titles = '', thatVal = '', thatVals = [];
+                                        var guigeming='', arr = [], arrs=[], addicon='', namet='';
+                                        if($list.find('.layui-elem-quote').length === 0) return;
+
+                                        // 获取计算分组的数据 arrs
+                                        $('.layui-elem-quote', $list).each(function(index, item){
+                                            addicon = index !== $list.find('.layui-elem-quote').length - 1 ? '+':'';
+                                            titles += $(this).find('.title .spid').val() + addicon;
+                                            arr = [];
+                                            $('.gd-item.mb-10', $(this)).each(function(){
+                                                arr.push({name:$(this).find('.title').val(), id:$(this).find('input[name*=id]').val()});
+                                            });
+                                            arrs.push(arr);
+                                        });
+
+                                        // 计算隔多少行变色 itemsLength
+                                        for(var i=0, taar = []; i<arrs.length; i++) {
+                                            if(i>0){
+                                                taar.push(arrs[i].length);
+                                            }
+                                        }
+                                        var t = taar[0];
+                                        for(var i=1; i<taar.length; i++) {
+                                           t *= taar[i];
+                                        }
+                                        itemsLength = t;
+
+                                        // 分组明细数组
+                                        var groups = setGroups(arrs);
+
+                                        // 根据分组长度追加分组明细dom
+                                        var $tr = $('#group-goods-tr tbody').html();
+                                        for(var i=0; i<groups.length; i++){
+                                            $('#group-goods-table tbody').append($tr);
+                                        }
+
+                                        // 给分组明细设置属性
+                                        for(var i=0; i<groups.length; i++){
+                                            namet = '';
+                                            ids='';
+                                            for(var j=0; j<groups[i].length; j++){
+                                                addicon = j!==groups[i].length-1 ? '+':'';
+                                                namet += groups[i][j].name+ addicon;
+                                                ids += groups[i][j].id+ addicon;
+                                            }
+                                            $('#group-goods-table tbody').find('tr').eq(i+2).find('.name').html(namet);
+                                            $('#group-goods-table tbody').find('tr').eq(i+2).find('.option-ids').val(ids);
+                                            $('#group-goods-table tbody').find('tr').eq(i+2).find('.option-ids').attr('name', 'specop[option_assemble]['+i+']');
+
+                                            $('#group-goods-table tbody').find('tr').eq(i+2).find('.option-title').val(namet);
+                                            $('#group-goods-table tbody').find('tr').eq(i+2).find('.option-title').attr('name', 'specop[option_title]['+i+']');
+
+                                            $('#group-goods-table tbody').find('tr').eq(i+2).find('.inventory').attr('name', 'specop[option_inventory]['+i+']');
+                                            $('#group-goods-table tbody').find('tr').eq(i+2).find('.price').attr('name', 'specop[option_price]['+i+']');
+                                            $('#group-goods-table tbody').find('tr').eq(i+2).find('.original_price').attr('name', 'specop[option_original_price]['+i+']');
+                                            $('#group-goods-table tbody').find('tr').eq(i+2).find('.goodsn').attr('name', 'specop[option_goodsn]['+i+']');
+                                            $('#group-goods-table tbody').find('tr').eq(i+2).find('.barcode').attr('name', 'specop[option_barcode]['+i+']');
+                                        }
+
+                                        $('#group-goods-table .head .group-name').html(titles);
+
+                                        // 如果是第一次进入就把后台保存的数据 initTableData 追加到分组明细
+                                        if(isinit){
+                                            for(var i=0; i<initTableData.length; i++){
+                                                $('tbody tr', $table).each(function(j){
+                                                    if(j>1) {
+                                                        if( initTableData[i].title=== $(this).find('.option-title').val()) {
+                                                            $(this).find('.inventory').val(initTableData[i].inventory);
+                                                            $(this).find('.price').val(initTableData[i].price);
+                                                            $(this).find('.original_price').val(initTableData[i].original_price);
+                                                            $(this).find('.goodsn').val(initTableData[i].goodsn);
+                                                            $(this).find('.barcode').val(initTableData[i].barcode);
+                                                        }
+                                                    }
+                                                })
+                                            }
+
+                                        // 如果不是就把上次修改的数据追加到分组明细
+                                        }else{
+                                            $('tbody tr', $oldTable).each(function(index){
+                                                if(index > 1){
+                                                    thatVal = $(this).find('.option-title').val();
+                                                    thatVals = [$(this).find('.inventory').val(), $(this).find('.price').val(),
+                                                    $(this).find('.original_price').val(),$(this).find('.goodsn').val(),$(this).find('.barcode').val()];
+                                                    $('tbody tr', $table).each(function(j){
+                                                        if(j>1) {
+                                                            if(thatVal === $(this).find('.option-title').val()) {
+                                                                $(this).find('.inventory').val(thatVals[0]);
+                                                                $(this).find('.price').val(thatVals[1]);
+                                                                $(this).find('.original_price').val(thatVals[2]);
+                                                                $(this).find('.goodsn').val(thatVals[3]);
+                                                                $(this).find('.barcode').val(thatVals[4]);
+                                                            }
+                                                        }
+                                                    })
+                                                }
+                                            });
+                                        }
+
+                                        // 设置各多少行 itemsLength 变色
+                                        $table.find('tbody tr').css({background: 'none'});
+                                        var x=0, n=0;
+                                        $('tbody tr', $table).each(function(j){
+                                            if(j>1) {
+                                                x = j-2;
+                                                n = parseInt(x/itemsLength)
+                                                if(n%2==0){
+                                                    $(this).css('background', '#ddd');
+                                                }
+                                            }
+                                        })
+
+                                        $('.group-goods-table').show();
+                                    }
+
+                                    // 如果是修改产品
+                                    if(location.href.indexOf('id=') !== -1){
+                                        // 追加id属性
+                                        setItemId();
+                                        // 跟新规格明细
+                                        updataGoodsTable(true);
+                                    }
+
+                                    // 给上面的设置明细各个规格项增加id属性
+                                    function setItemId() {
+                                        var $list = $('#specs');
+                                        $list.find('.guige input[name*=id]').remove();
+                                        $('.layui-elem-quote', $list).each(function(index, item){
+                                            var index = $(this).index();
+                                            $('.guige .title', $(this)).each(function(){
+                                                var start = $(this).attr('name').indexOf('items')+ 7;
+                                                var end = $(this).attr('name').indexOf(']',start);
+                                                var n = $(this).parent().parent().index();
+                                                var int = '<input name="spec[spec]['+index+'][items]['+n+'][id]" value="'+$(this).attr('name').slice(start, end)+'" type="hidden"/>';
+                                                $(this).parent().append(int);
+                                            });
+                                        });
+
+                                    }
+
+                                    // 点击‘刷新规格项目表’ 刷新
+                                    $('#shuaxingg').click(function(){
+                                        setItemId();
+                                        updataGoodsTable(false)
+                                    });
+
+                                    // 在快捷设置输入框输入数据之后点击设置按钮进行快捷设置
+                                    $('#group-goods-table').on('click','tr.control i',function(){
+                                        var val = $(this).prev().val();
+                                        var index = $(this).parent().index();
+                                        var $table = $('#group-goods-table');
+                                        $('td input', $table).each(function(){
+                                            if($(this).parent().index() === index) {
+                                                $(this).val(val)
+                                            }
+                                        })
+                                    })
+
+                                    // 拖动规格项变化位置后更新到对应属性
+                                    function upXiaoLei($dom) {
+                                        var $parent = $('.'+$dom.attr('class').replace(/\s/g, '.'));
+                                        $('.title', $parent).each(function(index){
+                                            $(this).attr('name', 'spec[spec]['+$dom.attr('data-ggindex')+'][items]['+index+'][title]')
+                                            $(this).next().find('.spec-thumb').attr('name','spec[spec]['+$dom.attr('data-ggindex')+'][items]['+index+'][thumb]');
+                                        })
+                                    }
+
+                                    // 拖动规格变化位置后更新到对应属性
+                                    function upDaLei() {
+                                        $parent = $('#specs');
+                                        $('.layui-elem-quote', $parent).each(function(index){
+                                            $(this).find('.spid').attr('name', 'spec[spec]['+index+'][title]');
+                                            $(this).find('.gd-item-panel').attr('class', 'layui-input-block gd-item-panel n'+index+' ui-sortable');
+                                            $(this).find('.gd-item-panel').attr('data-ggindex', index);
+                                            $('.title', $(this)).each(function(j){
+                                                $(this).attr('name', 'spec[spec]['+index+'][items]['+j+'][title]');
+                                                $(this).next().find('.spec-thumb').attr('name','spec[spec]['+index+'][items]['+j+'][thumb]');
+                                            })
+                                        })
+                                    }
+
+                                    // 拖动后更新属性数据的方法
+                                    function upDataIndex(e) {
+                                        var $dom = $(e.target);
+                                        if($dom.hasClass('gd-item-panel')){
+                                            upXiaoLei($dom);
+                                        }else{
+                                            upDaLei();
+                                        }
+                                    }
+
+                                    $("#specs").sortable({handle:'.btn-item-trun', stop: upDataIndex});
+                                    $( "#specs .gd-item-panel" ).sortable({delay: 300, stop: upDataIndex});
+                                    $( "#specs .gd-item-panel" ).disableSelection();
+
+                                    // 规格项，添加
+                                    $('#specs').on('click', '.btn-gd-item-add', function () {
+                                        let $obj = $('.spec-clone .sc-one .gd-item').clone(true);
+                                        let $obj_parent = $(this).closest('.layui-elem-quote').find('.gd-item-panel');
+                                        $obj.find('.title').attr('name', 'spec[spec][' + $(this).closest('.layui-elem-quote').index() + '][items][' + $obj_parent.find('.gd-item.mb-10').length + '][title]');
+                                        $obj.find('.spec-thumb').attr('name', 'spec[spec][' + $(this).closest('.layui-elem-quote').index() + '][items][' + $obj_parent.find('.gd-item.mb-10').length + '][thumb]');
+                                        $obj_parent.append($obj);
+                                        $( "#specs .gd-item-panel" ).sortable({delay: 300, stop: upDataIndex});
+                                        $( "#specs .gd-item-panel" ).disableSelection();
+
+                                    });
+
+                                    // 小规格，删除
+                                    $('#specs').on('click', '.btn-item-delete', function () {
+                                        let $obj = $(this);
+                                        $obj.closest('.gd-item').remove();
+                                        upXiaoLei($(this).closest('.gd-item-panel'));
+                                        //updataGoodsTable(false);
+                                    });
+
+                                    // 规格，添加
+                                    $('#addguige').click(function () {
+                                        let $obj = $('.spec-clone .gd-item-spec-one').clone(true);
+                                        $obj.find('.gd-item-panel').attr('data-ggindex', ($('.layui-elem-quote').length-1));
+                                        $obj.find('.gd-item-panel').addClass('n'+ ($('.layui-elem-quote').length-1));
+                                        $obj.find('.spid').attr('name', 'spec[spec][' + ($('.layui-elem-quote').length-1) + '][title]');
+                                        $obj.find('.title').attr('name', 'spec[spec][' + ($('.layui-elem-quote').length-1) + '][items][0][title]');
+                                        $obj.find('.spec-thumb').attr('name', 'spec[spec][' + ($('.layui-elem-quote').length-1) + '][items][0][thumb]');
+                                        $('#specs').append($obj);
+                                        $( "#specs .gd-item-panel" ).sortable({delay: 300, stop: upDataIndex});
+                                        $( "#specs .gd-item-panel" ).disableSelection();
+                                    });
+
+                                    // 规格，删除
+                                    $('#specs').on('click', '.btn-gd-item-delete', function () {
+                                        let $obj = $(this);
+                                        $obj.closest('.layui-elem-quote').remove();
+                                        upDaLei();
+                                        //updataGoodsTable(false);
+                                    });
+
+                                    layui.use('form', function(){
+                                        var form = layui.form;
+                                        form.on('checkbox(spec_status)', function(data){
+                                            if (data.elem.checked) {
+                                                $(".tboption").show();
+                                                if($('#group-goods-table>tbody>tr').length){
+                                                    $('.group-goods-table').show();
+                                                }
+                                            } else {
+                                                $(".tboption").hide();
+                                                $('.group-goods-table').hide();
+
+                                            }
+                                        });
+                                    });
+                                });
+                            </script>
+                        </div>
+
+                        <!-- 其他设置 -->
+                        <!-- <div class="layui-tab-item"></div> -->
+                    </div>
+                </div>
+
+                <div class="layui-tab-content fixed" id="data-submit">
+                    <div class="layui-form-item">
+                        <div class="layui-input-block">
+                            <button class="layui-btn" lay-submit="" lay-filter="store_goods">提交</button>
+                            <input type="hidden" name="token" value="{$_W['token']}" />
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <script>
+                layui.use('form', function(){
+                    var form = layui.form;
+
+                    form.on('submit(store_goods)', function(data){
+                        let url = "{php echo $this->createWebUrl('store_goods', array('op'=>'post'))}";
+                        var $obj = $(this);
+
+                        if (!$obj.hasClass('lock')) {
+                            $obj.addClass('lock'); // 不能再点击
+
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                dataType: 'json',
+                                data: data.field,
+                                success: function (rs) {
+                                    console.log(rs.message.errno);
+                                    if (rs.message.errno == '0') {
+                                        layer.msg('保存成功！' , {
+                                            time: 500
+                                        }, function () {
+                                            window.location.href = "{php echo $this->createWebUrl('store_goods')}";
+                                        });
+                                    } else {
+                                        layer.alert(rs.message.message);
+                                    }
+                                    $obj.removeClass('lock');
+                                },
+                                error: function () {
+                                    layer.alert('提交过程发生错误，请与管理员联系！');
+                                    $obj.removeClass('lock');
+                                }
+                            });
+                        }
+
+                        return false;
+                    });
+                });
+            </script>
+        {/if}
+        </div>
+    </div>
+
+    {template 'public/copyright'}
+</div>
+
+{template 'public/footer'}
+</body>
+</html>

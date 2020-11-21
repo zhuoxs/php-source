@@ -1,0 +1,2 @@
+<?php
+ namespace GuzzleHttp\Promise; class AggregateException extends RejectionException { public function __construct($msg, array $reasons) { parent::__construct($reasons, sprintf("\45\163\x3b\x20\45\144\x20\162\x65\152\145\143\x74\145\144\x20\160\x72\x6f\155\151\x73\x65\x73", $msg, count($reasons))); } }

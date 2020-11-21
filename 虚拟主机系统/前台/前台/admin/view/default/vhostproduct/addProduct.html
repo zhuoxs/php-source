@@ -1,0 +1,274 @@
+{{include file='common/head.html'}}
+<body leftmargin="0" topmargin="0" bgcolor="#ffffff" text="#000000">
+<script language='javascript' src='{{$PSTATIC}}/style/common.js'></script>
+<script language='javascript' src='/style/jq.js'></script>
+<script language='javascript'>
+function list_subtemplete_result() { 
+	var recv_msg=false;
+	try{
+	 if (xmlhttp.readyState==4) {
+		if(xmlhttp.status==200){		
+		  var dataArray = xmlhttp.responseXML.getElementsByTagName('subtemplete');
+	      var dataArrayLen = dataArray.length;
+	      var templeteMatched = false;
+		  var i=0;
+		  var insertData = '';
+		  if(dataArrayLen>0){
+		   	insertData = "引擎选择:<select name='subtemplete'>";
+		  	for(i=0;i<dataArrayLen;i++){			 
+				if(dataArray[i].firstChild==null){
+					continue;
+				}
+			  var templete = dataArray[i].firstChild.data;
+			  insertData += "<option value='" + templete + "' ";
+			  if(templete == '{{$vhostproduct.subtemplete}}'){
+				  insertData += 'selected';
+				  templeteMatched = true;
+			  }
+			  insertData += ">" + templete + "</option>\n";
+			 }
+			 insertData += "</select>";
+		  }
+		  xxkf_obj('subtemplete').innerHTML = insertData;
+		}
+	  }
+	}catch(e){
+		alert(e);
+	}
+}
+function changeTemplete(templete)
+{
+	//alert('templete='+templete);
+	xxkf_obj('subtemplete').innerHTML="<img src='{{$PSTATIC}}/style/busy.gif'/>";
+	var url = '?c={{$smarty.request.c}}&a=ajaxListSubTemplete&node=' + nodeform.node.value + '&templete=' + templete;
+	ajax_open_url(url,list_subtemplete_result);
+}
+function list_templete_result() { 
+	var recv_msg=false;
+	try{
+	 if (xmlhttp.readyState==4) {
+		if(xmlhttp.status==200){		
+		  var dataArray = xmlhttp.responseXML.getElementsByTagName('templete');
+	      var dataArrayLen = dataArray.length;
+	      var templeteMatched = false;
+		  var i=0;
+		  var insertData = "语言模板选择:<select name='templete' onChange='changeTemplete(this.value)'>";
+		  for(i=dataArrayLen-1;i>=0;i--){			 
+			  var templete = dataArray[i].firstChild.data;
+			  insertData += "<option value='" + templete + "' ";
+			  if(templete == '{{$vhostproduct.templete}}'){
+				  insertData += 'selected';
+				  templeteMatched = true;
+			  }
+			  insertData += ">" + templete + "</option>\n";
+		  }
+		  insertData += "</select>";
+		  xxkf_obj('templete').innerHTML = insertData;
+		  {{if $vhostproduct.templete!=''}}
+		  if(!templeteMatched){
+			 alert('Warning: The node have not templete : {{$vhostproduct.templete}}'); 
+		  }
+		  {{/if}}
+	      changeTemplete(nodeform.templete.options[nodeform.templete.selectedIndex].value);
+		}
+	  }
+	}catch(e){
+		alert(e);
+	}
+}
+function changeNode()
+{
+	xxkf_obj('templete').innerHTML="<img src='{{$PSTATIC}}/style/busy.gif'/>";
+	var url = '?c={{$smarty.request.c}}&a=ajaxListTemplete&node='+nodeform.node.value;
+	ajax_open_url(url,list_templete_result);
+}
+function change_cdn(val)
+{
+	if(val==0){$('cdnpanel').style.display='';}
+	 else {	$('cdnpanel').style.display='none';}
+}
+//未启用
+function add_group_old()
+{
+	var group_name = prompt("请输入新组名称");
+	if (group_name.length <3 ) {
+		alert("名称不能少于三个字符");
+		return;
+	}
+	var url = '?c=productgroup&a=productgroupAdd&group_name=' + group_name;
+	jQuery.get(url,function(msg){
+		if (msg =='成功'){
+			window.location.reload();
+		}else{
+			alert(msg);
+		}	
+	});
+}
+//未启用
+function add_group()
+{
+	document.getElementById('product_group').style.display = 'block';
+	xxkf_JSFX_FloatTopDiv('product_group',250,250);
+}
+function go_group_add()
+{
+	var url = "?c=productgroup&a=productgroupFrom";
+	window.location = url;
+	
+}
+</script>
+<!-- 
+<div style='display:none' class='product_group' id='product_group'>
+<form name='group_from' method='post' action='?c=productgroup&a=productgroupAdd'>
+	<p>系统:<select name='os'>
+		<option value='0'>windows</option>
+		<option value='1'>linux</option></select></p>
+	<p>请输入新组名称:<input	name='group_name'></p>
+	<p><input type='submit' value="确定"><input type='button' onclick='document.getElementById("product_group").style.display="none" ' value="取消"></p>
+	
+</form>
+</div>
+ -->
+	<div align="center">
+		<div class="wid_main mar_main" align="left">
+		<div class="block_top" align="left">当前位置：虚拟主机/cdn --> {{if $action=='editProduct'}}修改产品{{else}}增加产品{{/if}}</div>
+			<form name='nodeform' action="?c=vhostproduct&a={{$action}}&id={{$vhostproduct.id}}" method="post">
+			<table class="table_main2" cellpadding="0" cellspacing="1">
+				<tr><td colspan="2" class="bg_main hg_main"><b>{{if	$action=='editProduct'}}修改产品{{else}}增加产品{{/if}}</b></td></tr>
+			
+				<tr><td class="wid_general">选择主机</td>
+					<td><select name='node' onChange='changeNode()'>
+						{{foreach from=$nodes item=node}}
+						<option value='{{$node.name}}'	{{if $node.name==$vhostproduct.node}}selected{{/if}}>{{$node.name}}</option>
+						{{/foreach}}
+					</select>
+					{{if count($nodes)< 1}}
+					<font color='red'>*请先增加主机</font>
+					{{/if}}
+					</td></tr>
+			
+				<tr><td>产品名称：</td>
+					<td><input name='name' class="wid_130"	value="{{$vhostproduct.name}}"></td></tr>
+			
+				<tr><td>显示顺序：</td>
+					<td><input name='view' class="wid_130"	value="{{$vhostproduct.view}}"></td></tr>
+			
+				<tr><td>产品组：</td>
+					<td><select name='upid'>
+						<option value='0'>自由类型</option>
+						{{for $i=0;$i< count($product_groups);$i++}}
+						<option value='{{$product_groups[$i].group_id}}'
+							{{if $vhostproduct.upid==$product_groups[$i].group_id}}selected{{/if}}>{{$product_groups[$i].group_name}}</option>
+						{{/for}}
+					</select>&nbsp;&nbsp;
+					<input type='button' onclick='go_group_add()' value='添加产品组'>(可升级到相同产品组的其它产品，自由类型不可升级)</td></tr>
+			
+				<tr><td>产品类型：</td>
+					<td><input name='cdn' type='radio' value="0"
+						{{if !$vhostproduct || $vhostproduct.cdn==0}}
+						checked {{/if}} onClick="change_cdn(0)">虚拟主机 <input
+						name='cdn' type='radio' value="1" {{if $vhostproduct.cdn==1}}
+						checked {{/if}} onClick="change_cdn(1)">cdn</td></tr>
+			
+				<tr><td colspan='2' style="padding-left: 0px;">
+					<div id='cdnpanel' style='display: {{ if $ vhostproduct.cdn == 1'>
+					<table class="table_main3" cellpadding="0" cellspacing="1">
+						<tr><td class="wid_general">空间大小：</td>
+							<td><input name="web_quota"  value="{{$vhostproduct.web_quota}}" class="wid_130">&nbsp;M</td></tr>
+			
+						<tr><td>数据库大小：</td>
+							<td><input name="db_quota"  class="wid_130"	value="{{$vhostproduct.db_quota}}">&nbsp;M</td></tr>
+			
+						<tr><td>数据库类型：</td>
+							<td><input name="db_type" type="radio" value="mysql" {{if $vhostproduct.db_type!='sqlsrv'}}checked{{/if}}>mysql
+							<input name="db_type" type="radio"	value="sqlsrv" {{if $vhostproduct.db_type=='sqlsrv'}}checked{{/if}}>sql server</td></tr>
+			
+						<tr><td>绑定子目录</td>
+							<td><input type='checkbox' name='subdir_flag' value='1'{{if $vhostproduct.subdir_flag}}checked{{/if}}>允许绑定子目录</td></tr>
+			
+						<tr><td>子目录个数</td>
+							<td><input name='max_subdir' class="wid_130"
+								value='{{if $vhostproduct.max_subdir}}{{$vhostproduct.max_subdir}}{{else}}0{{/if}}'>&nbsp;0表示不限制</td></tr>
+			
+						<tr><td>默认绑定子目录:</td>
+							<td><input name="subdir"  value="{{if $vhostproduct.subdir}}{{$vhostproduct.subdir}}{{else}}wwwroot{{/if}}" class="wid_130"></td></tr>
+			
+						<tr><td>语言模板</td>
+							<td id='templete2'>
+							<span id='templete'><input name="templete"  value="{{$vhostproduct.templete}}"></span>
+							<span id='subtemplete'></span>
+							</td></tr>
+			
+						<tr><td>多引擎切换:</td>
+							<td><input type='radio' name="cs" value="0"
+								{{if $vhostproduct.cs==0}}checked{{/if}}>不能切换 <input
+								type='radio' name="cs" value="1"
+								{{if $vhostproduct.cs==1}}checked{{/if}}>随时切换 <input
+								type='radio' name="cs" value="2"
+								{{if !$vhostproduct || $vhostproduct.cs==2}}checked{{/if}}>购买时切换</td></tr>
+					</table>
+					</div>
+					</td>
+				</tr>
+			
+				<tr><td>价格</td>
+					<td><input name="price"  class="wid_130"	value="{{$vhostproduct.price/100}}">(元/年) <input type="checkbox" name="show_price" value="1"	{{if $vhostproduct.show_price!=0}}checked{{/if}}>前台按月显示</td></tr>
+				
+				{{if count($agent_ids)>0}}
+				<tr><td>代理价格</td>
+					<td>{{for $i=0;$i< count($agent_ids);$i++}}
+					{{$agent_ids[$i].name}}:<input name="agentprice_{{$agent_ids[$i].id}}"	 value="{{$agent_ids[$i].price/100}}" style="width: 45px" />
+					{{/for}}</td></tr>
+				{{/if}}
+			
+				<tr><td>域名绑定个数</td>
+					<td><input name="domain"  class="wid_130"
+						value="{{if $vhostproduct}}{{$vhostproduct.domain}}{{else}}-1{{/if}}">(-1表示无限)</td></tr>
+			
+				<tr><td>最大连接数</td>
+					<td><input name="max_connect"  class="wid_130" value="{{if $vhostproduct}}{{$vhostproduct.max_connect}}{{else}}0{{/if}}">(0无限)</td></tr>
+			
+				<tr><td>带宽限制</td>
+					<td><input name="speed_limit"  class="wid_130" value="{{if $vhostproduct}}{{$vhostproduct.speed_limit}}{{else}}0{{/if}}">&nbsp;K/每秒,(0无限)</td></tr>
+			
+				<tr><td>流量限制</td>
+					<td><input name="flow"  class="wid_130"	value="{{if $vhostproduct}}{{($vhostproduct.flow)}}{{else}}0{{/if}}">&nbsp;G/月,(0无限)(需kangle	web server商业版支持)</td></tr>
+			
+			
+				<tr><td>管理变量:</td>
+					<td><input name="envs"  class="wid_130"
+						value="{{$vhostproduct.envs}}"></td></tr>
+			
+				<tr><td>其它选项</td>
+					<td><input type='checkbox' name='htaccess' value='1'{{if $vhostproduct.htaccess || !$vhostproduct}}checked{{/if}}>.htaccess支持
+					<input type='checkbox' name='ftp' value='1'{{if $vhostproduct.ftp || !$vhostproduct}}checked{{/if}}>开启ftp
+					<input type='checkbox' name='log_file' value='1'{{if $vhostproduct.log_file || !$vhostproduct}}checked{{/if}}>日志独立
+					<input type='checkbox' name='access' value='1'{{if $vhostproduct.access || !$vhostproduct}}checked{{/if}}>自定义控制
+					<input type='checkbox' name='log_handle' id='log_handle' value='1'{{if $vhostproduct.log_handle}}checked{{/if}}>日志分析</td></tr>
+			
+				<tr><div id='advance'>
+					<td class="padd23">独立队列:</td>
+					<td class="padd23">工作数(0不限): <input name="max_worker"  id='max_worker' size='5' value="{{if $vhostproduct.max_worker}}{{$vhostproduct.max_worker}}{{else}}0{{/if}}">队列数(0不限): <input name="max_queue"  id='max_queue' size='5'	value="{{if $vhostproduct.max_queue}}{{$vhostproduct.max_queue}}{{else}}0{{/if}}">(需kangle	web server商业版支持)</td>
+					</div></tr>
+			
+				<tr><td>附加参数:</td>
+					<td><input name='append_params' size='40' value='{{$vhostproduct.append_params}}'/></td></tr>
+			
+				<tr><td>产品模板说明(支持html):</td>
+					<td><textarea name='describe' rows='6' cols='40'>{{$vhostproduct.describe}}</textarea></td></tr>
+			
+				<tr><td>状态</td>
+					<td><input type="checkbox" name="pause_flag" value="1" {{if $vhostproduct.pause_flag!=0}}checked{{/if}}>暂停销售 
+						<input type="checkbox" name="month_flag" value="1" {{if $vhostproduct.month_flag!=0}}checked{{/if}}>月付
+						<input type="checkbox" name="try_on" value="1" {{if $vhostproduct.try_on!=0}}checked{{/if}}>允许试用</td>
+				</tr>
+			
+				<tr><td>&nbsp;</td>
+					<td><input type="submit" value="确认提交"></td></tr>
+			</table>
+			</form>
+		</div>
+	</div>
+	<script language='javascript'>changeNode();</script>
+</body>
+{{include file='common/foot.html'}}

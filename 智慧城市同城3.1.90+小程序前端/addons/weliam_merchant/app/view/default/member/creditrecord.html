@@ -1,0 +1,106 @@
+{php include wl_template('common/header');}
+<div class="page-group">
+    <div class="page page-current" id="page-index">
+    	<header class="bar bar-nav">
+		    <a class="button button-link button-nav pull-left back" href="{php echo app_url('member/user/index')}">
+		      <span class="icon icon-left"></span>返回
+		    </a>
+		    <h1 class="title">积分记录</h1>
+		</header>
+		<div class="content infinite-scroll">
+			<div class="allcredit">
+				<!--全部积分记录-->
+			</div>
+			<div class="weui-loadmore loading_more" style="display: none;">
+	            <i class="weui-loading"></i>
+	            <span class="weui-loadmore__tips">正在加载</span>
+	        </div>
+	        <div class="weui-loadmore weui-loadmore_line" style="display: none;">
+	            <span class="weui-loadmore__tips" style="background-color: #EFEFF4;">暂无更多数据</span>
+	        </div>
+		</div>
+	</div>
+</div>
+
+
+<script type="text/html" id="creditlist">
+{{# for(var i = 0, len = d.length; i < len; i++){ }}
+<div class="card" style="border-radius: .2rem;">
+  <div class="card-content" style="border-radius: .2rem .2rem 0 0;">
+    <div class="list-block media-list">
+      <ul>
+        <li class="item-content">
+          <div class="item-media">
+            <img src="{URL_APP_IMAGE}jifen.png" width="50">
+          </div>
+          <div class="item-inner">
+            <div class="item-title-row">
+              <div class="item-title"><span style="color: #F26C4F;"> {{# if(d[i].num>0){ }}+{{# } }}{{ d[i].num }}</span></div>
+            </div>
+            <div class="item-subtitle" style="font-size: 12px;">{{ d[i].remark }}</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <div class="card-footer" style="color: white;background-color: #4dd6b1;">
+    <span>操作时间：{{d[i].createtime }}</span>
+  </div>
+</div>
+{{# } }}
+</script>
+<script>
+	$(function() {
+		$(document).on("pageInit", "#page-index", function(e, id, page) {
+			var loading = false;
+			var pagenum = 1,
+			    pagesize = 8,
+			    endmark = 0;
+			function addItems() {
+				$.post("{php echo app_url('member/user/getcreditrecord')}",{},function(d){
+					if (d.data) {
+						var gettpl1 = document.getElementById('creditlist').innerHTML;
+						sessionStorage.setItem("demokey",JSON.stringify(d.data));
+						var contentdata = d.data.slice(0,pagesize);
+						laytpl(gettpl1).render(contentdata, function(html){
+						   $(".allcredit").append(html);
+						});
+					}else{
+						$(".allcredit").html('<div class="common-no-con"><img src="{URL_APP_IMAGE}order_no_con.png" alt=""><p>无数据记录</p></div>');
+					}
+				}, 'json');
+			}
+			addItems();
+			$(page).on('infinite', function() {
+				if (endmark || loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+					loading = false;
+					var dt = JSON.parse(sessionStorage.getItem("demokey"));
+					var xxx = dt.slice(pagenum*pagesize ,pagenum*pagesize+pagesize);
+					addnew(xxx);
+					$.refreshScroller();
+				}, 500);
+			});
+			function addnew(cont){
+				if(cont.length){
+					$(".loading_more").hide();
+					var gettpl1 = document.getElementById('creditlist').innerHTML;
+					laytpl(gettpl1).render(cont, function(html){
+						$(".allcredit").append(html);
+					});
+					pagenum++;loading = false;
+				}else{
+					$(".loading_more").hide();
+					$(".weui-loadmore_line").show();
+					endmark = 1;
+				}
+			}
+		});
+		$.init();
+	});
+</script>
+
+
+{php include wl_template('common/footer');}

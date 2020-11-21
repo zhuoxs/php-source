@@ -1,0 +1,166 @@
+{template '_header'}
+<link rel="stylesheet" href="../addons/ewei_shopv2/plugin/task/static/style/taskplugin.css?v={php echo time();}">
+<link href="../addons/ewei_shopv2/static/css/font-awesome.min.css?v=4.4.0" rel="stylesheet">
+
+<div class="fui-page fui-page-current">
+    <div class="fui-header">
+        <div class="fui-header-left">
+            <a class="back"></a>
+        </div>
+        <div class="title">任务详情</div>
+        <div class="fui-header-right"></div>
+    </div>
+    <div class="fui-content">
+        <div class="d-head"><div class="d-sign"></div>
+            <div class="d-head-task">{$detail['title']}</div>
+            <div class="d-head-time">
+                {if !$poster}
+                {php echo date('Y-m-d',$detail['starttime']);}至{php echo date('Y-m-d',$detail['endtime']);}
+                {else}
+                {php echo date('Y-m-d',$detail['timestart']);}至{php echo date('Y-m-d',$detail['timeend']);}
+                {/if}
+            </div>
+        </div>
+        <div class="blank"></div>
+        {if !$poster}
+
+        {loop $require_data $k $v}
+        {php ++$i}
+            {if !empty($v['num'])}
+                <div class="d-item">
+                    <div class="dd-logo">{$i}</div>
+                    <div class="d-content">
+                        <div class="d-title">目标：{php echo $this->model->returnName($k);}{$v['verb']}{$v['num']}{$v['unit']}</div>
+                    </div>
+                </div>
+            {/if}
+        {/loop}
+        <div class="d-desc" style="margin-top: 1rem">
+            <div class="d-text">
+                <h4>任务奖励：</h4><br>
+
+                {loop $reward_data $k $v}
+                {if $k == 'score' && $v>0}
+                    {$v} 积分<br>
+                {elseif $k == 'balance' && $v>0}
+                    {$v} 元余额<br>
+                {elseif $k == 'redpacket' && $v>0}
+                    {$v} 元红包<br>
+                {elseif $k == 'coupon' && !empty($v)}
+                {php echo count($v);} 张优惠券：<br>
+
+                <?php
+                    foreach($v as $ck =>$cv){
+                        echo "&nbsp;&nbsp;&nbsp;&nbsp;".$cv['name']."<br>";
+                    }
+                ?>
+                {elseif !empty($v)}
+                    {php echo count($v);} 件商品<br>
+                <?php
+                    foreach($v as $ck =>$cv){
+                        echo "&nbsp;&nbsp;&nbsp;&nbsp;".$cv['name']."<br>";
+                    }
+                ?>
+                {/if}
+                {/loop}
+            </div>
+        </div>
+        {if !empty($detail['explain'])}
+        <br>
+        <div class="d-desc">
+            <div class="d-text">{php echo htmlspecialchars_decode($detail['explain']);}</div>
+        </div>
+        {/if}
+        {else}
+            {if $detail['needcount']}
+            {loop $reward_data['rec'] $k $v}
+            {php ++$i}
+            <div class="d-item">
+                <div class="dd-logo">{$i}</div>
+                <div class="d-content">
+                    <div class="d-title">目标：通过海报邀请{$detail['needcount']}人关注</div>
+                    <div class="d-reward">
+                        {if $k=='credit'}
+                        奖励：{$reward_data['rec'][$k]}积分
+                        {elseif $k=='money'}
+                        奖励：{$reward_data['rec'][$k]['num']}元奖金
+                        {elseif $k=='bribery'}
+                        奖励：{$reward_data['rec'][$k]}元红包
+                        {elseif $k=='coupon'}
+                        奖励：{$reward_data['rec'][$k]['total']}张优惠券
+                        {/if}
+                    </div>
+                </div>
+            </div>
+            {/loop}
+            {else}
+        {loop $reward_data['rec'] $k $v}
+        {php ++$i}
+        <div class="d-item">
+            <div class="dd-logo">{$i}</div>
+            <div class="d-content">
+                <div class="d-title">目标：通过海报邀请{$v['needcount']}人关注</div>
+                <div class="d-reward">
+                    {if $k=='credit'}
+                    奖励：{$v[$k]}积分
+                    {elseif $k=='money'}
+                    奖励：{$reward_data['rec'][$k]['num']}元奖金
+                    {elseif $k=='bribery'}
+                    奖励：{$reward_data['rec'][$k]}元红包
+                    {elseif $k=='coupon'}
+                    奖励：{$reward_data['rec'][$k]['total']}张优惠券
+                    {/if}
+                </div>
+            </div>
+        </div>
+        {/loop}
+            {/if}
+        {if $this->getDesc()}
+        <br>
+        <div class="d-desc">
+            <div class="d-text">{php echo htmlspecialchars_decode($this->getDesc());}</div>
+        </div>
+        {/if}
+        {/if}
+        <div class="task-footer"></div>
+    </div>
+</div><div class="d-btn{if $poster}-p{/if}">立即领取</div>
+<script>
+    $(function () {
+        $(".d-btn").click(function () {
+            var id = '{$id}';
+            $.ajax({
+                url:"{php echo mobileUrl('task/newtask');}",
+                type:'post',
+                data:{id:id},
+                success:function (data) {
+                    var json = JSON.parse(data);
+                    if(json.status){
+                        FoxUI.alert('领取成功，请到我的任务中查看','领取成功');
+                    }else{
+                        FoxUI.alert(json.result.message,'领取失败');
+                    }
+                }
+            });
+            return;
+        });
+        $(".d-btn-p").click(function () {
+            var id = '{$id}';
+            $.ajax({
+                url:"{php echo mobileUrl('task/gettask',array('content'=>$detail['keyword']));}",
+                type:'post',
+                data:{id:id},
+                success:function (data) {
+                    var json = JSON.parse(data);
+                    if(json.status){
+                        FoxUI.alert('领取成功，请到我的任务中查看','领取成功');
+                    }else{
+                        FoxUI.alert(json.result.message,'领取失败');
+                    }
+                }
+            });
+            return;
+        });
+    })
+</script>
+{template '_footer'}

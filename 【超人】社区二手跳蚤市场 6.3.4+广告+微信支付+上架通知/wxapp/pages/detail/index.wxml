@@ -1,0 +1,265 @@
+<movable post_appid="{{post_appid}}" post_img="{{showPostBtn?post_img:''}}" post_url="{{post_url}}" wx:if="{{completed}}">
+    <view class="container">
+        <view class="zan-panel no-padding">
+            <view class="swiper" wx:if="{{detail.album.length>0||detail.video.length>0}}">
+                <swiper autoplay="{{autoplay}}" bindchange="bindSwiperChange" circular="{{true}}" class="screen-swiper" duration="{{duration}}" indicatorDots="true" interval="{{interval}}" style="height:{{imgheights[current]}}rpx;">
+                    <swiper-item wx:if="{{detail.video.length>0&&!hideVideo}}" wx:for="{{detail.video}}" wx:key="*this">
+                        <video autoplay bindended="setVideoHide" controls="{{true}}" objectFit="cover" showPlayBtn="{{true}}" src="{{item}}"></video>
+                    </swiper-item>
+                    <swiper-item bindtap="previewImg" wx:if="{{detail.album.length>0}}" wx:for="{{detail.album}}" wx:key="*this">
+                        <image bindload="imageLoad" data-index="{{detail.video.length>0?detail.video.length+index:index}}" mode="widthFix" src="{{item}}"></image>
+                    </swiper-item>
+                </swiper>
+            </view>
+            <view class="detail-box">
+                <view class="detail-title">{{detail.title}}</view>
+                <view class="detail-sub">
+                    <text class="cu-tag bg-orange" wx:if="{{!post_time}}">{{detail.time_diff}}前发布</text>
+                    <text class="cu-tag bg-green" wx:if="{{post_time==2&&detail.is_online==1}}">卖家在线</text>
+                    <text class="cu-tag bg-red">{{detail.page_view}}人浏览</text>
+                    <text class="cu-tag bg-olive" wx:if="{{detail.trade_type==2}}">需自提</text>
+                    <text class="cu-tag bg-blue">库存量：{{detail.stock}}</text>
+                </view>
+                <view class="detail-text" wx:if="{{detail.trade_type==2&&detail.fetch_address}}">
+                        自提地址：{{detail.fetch_address}}
+                    </view>
+                <view class="detail-text" wx:if="{{detail.description||detail.summary}}">
+                        {{detail.description?detail.description:detail.summary}}
+                    </view>
+                <block wx:if="{{detail.add_fields}}">
+                    <view class="field-item" wx:if="{{item.value!=''}}" wx:for="{{detail.add_fields}}" wx:key="title">
+                        <view class="inline">{{item.title}}：</view>
+                        <view bindtap="copyValue" class="inline" data-value="{{item.value}}">{{item.type=='single_select'?item.extra.option[item.value]:item.value}}</view>
+                        <view class="zan-arrow"></view>
+                    </view>
+                </block>
+                <view class="item-status" wx:if="{{detail.status==2}}">
+                    <image mode="widthFix" src="{{soldImg?soldImg:'/libs/images/yz.png'}}"></image>
+                </view>
+                <view class="item-status" wx:if="{{detail.status==-2}}">
+                    <image mode="widthFix" src="/libs/images/sc.png"></image>
+                </view>
+            </view>
+            <view class="item-footer">
+                <zan-row>
+                    <zan-col class="address zan-font-12 zan-c-gray-dark" col="16">
+                        <view bindtap="showPosition" class="zan-ellipsis" data-lat="{{detail.lat}}" data-lng="{{detail.lng}}">
+                            <text class="iconfont icon-pos"></text> {{detail.address}}
+                            </view>
+                    </zan-col>
+                    <zan-col class="action zan-font-14 zan-c-gray-dark" col="8">
+                        <form bindsubmit="itemAction" data-status="{{is_fav?1:0}}" data-type="1" reportSubmit="true">
+                            <button class="ft-btn" formType="submit">
+                                <text class="iconfont icon-praise1" wx:if="{{is_fav}}"></text>
+                                <text class="iconfont icon-praise" wx:else></text>
+                                <text class="vt-md">点赞</text>
+                            </button>
+                        </form>
+                        <form bindsubmit="itemAction" data-status="{{is_collect?1:0}}" data-type="2" reportSubmit="true">
+                            <button class="ft-btn" formType="submit">
+                                <text class="iconfont icon-fav1" wx:if="{{is_collect}}"></text>
+                                <text class="iconfont icon-fav" wx:else></text>
+                                <text class="vt-md">收藏</text>
+                            </button>
+                        </form>
+                    </zan-col>
+                </zan-row>
+            </view>
+        </view>
+        <view class="order-info" wx:if="{{showOrder}}">
+            <view class="order-title">买家信息</view>
+            <view class="bg-white">
+                <zan-cell-group>
+                    <zan-cell title="昵称" value="{{detail.order.name}}"></zan-cell>
+                    <zan-cell bindtap="makeCall" isLink="true" title="手机号" value="{{detail.order.mobile}}"></zan-cell>
+                    <zan-cell title="地址" value="{{detail.order.address}}"></zan-cell>
+                    <zan-cell title="备注" value="{{detail.order.reply}}" wx:if="{{detail.order.reply}}"></zan-cell>
+                    <zan-cell title="取消原因" value="{{detail.order.reason}}" wx:if="{{detail.order.reason}}"></zan-cell>
+                </zan-cell-group>
+            </view>
+        </view>
+        <view class="seller-panel">
+            <zan-card cardClass="test-card" thumb="{{detail.avatar}}" useDetailSlot="{{true}}">
+                <view class="zan-card__detail" slot="detail-slot">
+                    <zan-row>
+                        <zan-col col="14">
+                            <view class="zan-font-14 zan-ellipsis">{{detail.nickname}}</view>
+                        </zan-col>
+                        <zan-col col="10" wx:if="{{detail.item_type!=-1}}">
+                            <view class="zan-c-red zan-pull-right">坐拥：{{detail.seller_credit1}}{{credit_title}}</view>
+                        </zan-col>
+                    </zan-row>
+                    <view class="zan-font-12 zan-c-gray-darker margin-md">
+                        <text>共卖出{{detail.sell_count}}件宝贝</text>
+                        <block wx:if="{{detail.level_one>0||detail.level_two>0||detail.level_three>0}}">
+                            <text bindtap="goToComment">，收获{{detail.level_one}}好评，{{detail.level_two}}中评，{{detail.level_three}}差评</text>
+                            <text class="iconfont icon-right"></text>
+                        </block>
+                    </view>
+                </view>
+            </zan-card>
+        </view>
+        <view class="middle-panel">
+            <form bindsubmit="jubao" reportSubmit="true">
+                <button class="like-btn" formType="submit">
+                    <text class="iconfont icon-jubao"></text>内容违规，我要举报
+                    </button>
+            </form>
+            <form bindsubmit="leaveMsg" reportSubmit="true">
+                <button class="like-btn" formType="submit">
+                    <text class="iconfont icon-xiaoxi"></text>很感兴趣，我要留言
+                    </button>
+            </form>
+        </view>
+        <block wx:if="{{notice.length>0}}">
+            <view class="notice-list" wx:if="{{notice_type==1}}">
+                <view class="notice-item" wx:for="{{notice}}" wx:key="id">
+                    <navigator hoverClass="none" url="../ad/index?id={{item.id}}">
+                        <image class="notice-icon" src="https://img.yzcdn.cn/public_files/2017/8/10/6af5b7168eed548100d9041f07b7c616.png"></image>
+                        <text style="color: {{item.title_color?item.title_color:'#999'}}">{{item.title}}</text>
+                    </navigator>
+                </view>
+            </view>
+            <view class="notice-swiper" wx:else>
+                <image class="notice-icon" src="https://img.yzcdn.cn/public_files/2017/8/10/6af5b7168eed548100d9041f07b7c616.png"></image>
+                <swiper autoplay="{{autoplay}}" class="notice" duration="{{duration}}" indicatorDots="{{noticeDots}}" interval="{{interval}}" vertical="{{vertical}}">
+                    <swiper-item wx:for="{{notice}}" wx:key="title">
+                        <navigator hoverClass="none" url="../ad/index?id={{item.id}}">
+                            <text style="color: {{item.title_color?item.title_color:'#999'}}">{{item.title}}</text>
+                        </navigator>
+                    </swiper-item>
+                </swiper>
+            </view>
+        </block>
+        <view class="msg-panel">
+            <view class="message-title">留言墙</view>
+            <view class="no-message" wx:if="{{message.length==0}}">
+                <view class="zan-font-14 margin-big">还没有人来留言，赶紧去抢个沙发吧！</view>
+            </view>
+            <view class="message-list" wx:if="{{message.length>0}}">
+                <view class="message-item" wx:for="{{message}}" wx:key="key">
+                    <view class="message-top">
+                        <view class="inline">
+                            <image class="msg-img" src="{{item.avatar}}"></image>
+                        </view>
+                        <view class="inline zan-font-14 zan-c-gray-darker">{{item.nickname}}</view>
+                        <view class="time-right">{{item.time_diff}}前来过</view>
+                    </view>
+                    <view class="message-content">
+                        <view class="zan-font-15 zan-c-gray-darker word-break">{{item.message}}</view>
+                        <view class="reply word-break" wx:if="{{item.reply}}">主人回复：{{item.reply}}</view>
+                    </view>
+                    <view class="message-footer text-right" wx:if="{{is_author&&!item.reply}}">
+                        <form bindsubmit="replyMsg" data-id="{{item.id}}" reportSubmit="true">
+                            <button class="zan-btn" formType="submit" type="default">
+                                <zan-icon type="edit"></zan-icon> 回复
+                                </button>
+                        </form>
+                    </view>
+                </view>
+            </view>
+        </view>
+        <view class="back-home">
+            <navigator hoverClass="none" openType="redirect" url="../home/index">
+                <text class="iconfont icon-index"></text>
+            </navigator>
+        </view>
+        <view class="back-home set-top" wx:if="{{is_author&&canSetTop&&detail.pay_position==0&&detail.status==1&&set_top}}">
+            <navigator hoverClass="none" openType="redirect" url="../set_top/index?post=1&id={{detail.id}}">
+                    置顶
+                </navigator>
+        </view>
+        <view class="bottom-bar {{iphoneX?'iphonex-bottom':''}}" style="bottom: {{iphoneX?'68rpx':0}}">
+            <zan-row>
+                <zan-col class="" col="8">
+                    <view class="bt-price" wx:if="{{detail.credit>0||detail.price>0}}">需付：
+                            <text wx:if="{{detail.buy_type==1}}">{{detail.credit}}{{credit_title}}</text>
+                        <text wx:if="{{detail.buy_type==0}}">{{detail.price}}{{detail.unit==0?'元':detail.unit_title}}</text>
+                    </view>
+                    <view class="bt-price" wx:if="{{detail.credit==0&&detail.price==0}}">
+                            价格：面议
+                        </view>
+                </zan-col>
+                <zan-col class="text-right" col="16">
+                    <block wx:if="{{detail.item_type==-1}}">
+                        <form bindsubmit="makePhone" data-phone="{{detail.phone}}" reportSubmit="true" wx:if="{{detail.phone}}">
+                            <button class="zan-btn" disabled="{{detail.status==2?true:false}}" formType="submit">卖家电话</button>
+                        </form>
+                        <form bindsubmit="copyWechat" data-wechat="{{detail.wechat}}" reportSubmit="true" wx:if="{{detail.wechat}}">
+                            <button class="zan-btn bg-yellow" disabled="{{detail.status==2?true:false}}" formType="submit">卖家微信</button>
+                        </form>
+                    </block>
+                    <block wx:else>
+                        <form bindsubmit="openActionSheet" reportSubmit="true" wx:if="{{is_author&&!blacklist}}">
+                            <button class="zan-btn" disabled="{{disabled}}" formType="submit">操作</button>
+                        </form>
+                        <form bindsubmit="toChat" reportSubmit="true" wx:if="{{!is_author&&detail.chat}}">
+                            <button class="zan-btn" formType="submit">{{detail.chat_text}}</button>
+                        </form>
+                        <form bindsubmit="buy" data-id="{{detail.id}}" data-type="credit" reportSubmit="true" wx:if="{{!is_author&&detail.status==1&&detail.buy_type==1}}">
+                            <button class="zan-btn bg-yellow" formType="submit">我要兑换</button>
+                        </form>
+                        <form bindsubmit="buy" data-id="{{detail.id}}" data-type="wechat" reportSubmit="true" wx:if="{{!is_author&&detail.status==1&&detail.buy_type==0&&wechat_on&&detail.wechatpay==1}}">
+                            <button class="zan-btn bg-yellow" formType="submit">我要买</button>
+                        </form>
+                    </block>
+                </zan-col>
+            </zan-row>
+            <view class="actionsheet-container">
+                <zan-actionsheet actions="{{soldOut?actions2:actions}}" bind:actionclick="handleActionClick" bind:cancel="closeActionSheet" cancelText="{{cancelText}}" cancelWithMask="{{cancelWithMask}}" show="{{show}}"></zan-actionsheet>
+            </view>
+        </view>
+    </view>
+</movable>
+<view class="container-loading" wx:else>
+    <image mode="widthFix" src="{{loadingImg}}"></image>
+</view>
+<zan-toptips content="{{content}}" id="zan-toptips"></zan-toptips>
+<zan-toast id="zan-toast"></zan-toast>
+<block wx:if="{{showModal}}">
+    <view class="mask"></view>
+    <view class="modal">
+        <view class="modal-title">请输入{{report?'举报原因':'内容'}}</view>
+        <form bindsubmit="formSubmit" reportSubmit="true">
+            <view class="modal-content text-left">
+                <textarea autoFocus="true" fixed="true" name="content" placeholder="在此输入内容..." showConfirmBar="{{confirmBar}}"></textarea>
+            </view>
+            <view class="modal-footer">
+                <button bindtap="closeModal" class="modal-btn">取消</button>
+                <button class="modal-btn confirm-btn" formType="submit">确定</button>
+            </view>
+        </form>
+    </view>
+</block>
+<block wx:if="{{showLogin}}">
+    <view class="mask"></view>
+    <view class="modal">
+        <view class="modal-title">友情提示</view>
+        <view class="modal-content">
+            <view>{{tips.top}}</view>
+            <view class="margin-small">{{tips.bottom}}</view>
+        </view>
+        <view class="modal-footer">
+            <button bindtap="closeLogin" class="modal-btn">取消</button>
+            <button bindtap="goNext" class="modal-btn confirm-btn" wx:if="{{defaultBtn}}">确定</button>
+            <button bindgetuserinfo="getUserInfo" class="modal-btn confirm-btn" lang="zh_CN" openType="getUserInfo" wx:if="{{!defaultBtn}}">确定</button>
+        </view>
+    </view>
+</block>
+<view catchtouchmove="true" wx:if="{{showPopup}}">
+    <view bindtap="togglePopup" class="mask"></view>
+    <view class="item-pop">
+        <video autoplay="true" objectFit="cover" src="{{video}}"></video>
+    </view>
+</view>
+<block wx:if="{{showShare}}">
+    <view bindtap="closeMask" class="mask"></view>
+    <view class="guide-box">
+        <view class="arrow">
+            <text class="iconfont icon-arrow"></text>
+        </view>
+        <view class="guide-text">
+            <view>点击右上角 <text class="zan-font-22">·•·</text> 按钮分享给好友或微信群</view>
+        </view>
+    </view>
+</block>

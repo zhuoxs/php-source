@@ -1,0 +1,138 @@
+{include file="common/top"}
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/static/css/viewer.min.css">
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/peixin/css/member.css">
+<script type="application/javascript" charset="utf-8" src="/static/UEditor/ueditor.config.js"></script>
+<script type="text/javascript" charset="utf-8" src="/static/UEditor/ueditor.all.min.js"></script>
+
+<style>
+
+</style>
+
+<div class="s-body">
+    <div class="content">
+        <!--左边选择-->
+        {include file="member/common"}
+        <!--右边内容-->
+        <div class="M-content">
+            <div class="M-info">
+                <!--我的图片-->
+                <div class="block my-img">
+                    <div class="establish img-btn">
+                        <a>创建图集</a>
+                    </div>
+                    <div class="img-box">
+                        <ul class="Atlas-box">
+                            {notempty name="atlas_list"}
+                            {volist name="atlas_list" id='v'}
+                            <li id="li_{:$v['id']}">
+                                <a href="{:url('member/pic',array('atlasid'=>$v['id']))}">
+                                    <img src="{$v['cover']}"/>
+                                    <span class="num">{$v['good']}</span>
+                                </a>
+                                <div class="edit-box">
+                                    <i class="btn fn-down-bold"></i>
+                                    <div class="editBox">
+                                        <span  data-id="{$v['id']}"><i class="btn fn-bianji1"></i>编辑</span>
+                                        <span  data-id="{$v['id']}" id="del"><i class="btn fn-shanchu"></i>删除</span>
+                                    </div>
+                                </div>
+                                {if condition="$v['status'] neq 1"}
+                                <span class="btn fn-jiaobiao"><i>已禁用</i></span>
+                                {else/}
+                                {if condition="$v['is_check'] eq 0"}<span class="btn fn-jiaobiao aspect"><i>审核中</i></span> {/if}
+                                {if condition="$v['is_check'] eq 2"}<span class="btn fn-jiaobiao"><i>已拒绝</i></span> {/if}
+                                {/if}
+                                <p class="title">{$v['title']}</p>
+                                <div class="subtitle">{:date('Y-m-d',$v['add_time'])}<span>{$v['click']}次播放</span></div>
+                            </li>
+                            {/volist}
+                            {else/}
+                            <div class="not-comment not">您还没有上传过图片哦 ~</div>
+                            {/notempty}
+                        </ul>
+                    </div>
+                    <div class="sort-pager">
+                        {$pages}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<script>
+    $(function () {
+
+        /*上传图片、点击标签*/
+        $(".form-checkbox").click(function(){
+            $(this).toggleClass("cur");
+        });
+
+        /*鼠标移动到图册效果*/
+        $(".Atlas-box li").hover(function () {
+            $(this).find(".edit-box").show();
+        }, function () {
+            $(this).find(".edit-box").hide();
+            $(".edit-box .fn-down-bold").siblings().slideUp();
+        });
+        /*点击图册上按钮效果*/
+        $(".edit-box .fn-down-bold").click(function () {
+            $(this).siblings().slideToggle();
+        });
+        /*我的图片、上传图集*/
+        $(".img-btn a").click(function () {
+            layer.open({
+                type: 2,
+                title: '创建图集',
+                area: ['650px', '500px'],
+                shadeClose: true,
+                skin: 'demo-class',
+                anim: 0,
+                content: "{:url('member/addAtlas')}"
+            });
+        });
+
+        /*我的图片、编辑图集*/
+        $(".img-box .editBox span:first-child").click(function () {
+                       var id= $(this).data('id');
+            layer.open({
+                type: 2,
+                title: '编辑图集信息',
+                area: ['650px', '500px'],
+                shadeClose: true,
+                skin: 'demo-class',
+                anim: 0,
+                content:  "/member/editAtlas/atlasid/"+id
+            });
+        });
+        /*我的图集删除*/
+        $("#del").click(function(){
+            var id = $(this).data('id');
+            var reqData={table:'atlas',id:id};
+            layer.confirm('确定删除吗？', {
+                btn: ['确定','取消'] //按钮
+            }, function(){
+                $.ajax({
+                    type: 'POST',
+                    url: "{:url('api/del')}",
+                    data: reqData,
+                    dataType : "json",
+                    success: function(data){
+                        console.log(data);
+                        if(data.resultCode==0){
+                            layer.msg('已成功删除', {icon: 1});
+                            $('#li_'+id).slideUp("200", function() {
+                                $('#li_'+id).remove();
+                            });
+                        }else{
+                            layer.msg('删除失败，原因：'+data.error,{time:2000,icon:2});
+                        }
+                    },
+                });
+
+            });
+        });
+
+    });
+</script>
+{include file="common/bottom"}

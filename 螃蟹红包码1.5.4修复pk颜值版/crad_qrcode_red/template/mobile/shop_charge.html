@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>余额</title>
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/mui.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/charge.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/font-awesome.css" />
+        <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/jquery-3.2.1.min.js" ></script>
+        <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/mui.min.js" ></script>
+        <script>
+            $(document).ready(function () {
+                $(".cont_one").click(function () {
+                    $(this).addClass("ins").siblings().removeClass("ins");
+                });
+
+            });
+        </script>
+        {php echo register_jssdk(false);}
+    </head>
+    <body>
+
+        <div class="xianshi">
+            <div class="money_one">
+                账户余额（元）
+            </div>
+            <div class="money_two">
+                <div class="number">
+                    {$least_money}
+                </div>
+                {if $shop['recharge_open']==1&&$check_shop['power']==3}
+                <div class="recharge">
+                    <a href="{php echo $this->createMobileUrl('shop_pay',array('token'=>$token, 'shopid' => $shopid))}">
+                        <div class="recharge_btn">
+                            充值
+                        </div>
+                    </a>
+                </div>
+                {/if}
+            </div>
+        </div>
+        <!--充值明细-->
+        <div class="titles">
+            资金明细
+        </div>
+        <div class="cont">
+            <div class="cont_one {if $type==1}ins{/if}" onclick="search(1)">充值</div>
+            <div class="cont_one {if $type==2}ins{/if}" onclick="search(2)">冻结</div>
+            <div class="cont_one {if $type==3}ins{/if}" onclick="search(3)">消费</div>
+        </div>
+        {loop  $charge_list $charge}
+        <div class="wode_huodong" id="list{$charge['id']}">
+            <div class="mui-table-view dingwei">
+                <li class="mui-table-view-cell mui-media jiachang">
+                    <div class="left_col">
+                        <div class="mui-media-body nichen">
+                            金额:
+                            <span>{php echo sprintf("%.2f", $charge['money']);}</span> <span>元</span>
+                        </div>
+                        <div class="mui-media-body shang-wan">
+                            时间:
+                            <span>{php echo date("Y-m-d H:i",$charge['createtime'])}</span>
+                        </div>
+                    </div>
+                    <div class="right_col">
+                        {if $charge['type']>1}
+                        <span>{$charge['activity_name']}</span> 
+                        {else}
+                        {if $charge['status']==1}
+                        <span>已支付 {php echo date("Y-m-d H:i",$charge['paytime'])}</span> 
+                        {else}
+                        <div class="ment" data-money="{$charge['money_all']}" data-id="{$charge['id']}">
+                            支付
+                        </div>
+                        <div class="ment_two" data-id="{$charge['id']}">
+                            删除
+                        </div>
+                        {/if}
+                        {/if}
+                    </div>
+                </li> 
+            </div>
+        </div>
+        {/loop}
+        {template 'shop_footer'}
+        <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/mui.min.js" ></script>
+        <script type="text/javascript">
+
+                $('.ment_two').click(function () {
+                    var id = $(this).data("id");
+                    var btnArray = ['取消', '确定'];
+                    var isdelete = false;
+                    mui.confirm('你确定要删除该记录吗？', '删除提示', btnArray, function (e) {
+                        if (e.index == 1 && !isdelete) {
+                            isdelete = true;
+                            $.get(
+                                    "{php echo $this->createMobileUrl('ajax_shop', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid))}",
+                                    {"op": "delete_pay", "id": id},
+                                    function (data) {
+                                        if (data.sta == 1) {
+                                            $('#list' + id).remove();
+                                            show_message(1, '删除成功', 3000, 1);
+                                            return true;
+                                        }
+                                        show_message(0, data.error, 3000, 1);
+                                    },
+                                    "json"
+                                    );
+                            return true;
+                        }
+                    });
+                });
+
+
+                $('.ment').click(function () {
+                    var money = $(this).data("money");
+                    var id = $(this).data("id");
+                    if (money == "" || id == "") {
+                        show_message(0, '参数错误', 3000, 1);
+                        return false;
+                    }
+                            var run_confim = false;
+
+                    var btnArray = ['充值', '取消'];
+                    mui.confirm('你确定要充值吗？', '充值提示', btnArray, function (e) {
+                        if (e.index == 0&& !run_confim) {
+                            run_confim = true;
+                            $.ajax({
+                                type: "POST",
+                                url: "{php echo $this->createMobileUrl('pay',array('token'=>$token, 'shopid' => $shopid))}",
+                                data: {money: money, orderid: id},
+                                dataType: "json",
+                                success: function (res) {
+                                    if (res.sta == 0) {
+                                        show_message(0, res.error, 3000, 1);
+                                    } else {
+                                        api_js_params = res;
+                                        if (typeof WeixinJSBridge == "undefined") {
+                                            if (document.addEventListener) {
+                                                document.addEventListener('WeixinJSBridgeReady', jsApiCall, false);
+                                            } else if (document.attachEvent) {
+                                                document.attachEvent('WeixinJSBridgeReady', jsApiCall);
+                                                document.attachEvent('onWeixinJSBridgeReady', jsApiCall);
+                                            }
+                                        } else {
+                                            jsApiCall();
+                                        }
+                                    }
+                                },
+                                error: function (err) {
+                                    show_message(0, '出错啦，刷新页面重试', 3000, 1);
+                                }
+                            });
+
+                        }
+                    });
+
+                });
+                //调用微信JS api 支付
+                var api_js_params = {};
+                function jsApiCall()
+                {
+                    WeixinJSBridge.invoke('getBrandWCPayRequest', api_js_params,
+                            function (res) {
+                                if (res.err_msg == "get_brand_wcpay_request:ok") { //支付成功
+                                    show_message(1, '充值成功', 2000, 1);
+                                    setTimeout(location.href = "{php echo $this->createMobileUrl('shop_charge',array('token'=>$token, 'shopid' => $shopid))}", 2000);
+                                } else if (res.err_msg == "get_brand_wcpay_request:cancel") {
+                                    show_message(0, '已取消充值', 2000, 1);
+                                    return false;
+                                } else if (res.err_msg == "get_brand_wcpay_request:fail") {
+                                    show_message(0, '充值失败，请刷新页面重试', 2000, 1);
+                                }
+                            }
+                    );
+                }
+                search = function (type) {
+                    location.href = "{php echo $this->createMobileUrl('shop_charge', array('token'=>$token, 'shopid' => $shopid))}" + '&type=' + type;
+                }
+
+                    setTimeout(function () { 
+                     $.get("{php echo $this->createMobileUrl('shop_activity', array('token'=>$token, 'shopid' => $shopid))}" + "&op=settlement_activity", function (ret) {}, 'json');
+    }, 2000);
+
+        </script>

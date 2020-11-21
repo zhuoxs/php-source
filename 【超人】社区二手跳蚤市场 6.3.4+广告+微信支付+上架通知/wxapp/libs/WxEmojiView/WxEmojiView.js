@@ -1,0 +1,364 @@
+var __this, ___Objs, __emojiArray = [ {
+    title: "微笑",
+    url: "00.gif"
+}, {
+    title: "撇嘴",
+    url: "01.gif"
+}, {
+    title: "色",
+    url: "02.gif"
+}, {
+    title: "发呆",
+    url: "03.gif"
+}, {
+    title: "得意",
+    url: "04.gif"
+}, {
+    title: "流泪",
+    url: "05.gif"
+}, {
+    title: "害羞",
+    url: "06.gif"
+}, {
+    title: "闭嘴",
+    url: "07.gif"
+}, {
+    title: "睡",
+    url: "08.gif"
+}, {
+    title: "大哭",
+    url: "09.gif"
+}, {
+    title: "尴尬",
+    url: "10.gif"
+}, {
+    title: "发怒",
+    url: "11.gif"
+}, {
+    title: "调皮",
+    url: "12.gif"
+}, {
+    title: "呲牙",
+    url: "13.gif"
+}, {
+    title: "惊讶",
+    url: "14.gif"
+}, {
+    title: "难过",
+    url: "15.gif"
+}, {
+    title: "吓",
+    url: "16.gif"
+}, {
+    title: "囧",
+    url: "17.gif"
+}, {
+    title: "抓狂",
+    url: "18.gif"
+}, {
+    title: "吐",
+    url: "19.gif"
+}, {
+    title: "偷笑",
+    url: "20.gif"
+}, {
+    title: "愉快",
+    url: "21.gif"
+}, {
+    title: "白眼",
+    url: "22.gif"
+}, {
+    title: "傲慢",
+    url: "23.gif"
+}, {
+    title: "馋",
+    url: "24.gif"
+}, {
+    title: "困",
+    url: "25.gif"
+}, {
+    title: "惊恐",
+    url: "26.gif"
+}, {
+    title: "流汗",
+    url: "27.gif"
+}, {
+    title: "憨笑",
+    url: "28.gif"
+}, {
+    title: "悠闲",
+    url: "29.gif"
+}, {
+    title: "奋斗",
+    url: "30.gif"
+}, {
+    title: "咒骂",
+    url: "31.gif"
+}, {
+    title: "疑问",
+    url: "32.gif"
+}, {
+    title: "嘘",
+    url: "33.gif"
+}, {
+    title: "晕",
+    url: "34.gif"
+}, {
+    title: "衰",
+    url: "36.gif"
+}, {
+    title: "骷髅",
+    url: "37.gif"
+}, {
+    title: "敲打",
+    url: "38.gif"
+}, {
+    title: "再见",
+    url: "39.gif"
+}, {
+    title: "擦汗",
+    url: "40.gif"
+}, {
+    title: "抠鼻",
+    url: "41.gif"
+}, {
+    title: "鼓掌",
+    url: "42.gif"
+}, {
+    title: "尴尬",
+    url: "43.gif"
+}, {
+    title: "坏笑",
+    url: "44.gif"
+}, {
+    title: "左哼哼",
+    url: "45.gif"
+}, {
+    title: "右哼哼",
+    url: "46.gif"
+}, {
+    title: "哈欠",
+    url: "47.gif"
+}, {
+    title: "鄙视",
+    url: "48.gif"
+}, {
+    title: "委屈",
+    url: "49.gif"
+}, {
+    title: "快哭了",
+    url: "50.gif"
+}, {
+    title: "阴险",
+    url: "51.gif"
+}, {
+    title: "亲亲",
+    url: "52.gif"
+}, {
+    title: "惊吓",
+    url: "53.gif"
+}, {
+    title: "可怜",
+    url: "54.gif"
+}, {
+    title: "菜刀",
+    url: "55.gif"
+}, {
+    title: "西瓜",
+    url: "56.gif"
+}, {
+    title: "啤酒",
+    url: "57.gif"
+}, {
+    title: "篮球",
+    url: "58.gif"
+}, {
+    title: "乒乓球",
+    url: "59.gif"
+}, {
+    title: "咖啡",
+    url: "60.gif"
+}, {
+    title: "米饭",
+    url: "61.gif"
+}, {
+    title: "猪头",
+    url: "62.gif"
+}, {
+    title: "玫瑰",
+    url: "63.gif"
+}, {
+    title: "枯萎",
+    url: "64.gif"
+}, {
+    title: "爱",
+    url: "65.gif"
+}, {
+    title: "心",
+    url: "66.gif"
+}, {
+    title: "心碎",
+    url: "67.gif"
+}, {
+    title: "蛋糕",
+    url: "68.gif"
+}, {
+    title: "闪电",
+    url: "69.gif"
+}, {
+    title: "炸弹",
+    url: "70.gif"
+}, {
+    title: "匕首",
+    url: "71.gif"
+}, {
+    title: "足球",
+    url: "72.gif"
+}, {
+    title: "瓢虫",
+    url: "73.gif"
+}, {
+    title: "便便",
+    url: "74.gif"
+}, {
+    title: "月亮",
+    url: "75.gif"
+}, {
+    title: "太阳",
+    url: "76.gif"
+}, {
+    title: "礼物",
+    url: "77.gif"
+}, {
+    title: "拥抱",
+    url: "78.gif"
+}, {
+    title: "太强了",
+    url: "79.gif"
+}, {
+    title: "太弱了",
+    url: "80.gif"
+}, {
+    title: "握手",
+    url: "81.gif"
+}, {
+    title: "YEAH",
+    url: "82.gif"
+}, {
+    title: "承认",
+    url: "83.gif"
+}, {
+    title: "勾引",
+    url: "84.gif"
+}, {
+    title: "握拳",
+    url: "85.gif"
+}, {
+    title: "拉勾",
+    url: "86.gif"
+}, {
+    title: "LOVE",
+    url: "87.gif"
+}, {
+    title: "NO",
+    url: "88.gif"
+}, {
+    title: "OK",
+    url: "89.gif"
+}, {
+    title: "相爱",
+    url: "90.gif"
+}, {
+    title: "飞吻",
+    url: "91.gif"
+}, {
+    title: "摇摆",
+    url: "92.gif"
+}, {
+    title: "发抖",
+    url: "93.gif"
+}, {
+    title: "大叫",
+    url: "94.gif"
+}, {
+    title: "转圈",
+    url: "95.gif"
+}, {
+    title: "鞠躬",
+    url: "96.gif"
+}, {
+    title: "偷吃",
+    url: "97.gif"
+}, {
+    title: "跳绳",
+    url: "98.gif"
+}, {
+    title: "擦泪",
+    url: "99.gif"
+}, {
+    title: "哭",
+    url: "100.gif"
+}, {
+    title: "呐喊",
+    url: "101.gif"
+}, {
+    title: "飞吻",
+    url: "102.gif"
+}, {
+    title: "右碰碰",
+    url: "103.gif"
+}, {
+    title: "左碰碰",
+    url: "104.gif"
+}, {
+    title: "查找",
+    url: "107.gif"
+}, {
+    title: "美眉",
+    url: "108.gif"
+}, {
+    title: "小猫",
+    url: "109.gif"
+}, {
+    title: "小狗",
+    url: "110.gif"
+}, {
+    title: "钱",
+    url: "111.gif"
+}, {
+    title: "音乐",
+    url: "112.gif"
+}, {
+    title: "药",
+    url: "113.gif"
+}, {
+    title: "吻",
+    url: "114.gif"
+} ];
+
+function bindThis(i) {
+    __this = i;
+    var t = {};
+    t.emojiArray = __emojiArray, ___Objs = t, __this.setData({
+        WxEmojiObjs: t
+    });
+}
+
+function explain(i) {
+    for (var t = i.split(/[:_/]/), l = [], e = 0; e < t.length; e++) if (t[e]) {
+        for (var r = {}, u = 0; u < __emojiArray.length; u++) {
+            if (__emojiArray[u].title == t[e]) {
+                r.node = "element", r.tag = "emoji", r.text = __emojiArray[u].url;
+                break;
+            }
+            r.node = "text", r.text = t[e];
+        }
+        l.push(r);
+    }
+    return l;
+}
+
+module.exports = {
+    bindThis: bindThis,
+    explain: explain
+};

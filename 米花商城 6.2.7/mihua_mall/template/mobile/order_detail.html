@@ -1,0 +1,359 @@
+{php $bootstrap_type = 3;}
+{template 'header'}
+
+<link type="text/css" rel="stylesheet" href="{MODULE_URL}/images/style.css">
+<link href="{MODULE_URL}/recouse/css/xin_v3.s.min.css" rel="stylesheet" type="text/css" />
+<link href="{MODULE_URL}style/css/mdialog.css" rel="stylesheet" type="text/css" />
+<script src="{MODULE_URL}recouse/js/jquery-1.11.2.min.js"></script>
+<script src="{MODULE_URL}style/js/mdialog.js"></script>
+<script src="{MODULE_URL}style/js/zepto.min.js"></script>
+<script type="text/javascript" src="{MODULE_URL}/recouse/js/common.js"></script>
+<link href="{MODULE_URL}/recouse/css/show_notice.css" rel="stylesheet" type="text/css" />
+<link href="{MODULE_URL}/recouse/css/order.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="{MODULE_URL}/recouse/js/utils.js"></script>  
+
+<div class="head">
+	<a href="javascript:history.back();" class="bn pull-left">
+	<img src="{MODULE_URL}recouse/images/back.png">
+	</a>
+	<span class="title">订单详情</span>
+	<a href="{php echo $this->createMobileUrl('mycart')}" class="bn pull-right">
+	<img src="{MODULE_URL}recouse/images/mycart.png">
+	
+	</a>
+</div>
+ 
+<div class="myoder img-rounded" style='padding:40px 0 0 0;'>
+
+	{loop $goods $g}
+	<div class="myoder-detail">
+		<a href="{php echo $this->createMobileUrl('detail', array('id' => $g['id']))}">
+			<div class="orderthumb">
+			<img src="{$_W['attachurl']}{$g['thumb']}" width="160"></a>
+	</div>
+		<div>
+			<div class="name"><a href="{php echo $this->createMobileUrl('detail', array('id' => $g['id']))}">{$g['title']}</a></div>
+			{if $g['optiontitle']}<div class="name">{$g['optiontitle']}</div>{/if}
+			<div class="price">
+				<span>&yen;{if $item['ordertype']==2 ||$item['ordertype']==3 }{$g['groupprice']}{else}{$g['marketprice']}{/if}{if $g['unit']} / {$g['unit']}{/if}</span>
+				<span class="num">{$g['total']}{if $g['unit']} {$g['unit']}{/if}</span>
+				{if $cfg['groupbutton']==1}
+				<span class="num red">
+				{if $item['ordertype'] == 1}
+					普通订单
+				{elseif $item['ordertype'] == 2}
+					<a class="red" href="{php echo $this->createMobileUrl('mygroup',array('groupid'=>$item['groupid']))}">参团订单</a>
+				{elseif $item['ordertype'] == 3}
+					<a class="red" href="{php echo $this->createMobileUrl('mygroup',array('groupid'=>$item['groupid']))}">建团订单</a>
+				{/if}
+					</span>
+			{/if}
+
+				{if $g['refund'] ==0 && $item['price']>0 }
+				<span class="red refund">
+					<a href="{php echo $this->createMobileUrl('refund', array('ogid' => $g['ogid']))}">
+						申请退款
+					</a>
+				</span>
+				{elseif $g['order_status'] >= 2}
+				<span class="red refund">
+					<a href="{php echo $this->createMobileUrl('refund', array('ogid' => $g['ogid']))}">
+						退款详情
+					</a>
+				</span>
+				{/if}
+			</div>
+		</div>
+	</div>
+
+{if $g['verified']==1}
+<div class="myoder-express">
+	<span class="express-company">核销状态</span>
+	<span class="express-num">
+		<span class="text-success">
+			{if $g['verified']==1}已核销
+			{elseif $item['verified']==1}已核销
+			{elseif $item['status']==2}
+			待核销{/if}
+			</span>
+		</span>
+</div>
+{if $g['verifystore']['storename']}
+<div class="myoder-express">
+	<span class="express-company">核销门店</span>
+	<span class="express-num">
+		<span class="text-success">{$g['verifystore']['storename']}</span>
+		</span>
+</div>
+{/if}
+<div class="myoder-express">
+	<span class="express-company">核销员</span>
+	<span class="express-num">
+		<span class="text-success">{if $g['verifyopen']['salername']}{$g['verifyopen']['salername']}{else}核销员{/if}</span>
+		</span>
+</div>
+
+<div class="myoder-express">
+	<span class="express-company">核销时间</span>
+	<span class="express-num">
+		<span class="text-success">
+			{if $g['verifytime']}
+			{php echo date('Y-m-d H:i', $g['verifytime'])}
+			{else}
+			{php echo date('Y-m-d H:i', $item['verifytime'])}
+			{/if}
+		</span>
+		</span></div>
+
+{/if}
+{if  (empty($g['qr_code']) || empty($g['qr_code_str']) )&& $g['order_status']==1 && $item['isverify']==2 && $g['verified']!=1}
+{php $g['qr_code']=model_order::createQrCodeByogid($item['ordersn'],$g['ogid'])}
+{/if}
+{if $g['qr_code'] && $g['verified']!=1}
+{php $qr_code=tomedia($g['qr_code'])}
+{if @fopen( $qr_code, 'r' ) }
+{else}
+{php $g['qr_code']=model_order::createQrCodeByogid($item['ordersn'],$g['ogid'])}
+{/if}
+
+<!--核销二维码-->
+<div class="myoder-express">
+	<div  class="mui-btn mui-btn-warning" onclick="order_qr_code('{php echo tomedia($g['qr_code'])}',this)">核销二维码</div>
+</div>
+{if $g['qr_code_str']}
+<div class="myoder-express">
+	<span class="express-company">核销码</span>
+	<span class="express-num text-bold">{$g['qr_code_str']}
+	</span>
+</div>
+{/if}
+{/if}
+	{/loop}
+
+{if $item['virtual_str']}
+<div class="myoder-express">
+	<span class="express-company">卡密</span>
+	<span class="express-num text-bold">{$item['virtual_str']}
+	</span>
+</div>
+{/if}
+	<div class="myoder-hd">
+		<span class="pull-left">订单编号：{$item['ordersn']}</span>
+		<span class="pull-right">{php echo date('Y-m-d H:i', $item['createtime'])}</span>
+	</div>
+	<div class="myoder-express">
+		<span class="express-company">状态</span>
+		<span class="express-num">
+		{if $item['paytype'] == 3}
+			{if $item['status'] == -1}
+			<span class="text-muted">订单取消</span>
+			{elseif $item['status'] < 3}
+			<span class="text-danger">货到付款 / 未付款</span>
+			{else}
+			{php $have_done=true;}
+			<span class="text-success">已完成</span>
+			{/if}
+		{else}
+			{if $item['status'] == -1}
+			<span class="text-muted">订单取消</span>
+			{elseif $item['status'] == 0}
+			<span class="text-danger">未付款</span>
+			{elseif $item['status'] == 1}
+			<span class="text-warning">已付款</span>
+			{elseif $item['status'] == 2}
+			<span class="text-warning">已发货</span>
+			{elseif $item['status'] == 4}
+			<span class="text-danger">交易已关闭</span>
+			{else}
+			{php $have_done=true;}
+			<span class="text-success">已完成</span>
+			{/if}
+		{/if}
+		</span>
+	</div>
+{if $item['dispatchPro']==1}
+<div class="myoder-express">
+		<span class="express-company">配送方式</span>
+		<span class="express-num">
+				{if empty($item['expresscom'])}{php $item['expresscom']=$item['express']}{/if}
+			{if $item['expresscom']}{$item['expresscom']}{else}{$dispatch['dispatchname']}{/if}
+			{if  !empty($item['expresscom']) &&  !empty($item['expresssn']) }
+		<a  class="openDis dispatchurl" href="javascript:;"
+		 onclick="express_btn('{$item['expresscom']}','{$item['expresssn']}','{php echo $this->createMobileUrl('ajaxdeal',array('op'=>'selectexpress'));}') ">查看物流</a>
+			<a  class="closeDis dispatchurl none" href="javascript:;" onclick="closeDis();">关闭物流</a>
+			{/if}	
+		</span>
+	</div>
+
+<div class="express_body">
+	<ul class="timeline">
+		<li class="time-label"></li>
+	</ul>
+
+</div>
+{/if}
+
+{if $item['status']>=1}
+<div class="myoder-express">
+		<span class="express-company">付款方式</span>
+	<span class="express-num">
+					{if $item['paytype'] == 1}余额支付{/if}
+					{if $item['paytype'] == 2}在线支付{/if}
+					{if $item['paytype'] == 3}货到付款{/if}					
+					{if $item['paytype'] == 4}{php echo $cfg['bm_payms_title'] ? $cfg['bm_payms_title']: '银行版收银台';}{/if}
+		</span>
+	</div>
+	{/if}
+
+{if $item['addressid']!=0}
+
+	<div class="myoder-express">
+		<span class="express-company">联系方式</span>		
+	</div>
+	<div class="express-address">
+		<span>姓名：<p class="address_desc">{$address['realname']}</p></span>
+		<span>电话：<p class="address_desc">{$address['mobile']}</p></span>
+		{if $address['province']}
+		<span>地址：<p class="address_desc">{$address['province']} 
+			{$address['city']} {$address['area']} {$address['address']}</p></span>
+		{/if}
+
+		
+	</div>
+
+	{/if}
+	{if ($item['status'] == '2' || $item['status']==3) && !empty($item['expresssn'])}
+	<div class="myoder-express">
+            <span class="express-company">快递: {$item['expresscom']}</span>
+		<span class="express-num">
+                    单号: {$item['expresssn']}
+                    
+		 </span>
+	</div>
+       
+        
+	{/if}
+    {if !empty($item['remark'])}
+   <div class="myoder-express" style='margin-top:10px;'>
+		<span class="express-company">订单备注</span>
+		
+	</div>
+        <div class='orderdetail ordermark'>
+            {$item['remark']}
+        </div> 
+        {/if}
+
+</div>
+<div class="infobox ">
+<ul  class="detailInfo">
+    <li><span class="fl ">小计</span><span class="fr">&yen;<span class="detail-goodmoney">{$item['goodsprice']}</span>    	
+    </li>
+	<li><span class="fl ">运费</span><span class="fr  red">+ &yen;<span class="detail-dispatch">{$item['dispatchprice']}</span></span>
+    </li>
+    <li><span class="fl ">积分抵扣</span><span class="fr green">- &yen;<span class="detail-credit">{$item['ded_money']}</span></span>
+    <input type="hidden" name="iscredit" class="iscredit" value="" />
+    </li>
+    <li><span class="fl ">优惠券</span><span class="fr  green">- &yen;<span class="detail-card">{$item['cardcutmoney']}</span></span>
+    </li>
+	 <li><span class="fl ">实际支付</span><span class="fr  green">&yen;<span class="detail-card">{$item['price']}</span></span>
+    </li>
+</ul>
+</div>
+
+
+
+		{if $item['status'] == 0}<a  href="{php echo $this->createMobileUrl('pay', array('orderid' => $item['id']))}" 
+			class="btn btn-success pull-right btn-sm">立即支付</a>
+			{/if}
+
+		{if $item['status'] == 2 || ($item['paytype'] == 3 && $item['status'] > 1&& $item['status'] < 3)}
+		<a  class="btn btn-success pull-right btn-sm" onclick="doConfirm({$item['id']}); " >
+			确认收货</a>{/if}
+		
+	
+		</span>
+	</div>
+
+
+
+
+	</div>
+	{if $item['status'] == 3}
+	{loop $goods $g}
+  		<div class='pingjia' style="margin-top: 10px">
+  			<span style='font-size:0.8em;'><b>商品评价：</b>{$g['title']}</span>
+	  	{if $have_content[$g['id']]}
+ 			<div>{$have_content[$g['id']]}</div>
+  		{else}		 
+	  		<textarea name='pingjiaq' placeholder=" {if !empty($comment_jifen)}评价赠送{$comment_jifen}积分{/if}" id='textarea{$g['id']}'></textarea>
+  		{/if}
+			{if empty($have_content[$g['id']])}
+  			<input type='submit' value='评价商品' data-id="{$g['id']}" class='pingjiabtn btn-success  btn-sm' onclick="{if !$have_content[$g['id']]}up_comment(this){/if}" >
+  			</div>
+{/if}
+  	{/loop}
+  	{/if}
+
+  		<script>
+		  $('#qr_code').click(function(){
+        var url ='{$qr_code}';		
+         showBigImage(url,$('#qr_code'));
+      
+    });
+		  function order_qr_code(url,obj){
+              showBigImage(url,$(obj));
+		  }
+  			function up_comment(obj){			
+  				var gid=$(obj).attr('data-id');				
+  				var uid='{$item['uid']}';
+				var ordersn='{$item['ordersn']}';
+  				var content=$("#textarea"+gid).val();
+  				if(!content){alert('请填写评价内容！'); return false;}
+					
+  				$.ajax({				
+  					type:'post',
+  					url:'{php echo $this->createMobileUrl('up_comment')}',
+            		dataType: 'json',					
+  					data:{'gid':gid,'uid':uid,'ordersn':ordersn,'content':content},
+  					success:function(da){
+  						if(da.status=='success'){
+							
+  							alert(da.msg);
+  							$("#textarea"+gid).attr('readonly','readonly');
+  							$(obj).val('评价成功');
+  							$(obj).attr('onclick','');
+							location.href='{php echo $this->createMobileUrl('detail', array('id' => $g['id']))}';
+  						}else{						
+							alert(da.msg);							
+  						}
+  					}
+  				});
+  			}
+
+
+		function doConfirm(id){ //确认收货 
+			new TipBox({type:'load',str:"努力加载中..",setTime:1500,callBack:function(){          
+         	$.ajax({				
+  			type:'post',
+  			url:'{php echo $this->createMobileUrl('myorder')}',
+            dataType: 'json',					
+  			data:{'op':'confirm','orderid':id},
+            success:function(data){
+            if(data.result=='0'){
+              new TipBox({type:'success',str:data.str,hasBtn:true});
+            }else{
+              new TipBox({type:'error',str:data.str,hasBtn:true});  
+            }
+            
+          }
+        });
+	  }}); 
+    
+	}
+
+ </script>
+
+</div>
+ {template 'wx_nav'}
+{template 'jsweixin'}
+

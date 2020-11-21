@@ -1,0 +1,778 @@
+{template 'public/header'}
+{template 'public/comhead'}
+<style>
+    /*top1.html*/
+    .topleft1{background-color:#f8f8f8; height:58px; border:1px solid #ebebeb;margin-bottom: 10px;}
+    .topright1 li{display:inline-block; line-height:60px; font-size:16px; color:#666; width:210px; padding-left:10px;}
+    .topright1 li a{font-size:16px;}
+    .xian{border-left:1px solid #DCDCDC; line-height:45px; display:block; padding-left:10px;}
+    .topright1 li img{margin-left:5px; width:28px; vertical-align:middle; margin-top:-2px;}
+</style>
+<ul class="nav nav-tabs">
+    <li class="active"><a href="#">订单管理</a></li>
+    <li><a href="{php echo $this->createWebUrl('goodssalemx', array('op' => 'display'))}">商品销售明细</a></li>
+    <li><a href="{php echo $this->createWebUrl('saletj', array('op' => 'display'))}">销售统计</a></li>
+    <li><a href="{php echo $this->createWebUrl('goodssaleph', array('op' => 'display'))}">商品销售排行</a></li>
+    <li><a href="{php echo $this->createWebUrl('memberpayph', array('op' => 'display'))}">顾客消费排行</a></li>
+    <!--<li><a href="{php echo $this->createWebUrl('memberaddqs', array('op' => 'display'))}">会员增长趋势</a></li>-->
+    <li><a href="{php echo $this->createWebUrl('tpllog', array('op' => 'display'))}">模版消息日志</a></li>
+</ul>
+{php include $this->template('web/_delivery_notice');}
+
+{if $operation == 'display'}
+<!--<button class="btn btn-primary dim btn-large-dim" type="button"><i class="fa fa-money"></i></button>-->
+<!--<script language="JavaScript">-->
+<!--function myrefresh(){-->
+<!--window.location.reload();-->
+<!--}-->
+<!--setTimeout('myrefresh()',2000); //指定1秒刷新一次-->
+<!--</script>-->
+<style>
+    .shop-preview {
+        position: fixed;
+        padding: 0 15px;
+        bottom: 0;
+        right: 0;
+        z-index: 10000;
+        width: 83.33333333%;
+    }
+
+    .shop-preview div {
+        /*background: rgba(255, 254, 220, 0.8);*/
+        filter:alpha(opacity=20);
+        /*opacity: 0.8;*/
+    }
+</style>
+<div class="main">
+    <div class="alert alert-info">
+        <i class="fa fa-info-circle"></i>提示：<br/>
+        1.未处理订单表示商家未接单，确认订单表示商家已接单，完成订单表示交易成功，若设置积分顾客可以获得积分。<br/>
+        2.完成和取消操作才有信息提醒用户，其它操作想信息提醒，请勾选单子后点通知按钮。
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="weisrc_dish" />
+                <input type="hidden" name="do" value="allorder" />
+                <input type="hidden" name="op" value="display" />
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width:90px;">订单号</label>
+                    <div class="col-sm-2 col-lg-2">
+                        <input class="form-control" name="ordersn" id="" type="text" value="{$_GPC['ordersn']}">
+                    </div>
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width:90px;">订单状态</label>
+                    <div class="col-sm-8 col-lg-2 col-xs-12">
+                        <select name="status" class="form-control">
+                            <option value="">不限</option>
+                            <option value="3" {if $_GPC['status'] == 3} selected="selected" {/if}>已完成</option>
+                            <option value="1" {if $_GPC['status'] == 1} selected="selected" {/if}>已确认</option>
+                            <option value="0" {if $_GPC['status'] == 0 && isset($_GPC['status']) && $_GPC['status'] != ''} selected="selected" {/if}>待处理</option>
+                            <option value="-1" {if $_GPC['status'] == -1} selected="selected" {/if}>已取消</option>
+                        </select>
+                    </div>
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width: 90px;">支付方式</label>
+                    <div class="col-sm-7 col-lg-2 col-xs-12">
+                        <select name="paytype" class="form-control">
+                            <option value="">不限</option>
+                            <option value="0" {if $_GPC['paytype'] == 0 && isset($_GPC['paytype']) && $_GPC['paytype'] != ''} selected="selected" {/if}>未确认</option>
+                            <option value="1" {if $_GPC['paytype'] == 1} selected="selected" {/if}>余额支付</option>
+                            <option value="2" {if $_GPC['paytype'] == 2} selected="selected" {/if}>微信支付</option>
+                            <option value="3" {if $_GPC['paytype'] == 3} selected="selected" {/if}>现金付款</option>
+                            <option value="4" {if $_GPC['paytype'] == 4} selected="selected" {/if}>支付宝</option>
+                            <option value="10" {if $_GPC['paytype'] == 10} selected="selected" {/if}>pos刷卡</option>
+                            <option value="11" {if $_GPC['paytype'] == 11} selected="selected" {/if}>挂帐</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width:90px;">桌台号</label>
+                    <div class="col-sm-2 col-lg-2">
+                        <input class="form-control" name="tableid" id="tableid" type="text" value="{$_GPC['tableid']}">
+                    </div>
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width: 90px;">订单类型</label>
+                    <div class="col-sm-7 col-lg-2 col-xs-12">
+                        <select name="dining_mode" class="form-control">
+                            <option value="">不限</option>
+                            <option value="1" {if $_GPC['dining_mode'] == 1} selected="selected" {/if}>堂点</option>
+                            <option value="2" {if $_GPC['dining_mode'] == 2} selected="selected" {/if}>外卖</option>
+                            <option value="3" {if $_GPC['dining_mode'] == 3} selected="selected" {/if}>预定</option>
+                            <option value="4" {if $_GPC['dining_mode'] == 4} selected="selected" {/if}>快餐</option>
+                            <option value="5" {if $_GPC['dining_mode'] == 5} selected="selected" {/if}>收银</option>
+                            <option value="6" {if $_GPC['dining_mode'] == 6} selected="selected" {/if}>充值</option>
+                        </select>
+                    </div>
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width: 90px;">下单时间</label>
+                    <div class="col-sm-7 col-lg-3 col-xs-12">
+                        {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d H:i:s', $starttime),'endtime'=>date('Y-m-d H:i:s', $endtime)),true);}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width: 90px;">所属门店</label>
+                    <div class="col-sm-7 col-lg-2 col-xs-12">
+                        <select name="storeid" class="form-control">
+                            <option value="">全部门店</option>
+                            {loop $storelist $row}
+                            <option value="{$row['id']}"{if $storeid==$row['id']} selected{/if}>{$row['title']}</option>
+                            {/loop}
+                        </select>
+                    </div>
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width: 90px;">支付状态</label>
+                    <div class="col-sm-7 col-lg-2 col-xs-12">
+                        <select name="ispay" class="form-control">
+                            <option value="">不限</option>
+                            <option value="0" {if $_GPC['ispay'] == 0 && isset($_GPC['ispay']) && $_GPC['ispay'] != ''} selected="selected" {/if}>未支付</option>
+                            <option value="1" {if $_GPC['ispay'] == 1} selected="selected" {/if}>已支付</option>
+                            <option value="2" {if $_GPC['ispay'] == 2} selected="selected" {/if}>待退款</option>
+                            <option value="3" {if $_GPC['ispay'] == 3} selected="selected" {/if}>已退款</option>
+                            <option value="4" {if $_GPC['ispay'] == 4} selected="selected" {/if}>退款失败</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-5 col-lg-3" style="width: 30%;">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                        <button class="btn btn-success" name="out_put" value="output"><i class="fa fa-file"></i> 导出</button>
+                        <button class="btn btn-success" name="out_put" value="out_goods"><i class="fa fa-file"></i>
+                            导出(商品)
+                        </button>
+                    </div>
+                </div>
+
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label" style="width: 90px;">门店类型</label>
+                        <div class="col-sm-7 col-lg-2 col-xs-12">
+                            <select class="form-control" name="types" id="types">
+                                <option value="0">请选择</option>
+                                {loop $shoptype $item}
+                                <option value="{$item['id']}" {if $_GPC['types']==$item['id']}selected{/if}>{$item['name']}</option>
+                                {/loop}
+                            </select>
+                        </div>
+                    </div>
+            </form>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <div class="row-fluid">
+                <div class="span3 control-group">
+                    总订单:<strong class="text-danger">{$total}</strong>
+                    {if $order_count > 0}
+                    ,未处理订单:<strong class="text-danger">{$order_count}</strong>
+                    {/if}
+                    ,订单总金额:<strong class="text-danger">{$order_price}</strong>
+                </div>
+            </div>
+        </div>
+        <form action="" method="post" class="form-horizontal form" >
+            <input type="hidden" name="storeid" value="{$storeid}" />
+            <div class="table-responsive panel-body">
+                <table class="table  table-bordered">
+                    <thead class="navbar-inner">
+                        <tr>
+                            <th class='with-checkbox' style="width:2%;"><input type="checkbox" class="check_all" /></th>
+                            <th style="width:5%;">编号</th>
+                            <th style="width:10%;">订单总额</th>
+                            <th style="width:15%;">联系信息</th>
+                            <th style="width:14%;">类型</th>
+                            <th style="width:8%;">状态</th>
+                            <th style="width:10%;">支付状态</th>
+                            <th style="width:12%; text-align:right;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loop $list $item}
+                        <tr>
+                            <th colspan="8" style="background-color: #d9edf7;">
+                                <span class="time text-muted">{php echo date("Y-m-d H:i:s", $item['dateline'])}</span> &nbsp;&nbsp;
+                                <span class="order-number text-muted">订单编号: {$item['ordersn']}</span> &nbsp;&nbsp;
+                                <span class="order-number text-muted">门店: {$storelist[$item['storeid']]['title']}</span>
+                            </th>
+                        </tr>
+                        <tr>
+                            <td class="with-checkbox text-center"><input type="checkbox" name="check" value="{$item['id']}"></td>
+                            <td>
+                                {$item['id']}
+                                <br/>
+                                {if $item['is_append']==1}
+                                <span class="label label-success">加单</span>
+                                {/if}
+                                {if $item['append_dish']==1}
+                                <span class="label label-danger">加菜</span>
+                                {/if}
+                                {if $item['isvip']==1}
+                                <span class="label label-success">会员</span>
+                                {/if}
+                                {if $item['ismerge']==1}
+                                <span class="label label-success">并单</span>
+                                {/if}
+                            </td>
+                            <td>
+                                <span style="color: #ff2126;font-size: 16px;">￥{$item['totalprice']}</span>
+                                {if $item['one_order_getprice'] > 0}
+                                <br>
+                                提现手续费:{$item['one_order_getprice']}
+                                {/if}
+                            </td>
+                            <td>
+                                {if !empty($item['address'])}
+                                <img src="{php echo tomedia($item['headimgurl']);}" style="width:30px;height:30px;padding1px;border:1px solid #ccc"/>
+                                {$item['nickname']}
+                                {/if}
+                                {if $item['username']}
+                                <br/>
+                                {$item['username']}
+                                {/if}
+                                {if $item['tel']}
+                                <br/>
+                                {$item['tel']}
+                                {/if}
+                                {if !empty($item['address'])}
+                                <br/>{$item['address']}
+                                {/if}
+                            </td>
+                            <td>
+                                {if $item['dining_mode']==8}<span class="label label-info" title="充值" >门店卡充值</span>{/if}
+                                {if $item['dining_mode']==7}<span class="label label-info" title="开卡" style="background-color: #9585bf;border-color: #9585bf;">开卡</span>{/if}
+                                {if $item['dining_mode']==1}<span class="label label-info" title="堂点" style="background-color: #9585bf;border-color: #9585bf;"><i class="fa fa-cutlery"> 店内</i></span>{/if}
+                                {if $item['dining_mode']==2}<span class="label label-info" title="外卖"  style="background-color: #4f99c6;border-color: #4f99c6;"><i class="fa fa-truck"> 外卖</i></span>
+
+                                {/if}
+                                {if $item['dining_mode']==3}<span class="label label-info" title="预定" style="background-color: #d43f3a;border-color: #fee188;"><i class="fa fa-calendar"> 预定</i></span>{/if}
+                                {if $item['dining_mode']==4}<span class="label label-info" title="快餐" style="background-color: #be386a;border-color: #be386a;"><i class="fa fa-delicious"> 快餐</i></span>
+                                {if !empty($item['quicknum'])}
+                                <br><span class="label label-info">牌号:{$item['quicknum']}</span>
+                                <br>
+                                <a class="label label-warning" href="{php echo $this->createWebUrl('allorder', array('op' => 'sendQuickNumNotice', 'id' => $item['id'], 'storeid' => $storeid))}" title="通知领餐">点击通知领餐</a>
+
+                                {/if}
+                                {/if}
+                                {if $item['dining_mode']==5}<span class="label label-info" title="收银" style="background-color: #d43f3a;border-color: #fee188;"><i class="fa fa-calendar"> 收银</i></span>{/if}
+                                {if $item['dining_mode']==6}<span class="label label-info" title="充值" ><i class="fa fa-calendar"> 充值</i></span>{/if}
+                                {if !empty($item['meal_time'])}
+                                <br><span class="label label-info">{$item['meal_time']}</span>
+                                {/if}
+                                {if $item['dining_mode']==2}
+                                {if $item['isfengniao'] == 1}
+                                <br/>
+                                <span class="label label-info">蜂鸟配送</span>
+                                {else}
+                                <br/>
+                                {if $item['delivery_status'] == 0}<span class="label label-default">未配送</span>{/if}
+                                {if $item['delivery_status'] == 1}<span class="label label-info">配送中</span>{/if}
+                                {if $item['delivery_status'] == 2}<span class="label label-success">已配送</span>{/if}
+
+                                {if $item['delivery_id'] != 0}
+                                <br/>
+                                <span class="label label-success">配送员:{$item['deliveryuser']}</span>
+                                {/if}
+                                {/if}
+                                {if $item['delivery_money'] != 0}
+                                <br/>
+                                <span class="label label-info">配送佣金:{$item['delivery_money']}</span>
+                                {/if}
+                                {/if}
+                                {if !empty($item['table'])}
+                                <br><span class="label label-info">桌号:{$item['table']}</span>
+                                {/if}
+                            </td>
+                            <td>
+                                {if $item['status'] == 0}<span class="label label-info">待处理</span>{/if}
+                                {if $item['status'] == 1}<span class="label label-warning">已确认</span>{/if}
+                                {if $item['status'] == 2}<span class="label label-success">已并台</span>{/if}
+                                {if $item['status'] == 3}<span class="label label-success">已完成</span>{/if}
+                                {if $item['status'] == -1}<span class="label label-danger">已取消</span>{/if}
+                                {if $item['isprint'] == 1}
+                                <br/>
+                                <span class="label label-warning">已打印</span>
+                                {/if}
+                            </td>
+                            <td>
+                                {if $item['paytype']}
+                                {if $item['paytype'] == 1}
+                                <span class="label label-success"><i class="fa fa-money">&nbsp;余额支付</i></span>
+                                {/if}
+                                {if $item['paytype'] == 2}
+                                <span class="label label-success"><i class="fa fa-check-circle">&nbsp;微信支付</i></span>
+                                {/if}
+                                {if $item['paytype'] == 3}
+                                <span class="label label-success"><i class="fa fa-money">&nbsp;现金支付</i></span>
+                                {/if}
+                                {if $item['paytype'] == 4}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;支付宝</i></span>
+                                {/if}
+                                <!--5现金，6银行卡，7会员卡，8微信，9支付宝-->
+                                {if $item['paytype'] == 5}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;现金</i></span>
+                                {/if}
+                                {if $item['paytype'] == 6}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;银行卡</i></span>
+                                {/if}
+                                {if $item['paytype'] == 7}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;会员卡</i></span>
+                                {/if}
+                                {if $item['paytype'] == 8}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;微信记账</i></span>
+                                {/if}
+                                {if $item['paytype'] == 9}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;支付宝记账</i></span>
+                                {/if}
+                                {if $item['paytype'] == 10}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;pos刷卡</i></span>
+                                {/if}
+                                {if $item['paytype'] == 11}
+                                <span class="label label-info"><i class="fa fa-alipay">&nbsp;挂帐</i></span>
+                                {/if}
+                                <br/>
+                                {/if}
+                                {if $item['ispay'] == 0}<span class="label label-warning">未支付</span>{/if}
+                                {if $item['ispay'] == 1}<span class="label label-success"><i class="fa fa-cloud">已支付</i></span>
+                                {/if}
+                                {if $item['ispay'] == 2}<span class="label label-info">待退款</span>{/if}
+                                {if $item['ispay'] == 3}
+                                <span class="label label-danger">已退款</span>
+                                {/if}
+                                {if $item['refund_price']>0}
+                                <br/>
+                                <span class="label label-danger">已退:{$item['refund_price']}</span>
+                                {/if}
+                                {if $item['ispay'] == 4}<span class="label label-danger">退款失败</span>{/if}
+                            </td>
+                            <td style="text-align:left;">
+                                <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('allorder', array('op' => 'detail', 'id' => $item['id'], 'storeid' => $storeid))}" title="详情">详情</a>
+                                {if $item['dining_mode']==2}
+                                <a class="btn btn-warning btn-sm btn_table_show" href="javascript:void(0);" title="配送" data-value="{$item['id']}">配送</a>{/if}
+                                {if $item['status'] != 3 && $item['ispay'] != 3}
+                                {if $item['ispay'] == 1 || $item['ispay'] == 2 || $item['ispay'] == 4}
+                                <a class="btn btn-danger btn-sm btnrefund" href="javascript:void(0);" title="退款" data-orderid={$item['id']} data-price="{$item['totalprice']}">退款</a>
+                                {/if}
+                                {/if}
+                            </td>
+                        </tr>
+                        {if $item['goods']}
+                        <tr>
+                            <td colspan="8">
+                                <div class="panel panel-default">
+                                    <div class="table-responsive panel-body">
+                                        <table class="table table-hover">
+                                            <thead class="navbar-inner">
+                                            <tr>
+                                                <th style="width:15%;">商品</th>
+                                                <th style="text-align:center;width:10%;">单价</th>
+                                                <th style="text-align:center;width:10%;">数量</th>
+                                                <th style="text-align:center; width:10%;">小计(元)</th>
+                                            </tr>
+                                            </thead>
+                                            {php $rowcount = count($item['goods']);}
+                                            {php $flag = 0;}
+                                            {loop $item['goods'] $row}
+                                            <tr>
+                                                <td>
+                                                    {if !empty($category[$row['pcate']])}<span class="text-error">[{$category[$row['pcate']]['name']}] </span>{/if}
+                                                    <a href="{php echo $this->createWebUrl('goods', array('id' => $row['id'], 'op' => 'post', 'storeid' => $item['storeid']))}">{$row['title']}</a>
+                                                    <br/>
+                                                    {if !empty($row['optionname'])}
+                                                    [{$row['optionname']}]
+                                                    {/if}
+                                                </td>
+                                                <td style="text-align: center;color: #ff2126;font-size: 16px;">
+                                                    ￥{$row['price']}{if $item['isvip']==1}(会员){/if}
+                                                </td>
+                                                <td style="text-align:center;">
+                                                    {$row['total']}
+                                                </td>
+
+                                                <td style="text-align: center;color: #ff2126;font-size: 16px;">
+                                                    {php $price = floatval($row['price']);}
+                                                    {php $total = intval($row['total']);}
+                                                    {php $goodprice = $price * $total;}
+                                                    {php $totalprice = $totalprice+$goodprice;}
+                                                    ￥{php echo $goodprice}
+                                                </td>
+
+                                            </tr>
+                                            {/loop}
+                                        </table>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {/if}
+                        {/loop}
+                    </tbody>
+                </table>
+                {$pager}
+            </div>
+            <div style="height: 50px;"></div>
+        </form>
+    </div>
+</form>
+    <div id="order-operator-modal"  class="modal fade" tabindex="-1">
+        <div class="modal-dialog" style='width: 520px;'>
+            <div class="modal-content">
+                <div class="modal-header"><button aria-hidden="true" data-dismiss="modal" class="close" type="button">×
+                </button><h3>订单退款</h3></div>
+                <div class="modal-body">
+                    <form id="Form1" action="{php echo $this->createWebUrl('allorder', array('op' => 'refund', 'storeid' => $storeid))}" method="post" class="form-horizontal">
+                        <input type="hidden" name="id" id="id" value="0">
+                        <div class="form-group">
+                            <label class="col-xs-12 col-sm-3 col-md-2 control-label">退款金额</label>
+                            <div class="col-sm-9">
+                                <div class="input-append">
+                                    <input type="text" placeholder="请输入退款金额" name="refund_price" id="refund_price" class="form-control" data-rule-required="true" data-rule-number="true">
+                                    <span class="add-on"><i class="icon-cny"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-xs-12 col-sm-3 col-md-2 control-label"></label>
+                            <div class="col-sm-9">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                                <button type="submit" class="btn btn-primary">提交</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form class="form-horizontal form" action="" method="post" enctype="multipart/form-data">
+        <div style="width:400px;position:absolute;top:50%;left:30%;z-index:2;display:none;" class="pay_display">
+            <div class="panel panel-default">
+                <div class="panel-heading">支付方式</div>
+                <div class="panel-body">
+                    <div class="col-md-8">
+                        <select name="pay_id" id="pay_id" class="form-control">
+                            <option value="3" >现金付款</option>
+                            <option value="10" >pos刷卡</option>
+                            <option value="11" >挂帐</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <a class="btn btn-primary pay_submit" name="payconfirm"  value="ok" >提交</a>
+                    </div>
+                    <div class="col-md-2"><a class="btn btn-danger table_close" href="javascript:void(0);">取消</a></div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <form class="form-horizontal form" action="" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="id" value="{$item[id]}">
+        <div style="width:400px;position:absolute;top:50%;left:30%;z-index:2;display:none;" class="table_display">
+            <div class="panel panel-default">
+                <div class="panel-heading">配送员</div>
+                <div class="panel-body">
+                    <div class="col-md-8">
+                        <select name="deliveryid" id="deliveryid" class="form-control">
+                            {loop $deliverylist $row}
+                            <option value="{$row['id']}"{if $row['id'] ==$order['delivery_id']}selected="selected"{/if}>{$row['username']}</option>
+                            {/loop}
+                        </select>
+                        <br/>
+                        <select name="delivery_status" id="delivery_status" class="form-control">
+                            <option value="1">配送中</option>
+                            <option value="2">已配送</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2"><a class="btn btn-primary discount_submit" name="confirmtable" value="ok" >提交</a></div>
+                    <div class="col-md-2"><a class="btn btn-danger table_close" href="javascript:void(0);">取消</a></div>
+                </div>
+            </div>
+        </div>
+        <input type="hidden" name="token" value="{$_W['token']}" />
+        <input type="hidden" id="orderid" value="0" />
+    </form>
+    <div class="shop-preview col-xs-12 col-sm-9 col-lg-10">
+        <div class="text-left alert alert-info">
+            <div style="margin-top: 0px;">
+                <input type="button" class="btn btn-success" name="btn_printall" value="前台打印" />
+                <input type="button" class="btn btn-success" name="btn_printall2" value="后厨打印" />
+                <input type="button" class="btn btn-warning btn_payall" name="btn_payall" value="付款" />
+                <input type="button" class="btn btn-info" name="btn_confirmall" value="确认" />
+                <input type="button" class="btn btn-success" name="btn_finishall" value="完成" />
+                <input type="button" class="btn btn-danger" name="btn_cancelall" value="取消" />
+                <input type="button" class="btn btn-info" name="btn_noticeall" value="通知" />
+                <input type="button" class="btn btn-warning" name="btn_acceptall" value="确认收货" />
+                <input type="button" class="btn btn-warning" name="btn_mergeall" value="合并店内订单" />
+            </div>
+        </div>
+    </div>
+    <script>
+        var table = $(".table_display");
+        $(".btn_table_show").click(function () {
+            var id = $(this).attr('data-value');
+            table.css("display", '');
+            $(".table_input").val("");
+            $("#orderid").val(id);
+            setDivCenter('.table_display');
+        });
+
+        var paydiv = $(".pay_display");
+        $(".btn_payall").click(function () {
+            var id = $(this).attr('data-value');
+            paydiv.css("display", '');
+            $(".table_input").val("");
+            $("#orderid").val(id);
+            setDivCenter('.pay_display');
+        });
+
+        function setDivCenter(divName){
+            var top = ($(window).height() - $(divName).height())/2 - 100;
+            var left = ($(window).width() - $(divName).width())/2-200;
+            var scrollTop = $(document).scrollTop();
+            var scrollLeft = $(document).scrollLeft();
+            $(divName).css( { position : 'absolute', 'top' : top + scrollTop, left : left + scrollLeft } ).show();
+        }
+
+        $(".table_close").click(function () {
+            table.css('display', 'none');
+            paydiv.css('display', 'none');
+        });
+        $(".discount_submit").click(function () {
+            var id = $("#orderid").val();
+            var deliveryid = $("#deliveryid").val();
+            var delivery_status = $("#delivery_status").val();
+            if (confirm("确认要提交吗?")) {
+                var url = "{php echo $this->createWebUrl('allorder', array('op' => 'setdelivery'))}";
+                $.post(
+                        url,
+                        {
+                            id: id,
+                            deliveryid:deliveryid,
+                            delivery_status:delivery_status
+                        },
+                        function (data) {
+                            alert(data.error);
+                            location.reload();
+                        }, 'json'
+                );
+            }
+        });
+    </script>
+</div>
+<script type="text/javascript">
+    $(function () {
+        $("tr").delegate(".btnrefund", "click", function () {
+            $("#refund_price").val($(this).attr("data-price"));
+            $("#id").val($(this).attr("data-orderid"));
+            $('#order-operator-modal').modal();
+        });
+
+        $(".check_all").click(function () {
+            var checked = $(this).get(0).checked;
+            $("input[type=checkbox]").attr("checked", checked);
+        });
+
+        $("input[name=btn_printall]").click(function () {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if (check.length < 1) {
+                alert('请选择要打印的订单!');
+                return false;
+            }
+            if (confirm("确认要打印选择的订单?")) {
+                var id = new Array();
+                check.each(function (i) {
+                    id[i] = $(this).val();
+                });
+                var url = "{php echo $this->createWebUrl('allorder', array('op' => 'printall', 'storeid' => $storeid, 'position_type' => 1))}";
+                $.post(
+                        url,
+                        {idArr: id},
+                        function (data) {
+                            alert(data.error);
+                            location.reload();
+                        }, 'json'
+                        );
+            }
+        });
+        $("input[name=btn_printall2]").click(function () {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if (check.length < 1) {
+                alert('请选择要打印的订单!');
+                return false;
+            }
+            if (confirm("确认要打印选择的订单?")) {
+                var id = new Array();
+                check.each(function (i) {
+                    id[i] = $(this).val();
+                });
+                var url = "{php echo $this->createWebUrl('allorder', array('op' => 'printall', 'storeid' => $storeid, 'position_type' => 2))}";
+                $.post(
+                        url,
+                        {idArr: id},
+                        function (data) {
+                            alert(data.error);
+                            location.reload();
+                        }, 'json'
+                );
+            }
+        });
+
+        $(".pay_submit").click(function () {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if (check.length < 1) {
+                alert('请选择要支付的订单!');
+                return false;
+            }
+            if (confirm("确认要支付选择的订单?")) {
+                var id = new Array();
+                check.each(function (i) {
+                    id[i] = $(this).val();
+                });
+                var url = "{php echo $this->createWebUrl('allorder', array('op' => 'payall', 'storeid' => $storeid))}";
+                var paytype = $('#pay_id').val();
+                $.post(
+                        url,
+                        {
+                            idArr: id,
+                            paytype: paytype
+                        },
+                        function (data) {
+                            alert(data.error);
+                            location.reload();
+                        }, 'json'
+                );
+            }
+        });
+        $("input[name=btn_confirmall]").click(function () {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if (check.length < 1) {
+                alert('请选择要确认的订单!');
+                return false;
+            }
+            if (confirm("确定要确认选择的订单?")) {
+                var id = new Array();
+                check.each(function (i) {
+                    id[i] = $(this).val();
+                });
+                var url = "{php echo $this->createWebUrl('allorder', array('op' => 'confirmall', 'storeid' => $storeid))}";
+                $.post(
+                        url,
+                        {idArr: id},
+                        function (data) {
+                            alert(data.error);
+                            location.reload();
+                        }, 'json'
+                        );
+            }
+        });
+        $("input[name=btn_finishall]").click(function () {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if (check.length < 1) {
+                alert('请选择要完成的订单!');
+                return false;
+            }
+            if (confirm("确定要完成选择的订单?")) {
+                var id = new Array();
+                check.each(function (i) {
+                    id[i] = $(this).val();
+                });
+                var url = "{php echo $this->createWebUrl('allorder', array('op' => 'finishall', 'storeid' => $storeid))}";
+                $.post(
+                        url,
+                        {idArr: id},
+                        function (data) {
+                            alert(data.error);
+                            location.reload();
+                        }, 'json'
+                        );
+            }
+        });
+        $("input[name=btn_cancelall]").click(function () {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if (check.length < 1) {
+                alert('请选择要取消的订单!');
+                return false;
+            }
+            if (confirm("确定要取消选择的订单?")) {
+                var id = new Array();
+                check.each(function (i) {
+                    id[i] = $(this).val();
+                });
+                var url = "{php echo $this->createWebUrl('allorder', array('op' => 'cancelall', 'storeid' => $storeid))}";
+                $.post(
+                        url,
+                        {idArr: id},
+                        function (data) {
+                            alert(data.error);
+                            location.reload();
+                        }, 'json'
+                        );
+            }
+        });
+        $("input[name=btn_noticeall]").click(function () {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if (check.length < 1) {
+                alert('请选择要通知的订单!');
+                return false;
+            }
+            if (confirm("确定要通知选择的订单?")) {
+                var id = new Array();
+                check.each(function (i) {
+                    id[i] = $(this).val();
+                });
+                var url = "{php echo $this->createWebUrl('allorder', array('op' => 'noticeall', 'storeid' => $storeid))}";
+                $.post(
+                        url,
+                        {idArr: id},
+                        function (data) {
+                            alert(data.error);
+                            location.reload();
+                        }, 'json'
+                        );
+            }
+        });
+
+        $("input[name=btn_acceptall]").click(function () {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if (check.length < 1) {
+                alert('请选择要确认收货的订单!');
+                return false;
+            }
+            if (confirm("确定要确认选择的订单?")) {
+                var id = new Array();
+                check.each(function (i) {
+                    id[i] = $(this).val();
+                });
+                var url = "{php echo $this->createWebUrl('allorder', array('op' => 'acceptdeliveryall', 'storeid' => $storeid))}";
+                $.post(
+                        url,
+                        {idArr: id},
+                        function (data) {
+                            alert(data.error);
+                            location.reload();
+                        }, 'json'
+                );
+            }
+        });
+
+        $("input[name=btn_mergeall]").click(function () {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if (check.length < 2) {
+                alert('请选择要合并的订单!');
+                return false;
+            }
+            if (confirm("确定要合并选择的订单?")) {
+                var id = new Array();
+                check.each(function (i) {
+                    id[i] = $(this).val();
+                });
+                var url = "{php echo $this->createWebUrl('allorder', array('op' => 'mergeall', 'storeid' => $storeid))}";
+                $.post(
+                        url,
+                        {idArr: id},
+                        function (data) {
+                            alert(data.error);
+                            location.reload();
+                        }, 'json'
+                );
+            }
+        });
+    });
+</script>
+{elseif $operation == 'detail'}
+{template 'web/allorder_detail'}
+{/if}
+{template 'public/footer'}

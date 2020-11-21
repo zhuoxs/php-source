@@ -1,0 +1,142 @@
+{template 'common/header'}
+{template 'web/order/position'}
+
+<div class="widget liuer-widget">
+    <header class="widget-header">
+        <h4 class="widget-title liuer-widget-title">筛选</h4>
+    </header>
+    <hr class="widget-separator">
+    <div class="widget-body">
+        <form action="" method="get" class="form-horizontal">
+            <input type="hidden" name="c" value="site">
+            <input type="hidden" name="a" value="entry">
+            <input type="hidden" name="m" value="liuer_mcar">
+            <input type="hidden" name="do" value="order">
+            <?php if($_GPC['type'] == 'vip'): ?>
+            <input type="hidden" name="type" value="vip">
+            <?php endif; ?>
+
+            <div class="form-group">
+                <label class="col-sm-2 control-label">时间范围</label>
+                <div class="col-sm-5">
+                    {php echo tpl_form_field_daterange('time',$_GPC['time']);}
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">状态</label>
+                <div class="col-sm-2">
+                    <select name="status" class="form-control">
+                        <option value="" selected="selected">不限</option>
+                        <option value="0" {if $_GPC['status'] == '0'} selected{/if}>未付款</option>
+                        <option value="9" {if $_GPC['status'] == '9'} selected{/if}>已付款</option>
+                        <option value="10" {if $_GPC['status'] == '10'} selected{/if}>已发货</option>
+                    </select>
+                </div>
+                <div class="col-sm-3">
+                    <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    <a href="<?php echo $this->createWebUrl('order',['op'=>'export']) ?>" class="btn btn-default" style="display: inline-block;margin-left: 15px;"><i class="fa fa-cloud-download"></i> 订单导出</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="widget">
+    <div class="widget-body">
+        <table class="table table-hover liuer-table liuer-table-pd">
+            <thead>
+            <tr>
+                <th>编号</th>
+                <th>订单号/商品</th>
+                <th>用户名</th>
+                <th>头像</th>
+                <?php if($_GPC['type'] != 'vip' && $_GPC['type'] != 'fenxiao'): ?>
+                <th>留言</th>
+                <th>收货地址</th>
+                <?php endif; ?>
+                <th>下单时间</th>
+                <th>金额</th>
+                <th>状态</th>
+                <th style="width: 120px;text-align: right;padding-right: 10px;">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {if $data}
+            {loop $data $no $v}
+            <tr>
+                <td>{php echo getNo($no)}</td>
+                <?php if($v['order_type'] == 1): ?>
+                <td>{php echo fetchGoodInfo($v['good_id'])}<br/>{$v['ordersn']}</td>
+                <?php elseif($v['order_type'] == 2): ?>
+                <td>{php echo get_group($v['good_id'])}<br/>{$v['ordersn']}</td>
+                <?php elseif($v['order_type'] == 3): ?>
+                <td>{php echo fetchFxInfo($v['good_id'])}<br/>{$v['ordersn']}</td>
+                <?php endif; ?>
+                <td>
+                    <?php if($v['openid']): ?>
+                    {php echo get_user_nickname($v['openid'])}
+                    <?php else: ?>
+                    {php echo fetch_user_info($v['user_id'])}
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <?php if($v['openid']): ?>
+                    <img src="{php echo get_user_avatar($v['openid'])}" width="40" height="40" />
+                    <?php else: ?>
+                    <img src="{php echo fetch_user_info($v['user_id'],'avatar')}" width="40" height="40" />
+                    <?php endif; ?>
+                </td>
+                <?php if($v['order_type'] == 1 ): ?>
+                <td>{$v['buyer_message']}</td>
+                <td>{$v['truename']}<br/>{$v['mobile']}<br/>{$v['address']}</td>
+                <?php endif; ?>
+                <td>
+                    <?php echo date('Y-m-d H:i',$v['created_at']) ?>
+                </td>
+                <td>¥{$v['price']}</td>
+                <td>
+                    <?php echo fetchOrderStatus($v['status']) ?>
+                </td>
+                <td class="liuer-do">
+                    <?php if($v['status'] == 9): ?>
+                    <a href="javascript:;" data-url="{php echo $this->createWebUrl('order', ['op'=>'send','id'=>$v['id']])}" class="btn btn-xs btn-primary btn-send">去发货</a>
+                    <?php elseif($v['status'] == 10): ?>
+                    <small>{$v['shipping_name']}<br/>{$v['shipping_no']}<br/>{php echo date('m-d H:i',$v['shipping_time'])}</small>
+                    <?php elseif($v['status'] == 0): ?>
+                    <?php if($_GPC['type'] == 'vip'): ?>
+                    <a href="{php echo $this->createWebUrl('order',['id'=>$v['id'],'op'=>'delete','type'=>'vip'])}" class="btn btn-xs btn-danger liuer-delete">删除</a>
+                    <?php else: ?>
+                    <a href="{php echo $this->createWebUrl('order',['id'=>$v['id'],'op'=>'delete'])}" class="btn btn-xs btn-danger liuer-delete">删除</a>
+                    <?php endif; ?>
+                    <?php endif; ?>
+                </td>
+            </tr>
+            {/loop}
+            {else}
+            <tr>
+                <td colspan="7" style="text-align: center;">暂无记录</td>
+            </tr>
+            {/if}
+            </tbody>
+        </table>
+    </div>
+
+    <footer class="widget-footer">
+        {if $total}
+        <div id="liuer_footer" class="panel-footer">
+            <div class="pull-left">
+                <div class="summary">共<b>{$total}</b>条数据</div>
+            </div>
+            <div class="pull-right">{$pager}</div>
+        </div>
+        {/if}
+    </footer>
+</div>
+<script>
+    require(['util','jquery'],function(util,$){
+        $('.btn-send').click(function(){
+            var url = $(this).data('url');
+            util.ajaxshow(url,'我要发货');
+        })
+    });
+</script>
+{template 'common/footer'}

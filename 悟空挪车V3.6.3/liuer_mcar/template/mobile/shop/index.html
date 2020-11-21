@@ -1,0 +1,190 @@
+{template 'header'}
+<link href="{ASSETS}/css/shop-index.css" rel="stylesheet" />
+<style>
+#hook-app{
+    padding-bottom: 0.5rem;
+}
+.addr-left{
+    display: block;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;width:3.6rem;
+}
+.spname{
+    height: 20px;
+    overflow: hidden;
+    font-weight: normal;
+}
+/*.spname{
+    display: inline-block;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    width: 3.6rem;
+}*/
+</style>
+<?php
+$config = get_module_info();
+$banner = $config['shop_banner'] ? tomedia($config['shop_banner']) : ASSETS . '/images/shop_banner.jpg';
+?>
+<body class="fff">
+<div id="hook-app">
+    <div class="shop-banner">
+        <img src="{$banner}" alt="">
+    </div>
+    <div class="shop-filter">
+        <div class="distance" @click="setIndex(1)" :class="{current:currentIndex==1}"><span>{{tab1}}</span> <i class="fa" :class="[currentIndex==1 ? 'fa-angle-up': 'fa-angle-down']"></i></div>
+        <div class="category" @click="setIndex(2)" :class="{current:currentIndex==2}"><span>{{tab2}}</span> <i class="fa" :class="[currentIndex==2 ? 'fa-angle-up': 'fa-angle-down']"></i></div>
+        <div class="lingma" @click="setIndex(3)" :class="{current:currentIndex==3}"><span>{{tab3}}</span> <i class="fa" :class="[currentIndex==3 ? 'fa-angle-up': 'fa-angle-down']"></i></div>
+    </div>
+    <div class="shop-filter-wrap">
+        <div class="shop-filter-data" v-if="selecting">
+            <ul class="distance-data" v-if="selectIndex == 1" @click="setVal(1)">
+                <li data-val="0">全部</li>
+                <li data-val="500">500m</li>
+                <li data-val="1000">1km</li>
+                <li data-val="2000">2km</li>
+                <li data-val="5000">5km</li>
+                <li data-val="10000">10km</li>
+            </ul>
+            <ul class="category-data" v-if="selectIndex == 2" @click="setVal(2)">
+                <li data-val="0">全部</li>
+                <?php foreach($category as $cat): ?>
+                <li data-val="<?php echo $cat; ?>"><?php echo $cat; ?></li>
+                <?php endforeach; ?>
+            </ul>
+            <ul class="lingma-data" v-if="selectIndex == 3" @click="setVal(3)">
+                <li data-val="0">全部</li>
+                <li data-val="9">可领码</li>
+                <li data-val="-1">不可领码</li>
+            </ul>
+        </div>
+    </div>
+    <div class="shop-list" v-if="shoplist.length > 0 && loading == 0">
+        <template v-for="item in shoplist">
+            <a class="shop-item" :href="item.href">
+                <div class="shop-media">
+                    <img :src="item.thumb" alt="">
+                </div>
+                <div class="shop-info">
+                    <div class="shop-title">
+                        <span v-if="item.ma_count" style="display: inline-block;white-space: nowrap;">可领码</span> <strong class="spname">{{item.name}}</strong>
+                    </div>
+                    <div class="shop-cate">
+                        <template v-if="item.brand_list.length > 0">
+                            <span v-for="brand in item.brand_list">{{brand}}</span>
+                        </template>
+                    </div>
+                    <div class="shop-address">
+                        <span class="addr-left">{{item.address}}</span>
+                        <span class="addr-right"><i class="fa fa-location-arrow"></i> <span class="addr">{{item.juli}}</span></span>
+                    </div>
+                </div>
+            </a>
+        </template>
+    </div>
+    <div id="loading" v-if="loading">
+        <span><img src="{ASSETS}/images/loading.gif" alt=""></span><span>加载数据中...</span>
+    </div>
+    <div class="no-data" v-if="shoplist.length == 0 && loading == 0">
+        <p>暂无入驻商家</p>
+    </div>
+</div>
+<script>
+    var updatePos = "{php echo $this->createMobileUrl('shop',['op'=>'position']);}";
+    var shoplist = "{php echo $this->createMobileUrl('shop',['op'=>'list']);}";
+    wx.ready(function () {
+        wx.getLocation({
+            type : 'wgs84',
+            success : function(res) {
+                console.log(res);
+                app.latitude = res.latitude;
+                app.longitude = res.longitude;
+
+                app._initList();
+                //更新用户的位置
+                $.post(updatePos,{
+                    latitude:res.latitude,
+                    longitude:res.longitude
+                },function(resp){
+                    console.log(resp);
+                    console.log(typeof resp);
+                    /*for(var id in resp){
+                        $('.addr'+id).text(resp[id]);
+                    }*/
+
+                    //改变距离地址
+                },'json');
+            },
+            cancel : function(res) {
+                alert("用户拒绝授权获取地理位置");
+            }
+        });
+    })
+    var app = new Vue({
+        el: '#hook-app',
+        data: {
+            loading: 0,
+            latitude: '',
+            longitude: '',
+            tab1: '距离',
+            tab2: '经营类目',
+            tab3: '可否领码',
+            selecting: 0,
+            selectIndex: 0,
+            shoplist: []
+        },
+        computed:{
+            currentIndex: function(){
+                return this.selecting && this.selectIndex;
+            }
+        },
+        mounted: function(){
+            //获取
+            // this._initList();
+        },
+        methods: {
+            _initList: function(){
+                this.loading = 1;
+                $.getJSON(shoplist,{
+                    tab1: this.tab1,
+                    tab2: this.tab2,
+                    tab3: this.tab3,
+                    latitude: this.latitude,
+                    longitude: this.longitude
+                },function(resp){
+                    app.shoplist = resp;
+                    app.loading = 0;
+                },'json');
+            },
+            setVal: function(index){
+                var text = event.target.textContent;
+                this._setTabVal(index,text);
+                this.selecting = 0;
+                this.selectIndex = 0;
+                //location跳转
+                this._initList();
+            },
+            _setTabVal: function(index,val){
+                if(index == 1){
+                    this.tab1 = val;
+                }else if(index == 2){
+                    this.tab2 = val;
+                }else if(index == 3){
+                    this.tab3 = val;
+                }
+            },
+            setIndex: function(index){
+                if(this.selecting){
+                    this.selecting = 0;
+                    this.selectIndex = 0;
+                }else{
+                    this.selecting = 1;
+                    this.selectIndex = index;
+                }
+            },
+            showGz: function(){
+                this.needGuanzhu = 1;
+            }
+        }
+    });
+</script>
+</body>
+</html>

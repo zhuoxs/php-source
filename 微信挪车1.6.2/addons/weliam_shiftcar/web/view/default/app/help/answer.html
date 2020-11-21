@@ -1,0 +1,167 @@
+{php include wl_template('common/header');}
+<link rel="stylesheet" type="text/css" href="{WL_URL_WRES}plug/bootstrap_module/checkbox/css/bootstrap-switch.css">
+<script type="text/javascript" src="{WL_URL_WRES}plug/bootstrap_module/checkbox/js/bootstrap-switch.js"></script>
+
+<ul class="nav nav-tabs">
+	<li {if $op == 'answer_list' }class="active"{/if}>
+        <a href="{php echo web_url('app/help/answer_list')}">全部解答</a>
+   </li>
+	<li {if $op == 'answer_edit'}class="active"{/if}>
+        <a href="{php echo web_url('app/help/answer_edit')}">编辑解答</a>
+    </li>
+</ul>
+{if  $op == 'answer_list'}
+<div class="main">
+	<div class="panel panel-default">
+	    <div class="panel-heading">筛选</div>
+	    <div class="panel-body">
+            <form action="{php echo web_url('app/help/answer_list')}" method="post" class="form-horizontal" role="form">
+                <div class="form-group">
+                    <label class="col-md-4 col-lg-1 control-label">分类</label>
+                    <div class="col-sm-4">
+						 <select name="categoryid" class="form-control select" id="search_select"  onchange="selectChange();">
+							<option value="">全部</option>
+							{loop $category_list $row}
+					            <option value="{$row['id']}" {if $row['id'] == $_GPC['categoryid']}selected="selected"{/if}>{$row['name']}</option>
+							{/loop}
+				        </select>
+					</div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-4 col-lg-1 control-label">名称</label>
+                    <div class="col-md-4">
+                        <input class="form-control" name="search" id="" type="text" value="{$_GPC['search']}" placeholder="通过名称查询">
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-default min-width" name="submit" type="submit"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+					
+                </div>
+            </form>
+	    </div>
+	</div>
+	<div class="panel panel-default">
+		<div class="table-responsive">
+		<table class="table table-hover">
+			<thead>
+				<tr>
+					<th style="width:30px;">排序</th>
+					<th style="width:100px;">标题</th>
+					<th style="width:100px;">分类</th>
+					<th style="width:50px;">显示</th>
+					<th style="width:100px;">创建时间</th>
+					<th style="width:80px;">操作</th>
+				</tr>
+			</thead>
+			<tbody>
+				{loop $list $row}
+				<tr>
+					<td>{$row['sort']}</td>
+					<td>{$row['title']}</td>
+					<td><span class="label label-info">{$row['category_name']}</span></td>
+					<td>
+						{if $row['is_show'] == 2}<span class="label label-success">显示</span>
+						{elseif $row['is_show'] == 1}<span class="label label-default">不显示</span>
+						{/if}
+					</td>
+					<td>{php echo date('Y-m-d H:s:i')}</td>
+					<td>
+						<a href="{php echo web_url('app/help/answer_delete', array('answerid'=> $row['id']))}" onclick="return confirm('您确定要删除该二维码以及其统计数据吗？')">删除</a>
+						<a href="{php echo web_url('app/help/answer_edit', array('answerid'=> $row['id']))}">编辑</a>
+						<a href="javascript:change_im({$row['id']})"><span id='change_im_{$row['id']}' class="label label-{if $row['is_importent'] == 2}danger{else}warning{/if}" style="float: right">{if $row['is_importent'] == 2}取消热点{else}设为热点{/if}</span></a>
+					</td>
+				</tr>
+				{/loop}
+			</tbody>
+		</table>
+		{$pager}
+		</div>
+	</div>
+</div>
+<script>
+	function selectChange(){
+		location.href = "{php echo web_url('app/help/answer_list')}&categoryid="+$('#search_select option:selected').val();
+	}
+	function change_im(answerid){
+		$.post("{php echo web_url('app/help/change_im')}&answerid="+answerid,{},function(data){
+			if(data.status == 2){
+				if(data.data == 2){
+					$('#change_im_'+answerid).html('取消热点');
+					$('#change_im_'+answerid).removeClass('label-warning');
+					$('#change_im_'+answerid).addClass('label-danger');
+				}else if(data.data == 1){
+					$('#change_im_'+answerid).html('设为热点');
+					$('#change_im_'+answerid).removeClass('label-danger');
+					$('#change_im_'+answerid).addClass('label-warning');
+				}
+			}
+		},'json');
+	}
+</script>
+{/if}
+
+{if $op == 'answer_edit'}
+<div class="main">
+	<form action="{php echo web_url('app/help/answer_edit')}" method="post" class="form-horizontal form" id="setting-form">
+		<div class="panel panel-default">
+			<div class="panel-heading">编辑解答</div>
+			<div class="panel-body">
+				<div class="tab-content">
+					<div class="tab-pane active" id="tab_basic">
+						<input type="hidden" name="answerid" value="{$list['id']}" />
+						<div class="form-group">
+							<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">标题</label>
+							<div class="col-xs-12 col-sm-8">
+								<input type="text" name="title" class="form-control" value="{$list['title']}" />
+							</div>
+						</div>
+						<div class="form-group">
+		                    <label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">所属分类</label>
+		                    <div class="col-sm-4">
+								 <select name="categoryid" class="form-control select" value="{$list['categoryid']}">
+									<option name='category_name'>--选择--</option>
+									{loop $category_list $row}
+							            <option value="{$row['id']}" {if $list['categoryid'] == $row['id']}selected="selected"{/if}>{$row['name']}</option>
+									{/loop}
+						        </select>
+							</div>
+							<label class="col-md-4 col-lg-1 control-label">排序</label>
+		                    <div class="col-sm-3">
+								<input type="text" name="sort" class="form-control" value="{$list['sort']}" /> 
+							</div>
+		                </div>
+		                <div class="form-group">
+							<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">问题解答</label>
+							<div class="col-sm-8 col-xs-12">
+								{php echo tpl_ueditor('answer', $list['answer']);}
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">是否显示</label>
+							<!--<div class="col-xs-12 col-sm-1">
+								<input type="checkbox" name="is_importent" class="form-control" value="{$list['is_importent']}" />
+							</div>-->
+							<div class="col-xs-12 col-sm-2">
+								<div class="plugin_status" style="width: 40%;margin-left: 30%;">
+									<i class="access"></i>
+									<span class="status_txt">	
+										<input class="flag" type="checkbox" {if $list['is_show'] == 2}checked="checked"{/if} name="is_show"/>
+									</span>
+								</div>
+								<script type="text/javascript">
+									$('.flag:checkbox').bootstrapSwitch({onText: '显示', offText: '隐藏'});
+								</script>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="form-group col-sm-12">
+			<input type="submit" name="submit" value="提交" class="btn btn-primary col-lg-1" />
+			<input type="hidden" name="token" value="{$_W['token']}" />
+		</div>
+	</form>
+</div>
+{/if}
+{php include wl_template('common/footer');}

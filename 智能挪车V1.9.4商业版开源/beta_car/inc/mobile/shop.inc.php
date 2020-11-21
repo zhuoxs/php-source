@@ -1,0 +1,2 @@
+<?php
+ goto MDiVA; VTd3G: $shop = pdo_get(table . "\x73\x65\164\164\x69\156\x67", array("\x75\x6e\x69\x61\x63\151\x64" => uniacid)); goto txiFD; MDiVA: global $_GPC, $_W; goto VTd3G; BDbRv: message("\xe7\xae\241\xe7\220\206\xe5\221\x98\xe6\x9c\xaa\350\xae\276\xe7\275\xae\xe6\x8c\252\xe8\275\xa6\xe7\xa0\201\xe9\x94\x80\345\224\256\344\xbb\267\346\xa0\xbc"); goto ZGNph; ZGNph: pQEjn: goto pFqyd; txiFD: if (!($shop["\x73\150\x6f\160"] <= 0)) { goto pQEjn; } goto BDbRv; pFqyd: include $this->template("\x73\x68\x6f\160");

@@ -1,0 +1,201 @@
+{template '_header'}
+{php $this->followBar()}
+<link rel="stylesheet" href="../addons/ewei_shopv2/plugin/creditshop/template/mobile/default/images/common.css" />
+<link rel="stylesheet" href="../addons/ewei_shopv2/plugin/creditshop/static/css/common.css" />
+<style type="text/css">
+    .fui-navbar ~ .fui-content, .fui-content.navbar{padding-bottom:0;}
+    {if !is_h5app()}
+        {if $set['creditbalance']==0 && $pay['credit'] == 0}
+        .fui-actionsheet a.balance{display: none;}
+        {/if}
+        {if $set['creditwechat']==0 && $pay['weixin'] == 0 && $pay['weixin_jie'] == 0}
+        .fui-actionsheet a.wechat{display: none;}
+        {/if}
+        {if $set['creditalipay']==0 && $pay['alipay'] == 0}
+        .fui-actionsheet a.alipay{display: none;}
+        {/if}
+    {else}
+        {if $pay['credit'] == 0}
+        .fui-actionsheet a.balance{display: none;}
+        {/if}
+        {if $pay['app_wechat'] == 0}
+        .fui-actionsheet a.wechat{display: none;}
+        {/if}
+        {if $pay['app_alipay'] == 0}
+        .fui-actionsheet a.alipay{display: none;}
+        {/if}
+    {/if}
+    .text-danger2 {
+        background: none;
+    }
+</style>
+<div class='fui-page order-detail-page'>
+    <div class="fui-header">
+        <div class="fui-header-left">
+            <a class="back" href="{php echo mobileUrl('creditshop/detail')}"></a>
+        </div>
+        <div class="title">创建订单</div>
+        <div class="fui-header-right"></div>
+    </div>
+    <div class='fui-content navbar'>
+        {if $goods['type']==0}
+            <div class="fui-cell-group fui-cell-click">
+                {if $goods['isverify']==0 && $goods['goodstype']==0}
+                <div class="fui-cell ">
+                    <div class="fui-cell-label ">收货地址</div>
+                    <a class="fui-cell-info" href="{php echo mobileUrl('member/address/selector')}">
+                        <div class="fui-cell-remark" id="address_select">请选择收货地址</div>
+                    </a>
+                </div>
+                {else if $goods['isverify']==1 && $goods['goodstype']==0}
+                <div class="fui-cell">
+                    <div class="fui-cell-text mask">兑换必填</div>
+                </div>
+                {if $set['set_realname']==0}
+                <div class="fui-cell">
+                    <div class="fui-cell-label">联系人</div>
+                    <div class="fui-cell-info">
+                        <input type="text" placeholder="请输入真实姓名" id="carrier_realname" data-show="{$set['set_realname']}" value="{$member['realname']}" class="fui-input" maxlength="10">
+                    </div>
+                </div>
+                {/if}
+                {if $set['set_mobile']==0}
+                <div class="fui-cell">
+                    <div class="fui-cell-label">联系方式</div>
+                    <div class="fui-cell-info">
+                        <input type="tel" placeholder="请输入手机号码" id="carrier_mobile" data-show="{$set['set_mobile']}" value="{$member['mobile']}" class="fui-input" maxlength="11">
+                    </div>
+                </div>
+                {/if}
+                <div class="fui-cell">
+                    <a class="fui-cell-info" href="{php echo mobileUrl('store/selector', array('ids'=>$goods['storeids'],'merchid'=>$goods['merchid']))}">
+                        <span class="fui-cell-text store" style="float: left">请选择兑换门店</span>
+                        <div class="fui-cell-remark" id="storename"></div>
+                    </a>
+                </div>
+                {/if}
+            </div>
+        {/if}
+        <div class="fui-list-group goods-list-group">
+            <div class="fui-list-group-title"><i class="icon icon-shop"></i> {$_W['shopset']['shop']['name']}</div>
+            <a href="{php echo mobileUrl('creditshop/detail',array('id'=>$goods['id']))}" class="external">
+                <div class="fui-list goods-list">
+                    <div class="fui-list-media">
+                        <img src="{php echo tomedia($goods['thumb'])}" alt="{$goods['title']}" class="round" onerror="this.src='../addons/ewei_shopv2/static/images/nopic100.jpg'">
+                    </div>
+                    <div class="fui-list-inner">
+                        <div class="text goodstitle">{$goods['title']}</div>
+                        {if $optionid}<div class='subtitle' style="font-size:0.6rem;color:#999;">规格：{$goods['optiontitle']}</div>{/if}
+                    </div>
+                    <div class='fui-list-angle'>
+                        <span class='marketprice'>
+                            {$goods['credit']}{$_W['shopset']['trade']['credittext']}{if $goods['money']>0}<br />&yen;{$goods['money']}{/if}
+				            {if $goods['type'] == 1}<br/>   x 1{/if}
+                        </span>
+                    </div>
+                </div>
+            </a>
+            {if $goods['type'] == 0}
+            <!--数量选择区域-->
+            <div class="numarea" style="height: 2rem">
+                <div class="fui-number" style="position: absolute;right: 0.5rem;margin-top: 0.25rem">
+                    <div class="minus">-</div>
+                    <input class="num" id="num" type="tel" name="num" value="1"/>
+                    <div class="plus">+</div>
+                </div>
+            </div>
+            {/if}
+        </div>
+
+        {if !empty($stores)}
+        <script language='javascript' src='https://api.map.baidu.com/api?v=2.0&ak=ZQiFErjQB7inrGpx27M1GR5w3TxZ64k7&s=1'></script>
+        <div class='fui-according-group'>
+            <div class='fui-according'>
+                <div class='fui-according-header'>
+                    <i class='icon icon-shop'></i>
+                    <span class="text">适用门店</span>
+                    <span class="remark"><div class="badge">{php echo count($stores)}</div></span>
+                </div>
+                <div class="fui-according-content store-container">
+                    {loop $stores $item}
+                    <div  class="fui-list store-item"
+
+                          data-lng="{php echo floatval($item['lng'])}"
+                          data-lat="{php echo floatval($item['lat'])}">
+                        <div class="fui-list-media">
+                            <i class='icon icon-shop'></i>
+                        </div>
+                        <div class="fui-list-inner store-inner">
+                            <div class="title"> <span class='storename'>{$item['storename']}</span></div>
+                            <div class="text">
+                                <span class='realname'>{$item['realname']}</span> <span class='mobile'>{$item['mobile']}</span>
+                            </div>
+                            <div class="text">
+                                <span class='address'>{$item['address']}</span>
+                            </div>
+                            <div class="text location" style="color:green;display:none">正在计算距离...</div>
+                        </div>
+                        <div class="fui-list-angle ">
+                            {if !empty($item['tel'])}<a href="tel:{$item['tel']}" class='external '><i class=' icon icon-phone' style='color:green'></i></a>{/if}
+                            <a href="{php echo mobileUrl('store/map',array('id'=>$item['id']))}" class='external' ><i class='icon icon-location' style='color:#f90'></i></a>
+                        </div>
+                    </div>
+                    {/loop}
+                </div>
+
+                <div id="nearStore" style="display:none">
+
+                    <div class='fui-list store-item'  id='nearStoreHtml'></div>
+                </div>
+            </div></div>
+        {/if}
+        <div class='fui-cell-group price-cell-group'>
+            <div class="fui-cell">
+                <div class="fui-cell-label">商品小计</div>
+                <div class="fui-cell-info"></div>
+                <div class="fui-cell-remark noremark">
+                    <span id="showcredit">{$goods['credit']}</span>{$_W['shopset']['trade']['credittext']}
+                    + &yen;<span id="showmoney">{$goods['money']}</span>
+                </div>
+            </div>
+            {if $goods['goodstype']==0 && $goods['type']==0 && $goods['isverify']==0}
+            <div class="fui-cell">
+                <div class="fui-cell-label">运费</div>
+                <div class="fui-cell-info"></div>
+                <div class="fui-cell-remark noremark dispatchprice">
+                    {if is_array($goods['dispatch'])}
+                        &yen;{php echo number_format($goods['dispatch']['min'],2)} ~ &yen;{php echo number_format($goods['dispatch']['max'],2)}
+                    {else}
+                        <span id="dispatch">{php echo $goods['dispatch'] == 0 ? '包邮' : '&yen;'.number_format($goods['dispatch'],2)}</span>
+                    {/if}
+                </div>
+            </div>
+            {/if}
+        </div>
+    </div>
+
+    <div class='fui-footer fui-navbar order-create-checkout'>
+        <p class="nav-item" style="width:10%;text-align: left;padding:0.3rem;font-size:0.7rem;">
+            需付{if $goods['isverify'] == 0 && $goods['goodstype']==0 && $goods['type']==0 && $goods['dispatch'] > 0}(含运费){/if}：
+            <span class="text-danger2" style="background: none;">
+                <span id="realcredit">{$goods['credit']}</span>{$_W['shopset']['trade']['credittext']}
+                {if $goods['money'] > 0 || $goods['dispatch'] >0}+
+                    {if is_array($goods['dispatch'])}
+                        &yen;<span class="moneydispatch">{php echo number_format($goods['money'] + $goods['dispatch']['max'],2)}</span>
+                    {else}
+                        &yen;<span class="moneydispatch">{php echo number_format($goods['money'] + $goods['dispatch'],2)}</span>
+                    {/if}
+                {/if}
+            </span>
+        </p>
+        <a href="javascript:;" class="nav-item btn btn-danger buybtn" id="openActionSheet">立即支付</a>
+    </div>
+    {template 'order/pay/wechat_jie'}
+    <script language='javascript'>
+        require(['../addons/ewei_shopv2/plugin/creditshop/static/js/create.js'], function (modal) {
+            modal.init({goods: {php echo json_encode($goods)},optionid:{$optionid},chance:{$chance},payinfo:{$payinfo}});
+        });
+    </script>
+
+</div>
+{template '_footer'}

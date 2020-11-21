@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<?php echo Dtemplate("web/common/sheader"); ?>
+ 
+<body>
+
+<!--侧边栏start-->
+<div class="asidebox clearfix">
+    <div class="aside1">
+        <a class="logo" href="">
+            <img src="{php echo $Swxapp['logo'];}" class="logoimg" />
+        </a>
+        <nav class="aside1_nav">
+            <ul>
+                <?php $route = strtolower($_GPC['op']); ?>
+                {loop $syscatelist $menu_id $menu}
+                <li class="{if $route == strtolower($menu['objname'])}active1{/if}">
+                    <a class="aside1_nav_a1" href="mbizlogin.php?op={$menu['objname']}">
+                        {if $menu['icon']}
+                        <i class="{$menu['icon']}"></i>
+                        {else}
+                        <i class="wb-dashboard"></i>
+                        {/if}
+                        {$menu['cate_name']}
+                    </a>
+                </li>
+                {/loop}
+            </ul>
+        </nav>
+    </div>
+    <div class="aside2 sidebar-2">
+        <div class="aside2_title">功能列表</div>
+        <nav class="aside2_nav">
+            <ul>
+                <?php $act = isset($_GPC['act'])?$_GPC['act']:''; ?>
+                {loop $children $k $vv}
+                {if $vv['type'] == 0}
+                <li class="{if $act == $vv['act']}active2{/if}">
+                    <i></i>
+                    <a href="mbizlogin.php?op=orderset&act={$vv['act']}">{$vv['cate_name']}</a>
+                </li>
+                {else}
+                <li>
+                    <div class="sidebar-content" style="width: 100%;" id="aaa">
+                        <i></i>
+                        <a class="nav-item child-item" href="javascript:">
+                            <span class="nav-pointer iconfont icon-play_fill"></span>
+                            <span>{$vv['cate_name']}</span>
+                        </a>
+                        {if isset($vv['child'])}
+                        {loop $vv['child'] $vo}
+                        <?php
+                                $act = isset($_GPC['act']) ? $_GPC['act'] : '';
+                            ?>
+                        <div class="sub-item-list {if $k == 0}active{/if}" data-id="{$vo['id']}">
+                            <a class="nav-item {if $act == self::$_GPC['act']}active{/if}" href="{php echo $this->createWebUrl($route,['op' => $vo['opt'],'cateid' => $cateid,'chid' => $vo['id'],'plugin' => $vv['name'],'type' => $type,'act' => $act])}">
+                                <span>{$vo['cate_name']}</span>
+                            </a>
+                        </div>
+                        {/loop}
+                        {/if}
+                    </div>
+                </li>
+                {/if}
+                {/loop}
+            </ul>
+        </nav>
+    </div>
+
+    <div class="aside_user">
+        v{php echo $Smodel['version']}
+    </div>
+</div>
+<!--侧边栏end-->
+<!--主体start-->
+<div class="contentbox">
+    <!--主体头start-->
+    <div class="content_head clearfix">
+        <div class="content_head_left"></div>
+        <ul class="nav navbar-nav navbar-right " style="float: right !important;margin-right: 45px !important">
+            <li class="dropdown">
+                <a href="mbizlogin.php?op=loginout"><i class="wi wi-back color-gray"></i><退出系统</a>
+            </li>
+        </ul>
+    </div>
+<div class="page">
+
+    <div class="page_content">
+{if $opt == 'display'}
+<script type="text/javascript">
+    function hx(id){
+        if(window.confirm('确定核销该订单？')){          
+            var newurl = "{$_W['siteroot']}web/mbizlogin.php?op=orderset&act=order&opt=hx&orderid="+id;
+            // alert(newurl);
+            location.href = newurl;
+        }
+    }
+</script>
+<div>
+    <h3 style="float: left;margin-top: 0;">订单列表</h3>
+</div>
+    <table class="table table-responsive" style="table-layout: fixed;">
+    <tbody>
+        <tr style="background:#f8f8f8">
+            <td style="width:60px;border-left:1px solid #f2f2f2;">商品</td>
+            <td style="width:150px;"></td>
+            <td style="width:70px;text-align: center;">单价/数量</td>
+            <td style="width:100px;text-align: center;">价格</td>
+            <td style="width:100px;text-align: center;">核销时间</td>
+            <td style="width:120px;text-align: center">状态</td>
+        </tr>
+{loop $orders $item}
+    <tr>
+        <td colspan="6" style="height:20px;padding:0;border-top:none;">&nbsp;</td>
+    </tr>
+    <tr class="trorder">
+        <td colspan="4" style="border-left:1px solid #dedede;">
+            {$item['shopname']}:  {$item['order_id']}                             
+        </td>
+        <td colspan="2" style="text-align:right;font-size:12px;border-right:1px solid #dedede" class="aops">
+            <span style="float: right;">下单时间：{$item['creattime']} </span>                        
+        </td>
+    </tr>
+    {loop $item['jsondata'] $index $val}
+    <tr class="trbody">
+        <td style="overflow:hidden;border-left:1px solid #dedede;" >
+            <img src="{$val['proinfo']['thumb']}" style="width:50px;height:50px;border:1px solid #ccc; padding:1px;" onerror="">
+        </td>
+        <td style="text-align: left;overflow:hidden;border-left:none;"> 
+            {$val['baseinfo']['title']} <br> {$val['proinfo']['ggz']}
+        </td>
+        <td style="text-align:center;border-left:none; border-right:1px solid #dedede">
+            {$val['proinfo']['price']}x{$val['num']}
+        </td>
+        {if $index == 0}
+        <td style="text-align:center;border-left:none;" rowspan="{$item['counts']}">
+            总价：{$item['allprice']}
+            <br/>
+            实付：{$item['price']}
+        </td>
+        <td style="text-align:right;border-left:none;" rowspan="{$item['counts']}">
+            {$item['hxtime']}
+        </td>
+        <td style="text-align:center;border-left:none;border-right:1px solid #dedede;" rowspan="{$item['counts']}">
+            {if $item['flag'] ==0}未支付{/if}
+            {if $item['flag'] ==1}
+                <a class="btn btn-danger btn-sm" onclick="hx({$item['id']})">核销</a>
+            {/if}
+            {if $item['flag'] ==2} <span class="btn btn-success btn-sm">已结算</span>{/if}
+            {if $item['flag'] ==3} <span class="btn btn-success btn-sm">已过期</span>{/if}
+            {if $item['flag'] ==4} <a class="btn btn-success btn-sm">已发货</a>{/if}
+        </td>
+        {/if}
+    </tr>
+    {/loop}
+    <tr style="border-bottom:none;background:#f9f9f9;">
+        <td colspan="3" style="text-align:left;border-left:1px solid #dedede;" >
+            {if $item['couponinfo']['price']}
+            优惠券：{$item['couponinfo']['price']}元<span style="padding: 0 20px"></span>
+            {/if}
+            {if $item['jf']>0}
+            积分：{$item['jf']}【抵扣{$item['jfmoney']}元】
+            {/if}
+        </td>
+        <td colspan="3" style="text-align:right;border-right:1px solid #dedede;">
+            买家留言： {$item['liuyan']}
+        </td>
+    </tr>
+    <tr>
+        <td colspan="6" style="height:20px;padding:8px;border-top:none;border-left:1px solid #dedede;border-right:1px solid #dedede;border-bottom:1px solid #dedede;">
+            姓名：{$item['address_get']['name']}<br/>
+            电话：{$item['address_get']['mobile']}<br/>
+            邮编：{$item['address_get']['postalcode']}<br/>
+            地址：{$item['address_get']['address']} {$item['address_get']['more_address']}<br/>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="6" style="height:20px;padding:8px;border-top:none;border-left:1px solid #dedede;border-right:1px solid #dedede;border-bottom:1px solid #dedede;">
+            {loop $item['formcon'] $item}
+                {if $item['type']== 3}
+                {$item['name']}：
+                        {loop $item['val'] $item2}
+                            {$item2},
+                        {/loop}
+               {/if}
+                {if $item['type']== 5}
+                {$item['name']}：
+                        {loop $item['z_val'] $item2}
+                           <img src="{$item2}" alt="" style="width:80px">
+                        {/loop}
+                {/if}
+                {if $item['type']!= 5 && $item['type']!= 3}
+                    {$item['name']}：{$item['val']}
+                {/if}
+                <br/>
+            {/loop}
+        </td>
+    </tr>
+    <tr>
+        <td colspan="6" style="height:20px;padding:0;border-top:none;">&nbsp;</td>
+    </tr>
+   {/loop}
+        </tbody></table>
+        <div id="fenye">
+            {$pager}
+        </div>
+{/if}
+</div>
+</div>
+</div>
+</body>
+</html>

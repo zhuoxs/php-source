@@ -1,0 +1,162 @@
+{php include wl_template('common/header');}
+<style>
+.weui_extra_area{font-size: 14px;color: #888;}
+.weui_extra_area a{color: #61749B;}
+.hee{height: 4rem;background: #ff512f;}
+.warning{color: #fff;position: absolute;display: block;width: 100%;margin: 1.8rem -0.8rem;font-size: 0.65rem;font-weight: 500;line-height: 2.2rem;text-align: center;white-space: nowrap;}
+.price{color: #E84D64;font-weight: bold;}
+.pickList .picker-item{
+		width: 100% !important;
+		display: block !important;
+	}
+	.picker-items-col{
+		width: 100% !important;
+		display: block !important;
+	}
+	.picker-items-col-wrapper{
+		width: 100% !important;
+		display: block !important;
+	}
+	#downnum,#upnum{
+		display: inline-block;
+		padding-left:7px;
+		padding-right:7px;
+		padding-bottom: 2px;
+		font-weight: bolder;
+		color: green;
+		border: 1px solid gray;
+	}
+	#couponnum{
+		background-color: white;
+		width: 2rem;
+		display: inline-block;
+		height: 25px;
+		text-align: center;
+		padding-left: 3px;
+		padding-right: 3px;
+		border-top: 1px solid gray;
+		border-bottom: 1px solid gray;
+	}
+</style>
+<div class="page-group">
+    <div class="page page-current" id="page-pay">
+        <header class="bar bar-nav">
+            <a class="button button-link button-nav pull-left back" href="javascript:;" onclick="history.go(-1);">
+                <span class="icon icon-left"></span>
+                返回
+            </a>
+            <h1 class="title">购买卡券</h1>
+        </header>
+        <div class="content" style="background-color: #F9F9F9;">
+        	 <div class="list-block" style="margin-top: .5rem;">
+                <ul>
+                    <li class="item-content paytype">
+                        <div class="item-inner">
+                            <div class="item-title">{$coupons['title']}</div>
+                            <div class="item-after">￥{$coupons['price']}</div>
+                        </div>    
+                    </li>
+                    <li class="item-content paytype">
+                        <div class="item-inner">
+                            <div class="item-title">数量</div>
+                            <div class="item-after"><div id="downnum">—</div><input onchange="subtotal()" type="tel" value="1" id="couponnum"/><div style="padding-left: 10px;padding-right: 10px;" id="upnum">+</div></div>
+                        </div>    
+                    </li>
+                    <li class="item-content paytype">
+                        <div class="item-inner">
+                            <div class="item-title">小计</div>
+                            <div class="item-after" style="color: orangered;">￥<span id="subtotal">{$coupons['price']}</span></div>
+                        </div>    
+                    </li>
+                </ul>
+            </div>
+            <div class="list-block" style="margin-top: .5rem;">
+                <ul>
+                    <li class="item-content paytype">
+                        <div class="item-inner">
+                            <div class="item-title">您绑定的手机号码</div>
+                            <div class="item-after"></div>
+                        </div>    
+                    </li>
+                    <li class="item-content paytype">
+                        <div class="item-inner">
+                            <div class="item-title">{$mobile}</div>
+                            <div class="item-after" onclick="bind()">绑定新号码<i class="icon iconfont icon-right"></i></div>
+                        </div>    
+                    </li>
+                </ul>
+            </div>
+            <div class="weui-btn-area">
+                <a href="javascript:;" class="weui-btn weui-btn_primary submitorder" id="wechat">提交订单</a>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+	$('#wechat').click(function(){
+		var paytype = $(this).attr('id');
+		var num = $('#couponnum').val();
+            $.post("{php echo app_url('wlcoupon/coupon_app/createCouponorder',array('id'=>$coupons['id']))}", {num:num},
+            function(d) {
+                if (d.errno) {
+                    $.confirm(d.message,
+	                    function() { //确定后操作。
+	                    	if(d.errno ==2){location.href = "{php echo app_url('member/user/binding',array('backurl'=>urlencode($url)));}";}
+	                    },
+	                    function() { //取消后操作。
+                    });
+                } else {
+                	location.href = "{php echo app_url('wlcoupon/coupon_app/createCouponorder');}&orderId="+d.message;
+                }
+            },
+            "json");
+        });
+    function subtotal(){
+    	var pricr = {$coupons['price']};
+    	var num = $('#couponnum').val();
+    	if (num>limitnum) {
+    		$.toast('最多购买'+limitnum+'张');
+    		$('#couponnum').val(limitnum);
+    		$('#subtotal').text(pricr*limitnum);
+    		$('#payprice').text(pricr*limitnum);
+    	}else if(num<1){
+    		$.toast('数量最小为1');
+    		$('#couponnum').val(1);
+    		$('#subtotal').text(pricr);
+    		$('#payprice').text(pricr);
+    	}else{
+    		$('#subtotal').text(pricr*num);
+    		$('#payprice').text(pricr*num);
+    	}
+    }
+    function bind(){
+		location.href = "{php echo app_url('member/user/binding',array('backurl'=>urlencode($url)));}";
+    }
+</script>
+<script type="text/javascript">
+	var limitnum = {$coupons['get_limit']};
+	if(limitnum == 0){limitnum = 100;}
+    $('#downnum').click(function(){
+    	var num = parseInt($('#couponnum').val());
+    	var newnum = num - 1;
+    	if (newnum<1) {
+    		$.toast('数量最小为1');
+    	}else{
+    		$('#couponnum').val(newnum);
+    		subtotal();
+    	}
+    });
+    $('#upnum').click(function(){
+    	var num = parseInt($('#couponnum').val());
+    	var newnum = num + 1;
+    	if (newnum>limitnum) {
+    		$.toast('最多购买'+limitnum+'张');
+    	}else{
+    		$('#couponnum').val(newnum);
+    		subtotal();
+    	}
+    });
+	
+
+</script>
+{php include wl_template('common/footer');}

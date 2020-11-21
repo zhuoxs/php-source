@@ -1,0 +1,258 @@
+{extend name="common/index" /}
+{block name="search_box"}
+<blockquote class="layui-elem-quote layui-quote-nm">
+    <p style="font-size: 14px;">当活动结束或手动关闭商品时，才能生成配送单进行配送</p>
+</blockquote>
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入姓名..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="type" id="type" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        <div class="layui-inline">
+            <input type="text" title="查询开始时间" class="layui-input" name="begin_time" id="begin_time" placeholder="查询开始时间">
+        </div>
+        <div class="layui-inline">
+            <input type="text" title="查询结束时间" class="layui-input" name="end_time" id="end_time" placeholder="查询结束时间">
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+{/block}
+
+<!--数据表-操作列-->
+
+{block name="tool_template"}
+<!--
+<script type="text/html" id="dataTool">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnEdit">详情</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDelete">发货</a>
+</script>-->
+{/block}
+
+
+{block name="tool_box"}
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnChooseGoods" class="layui-btn layui-btn-primary layui-btn-sm">生成配送单</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnCSV" class="layui-btn layui-btn-primary layui-btn-sm">导出CSV</a>
+    </div>
+</div>
+{/block}
+{block name="table_config"}
+<script type="text/html" id="dataOrderState">
+    {{# if(d.state == 3){ }}
+    配送中
+    {{# } }}
+    {{# if(d.state == 4){ }}
+    已完成
+    {{# } }}
+</script>
+
+<script type="text/html" id="dataTools">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnDetail">详情</a>
+    {{# if(d.order_status ==1 ){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnFahuo">发货</a>
+    <!--<a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnFahuo">发货</a>-->
+    {{# } }}
+
+    {{# if(d.order_status ==5&&(d.review_status==0||d.refund_status==2)&&d.refund_status!=1 ){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnRefund">退款</a>
+    {{# } }}
+</script>
+
+<script>
+    layui.use(['table','form','laydate'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        var laydate = layui.laydate;
+        laydate.render({
+            elem: '#begin_time'
+        });
+        laydate.render({
+            elem: '#end_time'
+        });
+
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_list')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'order_no', width:200, title: '配送单号',fixed:'left',sort:true},
+                {field:'leader_name', width:180, title: '团长'},
+                {field:'tel', width:200, title: '联系电话'},
+                {field:'address', width:250, title: '收货地址',sort:false},
+                {field:'state', width:180, title: '配送状态',sort:false,templet: '#dataOrderState'},
+                {field:'detail', width:300, title: '配送详情',sort:false},
+                {field:'o',fixed:'right',width:200, title: '操作',templet: '#dataTools'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+        //        搜索
+        $('#btnSearch').unbind('click').click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    type: $('#type').val(),
+                    begin_time: $('#begin_time').val(),
+                    end_time: $('#end_time').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        type: $('#type').val(),
+                        begin_time: $('#begin_time').val(),
+                        end_time: $('#end_time').val(),
+                    }
+                });
+            }
+        })
+        $('#btnCSV').click(function () {
+            var url = '{:adminurl("outCSV")}';
+            url += '&key='+$('#key').val();
+            url += '&type='+$('#type').val();
+            url += '&begin_time='+$('#begin_time').val();
+            url += '&end_time='+$('#end_time').val();
+
+            var checkData = table.checkStatus('laytable');
+            var ids = [];
+            for (var i in checkData.data){
+                if(ids.indexOf(checkData.data[i]['id']) == -1){
+                    ids.push(checkData.data[i]['id']);
+                }
+            }
+            if (ids.length){
+                url += '&ids='+ids.join(',');
+            }
+
+            top.window.open(url);
+        })
+        //商品详情
+        $(document).on('click','.btnDetail',function(e){
+            var id = $(this).data('id')
+            var index = layer.open({
+                type: 2,
+                title: '详情',
+                shadeClose: true,
+                shade: false,
+                maxmin: true, //开启最大化最小化按钮
+                area: ['893px', '600px'],
+                content: "{:adminurl('detail')}&id="+id,
+            });
+            layer.full(index);
+            return false;
+        })
+        var loading = false;
+        $('#btnChooseGoods').click(function () {
+            layer.open({
+                type: 2,
+                title: '选择团长',
+                shadeClose: true,
+                shade: false,
+                maxmin: true, //开启最大化最小化按钮
+                area: ['893px', '600px'],
+                content: "{:adminurl('choose3','Cleader')}&onlyone=1",
+                btn: ['下一步', '取消'],
+                yes: function (index,layerObj) {
+                    var win = $(layerObj).find("iframe")[0].contentWindow;
+                    var checkData = win.layui.table.checkStatus('laytable');
+
+
+                    // var store_ids = [];
+                    // var names = [];
+                    // for (var i in checkData.data){
+                    //     if(store_ids.indexOf(checkData.data[i]['id']) == -1){
+                    //         store_ids.push(checkData.data[i]['id']);
+                    //         names.push(checkData.data[i]['name']);
+                    //     }
+                    // }
+
+                    if (!checkData.data.length){
+                        layer.msg('请选择团长');
+                    }else{
+                        layer.close(index);
+                        var leader_id = checkData.data[0]['id'];
+                        layer.open({
+                            type: 2,
+                            title: '选择商品',
+                            shadeClose: true,
+                            shade: false,
+                            maxmin: true, //开启最大化最小化按钮
+                            area: ['893px', '600px'],
+                            content: "{:adminurl('choose','Cordergoods')}&leader_id="+leader_id,
+                            btn: ['确认', '取消'],
+                            yes: function (index,layerObj) {
+                                if (loading){
+                                    return;
+                                }
+                                loading = true;
+                                var win = $(layerObj).find("iframe")[0].contentWindow;
+                                var checkData = win.layui.table.checkStatus('laytable');
+                                if (!checkData.data.length) {
+                                    layer.msg('请选择发货商品');
+                                    loading = false;
+                                    return;
+                                }
+                                var url = "{:adminurl('save','Cdeliveryorder')}";
+                                $.post(url, {goodses:checkData.data,leader_id:leader_id}, function(data){
+                                    if (data.code == 0) {
+                                        layer.close(index);
+                                        layer.msg('添加成功',{icon: 6,anim: 6});
+                                        table.reload('laytable',{});
+                                    }else{
+                                        layer.msg(data.msg,{icon: 5,anim: 6});
+                                    }
+                                    setTimeout(function () {
+                                        loading = false;
+                                    },1000);
+                                }, 'json');
+                            }
+                        });
+                    }
+                }
+            });
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        var ret = [
+                {"id":0,"text":"全部单据"},
+                {"id":3,"text":"配送中"},
+                {"id":4,"text":"已完成"},
+            ];
+        ret.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            return obj;
+        });
+        $('#type').select2({
+            data: ret,
+        })
+
+    })
+</script>
+{/block}

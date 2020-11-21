@@ -1,0 +1,138 @@
+{template 'newui/head_base'}
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1295669_0kykfx3920bo.css">
+{template 'weixin'}
+<style>
+    .yd-list-theme4 .yd-list-item .yd-list-img{
+        display: none;
+    }
+    .yd-tab-nav:after{
+        display: none;
+        padding-bottom: 1vh;
+    }
+</style>
+<div id="app">
+    <template>
+        <div>
+            <yd-flexbox direction="vertical">
+                <yd-flexbox-item><img width="100%" src="{$img}"></yd-flexbox-item>
+            </yd-flexbox>
+        </div>
+    </template>
+    <template>
+        <yd-tab v-model="tab2" :callback="fn" :prevent-default="false" :item-click="itemClick">
+            <yd-tab-panel v-for="item in items" :label="item.label">
+                <section id="J_List">
+                    <div id="J_ListContent"></div>
+                </section>
+            </yd-tab-panel>
+        </yd-tab>
+        <yd-infinitescroll :callback="loadList" distance="100" ref="scroll">
+            <yd-list theme="4" slot="list">
+                <yd-list-item  v-for="item, key in list" :key="key">
+                    <img slot="img" :src="item.img">
+                    <span slot="title" style="padding-bottom: 1vh">{{item.title}}</span>
+                    <yd-list-other slot="other">
+                        <div style="width: 85%">
+                            <p style="padding-bottom: 1vh" class="list-price">{{item.address}}</p>
+                            <p style="padding-bottom: 1vh" class="list-del-price"><i class="iconfont icon-position" style="font-size: 12px"></i> {{item._distance}} 米</p>
+                        </div>
+                        <div style="position: absolute;z-index:999;right: 0; top: 50%;transform: translateY(-50%);"  @click="daohang(item.location.lat,item.location.lng,item.title,item.address)"><i class="iconfont icon-daohang" style="font-size: 40px;color: #4077ec"></i></div>
+                    </yd-list-other>
+                </yd-list-item>
+            </yd-list>
+
+            <!-- 数据全部加载完毕显示 -->
+            <span slot="doneTip">啦啦啦，啦啦啦，没有数据啦~~</span>
+
+        </yd-infinitescroll>
+    </template>
+</div>
+<script>
+    wx.ready(function () {
+        wx.getLocation({
+            type : 'wgs84',
+            success : function(res) {
+                app.lat =res.latitude;
+                app.lon =res.longitude;
+                app._initList(res.latitude,res.longitude,'0');
+            },
+            cancel : function(res) {
+                this.$dialog.alert({mes: "用户拒绝授权获取地理位置"});
+            }
+        });
+    })
+    var app = new Vue({
+        el: '#app',
+        data:{
+            lat:'',
+            lon:'',
+            tab2: 0,
+            items: [
+                {label: '停车场'},
+                {label: '加油站'},
+                {label: '充电桩'},
+                {label: '汽车维修'},
+                {label: '洗手间'},
+            ],
+            page: 1,
+            pageSize: 10,
+            list:''
+        },
+        methods: {
+            _initList:function(lat,lon,type){
+                this.$dialog.loading.open('数据加载中');
+                var url = "{$_W['siteroot']}app/{php echo $this->createMobileUrl('chuxing');}";
+                this.$http.jsonp(url,{params:{lat:lat,lon:lon,type:type,page:app.page}}).then(function (index) {
+                    this.page++;
+                    app.list = index.body.data;
+                    app.$dialog.loading.close();
+                });
+
+            },fn:function(label,key) {
+                app.list = '';
+                this.page='1';
+                this.pageSize='10';
+                this.$refs.scroll.$emit('ydui.infinitescroll.reInit');
+                app._initList(this.lat,this.lon,key);
+            },
+            itemClick:function(key) {
+                this.tab2 = key;
+            },daohang:function (lat,lng,name,info) {
+                wx.ready(function () {
+                    wx.openLocation({
+                        latitude: lat, // 纬度，浮点数，范围为90 ~ -90
+                        longitude: lng, // 经度，浮点数，范围为180 ~ -180。
+                        name: name, // 位置名
+                        address: info, // 地址详情说明
+                        scale: 17, // 地图缩放级别,整形值,范围从1~28。默认为最大
+                        infoUrl: '' // 在查看位置界面底部显示的超链接,可点击跳转
+                    }); });
+            },
+            loadList() {
+                var url = "{$_W['siteroot']}app/{php echo $this->createMobileUrl('chuxing');}";
+                this.$http.jsonp(url, {
+                    params: {
+                        lat:app.lat,
+                        lon:app.lon,
+                        type:this.tab2,
+                        page:app.page
+                    }
+                }).then(function (response) {
+                    const _list = response.body;
+
+                    this.list = [...this.list, ..._list.data];
+                    if (_list.count < this.pageSize ) {
+                        /* 所有数据加载完毕 */
+                        this.$refs.scroll.$emit('ydui.infinitescroll.loadedDone');
+                        return;
+                    }
+                    /* 单次请求数据完毕 */
+                    this.$refs.scroll.$emit('ydui.infinitescroll.finishLoad');
+                    this.page++;
+                    this.pageSize = this.pageSize+10
+
+                });
+            }
+        }
+    })
+</script>

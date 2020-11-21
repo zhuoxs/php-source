@@ -1,0 +1,117 @@
+{php include wl_template('common/header');}
+<div class="page-group" >
+    <div class="page page-current">
+        <header class="bar bar-nav">
+            <a class="button button-link button-nav pull-left back" href="{php echo app_url('store/supervise/platform')}"><span class="icon icon-left"></span>返回</a>
+            <h1 class="title">验证码核销</h1>
+        </header>
+        <div class="content native-scroll">
+            <div class="weui-cells__title">验证码核销</div>
+            <div class="list-block">
+                <ul>
+                    <li>
+                        <div class="item-content">
+                            <div class="item-inner">
+                                <div class="item-title label">验证码类型</div>
+                                <div class="item-input">
+                                    <select id="veriftype">
+                                        <option value="">选择验证码类型</option>
+                                        <option value="1">抢购验证码</option>
+                                        {if p('groupon')}
+                                        <option value="5">团购消费码</option>
+                                        {/if}
+                                        {if p('activity')}
+                                        <option value="2">活动验证码</option>
+                                        {/if}
+                                        <option value="3">卡券消费码</option>
+                                        <option value="4">拼团消费码</option>
+                                        {if p('bargain')}
+                                        <option value="6">砍价消费码</option>
+                                        {/if}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="item-content">
+                            <div class="item-inner">
+                                <div class="item-title label">验证码</div>
+                                <div class="item-input">
+                                    <input type="text" placeholder="请输入验证码" id="verifcode" value="">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-content couponnum">
+                            <div class="item-inner">
+                                <div class="item-title label">核销次数</div>
+                                <div class="item-input">
+                                    <input type="tel" placeholder="请输入核销次数" id="couponnum" value="1">
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="weui-btn-area">
+                <a class="weui-btn weui-btn_primary external" href="javascript:;" id="showTooltips">确定</a>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    var flag = 0;
+    $(document).on('click','#showTooltips',function () {
+        if(flag){
+            $.toast("核销中,请勿重复点击");
+            return false;
+        }else{
+            flag = 1;
+        }
+        var verifcode = $('#verifcode').val();
+        var veriftype = $('#veriftype').val();
+        var couponnum = $('#couponnum').val();
+        if(!veriftype){
+            $.toast("请选择验证码类型");
+            flag = 0;
+            return false;
+        }
+        if(!verifcode){
+            $.toast("请输入验证码");
+            flag = 0;
+            return false;
+        }
+        if(couponnum<1){
+            if(veriftype == 1){
+                var pluginname = '抢购订单';
+            }else if(veriftype == 2){
+                var pluginname = '商户活动';
+            }else if(veriftype == 3){
+                var pluginname = '优惠券';
+            }else if(veriftype == 4){
+                var pluginname = '拼团订单';
+            }else if(veriftype == 5){
+                var pluginname = '团购订单';
+            }else if(veriftype == 6){
+                var pluginname = '砍价订单';
+            }
+            $.toast("请输出"+pluginname+"核销次数");
+            flag = 0;
+            return false;
+        }
+
+        $.post("{php echo app_url('store/supervise/verifcode')}",{verifcode:verifcode,veriftype:veriftype,couponnum:couponnum},function(d){
+            flag = 0;
+            if(d.result == 1){
+                $.toast("核销成功");
+                location.href = "{php echo app_url('store/supervise/platform')}";
+            }else if(d.result == 2){
+                $.toast(d.msg);
+            }else{
+                $.toast("未知错误");
+            }
+        },"json");
+    });
+
+</script>
+{php include wl_template('common/footer');}

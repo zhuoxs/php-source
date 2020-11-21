@@ -1,0 +1,100 @@
+{extend name="common/index" /}
+{block name="search_box"}
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入关键字..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="cat_id" id="cat_id" style="width: 200px;" class="select2" lay-ignore></select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+{/block}
+{block name="tool_box"}
+{/block}
+{block name="table_config"}
+<script type="text/html" id="dataQuick">
+    <input type="checkbox" name="is_quick" value="{{d.id}}" lay-skin="switch" lay-text="快速购买|取消" lay-filter="quick" {{ d.is_quick == 1 ? 'checked' : '' }}>
+</script>
+<script>
+    layui.use(['table','form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_list')}&meeting_id={:input('get.meeting_id')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+
+                {if input('get.readonly')}
+                    {type:'radio',fixed:'left'},
+                {else /}
+                    {type:'checkbox',fixed:'left'},
+                {/if}
+
+                {field:'name', width:180, title: '名称',fixed:'left',sort:true},
+                {field:'cat_name', width:180, title: '分类',sort:true},
+                {field:'stock', width:180, title: '库存',sort:true},
+                {field:'price', width:180, title: '销售价',sort:true},
+                {field:'sales_num', width:180, title: '销售量',sort:true},
+                {field:'virtual_num', width:180, title: '虚拟销售量',sort:true},
+                {field:'index', width:180, title: '排序',sort:true},
+                {field:'create_time', width:200, title: '创建时间',sort:true},
+                {field:'update_time', width:200, title: '修改时间',sort:true},
+                {field:'is_quick', width:150, title: '是否快速购买',sort:true,templet: '#dataQuick'},
+                {field:'state', width:100, title: '启用状态',sort:true,templet: '#dataState'},
+                {field:'is_hot', width:100, title: '推荐状态',sort:true,templet: '#dataHot'},
+            ]]
+            ,page: true,
+            height:'full-200',
+        });
+        //        搜索
+        $('#btnSearch').unbind('click').click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    cat_id: $('#cat_id').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        cat_id: $('#cat_id').val(),
+                    }
+                });
+            }
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        $.get("{:adminurl('select','ccategory')}", function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: '', text: '请选择分类'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#cat_id').select2({
+                data: ret,
+            })
+        })
+    })
+</script>
+{/block}

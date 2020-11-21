@@ -1,0 +1,217 @@
+{template 'common/header'}
+<ul class="nav nav-tabs">
+	<li {if $op == 'list'}class="active"{/if}><a href="{php echo $this->createWebUrl('manage', array('op'=>'list'));}">视频列表</a></li>	
+	<li {if $op == 'member'}class="active"{/if}><a href="{php echo $this->createWebUrl('member');}">会员列表</a></li>
+	<li><a href="{php echo $this->createWebUrl('member',array('op'=>'qingli'));}">一键清理空会员</a></li>	
+	<li><a href="{php echo $this->createWebUrl('member',array('op'=>'chongzhi'));}">一键重置异常会员</a></li>	
+</ul>
+{if $op == 'member'}
+<style>
+.table td span{display:inline-block;margin-top:4px;}
+.table td input{margin-bottom:0;}
+.account-stat{overflow:hidden; color:#666;}
+.account-stat .account-stat-btn{width:100%; overflow:hidden;}
+.account-stat .account-stat-btn > div{text-align:center; margin-bottom:5px;margin-right:2%; float:left;width:23%; height:80px; padding-top:10px;font-size:16px; border-left:1px #DDD solid;position: relative}
+.account-stat .account-stat-btn > div.col-3{width: 31%}
+.account-stat .account-stat-btn > div:first-child{border-left:0;}
+.account-stat .account-stat-btn > div span{display:block; font-size:30px; font-weight:bold}
+.account-stat .account-stat-btn > div.col-12{width: 12.2%;}
+.account-stat .account-stat-btn > div.col-6{width: 48%;}
+.account-stat .account-stat-btn > div a{font-size: 15px; position: absolute; right: 0; bottom: 10px}
+</style>
+<div class="panel panel-default">
+    <div class="panel-heading">
+        关键指标
+    </div>
+    <div class="account-stat">
+        <div class="account-stat-btn">
+            <div>总人数<span>{$total}</span></div>                  
+            <div>观看视频数<span>{$today_click}</span></div> 
+            <div>会员人数<span>{$total_member}</span></div> 
+            <div>今日新增<span>{$today_member}</span></div> 
+        </div>
+    </div>
+</div>
+<div class="panel panel-info">
+	<div class="panel-heading">筛选</div>
+	<div class="panel-body">
+		<form action="./index.php" method="get" class="form-horizontal" role="form">
+			<input type="hidden" name="c" value="{$_GPC['c']}">
+			<input type="hidden" name="a" value="{$_GPC['a']}">
+			<input type="hidden" name="do" value="{$_GPC['do']}">
+			<input type="hidden" name="m" value="{$_GPC['m']}">
+			<input type="hidden" name="op" value="{$op}">
+			<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">昵称</label> 
+				<div class="col-xs-3">
+					<input type="text" name="keyword" class="form-control" value="{$_GPC['keyword']}" placeholder="可搜索微信昵称 " /> 
+				</div>
+			<!-- <input type="hidden" name="id" value="{$_GPC['id']}"> -->
+			<div class="form-group">				
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">登陆时间</label>
+                <div class="col-xs-3" >
+                    {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d', $starttime),'endtime'=>date('Y-m-d', $endtime)));}
+                </div>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">报名类型</label>
+				<div class="col-xs-3">
+					<label class="radio-inline"><input type="radio" value="0" name="is_pay"  {if !$_GPC['is_pay']}checked{/if} {if $_GPC['is_pay'] == 0 }checked{/if}>全部</label>
+             		<label class="radio-inline"><input type="radio" value="1" name="is_pay"  {if $_GPC['is_pay'] == 1 }checked{/if}>会员</label>
+             		<label class="radio-inline"><input type="radio" value="2" name="is_pay"  {if $_GPC['is_pay'] == 2 }checked{/if}>非会员</label>
+             		<label class="radio-inline"><input type="radio" value="3" name="is_pay"  {if $_GPC['is_pay'] == 3 }checked{/if}>黑名单</label>
+				</div>				
+			</div>
+			<div style="color: red !important;">&#22823;&#37327;&#28304;&#30721;&#65292;&#25345;&#32493;&#26356;&#26032;&#65306;&#119;&#119;&#119;&#46;&#108;&#97;&#110;&#114;&#101;&#110;&#122;&#104;&#105;&#106;&#105;&#97;&#46;&#99;&#111;&#109;</div><div class="form-group">				
+				<div class="col-xs-12 col-sm-8 col-md-8 col-lg-8" >
+					<button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>	
+					{if pdo_tableexists('cyl_video_pc_site')}
+					<a href="{php echo $this->createWebUrl('member', array('op'=>'add'));}" class="btn btn-primary">添加会员</a> 	
+					{/if}			
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="main">
+
+	<div class="panel panel-default">
+		<div class="panel-heading">会员列表</div> 
+		<div class="panel-body">
+			<div class="table-responsive panel-body">
+				<table class="table table-hover" style="min-width: 300px;">
+					<thead class="navbar-inner">
+						<tr>
+							<th class="col-sm-1" style="width: 20px">ID</th>
+							<th class="col-sm-1">微信昵称</th>
+							<th class="col-sm-1">会员编号</th>
+							<th class="col-sm-1">微信头像</th>
+							<th class="col-sm-1">是否会员</th>
+							<th class="col-sm-2">到期时间</th>
+							<th class="col-sm-2">加入时间</th>	
+							<th class="col-sm-2">登陆时间</th>	
+							<th class="col-sm-2">上级会员</th>	
+							<th>操作</th>
+						</tr>
+					</thead>
+					<tbody>
+						{loop $list $data}
+						<tr>
+							<td>{$data['id']}</td>
+							<td>{$data['nickname']}{$data['phone']}</td>
+							<td>{$data['uid']}</td>
+							<td><img src="{$data['avatar']}" width="30"></td>		
+							<td>{if $data['is_pay'] == 1}会员{else}普通{/if}</td>							
+							<td>{if $data['end_time']}{php echo date('Y-m-d H:i:s',$data['end_time'])}{else}普通{/if}</td>							
+							<td>{php echo date('Y-m-d H:i:s',$data['time'])}</td>
+							<td>{php echo date('Y-m-d H:i:s',$data['old_time'])}</td> 
+							<td>{$data['site_name']}</td> 
+							<td>								
+								<a href="{php echo $this->createWebUrl('member', array('op'=>'add', 'id'=>$data['id']));}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="" data-original-title="编辑">编辑</a>
+								<a onclick="if(!confirm('删除后将不可恢复,确定删除吗?')) return false;" href="{php echo $this->createWebUrl('member', array('op'=>'delete', 'id'=>$data['id']));}" class="btn btn-default btn-danger" data-toggle="tooltip" data-placement="top" title="" data-original-title="删除">删除</a> 
+								<a href="{php echo $this->createWebUrl('manage', array('op'=>'single','openid'=>$data['openid']));}" class="btn btn-default btn-success">观看记录</a> 
+								{if $data['is_pay'] == 3}
+								<a href="{php echo $this->createWebUrl('member', array('op'=>'blacklistopen','id'=>$data['id']));}" class="btn btn-warning">解除黑名单</a>   
+								{else}
+								<a href="{php echo $this->createWebUrl('member', array('op'=>'blacklist','id'=>$data['id']));}" class="btn btn-default btn-warning">设置黑名单</a>   
+								{/if}
+							</td>
+						</tr>
+						{/loop}
+						{if empty($list)}
+						<tr>
+							<td colspan="8">
+								尚未添加
+							</td>
+						</tr>
+						{/if}
+					</tbody>
+				</table>
+				{$pager}
+			</div>
+		</div>
+	</div>
+</div>
+{elseif $op == 'add' || $op == 'edit'}
+<div class="main">
+	<form action="" method="post" class="form-horizontal form" id="form">
+		<div class="panel panel-default">			
+			<div class="panel-body">
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">微信编号openid</label>
+					<div class="col-xs-12 col-sm-8">
+						<input type="text" name="data[openid]" class="form-control" value="{$item['openid']}" />
+						<span class="help-block">可以是手机号也可以是粉丝编号（openid）请在粉丝营销->粉丝->右侧列表查看内->复制粉丝编号</span>
+					</div>
+				</div>		
+				{if pdo_tableexists('cyl_video_pc_site')}
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">手机号</label>
+					<div class="col-xs-12 col-sm-8">
+						<input type="text" name="data[phone]" class="form-control" value="{$item['phone']}" />
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">密码</label>
+					<div class="col-xs-12 col-sm-8">
+						<input type="text" name="password" class="form-control" value="" />
+					</div>
+				</div>
+				{/if}
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">微信昵称</label>
+					<div class="col-xs-12 col-sm-8">
+						<input type="text" name="data[nickname]" class="form-control" value="{$item['nickname']}" />
+					</div>
+				</div>		
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">微信头像</label>
+					<div class="col-xs-12 col-sm-8">
+						{php echo tpl_form_field_image('avatar', $item['avatar']);}
+					</div>
+				</div>	
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">会员类型</label>
+					<div class="col-xs-12 col-sm-8">
+						<label class="radio-inline"><input type="radio" value="1" name="data[is_pay]"  {if $item['is_pay'] == 1 }checked{/if}>会员</label>
+             		<label class="radio-inline"><input type="radio" value="0" name="data[is_pay]"  {if $item['is_pay'] == 0 }checked{/if}>非会员</label>
+					</div>
+				</div>	
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">到期时间</label>
+					<div class="col-xs-12 col-sm-8">
+					{php echo tpl_form_field_date('end_time',$item['end_time'],true);}
+					</div>
+				</div>		
+				
+				{if !empty($id)}
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">添加日期</label>
+					<div class="col-xs-12 col-sm-8">
+						<p class="form-control-static">{php echo date('Y-m-d', $item['time']);}</p>
+					</div>
+				</div>
+				{/if}
+				
+		</div> 
+				<div class="form-group">
+					<div class="col-xs-12 col-sm-9 col-md-10 col-lg-10 col-sm-offset-3 col-md-offset-2 col-lg-offset-2">						
+						<input name="submit" type="submit" value="提交" class="btn btn-primary" />
+						<input type="hidden" name="token" value="{$_W['token']}" />
+					</div>
+				</div>
+			</div>
+		</div>
+	</form>
+</div>
+<script type="text/javascript">	
+	$('#credit1').click(function(){
+		$('#credit-status1').show();
+		$('#credit-status2').hide();
+	});
+	$('#credit2').click(function(){
+		$('#credit-status1').hide();
+		$('#credit-status2').show();
+	});
+</script>
+{/if}
+{template 'common/footer'}

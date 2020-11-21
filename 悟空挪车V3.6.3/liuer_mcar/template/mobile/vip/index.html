@@ -1,0 +1,195 @@
+{template 'header'}
+<script type="text/javascript" src="{$_W['siteroot']}app/resource/js/app/util.js"></script>
+<script type="text/javascript" src="{$_W['siteroot']}app/resource/js/lib/mui.min.js?v=20160906"></script>
+<style>
+    body.pageBind{
+        background: #f5f5f5;
+    }
+    .pageBind header{
+        background: none;
+    }
+    .user-form{
+        border-radius: 0;
+        margin:0px;
+    }
+    .pageBind h3{
+        color: #ffffff;
+        font-size: .35rem;
+        text-align: center;
+        margin-top: .5rem;
+        margin-bottom: .5rem;
+    }
+    .user-do{
+        margin:0 15px;
+    }
+    .yd-cell-box{
+        margin-bottom: 0;
+    }
+    .saorao{
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .saorao img{
+        width: 100%;
+        max-width: 100%;
+    }
+    .header{
+        margin-bottom: 10px;
+    }
+    .vip-info{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .vip-left{
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 10px;
+    }
+    .vip-title{
+        font-size: 14px;
+        font-weight: bold;
+    }
+    .vip-desc{
+        font-size: 12px;
+        color: #999999;
+    }
+    .vip-right{
+        font-size: 14px;
+        color: #ff3300;
+    }
+    .vip-banner{
+        width: 100%;
+    }
+    .vip-banner img{
+        width: 100%;
+        max-width: 100%;
+    }
+    .vip-description{
+        background: #ffffff;
+        padding: 10px 10px 20px;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+    .vip-description p{
+        margin-bottom: 5px;
+    }
+</style>
+<?php
+$config = get_module_info();
+$vip_banner = $config['vip_banner'] ? tomedia($config['vip_banner']) : ASSETS . '/images/vip.png';
+?>
+<body class="pageBind pageFooter">
+<div id="hook-app">
+    <?php if($config['header_isshow']): ?>
+    <div class="header">
+        <yd-navbar title="开通会员">
+            <a href="<?php echo $this->createMobileUrl('user'); ?>" slot="left">
+                <yd-navbar-back-icon></yd-navbar-back-icon>
+            </a>
+        </yd-navbar>
+    </div>
+    <?php endif; ?>
+    <div class="vip-banner">
+        <img src="{$vip_banner}" alt="">
+    </div>
+    <?php if($config['vip_text']): ?>
+    <div class="vip-description">
+        {php echo htmlspecialchars_decode($config['vip_text'])}
+    </div>
+    <?php endif; ?>
+    <div class="vip-form">
+        <yd-checklist v-model="checklist">
+            <?php foreach($groupArr as $group){ ?>
+            <yd-checklist-item val="{$group['id']}" :change="choseMe">
+                <div class="vip-info">
+                    <div class="vip-left">
+                        <div class="vip-title">{$group['name']}（{$group['duration']}天）</div>
+                        <div class="vip-desc">{$group['remark']}</div>
+                    </div>
+                    <div class="vip-right">
+                        ¥<span class="vip-price">{$group['price']}</span>
+                    </div>
+                </div>
+            </yd-checklist-item>
+            <?php } ?>
+        </yd-checklist>
+    </div>
+    <div class="user-do">
+        <yd-button size="large" type="warning" shape="angle" v-if="!paying" @click.native="handle" style="background: #04be01">确认开通</yd-button>
+        <yd-button size="large" type="hollow" v-if="paying"><img src="{ASSETS}/images/loading.gif" alt="" style="position: relative;top: -2px;"> 正在支付</yd-button>
+        <!--<yd-button size="large" type="warning" shape="angle" @click.native="" style="background: #ff4748">激活码开通</yd-button>-->
+    </div>
+</div>
+
+<script>
+    var user_id = "{$user_id}";
+    var bindUrl = "{php echo $this->createMobileUrl('bind-code');}";
+    var smsUrl = "{php echo $this->createMobileUrl('send-sms');}";
+    var checkVerify = "{php echo $this->createMobileUrl('check-verify');}";
+
+    var url = "<?php echo $this->createMobileUrl('order',['op'=>'vip']); ?>";
+
+    var reg = /^1[345789][0-9]\d{8}/;
+
+    var app = new Vue({
+        el: '#hook-app',
+        data: {
+            is_shield: 1,
+            paying: 0,
+            checklist: ['{$first}']
+        },
+        methods: {
+            handle: function(){
+                //loading
+                this.$dialog.loading.open('下单中...');
+                this.paying = 1;
+                $.post(url,{
+                    gid: this.checklist[0]
+                },function(resp) {
+                    app.$dialog.loading.close();
+
+                    if(resp.error){
+                        app.message(resp.msg);
+                    }else{
+                        //下单
+                        util.pay({
+                            orderFee : resp.fee,
+                            payMethod : 'wechat',
+                            orderTitle : resp.title,
+                            orderTid : resp.ordersn,
+                            module : 'liuer_mcar',
+                            success : function(result) {
+                                app.message('支付成功，即将跳转到会员中心','success');
+                                setTimeout(function(){
+                                    location.href = resp.url;
+                                },1500)
+                            },
+                            fail : function(result) {
+                                app.message('支付失败：'+result.message);
+                            },
+                            complete : function(result) {
+                                app.paying = 0;
+                            }
+                        });
+                    }
+                },'json');
+                return false;
+            },
+            choseMe: function(val,bool){
+                Vue.nextTick(function(){
+                    app.checklist = [val];
+                })
+            },
+            message:function(msg){
+                this.$dialog.toast({
+                    mes: msg,
+                    timeout: 1500
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>

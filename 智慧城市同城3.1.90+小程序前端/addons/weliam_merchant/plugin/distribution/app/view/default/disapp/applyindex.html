@@ -1,0 +1,180 @@
+{php include wl_template('common/header');}
+<div class="page-group" >
+	<div class="page page-current" id="page-index">
+		<div class="hm_view_nav">
+			<a href="{php echo app_url('member/user/index')}"><i class="icon iconfont icon-back"></i></a>
+		</div>
+		<div class="content native-scroll" style="background-color: #FAFAFA;padding-bottom: 3rem;" >
+			<style>
+				.title {color: #fff;background-color: #FF532F;}
+				.bar .button-link {color: #fff;}
+				.swiper-slide-i {height: 41.67vw;}
+				.swiper-slide-i img {width: 100%;height: 100%;display: block;object-fit: cover;}
+				.ranking-list {margin: .75rem;margin-top: -1rem;padding: .5rem;background-color: #fff;-webkit-border-radius: 6px;border-radius: 6px;position: relative;z-index: 10;}
+				.ranking-list-d {border: 2px solid #FFF6EC;-webkit-border-radius: 3px;border-radius: 3px;}
+				.ranking-list-h {height: 2.5rem;line-height: 2.5rem;color: #df231c;font-size: .8rem;font-weight: 600;text-align: center;margin: 0 .5rem;padding: 0 .5rem;border-bottom: 2px solid #F2EAE4;}
+				.ranking-list-i {height: 2.5rem;line-height: 2.5rem;font-size: .75rem;margin: 0 .5rem;padding: 0;display: -webkit-flex;display: flex;justify-content: space-between;position: relative;}
+				.ranking-list-i:after {content: "";width: 100%;height: 1px;background-color: #F2EAE4;position: absolute;left: 0;bottom: 0;}
+				.ranking-list-i span {color: #333;padding-right: .5rem;-webkit-flex: 1;flex: 1;white-space: nowrap;display: block;}
+				.ranking-list-i em {color: #ED414A;font-style: normal;display: block;}
+				.ranking-list-item-d {height: calc(10rem - 1px);overflow: hidden;position: relative;}
+				.ranking-rollGallerylist {width: 100%;position: absolute;}
+				.explain-line {height: 2.1rem;line-height: 2.1rem;color: #df231c;font-size: .8rem;font-weight: 600;text-align: center;margin: 0 1.25rem;position: relative;}
+				.explain-line span {padding: 0 .5rem;background-color: #FAFAFA;position: relative;z-index: 1;}
+				.explain-line:after {content: "";width: 100%;height: 1px;background-color: #df231c;position: absolute;left: 0;top: 50%;}
+				.weui-btn-area {margin: .75rem;padding: .5rem;background-color: #fff;-webkit-border-radius: 6px;border-radius: 6px;}
+				.weui-btn-area img{max-width: 100%;}
+				.weui-btn-area-d {padding: .5rem;border: 2px solid #FFF6EC;-webkit-border-radius: 3px;border-radius: 3px;}
+				.weui-btn_primary {background-color: #06C1AE;-webkit-border-radius: 3rem;border-radius: 3rem;}
+				.weui-btn {font-size: .8rem;}
+				.fix-bottom {padding: .5rem .75rem;}
+			</style>
+			{if $thumbs}
+			<section class="banner-header">
+				<div class="swiper-container" id="store_banner">
+					<div class="swiper-wrapper">
+						{loop $thumbs $thumb}
+						<div class="swiper-slide">
+							<div class="swiper-slide-i"><img src="{php echo tomedia($thumb)}"></div>
+						</div>
+						{/loop}
+					</div>
+					<div class="swiper-pagination" id="store_banner_page"></div>
+				</div>
+			</section>
+			{/if}
+			{if $rolllist}
+			<div class="ranking-list">
+				<div class="ranking-list-d">
+					<div class="ranking-list-h">最近提现</div>
+					<div class="ranking-list-item-d">
+						<div class="ranking-rollGallerylist">
+							{loop $rolllist $roll}
+							<div class="ranking-list-i"><span>{$roll['nickname']}</span><em>申请提现￥{$roll['applymoney']}</em></div>
+							{/loop}
+						</div>
+					</div>
+				</div>
+			</div>
+			{/if}
+			<div class="explain-line"><span>申请{$fxstext}说明</span></div>
+			<div class="weui-btn-area">
+				<div class="weui-btn-area-d">
+					{$_W['wlsetting']['distribution']['appdetail']}
+				</div>
+			</div>
+		</div>
+		<div class="fix-bottom">
+			<a class="weui-btn weui-btn_primary external" href="javascript:validate();" id="showTooltips">成为{$fxstext}{if $applymoney>0}(￥{$applymoney}){/if}</a>
+		</div>
+	</div>
+</div>
+
+<script>
+	new Swiper('#store_banner', {
+		speed:500,
+		autoplay: 3000,
+		autoplayDisableOnInteraction : false,
+		setWrapperSize:true,
+		pagination: '.swiper-pagination',
+		paginationClickable: true
+	});
+	if ($('.ranking-rollGallerylist').length > 0) {
+		require(['rollGallery'], function() {
+			$(".ranking-rollGallerylist").rollGallery({
+				direction: "top",
+				speed: 2000,
+				showNum: 4,
+				speedPx:20
+			});
+		})
+	}
+
+	$(function(){
+		var goflag = {$goflag};
+		if(goflag){
+			validate();
+		}
+	})
+
+	function validate(){
+		if(window.sysinfo.inwxapp == 'yes' || window.__wxjs_environment === 'miniprogram') {
+			$.ajax({
+				type: "POST",
+				url: "{php echo app_url('distribution/disappbase/applydis',array('rank'=>$rank))}",
+				data:{},
+				dataType: 'json',
+				beforeSend: function(XMLHttpRequest) {},
+				success: function(data) {
+					if(data.errno == 1){
+						$.alert('申请成功，等待审核', function () {
+							location.href = "{php echo app_url('distribution/disappbase/applywait')}";
+						});
+					}else if(data.errno == 2){
+						$.alert('恭喜您成为{$fxstext}', function () {
+							location.href = "{php echo app_url('distribution/disappbase/index')}";
+						});
+					}else if(data.errno == 3){
+						$.alert('开通一卡通会员后才能申请{$fxstext}', function () {
+							location.href = "{php echo app_url('halfcard/halfcardopen/open')}";
+						});
+					}else if(data.errno == 5){
+						$.confirm(data.message,function () { //确定后操作。
+									location.href = "{php echo app_url('member/user/binding',array('backurl'=>urlencode(app_url('distribution/disappbase/applyindex'))));}";
+								},function () { //取消后操作。
+								}
+						);
+					}else if(data.errno == 6){
+						location.href = "{php echo app_url('distribution/disappbase/topayorder')}&orderid="+data.message;
+					}else{
+						$.toast(data.message);
+					}
+				},
+				error: function() {
+					$('.error').show();
+				}
+			});
+		}else{
+			{if in_array('distribution',$_W['wlsetting']['share']['forcefollow']) && $_W['fans']['follow'] != 1 && is_weixin()}
+			common.ForceFollow('distribution',{$rank});
+			{else}
+			$.ajax({
+				type: "POST",
+				url: "{php echo app_url('distribution/disappbase/applydis',array('rank'=>$rank))}",
+				data:{},
+				dataType: 'json',
+				beforeSend: function(XMLHttpRequest) {},
+				success: function(data) {
+					if(data.errno == 1){
+						$.alert('申请成功，等待审核', function () {
+							location.href = "{php echo app_url('distribution/disappbase/applywait')}";
+						});
+					}else if(data.errno == 2){
+						$.alert('恭喜您成为{$fxstext}', function () {
+							location.href = "{php echo app_url('distribution/disappbase/index')}";
+						});
+					}else if(data.errno == 3){
+						$.alert('开通一卡通会员后才能申请{$fxstext}', function () {
+							location.href = "{php echo app_url('halfcard/halfcardopen/open')}";
+						});
+					}else if(data.errno == 5){
+						$.confirm(data.message,function () { //确定后操作。
+									location.href = "{php echo app_url('member/user/binding',array('backurl'=>urlencode(app_url('distribution/disappbase/applyindex'))));}";
+								},function () { //取消后操作。
+								}
+						);
+					}else if(data.errno == 6){
+						location.href = "{php echo app_url('distribution/disappbase/topayorder')}&orderid="+data.message;
+					}else{
+						$.toast(data.message);
+					}
+				},
+				error: function() {
+					$('.error').show();
+				}
+			});
+			{/if}
+			}
+		}
+</script>
+{php include wl_template('common/footer');}

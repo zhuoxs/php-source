@@ -1,0 +1,79 @@
+{template 'header'}
+{template 'left'}
+<script type="text/javascript" src="{MODULE_URL}recouse/js/webutil.js"></script>
+<link href="{MODULE_URL}recouse/css/webpage.css" rel="stylesheet">
+<section id="content">
+	<div class="main">
+		<div class="panel panel-info">
+			<div class="panel-heading">更新信息</div>
+			<div class="panel-body">
+				{if $isUpdate}
+				<div>有新版本</div>
+				<div>版本号：{$info['version']}</div>
+				<div>更新信息：{$info['update_info']}</div>
+				<div>发布时间：{$info['create_time']}</div>
+				<br>
+                <div style="height:500px;overflow:auto;margin:20px;">
+                	<ul>
+                    {php $i=0}
+                	 {loop $_ugrade $row}
+                     <li id="{$row['md5']}">{$row['path']}
+                     {if $row['status']=='0'}
+                     {$row['msg']}
+                     {/if}</li>
+                     {php $i++}
+                     {/loop}
+                      <li>共计需要更新文件{$i}个</li>
+                    </ul>
+                <div>
+                {if $ugrage}
+				<div>
+                <a href="javascript:void(0)" id="update"><a href="/index.php?c=site&a=entry&op=getugrade&do=system&m=mihua_mall" >点击更新</a></a> <!--onclick="doUpdate()" -->
+				</div>
+                {/if}
+				{else}
+				{$msg}
+				{/if}
+			</div>
+			</div>
+		</div>
+</section>
+<script>
+	function doUpdate(){
+		$("#tips").html('正在更新,请勿关闭浏览器,或者刷新页面');
+		$("#update").text('正在更新');
+		$("#update").attr("disabled",'disabled');
+		$.ajaxSettings.async = false;
+		$.getJSON('/index.php?c=site&a=entry&op=doUpdate&do=system&m=mihua_mall&jsoncallback=?',{},function (data) {
+			if(data.code == 0){
+				var update=1;
+				$("#tips").append('<p>开始更新文件</p>');
+					$.each(data.list,function(i){
+						$("#tips").append('<p id="'+data.list[i].md5+'">'+data.list[i].path+'<span>开始更新</span></p>');
+							document.getElementById('tips').scrollTop = document.getElementById('tips').scrollHeight;
+							$.getJSON('/index.php?c=site&a=entry&op=getrelease&files='+data.list[i].path+'&do=system&m=mihua_mall&jsoncallback=?',{},function (json) {
+							if(json.items.status==1){
+								$('#'+data.list[i].md5).find('span').css({ "color": "#ff0011", "background": "blue" }).html(json.items.msg);//查找文件并输出	
+							}else{
+								update=0;
+								$('#'+data.list[i].md5).find('span').css({ "color": "#111111", "background": "blue" }).html(json.items.msg);	
+								
+							}	
+							});	
+					});	
+
+					$.getJSON('/index.php?c=site&a=entry&op=putversion&do=system&m=mihua_mall&jsoncallback=?',{},function (version){	
+					$("#tips").append(version.msg);	
+					});
+				//window.setTimeout(function () {window.location.reload();},2000);
+				
+				
+			}else{
+				$("#update").removeAttr("disabled");
+				$("#update").text('请稍后重试');
+				$("#tips").html('错误码: '+data.code + ' ,错误信息: '+data.msg);
+			}
+		});
+	}
+</script>
+{template 'footer'}

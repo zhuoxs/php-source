@@ -1,0 +1,312 @@
+{template '_header'}
+<style type='text/css'>
+    .moresearch { padding:0px 10px;}
+    .moresearch .col-sm-2 {
+        padding:0 5px
+    }
+</style>
+<div class="page-heading">
+     
+         <span class='pull-right'>
+ 		<a class="btn btn-default  btn-sm" href="{php echo referer()}">返回列表</a>
+ 	</span>
+
+    <h2>推广下线 <small>总数: <span class='text-danger'>{$total}</span></small></h2> </div>
+<div class="panel panel-default">
+    <div class='panel-body'>
+        <div style='height:100px;width:110px;float:left;'>
+            <img src='{$member['avatar']}' style='width:100px;height:100px;border:1px solid #ccc;padding:1px' />
+        </div>
+        <div style='float:left;height:100px;overflow: hidden'>
+            昵称: {$member['nickname']}<br/>
+            姓名: {$member['realname']} <br/>
+            手机号: {$member['mobile']} /  微信号: {$member['weixin']}<br/>
+            下级会员(非分销商): <span style='color:red'>{$level11}</span> 人    <br/>
+            下级分销商: 总共 <span style='color:red'>{$member['agentcount']}</span> 人
+            {if $this->set['level']>=1}一级: <span style='color:red'>{$level1} </span>  人{/if}
+            {if $this->set['level']>=2}二级: <span style='color:red'>{$level2}</span>  人{/if}
+            {if $this->set['level']>=3}三级: <span style='color:red'>{$level3}</span> 人{/if}
+            <!--分享链接首次点击次数:  <span style='color:red'>{$member['clickcount']}</span> 次-->
+        </div>
+    </div>
+</div>
+
+<form action="./index.php" method="get" class="form-horizontal" role="form" id="form1">
+    <input type="hidden" name="c" value="site" />
+    <input type="hidden" name="a" value="entry" />
+    <input type="hidden" name="m" value="ewei_shopv2" />
+    <input type="hidden" name="do" value="web" />
+    <input type="hidden" name="r" value="commission.agent.user" />
+    <input type="hidden" name="id" value="{$agentid}" />
+    <div class='row  m-b-sm m-t-sm moresearch' style='overflow: hidden;'>
+
+        <div class="col-sm-2">
+            <select name='isagent'  class='form-control  input-sm'  >
+                <option value=''>是否分销商</option>
+                <option value='0' {if $_GPC['isagent']=='0'}selected{/if}>不是</option>
+                <option value='1' {if $_GPC['isagent']=='1'}selected{/if}>是</option>
+            </select>
+        </div>
+
+        <div class="col-sm-2">
+            <select name='level' class='form-control  input-sm' >
+                <option value=''>下线层级</option>
+                {if $this->set['level']>=1}<option value='1' {if $_GPC['level']=='1'}selected{/if}>一级下线</option>{/if}
+                {if $this->set['level']>=2}<option value='2' {if $_GPC['level']=='2'}selected{/if}>二级下线</option>{/if}
+                {if $this->set['level']>=3}<option value='3' {if $_GPC['level']=='3'}selected{/if}>三级下线</option>{/if}
+            </select>
+        </div>
+
+        <div class="col-sm-2">
+            <select name='followed' class='form-control  input-sm'>
+                <option value=''>关注</option>
+                <option value='0' {if $_GPC['followed']=='0'}selected{/if}>未关注</option>
+                <option value='1' {if $_GPC['followed']=='1'}selected{/if}>已关注</option>
+                <option value='2' {if $_GPC['followed']=='2'}selected{/if}>取消关注</option>
+            </select>
+        </div>
+        <div class="col-sm-2">
+
+            <select name='agentlevel' class='form-control  input-sm'>
+                <option value=''>等级</option>
+                {loop $agentlevels $level}
+                <option value='{$level['id']}' {if $_GPC['agentlevel']==$level['id']}selected{/if}>{$level['levelname']}</option>
+                {/loop}
+            </select>
+
+
+        </div>
+
+        <div class="col-sm-2">
+            <select name='isagentblack'  class='form-control  input-sm'    >
+                <option value=''>黑名单</option>
+                <option value='0' {if $_GPC['isagentblack']=='0'}selected{/if}>否</option>
+                <option value='1' {if $_GPC['isagentblack']=='1'}selected{/if}>是</option>
+            </select>
+        </div>
+
+    </div>
+
+    <div class="page-toolbar row m-b-sm m-t-sm ">
+        <div class="col-sm-5">
+
+            <button class="btn btn-default btn-sm"  type="button" data-toggle='refresh' style='float:left;'><i class='fa fa-refresh'></i></button>
+
+            {php echo tpl_daterange('time', array('sm'=>true, 'placeholder'=>'成为分销商时间'),true);}
+        </div>
+
+
+        <div class="col-sm-7 pull-right">
+
+
+            <select name='searchfield'  class='form-control  input-sm select-sm'   style="width:120px;"  >
+
+                <option value='member' {if $_GPC['searchfield']=='member'}selected{/if}>下线信息</option>
+                <option value='parent' {if $_GPC['searchfield']=='parent'}selected{/if}>推荐人信息</option>
+
+            </select>
+
+            <div class="input-group">
+                <input type="text" class="form-control input-sm"  name="keyword" value="{$_GPC['keyword']}" placeholder="昵称/姓名/手机号"/>
+				 <span class="input-group-btn">
+                     <button class="btn btn-sm btn-primary" type="submit"> 搜索</button>
+                     <button type="submit" name="export" value="1" class="btn btn-success btn-sm">导出</button>
+			 
+				</span>
+            </div>
+
+        </div>
+    </div>
+    {if count($list)>0}
+
+    <table class="table table-hover table-responsive">
+        <thead class="navbar-inner" >
+        <tr>
+
+            <th style='width:100px;'>粉丝</th>
+            <th style='width:110px;'>姓名<br/>手机号码</th>
+            <th style='width:80px;'>等级</th>
+            <th style='width:80px;'>累计佣金<br/>打款佣金</th>
+            <th style='width:80px;'>下级分销商</th>
+
+            <th style='width:90px;'>注册时间</th>
+            <th style='width:90px;'>审核时间</th>
+            <th style='width:70px;'>状态</th>
+            <th style='width:70px;'>关注</th>
+            <th>操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        {loop $list $row}
+        <tr rel="pop" data-title="ID: {$row['id']} " data-content="推荐人 <br/> {if empty($row['agentid'])}
+				  {if $row['isagent']==1}
+				      <label class='label label-primary'>总店</label>
+				      {else}
+				       <label class='label label-default'>暂无</label>
+				      {/if}
+				{else}
+				
+                    	{if !empty($row['parentavatar'])}
+                         <img src='{$row['parentavatar']}' style='width:20px;height:20px;padding1px;border:1px solid #ccc' />
+                       {/if}
+                       [{$row['agentid']}]{if empty($row['parentname'])}未更新{else}{$row['parentname']}{/if}
+					   {/if}">
+
+
+
+            <td >
+                <span data-toggle='tooltip' title='{$row['nickname']}'>
+                {if !empty($row['avatar'])}
+                <img src='{php echo tomedia($row['avatar'])}' style='width:30px;height:30px;padding1px;border:1px solid #ccc' />
+                {/if}
+                {if empty($row['nickname'])}未更新{else}{$row['nickname']}{/if}
+                </span>
+            </td>
+
+            <td>{$row['realname']} <br/> {$row['mobile']}</td>
+            <td>{if $row['isagent']==1}
+                {if empty($row['levelname'])} {php echo empty($this->set['levelname'])?'普通等级':$this->set['levelname']}{else}{$row['levelname']}{/if}</td>
+            {else}
+            -{/if}
+
+            <td>{if $row['isagent']==1}
+                {$row['commission_total']}<br/>{$row['commission_pay']}
+                {else}
+                -{/if}
+            </td>
+            <td >{if $row['isagent']==1}
+                {$row['levelcount']}
+                {if $row['levelcount']>0}
+                <a data-toggle='popover' data-placement='bottom' data-content='{if $level>=1 && $row['level1']>0}一级：{$row['level1']} 人{/if}{if $level>=2  && $row['level2']>0}<br/> 二级：{$row['level2']} 人{/if}{if $level>=3  && $row['level3']>0}<br/>三级：{$row['level3']} 人{/if}'>
+                <i class='fa fa-question-circle'></i>
+                </a>
+                {/if}
+                {else}
+                -{/if}
+
+            </td>
+            <td>{php echo date('Y-m-d',$row['createtime'])}<br/>{php echo date('H:i',$row['createtime'])}</td>
+            <td>{if !empty($row['agenttime']) && $row['isagent']==1}
+                {php echo date('Y-m-d',$row['agenttime'])}<br/>{php echo date('H:i',$row['agenttime'])}
+                {else}
+                -
+                {/if}
+            </td>
+            <td>
+
+                {if $row['isagent']==1}
+                <span class='label {if $row['status']==1}label-success{else}label-default{/if}'
+                {ifp 'commission.agent.check'}
+                data-toggle='ajaxSwitch'
+                data-confirm ='确认要{if $row['status']==1}取消审核{else}审核通过{/if}?'
+                data-switch-value='{$row['status']}'
+                data-switch-value0='0|未审核|label label-default|{php echo webUrl('commission/agent/check',array('status'=>1,'id'=>$row['id']))}'
+                data-switch-value1='1|已审核|label label-success|{php echo webUrl('commission/agent/check',array('status'=>0,'id'=>$row['id']))}'
+                {/if}
+                >
+                {if $row['status']==1}已审核{else}未审核{/if}</span>
+                <br/>
+
+
+                <span class='label {if $row['agentblack']==0}label-success{else}label-default{/if}' {if $row['isagent']==1}
+                {ifp 'commission.agent.agentblack'}
+                data-toggle='ajaxSwitch'
+                data-confirm ='确认要{if $row['agentblack']==1}取消黑名单{else}设置黑名单{/if}?'
+                data-switch-value='{$row['agentblack']}'
+                data-switch-value0='0|正常|label label-success|{php echo webUrl('commission/agent/agentblack',array('agentblack'=>1,'id'=>$row['id']))}'
+                data-switch-value1='1|黑名单|label label-default|{php echo webUrl('commission/agent/agentblack',array('agentblack'=>0,'id'=>$row['id']))}'
+                {/if}{/if}
+                >
+                {if $row['agentblack']==1}黑名单{else}正常{/if}</span>
+
+                {else}
+                -
+                {/if}
+            </td>
+            <td>
+                {if empty($row['followed'])}
+                {if empty($row['uid'])}
+                <label class='label label-default'>未关注</label>
+                {else}
+                <label class='label label-warning'>取消关注</label>
+                {/if}
+                {else}
+                <label class='label label-primary'>已关注</label>
+                {/if}
+
+            </td>
+
+
+            <td  style="overflow:visible;">
+
+                <div class="btn-group btn-group-sm">
+                    <a class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false" href="javascript:;">操作 <span class="caret"></span></a>
+                    <ul class="dropdown-menu dropdown-menu-left">
+
+                        {ifp 'member.list.view'}<li><a href="{php echo webUrl('member/list/detail',array('id' => $row['id']));}" title='会员信息' target='_blank'><i class='fa fa-user'></i> 会员信息</a></li>	{/if}
+                        {if $row['isagent']==1}
+                        <li class="divider"></li>
+                        {ifp 'order.list'}<li><a  href="{php echo webUrl('order/list',array('agentid' => $row['id']));}" title='推广订单'  target='_blank'><i class='fa fa-list'></i> 推广订单</a></li>{/if}
+                        {ifp 'commission.agent.user'}<li><a  href="{php echo webUrl('commission/agent/user',array('id' => $row['id']));}"  title='推广下线'  target='_blank'><i class='fa fa-users'></i> 推广下线</a></li>{/if}
+                        {ifp 'commission.agent.delete'}<li><a data-toggle='ajaxRemove' href="{php echo webUrl('commission/agent/delete',array('id' => $row['id']));}" title="删除" data-confirm="确定要删除该分销商吗？"><i class='fa fa-remove'></i> 删除分销商</a></li>{/if}
+                        <li class="divider"></li>
+                        {/if}
+
+                        {ifp 'order.list'}<li><a  href="{php echo webUrl('order/list', array('op' => 'display','searchfield'=>'member', 'keyword'=>$row['nickname']))}" title='会员订单' target='_blank'><i class='fa fa-list'></i> 会员订单</a></li>{/if}
+                        {ifp 'finance.recharge.credit1'}<li><a data-toggle="ajaxModal" href="{php echo webUrl('finance/recharge', array('type'=>'credit1','id'=>$row['id']))}" title='充值积分'><i class='fa fa-credit-card'></i> 充值积分</a></li>{/if}
+                        {ifp 'finance.recharge.credit2'}<li><a data-toggle="ajaxModal" href="{php echo webUrl('finance/recharge', array('type'=>'credit2','id'=>$row['id']))}" title='充值余额'><i class='fa fa-money'></i> 充值余额 </a></li>{/if}
+                        {ifp 'member.list.delete'}<li><a  data-toggle='ajaxRemove'  href="{php echo webUrl('member/list/delete',array('id' => $row['id']));}" title='删除会员' data-confirm="确定要删除该会员吗？"><i class='fa fa-remove'></i> 删除会员</a></li>{/if}
+
+                    </ul>
+                </div>
+
+
+            </td>
+        </tr>
+        {/loop}
+        </tbody>
+    </table>
+    {$pager}
+
+    {else}
+    <div class='panel panel-default'>
+        <div class='panel-body' style='text-align: center;padding:30px;'>
+            暂时没有任何分销商!
+        </div>
+    </div>
+    {/if}
+    <script language="javascript">
+
+
+
+        require(['bootstrap'],function(){
+            $("[rel=pop]").popover({
+                trigger:'manual',
+                placement : 'left',
+                title : $(this).data('title'),
+                html: 'true',
+                content : $(this).data('content'),
+                animation: false
+            }).on("mouseenter", function () {
+                var _this = this;
+                $(this).popover("show");
+                $(this).siblings(".popover").on("mouseleave", function () {
+                    $(_this).popover('hide');
+                });
+            }).on("mouseleave", function () {
+                var _this = this;
+                setTimeout(function () {
+                    if (!$(".popover:hover").length) {
+                        $(_this).popover("hide")
+                    }
+                }, 100);
+            });
+
+
+        });
+
+
+    </script>
+
+
+    {template '_footer'}

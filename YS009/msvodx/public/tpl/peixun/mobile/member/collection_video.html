@@ -1,0 +1,125 @@
+{include file="common/head"}
+<style>
+    footer a.active{
+        color: #888;
+    }
+    footer a:last-child{
+        color: #dc1d1d;
+    }
+</style>
+    <div class="tab-box">
+        <a href="{:url('member/collection_video')}" target="_self" class="cur">视频</a>
+        <a href="{:url('member/collection_img')}" target="_self">图片</a>
+        <a href="{:url('member/collection_novel')}" target="_self">资讯</a>
+    </div>
+    <ul class="content-list">
+        {notempty name="video_info"}
+        {volist name="video_info" id="v"}
+
+        <li>
+            <div class="v">
+                <a href="{:url('video/play',['id'=>$v['video_id']])}">
+                <div class="v-thumb">
+                    <img src="{$v['thumbnail']}">
+                    <div class="v-tagrb"><span class="v-time">{$v['play_time']}</span></div>
+                    {if condition="$v['reco'] gt '0'"}
+                    <div class="v-straw">推荐</div>
+                    {/if}
+                </div>
+                </a>
+                <div class="v-metadata">
+                    <a href="{:url('video/play',['id'=>$v['id']])}"><div class="v-title">{$v['title']}</div></a>
+                    <div class="v-desc">
+                        <i class="btn fn-bofang" title="播放"></i>
+                        <span class="v-num">{$v['click']}</span>&nbsp;
+                        <i class="btn fn-zan2" title="点赞"></i>
+                        <span class="v-num">{$v['good']}</span>
+                        <var style="float: right;padding: 0 5px;" onclick="delcolect({$v['id']},'video')">
+                            <i class="btn fn-shanchu" title="删除"></i>
+                        </var>
+                    </div>
+                </div>
+            </div>
+        </li>
+
+        {/volist}
+        {else/}
+        <div class="not-comment not">您还没收藏视频哦 ~</div>
+        {/notempty}
+    </ul>
+
+</div>
+
+{include file="common/footer"}
+<script>
+    var status = 1;
+    var page  = 0;
+    var type = 'video';
+    $(window).scroll(function(){
+        var srollPos = $(window).scrollTop();
+
+        var data = {
+            "page" : page ,
+            "offset" : 10,
+        };
+        if(srollPos+$(window).height() > $(document).height() - 80){
+            if(status == 1) {
+                status = 0;
+                $.ajax({
+                    type: "POST",
+                    data: data,
+                    dataType: "JSON",
+                    url: "{:url('Api/moreCollection')}",
+                    success: function (data) {
+                        if(data.resultCode == 0){
+                            var datas = data.data.list;
+                            if(datas){
+                                var html = '';
+                                datas.forEach(function(item) {
+                                    var  url =  '/video/play/id/'+item['video_id'];
+                                    var update_time = item['update_time'];
+                                    var newDate = new Date(update_time * 1000);
+                                    var types = 'video';
+                                    html += '<li>';
+                                    html += '<div class="v">';
+                                    html += '<a href="'+url+'">';
+                                    html += '    <div class="v-thumb">';
+                                    html += '    <img src="'+item['thumbnail']+'">';
+                                    html += '    <div class="v-tagrb"><span class="v-time">'+item['play_time']+'</span></div>';
+                                    if(item['reco'] > 0){
+                                        html += '    <div class="v-straw">推荐</div>';
+                                    }
+                                    html += '</div>';
+                                    html += '</a>';
+                                    html += '<div class="v-metadata">';
+                                    html += '    <div class="v-title">'+item['title']+'</div>';
+                                    html += '    <div class="v-desc">';
+                                    html += '    <i class="btn fn-bofang" title="播放"></i>';
+                                    html += '    <span class="v-num">'+item['click']+'</span>&nbsp;';
+                                    html += '<i class="btn fn-zan2" title="点赞"></i>';
+                                    html += '    <span class="v-num">'+item['good']+'</span>';
+                                    html += '    <var style="float: right;">';
+                                    html += '    <i class="btn fn-shanchu" title="删除" onclick="delcolect('+item['id']+',type)"></i>';
+                                    html += '    </var>';
+                                    html += '</div>';
+                                    html += '</div>';
+                                    html += '</div>';
+                                    html += '</li>';
+
+                                });
+                                $('.not-comment').remove();
+                                $('.content-list').append(html);
+                                page++;
+                                status = 1;
+                            }else{
+                                console.log('没有更多数据了！');
+                            }
+                        }else{
+                            console.log('没有更多数据了！');
+                        }
+                    }
+                });
+            }
+        }
+    })
+</script>

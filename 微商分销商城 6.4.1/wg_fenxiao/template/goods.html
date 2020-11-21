@@ -1,0 +1,302 @@
+{template 'common/header'}
+<ul class="nav nav-tabs">
+    <li {if $operation=='goodsAdd' }class="active" {/if}><a href="{php echo $this->createWebUrl('goods', array('op' => 'goodsAdd'))}">添加商品</a></li>
+    <li {if $operation=='goodsManager' }class="active" {/if}><a href="{php echo $this->createWebUrl('goods', array('op' => 'goodsManager'))}">管理商品</a></li>
+    <li {if $operation=='categorysAdd' }class="active" {/if}><a href="{php echo $this->createWebUrl('categorys', array('op' => 'categorysAdd'))}">添加分类</a></li>
+    <li {if $operation=='categorysManager' }class="active" {/if}><a href="{php echo $this->createWebUrl('categorys', array('op' => 'categorysManager'))}">管理分类</a></li>
+</ul>
+{if $operation == 'goodsAdd'}
+<!-- 商品添加开始 -->
+<div class="main">
+    <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data" id="form1" onsubmit="return formcheck()">
+        <div class="panel panel-default">
+            <div class="panel-heading">添加、编辑商品</div>
+            <div class="panel-body">
+                <ul class="nav nav-tabs" id="myTab">
+                    <li class="active"><a href="#tab_basic">基本信息</a></li>
+                    <li><a href="#tab_des">商品描述</a></li>
+                    <li><a href="#tab_service">售后保障</a></li>
+                    <li><a href="#tab_other">其他设置</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane  active" id="tab_basic">{template 'goods_basic'}</div>
+                    <div class="tab-pane" id="tab_des">{template 'goods_des'}</div>
+                    <div class="tab-pane" id="tab_service">{template 'goods_service'}</div>
+                    <div class="tab-pane" id="tab_other">{template 'goods_other'}</div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group col-sm-12">
+            <input type="submit" name="submit" value="提交" class="btn btn-primary col-lg-1" />
+            <input type="hidden" name="token" value="{$_W['token']}" />
+			<div>&#22823;&#37327;&#28304;&#30721;&#65292;&#25345;&#32493;&#26356;&#26032;&#65306;&#119;&#119;&#119;&#46;&#108;&#97;&#110;&#114;&#101;&#110;&#122;&#104;&#105;&#106;&#105;&#97;&#46;&#99;&#111;&#109;</div>
+        </div>
+    </form>
+</div>
+<script type="text/template" id="type_html">
+<div class="col-xs-12">
+    <label class="col-xs-12 col-sm-3 col-md-2 control-label"></label>
+    <div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+        <input type="hidden" name="type_id[]" value="0">
+        <input type="text" name="type_title[]" placeholder="属性" class="form-control" value="">
+    </div>
+    <div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+        <input type="text" name="type_marketprice[]" placeholder="价格" class="form-control" value="">
+    </div>
+    <div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+        <input type="text" name="type_amount_total[]" placeholder="库存" class="form-control" value="">
+    </div>
+    <div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+        <input type="text" name="type_jifen[]" placeholder="积分" class="form-control" value="">
+    </div>
+    <div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+        <input type="text" name="type_display_order[]" placeholder="排序" class="form-control" value="">
+    </div>
+    <div class="col-xs-1 col-sm-1 col-md-1 col-lg-1">
+        <a href="javascript:void(0);" class="btn btn-default btn-sm type-del">删除</a>
+    </div>
+</div>
+</script>
+<script type="text/javascript">
+function selectmember(id){
+    $('#modal-module-menus').modal('hide');
+    $('#salers').val(id);
+}
+require(['jquery', 'util', 'datetimepicker'], function($, util, d) {
+
+    $(function() {
+        $('.time_pick').datetimepicker({
+            format: 'Y-m-d H:i:s',
+            language: 'zh-CN',
+            step:10,
+            startDate:new Date()
+
+        });
+        $('#search_member').click(function(){
+            if($('#search-kwd').val() == ''){
+               util.message('请输入昵称');
+               return; 
+            }
+            $("#module-menus").html("正在搜索....");
+            $.get('{php echo $this->createWebUrl('members',array('op'=>'getSellerOpenid'))}', { 
+                keyword: $.trim($('#search-kwd').val())
+            }, function (dat) {
+                $('#module-menus').html(dat);
+            });
+        });
+    });
+});
+require(['jquery','ueditor','datetimepicker'], function ($,UM) {
+    function yongjin(value) {
+        if(value==0){
+            $('#yongji-detail').hide();
+        }else {
+            $('#yongji-detail').show();
+        }
+    }
+    function gou(value) {
+        if(value == "0"){
+            $('#gou-detail').hide();
+        }else {
+            $('#gou-detail').show();
+        }
+    }
+    function goodstype(value) {
+        if(value == "1"){
+            $('#goodspasstype').show();
+            $('#goodslianjie-info').show();
+        }else {
+            $('#goodspasstype').hide();
+        }
+    }
+
+    var um = UM.getEditor('content');
+    var spider_url = "{php echo $this->createWebUrl('spider')}";
+    function spider_news() {
+        var url = $('#spider_url').val();
+        var reg=/(http|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?/;
+        if(!reg.test(url)){
+            alert("地址错误");
+        } else {
+            $.post(spider_url,{url:url},function (data) {
+                if(data.code != 200) {
+                    alert(data.msg);
+                } else {
+                    $('#goodsname').val(data.data.title);
+                    $('input[name="thumb"]').val(data.data.image);
+                    $('#thumb-image').find('img').attr('src',data.data.image);
+                    $.each(data.data.images,function (i, d) {
+                        $('.multi-img-details').append(d);
+                    })
+                    um.setContent(data.data.content);
+                }
+            },'JSON');
+        }
+    }
+    $('#spider_news').click(function () {
+        spider_news();
+    });
+
+
+    $('#myTab a').click(function(e) {
+        e.preventDefault(); //阻止a链接的跳转行为
+        $(this).tab('show'); //显示当前选中的链接及关联的content
+    });
+    var type_dom = $('#type_html').html();
+    $('#add-type').click(function () {
+        $('#goods-type').append(type_dom);
+    });
+    $('#duliyongjin').change(function () {
+        var id = $(this).val();
+        yongjin(id);
+    });
+    $('#gou').change(function () {
+        var id = $(this).val();
+        gou(id);
+    });
+
+    $('#goodstype').change(function () {
+        var id = $(this).val();
+        goodstype(id);
+    });
+
+
+    goodstype({$item['goodstype']});
+    gou(<?php echo (int)$item['gou'];?>);
+    yongjin({$item['duliyongjin']});
+    $(document).on("click",'.type-del',function(){
+        $(this).parent().parent().remove();
+    });
+
+
+
+});
+
+function formcheck() {
+    if ($("#category_parent").val() == '0') {
+        util.message('请选择分类', '', 'error');
+        return false;
+    }
+    if ($("#goodsname").val() == '') {
+        util.message('商品名不能为空', '', 'error');
+        return false;
+    }
+    if ($("#marketprice").val() <= 0) {
+        util.message('销售价填写不正确', '', 'error');
+        return false;
+    }
+
+    if ($("#zongyongjin").val() < 0) {
+        util.message('总佣金不能<0', '', 'error');
+        return false;
+    }
+    if ($("input[name='thumb']").val() == '') {
+        util.message('商品图片不能为空', '', 'error');
+        return false;
+    }
+    if ($("textarea[name='content']").val() == '') {
+        util.message('商品详情不能为空', '', 'error');
+        return false;
+    }
+    if($('#gou').val() == 1) {
+        var startTime=$("#start").val();
+        var start=new Date(startTime.replace("-", "/").replace("-", "/"));
+        var endTime=$("#end").val();
+        var end=new Date(endTime.replace("-", "/").replace("-", "/"));
+        if(end<=start){
+            util.message('结束时间要大于开始时间', '', 'error');
+            return false;
+        }
+    }
+    if($('#goodstype').val() == '1') {
+        if($('#goodspasstype_d').val() <=0) {
+            util.message('请选择推送密码', '', 'error');
+            return false;
+        }
+    }
+
+    return true;
+}
+</script>
+<!--商品添加结束  -->
+{elseif $operation == 'goodsManager'}
+<!-- 商品列表 开始-->
+<div class="main">
+    <div class="panel panel-default">
+        <div class="panel-body table-responsive">
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">商品</label>
+                <div class="col-sm-4 col-xs-12">
+                    <select class="form-control" id="category_all">
+                        <option value="0">全部商品</option>
+                        {loop $category $cate}
+                        <option value="{$cate['id']}" {if $category_id==$cate['id']}selected="selected"{/if}>{$cate['name']}</option>
+                        {/loop}
+                    </select>
+                </div>
+            </div>
+            <table class="table table-hover">
+                <thead class="navbar-inner">
+                    <tr>
+                        <th style="width:3%;">ID</th>
+                        <th style="width:30%;">商品名称</th>
+                        <th style="width:10%;">商品价格</th>
+                        <th style="width:10%;">销量</th>
+                        <th style="width:5%;">排序</th>
+                        <th style="width:10%;">状态</th>
+                        <th style="width:10%;">地址</th>
+                        <th style="text-align:right; width:20%;">操作</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    {loop $list $item}
+                    <tr>
+                        <td>{$item['id']}</td>
+                        <td>
+                            {if !empty($category[$item['pcate']])}
+                            <span class="text-danger">[{$category[$item['pcate']]['name']}]</span> {/if} {if !empty($category[$item['ccate']])}
+                            <span class="text-info">[{$category[$item['ccate']]['name']}]</span> {/if} {$item['goodsname']}
+                        </td>
+                        <td>
+                            {$item['marketprice']}
+                        </td>
+                        <td>
+                            {$item['sell_total']}
+                        </td>
+                        <td>
+                            {$item['displayorder']}
+                        </td>
+                        <td>
+                            <label data='{$item[' status ']}' class='label  label-default {if $item[' status ']==1}label-info{/if}'>{if $item['status']==1}上架{else}下架{/if}</label>
+                        </td>
+                        <td>
+                            <a class="js-clip" href="javascript:void(0);" data-url="{$_W['siteroot']}app<?php echo ltrim($this->createMobileUrl('goods', array('goods_id' => $item['id'])),'.');?>">复制链接</a>
+                        </td>
+                        <td style="text-align:right;">
+                            <a href="{php echo $this->createWebUrl('goods', array('id' => $item['id'], 'op' => 'goodsAdd'))}" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="top" title="编辑"><i class="fa fa-pencil"></i></a>&nbsp;&nbsp;
+                            <a href="{php echo $this->createWebUrl('goods', array('id' => $item['id'], 'op' => 'goodsDelete'))}" onclick="return confirm('此操作不可恢复，确认删除？');return false;" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="top" title="删除"><i class="fa fa-times"></i></a>
+                        </td>
+                    </tr>
+                    {/loop}
+                </tbody>
+            </table>
+            {$pager}
+        </div>
+    </div>
+</div>
+<!-- 商品列表 结束 -->
+<script>
+    $(function () {
+        $('.js-clip').each(function(){
+            util.clip(this, $(this).data('url'));
+        });
+        var url = "{php echo $this->createWebUrl('goods');}";
+        $('#category_all').change(function () {
+            location = url+'&category_id='+$(this).val();
+        });
+    });
+</script>
+{/if}
+
+{template 'common/footer'}

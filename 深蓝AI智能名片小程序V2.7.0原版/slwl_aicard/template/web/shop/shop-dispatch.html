@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{$_W['slwl']['lang']['sys_name']}</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="">
+    {template 'public/header'}
+
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+    {template 'public/top'}
+    {template 'public/left'}
+
+    <div class="layui-body">
+        <div class="layui-main">
+            <div class="layui-tab">
+                <ul class="layui-tab-title">
+                    <li {if $operation == 'display'} class="layui-this" {/if}><a href="{php echo webUrl('shop_dispatch',array('op' =>'display'))}">配送方式</a></li>
+                    <li {if empty($one['id']) && $operation == 'post'} class="layui-this" {/if}><a href="{php echo webUrl('shop_dispatch',array('op' =>'post'))}">添加</a></li>
+                    {if !empty($one['id']) && $operation == 'post'}<li class="layui-this"><a href="{php echo webUrl('shop_dispatch',array('op' =>'post','id'=>$one['id']))}">编辑</a></li>{/if}
+                </ul>
+            </div>
+
+        {if $operation == 'display'}
+            <div class="layui-form">
+                <table class="layui-table" lay-even="" lay-skin="nob">
+                    <colgroup>
+                        <col width="50">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>排序</th>
+                            <th>配送方式</th>
+                            <th>配送类型</th>
+                            <th>首重价格</th>
+                            <th>续重价格</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {php $this_statuses = array('0'=>'禁用','1'=>'启用'); }
+                        {loop $list $item}
+                        <tr>
+                            <td>{$item['id']}</td>
+                            <td>{$item['displayorder']}</td>
+                            <td>{$item['dispatchname']}</td>
+                            <td>{if $item['dispatchtype']==0}先付款后发货{elseif $item['dispatchtype']==1}货到付款{else}自提{/if}</td>
+                            <td>{$item['firstprice']}</td>
+                            <td>{$item['secondprice']}</td>
+                            <td>{$this_statuses[$item['enabled']]}</td>
+                            <td style="text-align:left;">
+                                <a href="{php echo webUrl('shop_dispatch', array('op' => 'post', 'id' => $item['id']))}" class="layui-btn" title="编辑">编辑</a>
+                                <a href="javascript:;" class="layui-btn layui-btn-danger btn-del" data-id="{$item['id']}" title="删除">删除</a>
+                            </td>
+                        </tr>
+                        {/loop}
+                    </tbody>
+                </table>
+                <div class="pager">
+                    {$pager}
+                </div>
+            </div>
+
+            <script>
+                // 分页
+                layui.use('laypage', function(){
+                    var laypage = layui.laypage;
+
+                    laypage.render({
+                        elem: $('.pager')
+                        ,limit: '{php echo $psize; }'
+                        ,count: '{php echo $total; }'
+                        ,theme: '#1E9FFF'
+                        ,curr:  '{php echo $pindex; }'
+                        ,hash: '{php echo $pindex; }'
+                        ,jump: function (obj, first) {
+                            if (first != true) {
+                                var currentPage = obj.curr; //获取点击的页码
+                                window.location.href = "{php echo webUrl('shop_dispatch')}&page=" + currentPage;
+                            }
+                        }
+                    });
+                });
+                $(function () {
+                    $('.pager').show();
+                });
+            </script>
+            <script>
+                // 删除
+                layui.use('layer', function(){
+                    var layer = layui.layer;
+
+                    $('.btn-del').click(function () {
+                        $obj = $(this);
+                        $del_id = $obj.data('id');
+                        layer.confirm('确定要删除吗？', {
+                            offset: '20%',
+                            btn: ['再想想', '删除'],
+                            scrollbar: false,
+                            closeBtn: 0,
+                        }, function (i) {
+                           layer.close(i);
+                        }, function (i) {
+                            let $url = "{php echo webUrl('shop_dispatch', array('op'=>'delete'))}";
+
+                            $.ajax({
+                                type: "POST",
+                                url: $url,
+                                dataType: 'json',
+                                data: {
+                                    id: $del_id
+                                },
+                                success: function (rs) {
+                                    console.log(rs);
+                                    if (rs.message.errno == '0') {
+                                        layer.msg('删除成功！', {
+                                            time: 500
+                                        },
+                                        function () {
+                                            $obj.closest('tr').fadeOut(200, function () {
+                                                $obj.remove();
+                                            });
+                                        });
+                                    } else {
+                                        layer.msg(rs.message.message, {
+                                            offset: '20%',
+                                        });
+                                        $obj.removeClass('lock');
+                                    }
+                                },
+                                error: function () {
+                                    layer.msg('提交过程发生错误，请与管理员联系', {
+                                        offset: '20%',
+                                    });
+                                    $obj.removeClass('lock');
+                                }
+                            });
+                        });
+                    });
+                });
+            </script>
+
+        {elseif $operation == 'post'}
+            <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+                {if empty($one['id']) && $operation == 'post'}
+                    <legend>添加</legend>
+                {else}
+                    <legend>编辑</legend>
+                {/if}
+            </fieldset>
+            <form class="layui-form" action="" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="id" value="{$one['id']}" />
+                <div class="layui-form-item">
+                    <label class="layui-form-label">排序</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="displayorder" value="{$one['displayorder']}" class="layui-input" placeholder="数字越大，排名越靠前">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">配送名称</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="dispatchname" lay-verify="required" value="{$one['dispatchname']}" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">配送类型</label>
+                    <div class="layui-input-block">
+                        <input type="radio" name="dispatchtype" value="0" title="先付款后发货" {if $one['dispatchtype']==0}checked{/if}>
+                        <!-- <input type="radio" name="dispatchtype" value="1" title="货到付款" {if $one['dispatchtype']==1}checked{/if}> -->
+                        <!-- <input type="radio" name="dispatchtype" value="2" title="自提" {if $one['dispatchtype']==2}checked{/if}> -->
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">重量设置</label>
+                    <div class="layui-input-block">
+                        <div class="input-group form-group">
+                            <span class="input-group-addon pad-trim-10">首重重量</span>
+                            <select name="firstweight">
+                                <option value="500" {if $one['firstweight']==500}selected{/if}>0.5</option>
+                                <option value="1000" {if $one['firstweight']==1000 || empty($one['firstweight'])}selected{/if}>1</option>
+                                <option value="1200" {if $one['firstweight']==1200}selected{/if}>1.2</option>
+                                <option value="2000" {if $one['firstweight']==2000}selected{/if}>2</option>
+                                <option value="5000" {if $one['firstweight']==5000}selected{/if}>5</option>
+                                <option value="10000" {if $one['firstweight']==10000}selected{/if}>10</option>
+                                <option value="20000" {if $one['firstweight']==20000}selected{/if}>20</option>
+                                <option value="50000" {if $one['firstweight']==50000}selected{/if}>50</option>
+                            </select>
+                            <span class="input-group-addon pad-trim-10">KG</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label"></label>
+                    <div class="layui-input-block">
+                        <div class="input-group form-group">
+                            <span class="input-group-addon pad-trim-10">续重重量</span>
+                            <select name="secondweight">
+                                <option value="500" {if $one['secondweight']==500}selected{/if}>0.5</option>
+                                <option value="1000" {if $one['secondweight']==1000 || empty($one['secondweight'])}selected{/if}>1</option>
+                                <option value="1200" {if $one['secondweight']==1200}selected{/if}>1.2</option>
+                                <option value="2000" {if $one['secondweight']==2000}selected{/if}>2</option>
+                                <option value="5000" {if $one['secondweight']==5000}selected{/if}>5</option>
+                                <option value="10000" {if $one['secondweight']==10000}selected{/if}>10</option>
+                                <option value="20000" {if $one['secondweight']==20000}selected{/if}>20</option>
+                                <option value="50000" {if $one['secondweight']==50000}selected{/if}>50</option>
+                            </select>
+                            <span class="input-group-addon pad-trim-10">KG</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">价格设置</label>
+                    <div class="layui-input-block">
+                        <div class="input-group form-group">
+                            <span class="input-group-addon pad-trim-10">首重价格</span>
+                            <input type="text" name="firstprice" class="form-control" value="{$one['firstprice']}" />
+                            <span class="input-group-addon pad-trim-10">元</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label"></label>
+                    <div class="layui-input-block">
+                        <div class="input-group form-group">
+                            <span class="input-group-addon pad-trim-10">续重价格</span>
+                            <input type="text" name="secondprice" class="form-control" value="{$one['secondprice']}" />
+                            <span class="input-group-addon pad-trim-10">元</span>
+                        </div>
+                        <div class="layui-form-mid layui-word-aux">根据重量来计算运费，当物品不足《首重重量》时，按照《首重费用》计算，超过部分按照《续重重量》和《续重费用》乘积来计算</div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">物流公司</label>
+                    <div class="layui-input-block">
+                        <select name="express" lay-verify="required" lay-filter="cateChild">
+                            <option value="0">请选择...</option>
+                            {loop $express $item}
+                                <option value="{$item['id']}" {if $one['express']==$item['id']}selected{/if}>{$item['express_name']}</option>
+                            {/loop}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">介绍</label>
+                    <div class="layui-input-block">
+                        <textarea name="description" placeholder="介绍" class="layui-textarea">{$one['description']}</textarea>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">状态</label>
+                    <div class="layui-input-block">
+                        <input type="radio" name="enabled" value="1" title="启用" {if $adv['enabled']==1}checked{/if}>
+                        <input type="radio" name="enabled" value="0" title="禁用" {if $adv['enabled']==0}checked{/if}>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit="" lay-filter="dispatch">提交</button>
+                        <input type="hidden" name="token" value="{$_W['token']}" />
+                    </div>
+                </div>
+            </form>
+
+            <script>
+                layui.use('form', function(){
+                    var form = layui.form;
+
+                    form.on('submit(dispatch)', function(data){
+                        let url = "{php echo webUrl('shop_dispatch', array('op'=>'post'))}";
+                        var $obj = $(this);
+
+                        if (!$obj.hasClass('lock')) {
+                            $obj.addClass('lock'); // 不能再点击
+
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                dataType: 'json',
+                                data: data.field,
+                                success: function (rs) {
+                                    console.log(rs.message.errno);
+                                    if (rs.message.errno == '0') {
+                                        layer.msg('保存成功！' , {
+                                            time: 500
+                                        }, function () {
+                                            window.location.href = "{php echo webUrl('shop_dispatch')}";
+                                        });
+                                    } else {
+                                        layer.msg(rs.message.message, {
+                                            offset: '20%',
+                                        });
+                                    }
+                                    $obj.removeClass('lock');
+                                },
+                                error: function () {
+                                    layer.msg('提交过程发生错误，请与管理员联系', {
+                                        offset: '20%',
+                                    });
+                                    $obj.removeClass('lock');
+                                }
+                            });
+                        }
+                        return false;
+                    });
+                });
+            </script>
+        {/if}
+        </div>
+    </div>
+
+    {template 'public/copyright'}
+</div>
+
+{template 'public/footer'}
+</body>
+</html>

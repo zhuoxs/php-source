@@ -1,0 +1,154 @@
+{template 'common/header'}
+{template 'catetab'}
+<style type="text/css">
+	th,tr,td{
+		border:1px solid #e2e2e2;
+		overflow: hidden;
+	}
+.img{
+	width:120px;
+	height:80px;
+	
+	}
+.open{
+	border:1px solid #ccc;
+	padding: 0 3px 0 3px;
+	cursor: pointer;
+	}
+</style>
+<a href="{php echo $this->createWebUrl('cateadd');}" class="btn btn-default btn-sm" style="background-color: #5FB878; color: #fff;">新增栏目</a>
+<div style="width: 100%; overflow: hidden;">
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+  <tr pid="0">
+    <td width="6%" align="center">伸缩</td>
+    <td width="31" height="30" align="center">ID</td>
+    <td width="" align="left">栏目名称</td>
+	<td width="" align="center">栏目状态</td>
+	<td width="" align="center">底部显示</td>
+	<td width="" align="center">hot图标</td>
+	<td width="" align="center">栏目模板</td>
+    <td width="" colspan="2" align="center">操作</td>
+  </tr>
+  {loop $cateres $index $item}
+  <tr id="{$item['id']}" pid="{$item['pid']}" style="border:1px solid #e2e2e2">
+    <td align="center"><span class="open">+</span></td>
+    <td height="50" align="center">{$item['id']}</td>
+    <td align="left" {if $item['level']!=0}style="color:#999999;"{/if}><?php echo str_repeat('-', $item['level']*4);?>{$item['catename']}</td>
+	<td align="center"><a id="{$item['id']}" onclick="changestatus(this);">{if $item['status']=='1'}<span class="btn btn-default btn-sm">显示</span>{else}<span class="btn btn-danger btn-sm">隐藏</span>{/if}</a></td>
+	<td align="center"><a id="{$item['id']}" onclick="changenav(this);">{if $item['bottom_nav']=='1'}<span class="btn btn-default btn-sm">显示</span>{else}<span class="btn btn-danger btn-sm">隐藏</span>{/if}</a></td>
+	<td align="center"><a id="{$item['id']}" onclick="changehot(this);">{if $item['hot']=='1'}<span class="btn btn-default btn-sm">显示</span>{else}<span class="btn btn-danger btn-sm">隐藏</span>{/if}</a></td>
+    <td height="50" align="center">
+	    {if $item['cate_attr']==1}网站首页{/if}
+		{if $item['cate_attr']==2}关于我们{/if}
+		{if $item['cate_attr']==3}服务项目{/if}
+		{if $item['cate_attr']==4}产品中心{/if}
+		{if $item['cate_attr']==5}新闻资讯{/if}
+		{if $item['cate_attr']==6}案例展示{/if}
+		{if $item['cate_attr']==7}联系我们{/if}
+		{if $item['cate_attr']==8}APP开发{/if}
+		{if $item['cate_attr']==9}经销加盟{/if}
+		{if $item['cate_attr']==10}帮助中心{/if}
+	</td>
+
+    <td align="center"><a href="{php echo $this->createWebUrl('Cateedit', array('id' => $item['id']));}" class="btn btn-default btn-sm">编辑</a></td>
+    <td align="center"><a onClick="return confirm('确定删除该案例吗？')" href="{php echo $this->createWebUrl('Catedel',array('id'=>$item['id']))}" class="btn btn-danger btn-sm" >删除</a></td>
+  </tr>
+  {/loop}
+</table>
+</div>
+
+<script src="{$_W['siteroot']}addons/yzxgwpc_sun/template/jquery/jquery-3.3.1.min.js"></script>
+<script>
+    //栏目伸缩状态js
+    $('tr[pid!=0]').hide();
+    $('.open').click(function(){
+        var id=$(this).parents('tr').attr('id');
+        if($(this).text()=='+'){
+            $(this).text('-');
+            $('tr[pid='+id+']').show();
+        }else{
+            $(this).text('+');
+            // $('tr[pid='+id+']').hide();
+            $.ajax({
+            type:"post",
+            dataType:"json",
+            data:{cateid:id},
+            url:"{php echo $this->createWebUrl('Ajaxlst');}",
+            success:function(data){
+                var sonids=[];
+                var idsobj=$('tr[pid!=0]');
+                idsobj.each(function(k,v){
+                    sonids.push($(this).attr('id'));
+                });
+                $.each(data,function(k,v){
+                    if($.inArray(v,sonids)){
+                        $('tr[id='+v+']').hide();
+                        $('tr[id='+v+']').find('span:first').text('+');
+                    }
+                });
+            }
+        });
+        }
+    });
+
+    //ajax修改显示状态
+    function changestatus(o){
+        var id=$(o).attr("id");
+        $.ajax({
+            type:"post",
+            dataType:"json",
+            data:{id:id},
+            url:"{php echo $this->createWebUrl('Changestatus');}",
+            success:function(data){
+                if(data==1){
+                    $(o).attr("class","btn btn-danger btn-sm");
+                    $(o).text('隐藏');
+                }else{
+                    $(o).attr("class","btn btn-default btn-sm");
+                    $(o).text('显示');
+                }
+            }
+        });
+    }
+
+    //ajax修改底部显示
+	function changenav(o){
+        var id=$(o).attr("id");
+        $.ajax({
+            type:"post",
+            dataType:"json",
+            data:{id:id},
+            url:"{php echo $this->createWebUrl('Changenav');}",
+            success:function(data){
+                if(data==1){
+                    $(o).attr("class","btn btn-danger btn-sm");
+                    $(o).text('隐藏');
+                }else{
+                    $(o).attr("class","btn btn-default btn-sm");
+                    $(o).text('显示');
+                }
+            }
+        });
+    }
+
+	//ajax修改hot图标显示
+	function changehot(o){
+        var id=$(o).attr("id");
+        $.ajax({
+            type:"post",
+            dataType:"json",
+            data:{id:id},
+            url:"{php echo $this->createWebUrl('Changehot');}",
+            success:function(data){
+                if(data==1){
+                    $(o).attr("class","btn btn-danger btn-sm");
+                    $(o).text('隐藏');
+                }else{
+                    $(o).attr("class","btn btn-default btn-sm");
+                    $(o).text('显示');
+                }
+            }
+        });
+    }
+</script>
+

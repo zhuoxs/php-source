@@ -1,0 +1,2 @@
+<?php
+ namespace app\boguan\model; class Share extends BaseModel { public function user() { return $this->hasOne("\125\163\x65\x72", "\151\144", "\x75\163\145\x72\x5f\151\144"); } public function parent() { return $this->hasOne("\125\x73\x65\162", "\x69\x64", "\160\x61\x72\145\156\164\x5f\x69\x64"); } }

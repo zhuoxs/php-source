@@ -1,0 +1,171 @@
+{php include wl_template('common/header');}
+<link href="{URL_MODULE}plugin/halfcard/app/resource/css/pay.css" rel="stylesheet" />
+<div class="page-group" >
+    <div class="page page-current">
+		<div class="content">
+			{if $halfactive} 
+			<div class="pay-content">
+				<div class="weui-cell">
+					<div class="weui-cell__hd"><label class="weui-label">消费总金额</label></div>
+					<div class="weui-cell__bd">
+						<input class="weui-input pay-input" type="number" pattern="[0-9]*" id="ordermoney" onchange="calculation()" placeholder="请输入用户消费金额">
+					</div>
+				</div>
+				<div class="weui-cell weui-cells_checkbox pay-out">
+					<label class="weui-check__label" for="isOut">
+			            <div class="weui-cell__hd">
+			                <input type="checkbox" onchange="calculation()"  class="weui-check" name="checkbox1" id="isOut">
+			                <i class="weui-icon-checked"></i>
+			            </div>
+			            <div class="weui-cell__bd">
+			                <p>输入不参与优惠金额</p>
+			            </div>
+        			</label>
+				</div>
+				<div id="outMoney">
+					<div class="weui-cell">
+						<div class="weui-cell__hd"><label class="weui-label">不可优惠金额</label></div>
+						<div class="weui-cell__bd">
+							<input class="weui-input pay-input" type="number" pattern="[0-9]*" id="isOutmoney" onchange="calculation()" placeholder="询问服务员后输入">
+						</div>
+					</div>
+				</div>
+			</div>
+			{/if}
+			<div class="pay-deduction">
+				<div class="pay-use">
+					{if $packactives}
+					{loop $packactives $packa}
+					<div class="row">
+						<div class="col-50">使用礼包<span class="packinfo">{$packa['title']}</span></div>
+						<div class="col-50">
+							<label style="float: right;margin-top: .15rem;" class="label-switch">
+		                  		<input type="checkbox" value = "{$packa['id']}" class="packswitch" checked="checked">
+		                  		<div class="checkbox"></div>
+		                	</label>
+						</div>
+					</div>
+					{/loop}
+					{/if}
+					{if $halfactive}
+					<div class="row">
+						<div class="col-50">会员减免<span>{if $actflag }活动折扣{else if empty($actflag)}平时折扣{/if}{$discount}折</span></div>
+						<div class="col-50 money jianmoney">-0.00元</div>
+					</div>
+					{/if}
+				</div>
+				<div class="line-box">
+					<div class="buy-line"></div>
+				</div>
+				<div class="pay-use">
+					{if $halfactive}
+					<div class="row">
+						<div class="col-50">实付金额</div>
+						<div class="col-50 money paymoney">0.00元</div>
+					</div>
+					{/if}
+				</div>
+				<div class="pay-ing">
+					持卡人：{$card['username']}
+				</div>
+				{if $halfactive}
+				<span>金额仅供记录使用，不做其他用途</span>
+				{/if}
+				<button type="button" class="weui-btn weui-btn_ submit2" >确认核销使用</button>
+			</div>
+			<script type="text/javascript">
+				var nouse = 0;
+				$("#isOut").change(function() {
+					if($(this).prop("checked")) {
+						$("#outMoney").show();
+					} else {
+						$("#outMoney").hide();
+					}
+				});
+				var discount = "{$discount}";
+				var paymoney = 0;
+				{if $halfactive}
+				function calculation(){
+					var ordermoney = (parseFloat($('#ordermoney').val())).toFixed(2);
+					var isoutmoney = 0;
+					if($('#isOut').prop("checked")){
+						isoutmoney = (parseFloat($('#isOutmoney').val())).toFixed(2);
+					}
+					if (!isNaN(ordermoney) && !isNaN(isoutmoney)) {
+						var trueordermoney = 0;
+						trueordermoney = ordermoney - isoutmoney;
+						paymoney = parseFloat(trueordermoney*0.1*{$discount});
+						paymoney = parseFloat(paymoney) + parseFloat(isoutmoney);
+						paymoney = (parseFloat(paymoney)).toFixed(2);
+						var jianmoney = parseFloat(ordermoney) - parseFloat(paymoney);
+						jianmoney = (parseFloat(jianmoney)).toFixed(2)
+				  		$('#ordermoney').val(ordermoney);
+				  		$('#isOutmoney').val(isoutmoney);
+				  		$('.jianmoney').html('-'+jianmoney+"元");
+				  		$('.paymoney').html(paymoney+"元");
+					} else {
+						$('.jianmoney').html('-0.00元');
+				  		$('.paymoney').html("0.00元");
+					}
+				}
+				{/if}
+			  	$('.submit2').click(function(){
+			  		var freeflag = 0;
+			  		{if $halfactive}
+			  		var ordermoney = $('#ordermoney').val();
+			  		if(ordermoney){
+				  		if(isNaN(ordermoney)){
+				  			$.toast("输入错误");
+				  			$('#ordermoney').val('');
+				  			return false;
+				  		}
+				      	ordermoney = (parseFloat(ordermoney)).toFixed(2);
+				  		$('#ordermoney').val(ordermoney);
+			  		}else{
+			  			ordermoney = 0;
+			  		}
+					var isoutmoney = 0;
+					if($('#isOut').prop("checked")){
+						isoutmoney = (parseFloat($('#isOutmoney').val())).toFixed(2);
+					}
+			  		{else}
+			  		var ordermoney = 0;
+					var isoutmoney = 0;
+					{/if}
+			  		var cardid = "{$cardid}";
+			  		var halfactiveid = "{$halfactive['id']}";
+			  		var merchantid = "{$merchant['id']}";
+					{if $packactives}
+					var packids = [];
+					$('.packswitch').each(function() {
+						if ($(this).is(':checked')){
+							packids.push($(this).val());
+						};
+					});
+					{else}
+					var packids = 0;
+			  		{/if}
+			  		var actflag = "{$actflag}";
+			  		$.confirm("确认核销？",
+			  			function(){
+			  				if(nouse){
+			  					$.toast('核销中，请勿重复点击');
+			  				}else{
+			  					nouse = 1;
+				  				$.post("{php echo app_url('halfcard/halfcard_app/createcardrecord')}",{packids:packids,ordermoney:ordermoney,paymoney:paymoney,undismoney:isoutmoney,discount:discount,cardid:cardid,halfactiveid:halfactiveid,merchantid:merchantid,actflag:actflag},function(d){
+						          	if(d.errno == 0){
+						          		$.toast('核销成功');
+						          		setTimeout(function(){WeixinJSBridge.call('closeWindow');},1000);
+						          	}else{
+						          		$.toast(d.msg);
+						          	}
+							    },"json");
+			  				}
+			  			},function(){}
+				  	);
+			  	});
+			</script> 
+		</div>
+	</div>
+</div>
+{php include wl_template('common/footer');}

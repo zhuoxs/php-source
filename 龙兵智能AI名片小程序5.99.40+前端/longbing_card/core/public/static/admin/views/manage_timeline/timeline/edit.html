@@ -1,0 +1,194 @@
+
+<title>动态详情</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>动态详情</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-header">动态详情</div>
+        <div class="layui-card-body" style="padding: 15px;">
+
+            <form class="layui-form" action="" lay-filter="component-form-group" onsubmit=" return  false;">
+
+                <input type="hidden" name="itemId">
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">标题</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="title" required lay-verify="required" placeholder="" autocomplete="off" class="layui-input">
+                    </div>
+                    <blockquote style="margin-left: 110px" class="layui-elem-quote" style="margin-top: 10px;">
+                        此标题为分享时显示的标题, 不是动态列表页展示的内容
+                    </blockquote>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">内容</label>
+                    <div class="layui-input-block">
+                        <textarea name="content" id="" cols="30" rows="10" class="layui-textarea" lay-verify="required"></textarea>
+                    </div>
+                    <blockquote style="margin-left: 110px" class="layui-elem-quote" style="margin-top: 10px;">
+                        此内容为动态列表页面展示的内容
+                    </blockquote>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">动态图片</label>
+                    <div class="layui-upload">
+                        <button type="button" class="layui-btn" id="btn-upload-images">多图片上传</button>
+                        <div class="layui-upload-list del-image"  id="div-upload-images"><ul></ul></div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">排序值</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="top" required placeholder="" autocomplete="off" class="layui-input">
+                    </div>
+                    <blockquote style="margin-left: 110px" class="layui-elem-quote" style="margin-top: 10px;">
+                        排序值, 倒序, 值越大排序越靠前, 请填写数字
+                    </blockquote>
+                </div>
+
+                <!--提交数-->
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="LAY-filter-demo-form">立即提交</button>
+                        <button id="backlist" class="layui-btn layui-btn-primary">返回</button>
+                    </div>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.use(['admin', 'form'], function(){
+        var $ = layui.$
+            ,admin = layui.admin
+            ,element = layui.element
+            ,layer = layui.layer
+            ,form = layui.form;
+
+        layer.load();
+
+        //id的值（判断是否编辑）
+        var router = layui.router();
+        var id=router.search.timeline_id;
+        if(typeof(id)=='undefined'){
+            id=0;//默认新增
+        }
+        $("#backlist").click(function(){
+            window.history.back();
+            return false;
+        });
+
+
+        $('.del-image').on('click','.layui-icon', function () {
+            $(this).parents('dd').remove();
+        });
+
+        //发送请求获取数据(数据的回显)
+        admin.req({
+            type:'POST',
+            url: config.url+'manage_timeline/timeline/detail'//数据接口
+            ,data:{"id":id},
+            done:function(res){
+                if(res.data){
+                    layer.closeAll();
+                    //预设元素
+                    form.val("component-form-group", {
+                        "itemId": res.data.id,// "name": "value"
+                        "title": res.data.title,// "name": "value"
+                        "content": res.data.content,// "name": "value"
+                        "images": res.data.images,// "name": "value"
+                        "top": res.data.top ? res.data.top : 0,// "name": "value"
+                    });
+
+                    //多张图片
+                    if(res.data.images){
+                        var strs='';
+                        layui.each(res.data.images, function(index, item){
+                            strs += '<dd><i class="layui-icon">&#x1007;</i> ' +
+                                '<img  width="100px" src="'+item.path+'"> ' +
+                                '<p id=""></p>' +
+                                '<input type="hidden" name="images[]" value="'+item.id+'"></dd>';
+                        });
+                        $('#div-upload-images ul').append(strs);
+                    }
+
+                }
+            }
+        });
+
+        /* 监听提交 */
+        form.on('submit', function(data){
+
+            layer.load();
+            //发送请求
+            var data = data.field;
+            admin.req({
+                type:'POST',
+                url: config.url+'manage_timeline/timeline/edit'//数据接口
+                ,data:data,
+                done:function(res){
+                    layer.msg('成功', {
+                        offset: '15px'
+                        ,icon: 1
+                        ,time: 1000
+                    }, function(){
+                        window.history.back();
+                    });
+                }
+            });
+            return  false;
+        });
+
+
+
+        /*上传图片*/
+        layui.use(['admin', 'upload'], function(){
+            var $ = layui.jquery
+                ,upload = layui.upload;
+
+            //多图片上传
+
+            //详情图
+            upload.render({
+                elem: '#btn-upload-images'
+                ,url: config.url+'manage_base/base_admin/upload'//上传地址
+                ,multiple: true
+                ,before: function(obj){
+                    //预读本地文件示例，不支持ie8
+                    layer.load(0, {
+                        offset: 'auto'
+                    });
+                }
+                ,done: function(res){
+                    //上传完毕
+                    if (res.code > 0) {
+                        return layer.msg('上传失败');
+                    }
+                    var str = '<dd><i class="layui-icon">&#x1007;</i> <img  width="100px" src="'+res.data.src+'"> <p id="p-upload-images"></p>' +
+                        '<input type="hidden" name="images[]" value="'+res.data.id+'" id="images"></dd>';
+                    $('#div-upload-images ul').append(str);
+                }
+                ,allDone: function(obj){ //当文件全部被提交后，才触发
+                    layer.closeAll('loading');
+                }
+            });
+
+        });
+
+
+    });
+
+</script>

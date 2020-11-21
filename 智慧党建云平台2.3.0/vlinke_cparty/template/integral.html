@@ -1,0 +1,296 @@
+{template 'common/header'}
+<div class="we7-page-title"> &nbsp; </div>
+<ul class="we7-page-tab">
+<li><a href="{php echo $this->createWebUrl('user')}">党员管理</a></li>
+<li class="active"><a href="{php echo $this->createWebUrl('integral');}">积分记录 </a></li>
+<li><a href="{php echo $this->createWebUrl('leader')}">管理人员</a></li>
+<li><a href="{php echo $this->createWebUrl('branch')}">组织管理</a></li>
+</ul>
+
+<div class="btn-group we7-btn-group we7-margin-bottom">
+<a class="btn {php echo $op=='display'?'active':'';}" href="{php echo $this->createWebUrl('integral')}">积分记录</a>
+<a class="btn {php echo $op=='statistics'?'active':'';}" href="{php echo $this->createWebUrl('integral',array('op'=>'statistics'))}">积分统计</a>
+</div>
+
+{if $op=='display'}
+<div class="panel panel-default">
+<div class="panel-heading">筛选</div>
+<div class="panel-body">
+<form action="" method="get" class="form-horizontal form" role="form">
+<input type="hidden" name="c" value="site" />
+<input type="hidden" name="a" value="entry" />
+<input type="hidden" name="m" value="vlinke_cparty" />
+<input type="hidden" name="do" value="integral" />
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label"> 所属组织</label>
+        <div class="col-sm-10">
+            <div class="input-group">
+                <input type="text" class="form-control" name="branchname" id="branchname" value="{$branch['name']}" placeholder="请输入组织名称点击查询并选择...">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" onclick="javascript:checkBranch();">点击查询</button>
+                </span>
+            </div>
+            <div class="help-block" id="branchbox"></div>
+        </div>
+    </div>
+    <input type="hidden" name="branchid" id="branchid" value="{$branch['id']}" />
+    <script type="text/javascript">
+    function checkBranch() {
+        var branchname = $("#branchname").val();
+        $.post("<?php echo $this->createWebUrl('checkbranch'); ?>",{branchname:branchname},         
+            function(ret){
+                $("#branchbox").html(ret);
+            }
+        );
+    }
+    function clickBranch(branchid,branchname) {
+        $("#branchid").val(branchid);
+        $("#branchname").val(branchname);
+    }
+    </script>
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label">真实姓名</label>
+        <div class="col-sm-2">
+            <input class="form-control" name="realname" type="text" placeholder="党员真实姓名..." value="{$realname}">
+        </div>
+        <div class="col-sm-2">
+            <select class="form-control" name="channel">
+                <option value="" {if $channel==""}selected{/if}>全部类型</option>
+                {loop $channelarr $key $row}
+                <option value="{$key}" {if $channel==$key} selected {/if}>{$row}</option>
+                {/loop}
+            </select>
+        </div>
+        <div class="col-sm-6">
+            <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+            <button class="btn btn-default" name="output" value="1"><i class="fa fa-file"></i> 导出</button>
+            <button type="button" class="btn btn-default">总记录数：{$total['tol']}</button>
+            <button type="button" class="btn btn-default">积分和：{$total['integraltol']}</button>
+        </div>
+    </div>
+</form>
+</div>
+</div>
+
+<table class="table we7-table table-hover vertical-middle">
+<thead class="navbar-inner">
+    <tr>
+        <th style="width:15%;">ID</th>
+        <th style="width:25%;">信息</th>
+        <th style="width:10%;">积分</th>
+        <th style="width:10%;">类型</th>
+        <th style="width:20%;">创建时间</th>
+        <th style="width:20%; text-align:right;">
+            <a class="btn btn-success btn-sm" href="javascript:$('.trbox').show();"><i class="fa fa-eye"></i> 显示</a>
+            <a class="btn btn-success btn-sm" href="javascript:$('.trbox').hide();"><i class="fa fa-eye-slash"></i> 隐藏</a>
+        </th>
+    </tr>
+</thead>
+<tbody>
+    {loop $list $row}
+    <tr> 
+        <td><input type="checkbox" name="check" value="{$row['id']}"> {$row['id']}</td>
+        <td><strong>{$row['realname']}-{$row['mobile']}</strong></td>
+        <td>{$row['integral']}</td>
+        <td>
+            <span class="label label-default">{$channelarr[$row['channel']]}</span>
+        </td>
+
+        <td>{php echo date('Y-m-d H:i',$row['createtime'])}</td>
+        <td class="text-right">
+            <a class="btn btn-primary btn-sm" href="javascript:$('#trbox{$row['id']}').slideToggle();"><i class="fa fa-eye"></i> 详情</a>
+
+            <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('integral',array('op'=>'delete','id'=>$row['id']))}" onclick="return confirm('删除后不可恢复,确定要删除吗?')"><i class="fa fa-times"></i> 删除</a>
+        </td>
+    </tr>
+    <tr class="trbox" id="trbox{$row['id']}" style="display: none;">
+        <td></td>
+        <td class="text-left" colspan="5">
+          备注信息：{$row['remark']}
+        </td>
+    </tr>
+    {/loop}
+    <tr>
+        <td class="text-left" colspan="4">
+          <span class="btn btn-success btn-sm checkall" id="checkall"><i class="icon-edit"></i>全选</span>
+          <span class="btn btn-success btn-sm uncheckall" id="uncheckall"><i class="icon-edit"></i>全不选</span>
+          <input type="button" class="btn btn-primary btn-sm deleteall" id="deleteall" name="deleteall" value="删除选择的" />
+        </td>
+        <td class="text-right" colspan="2">
+            <a class="btn btn-success btn-sm" href="javascript:$('.trbox').show();"><i class="fa fa-eye"></i> 显示</a>
+            <a class="btn btn-success btn-sm" href="javascript:$('.trbox').hide();"><i class="fa fa-eye-slash"></i> 隐藏</a>
+        </td>
+    </tr>
+</tbody>
+</table>
+<div class="pull-right">{$pager}</div>
+<script>
+    $(function(){
+        $('.checkall').bind('click',function(){
+            $("input[name='check']").each(function(){
+               $(this).prop("checked","checked");
+            });
+        });
+        $('.uncheckall').bind('click',function(){
+            $("input[name='check']").each(function(){
+               $(this).prop("checked",false);
+            });
+        });
+
+        $('#deleteall').click(function(){
+            var check = $("input:checked");
+            if(check.length<1){
+                alert("请选择要删除的记录!");
+                return false;
+            }
+            if(confirm("确认要删除选择的记录?")){
+                var id = new Array();
+                check.each(function(i){ id[i] = $(this).val(); });
+                $.post("<?php echo $this->createWebUrl('integral',array('op'=>'deleteall')); ?>",{idArr:id},         
+                    function(data){
+                        if(data == 'error'){
+                           alert('删除失败！');
+                           location.reload();
+                        }else{
+                           alert('删除成功！');
+                           location.reload();
+                        }
+                    }
+                );
+            }
+        });
+    });
+</script>
+{elseif $op=='statistics'}
+<div class="panel panel-default">
+<div class="panel-heading">筛选</div>
+<div class="panel-body">
+<form action="" method="get" class="form-horizontal form" role="form">
+<input type="hidden" name="c" value="site" />
+<input type="hidden" name="a" value="entry" />
+<input type="hidden" name="m" value="vlinke_cparty" />
+<input type="hidden" name="do" value="integral" />
+<input type="hidden" name="op" value="statistics" />
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label"> 所属组织</label>
+        <div class="col-sm-10">
+            <div class="input-group">
+                <input type="text" class="form-control" name="branchname" id="branchname" value="{$branch['name']}" placeholder="请输入组织名称点击查询并选择...">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" onclick="javascript:checkBranch();">点击查询</button>
+                </span>
+            </div>
+            <div class="help-block" id="branchbox"></div>
+        </div>
+    </div>
+    <input type="hidden" name="branchid" id="branchid" value="{$branch['id']}" />
+    <script type="text/javascript">
+    function checkBranch() {
+        var branchname = $("#branchname").val();
+        $.post("<?php echo $this->createWebUrl('checkbranch'); ?>",{branchname:branchname},         
+            function(ret){
+                $("#branchbox").html(ret);
+            }
+        );
+    }
+    function clickBranch(branchid,branchname) {
+        $("#branchid").val(branchid);
+        $("#branchname").val(branchname);
+    }
+    </script>
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label"> 属性</label>
+        <div class="col-sm-10">
+            <div class="input-group">
+                <div class="input-group-addon">获取类型</div>
+                <select class="form-control" name="channel">
+                    <option value="" {if $channel==""}selected{/if}>全部类型</option>
+                    {loop $channelarr $key $row}
+                    <option value="{$key}" {if $channel==$key} selected {/if}>{$row}</option>
+                    {/loop}
+                </select>
+                <div class="input-group-addon">周期类型</div>
+                <select class="form-control" name="itype">
+                    <option value="" {if $itype==""}selected{/if}>选择周期</option>
+                    <option value="iyear" {if $itype=='iyear'} selected {/if}>年份</option>
+                    <option value="iseason" {if $itype=='iseason'} selected {/if}>季度</option>
+                    <option value="imonth" {if $itype=='imonth'} selected {/if}>月份</option>
+                </select>
+                <div class="input-group-addon">周期值</div>
+                <input class="form-control" name="ivalue" type="text" placeholder="输入周期值..." value="{$ivalue}">
+            </div>
+            <div class="help-block">周期值示例：年份如 2018；季度如 20183；月份如 201806</div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-sm-2 control-label"> </label>
+        <div class="col-sm-6">
+            <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+            <button class="btn btn-default" name="output" value="1"><i class="fa fa-file"></i> 导出</button>
+            <button type="button" class="btn btn-default">总记录数：{$total}</button>
+        </div>
+    </div>
+</form>
+</div>
+</div>
+
+<table class="table we7-table table-hover vertical-middle">
+<thead class="navbar-inner">
+    <tr>
+        <th style="width:15%;">USERID</th>
+        <th style="width:15%;">头像</th>
+        <th style="width:25%;">信息</th>
+        <th style="width:15%;">积分</th>
+        <th style="width:30%; text-align:right;">操作</th>
+    </tr>
+</thead>
+
+{loop $list $row}
+<tbody>
+<tr> 
+    <td>{$row['id']}</td>
+    <td><img class="img-responsive" style="max-width:60px;" src="{php echo tomedia($row['headpic']);}"/></td>
+    <td>
+        <p><strong>{$row['realname']}-{$row['mobile']}</strong></p>
+        {$row['idnumber']}
+    </td>
+    <td>{php echo intval($integrallist[$row['id']]['inttol'])}</td>
+    <td class="text-right">
+        <a class="btn btn-primary btn-sm" href="javascript:getMore({$row['id']});"><i class="fa fa-list"></i> 详情</a>
+
+        <a class="btn btn-primary btn-sm" href="{php echo $this->createWebUrl('integral',array('op'=>'userlog','userid'=>$row['id'],'itype'=>$itype,'ivalue'=>$ivalue,'channel'=>$channel,'output'=>1))}"><i class="fa fa-file"></i> 导出</a>
+
+        <a class="btn btn-default btn-sm" id="eye{$row['id']}" href="javascript:$('#trbox{$row['id']}').slideToggle();" disabled="disabled"><i class="fa fa-eye-slash"></i> 显示隐藏</a>
+    </td>
+</tr>
+</tbody>
+<tbody id="trbox{$row['id']}" style="background-color: #f4f6f9;"></tbody>
+{/loop}
+</table>
+<div class="pull-right">{$pager}</div>
+
+<script>
+function getMore(userid) {
+    $.ajax({
+        type: 'POST',
+        url: "{php echo $this->createWebUrl('integral',array('op'=>'userlog','itype'=>$itype,'ivalue'=>$ivalue,'channel'=>$channel));}",
+        data: {userid:userid},
+        success: function(ret){
+            console.log(ret);
+            $("#trbox"+userid).show();
+            $("#eye"+userid).removeAttr("disabled");
+            $("#eye"+userid+" i").removeClass("fa-eye-slash").addClass("fa-eye");
+            $("#trbox"+userid).html(ret);
+        },
+    }); 
+}
+</script>
+
+
+
+{/if}
+{template 'common/footer'}

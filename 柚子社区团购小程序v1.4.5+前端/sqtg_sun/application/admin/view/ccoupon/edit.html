@@ -1,0 +1,275 @@
+{extend name="common/edit" /}
+{block name="content"}
+<!--<div class="layui-form-item">
+    <label class="layui-form-label">上级分类</label>
+    <div class="layui-input-block">
+        <select name="parent_id" id="parent_id" class="select2" lay-ignore></select>
+    </div>
+</div>-->
+<div class="layui-form-item">
+    <label class="layui-form-label">优惠券名称</label>
+    <div class="layui-input-block">
+        <input autocomplete="off" type="text" name="name" lay-verify="required" placeholder="请输入优惠券名称" class="layui-input" value="{$info.name??''}">
+    </div>
+</div>
+
+<div class="layui-form-item">
+    <div class="layui-inline">
+        <label class="layui-form-label">单笔满</label>
+        <div class="layui-input-inline" style="width: 100px;">
+            <input type="text" name="use_money" value="{$info.use_money??''}"  placeholder="￥" autocomplete="off" class="layui-input">
+        </div>
+        <div class="layui-form-mid">立减</div>
+        <div class="layui-input-inline" style="width: 100px;">
+            <input type="text" name="money" value="{$info.money??''}" placeholder="￥" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+</div>
+
+<div class="layui-form-item">
+    <div class="layui-inline">
+        <label class="layui-form-label">活动开始时间</label>
+        <div class="layui-input-inline">
+            <input type="text" name="begin_time" id="begin_time" value="{$info.begin_time}"  placeholder="yyyy-MM-dd" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+</div>
+
+<div class="layui-form-item">
+    <div class="layui-inline">
+        <label class="layui-form-label">活动结束时间</label>
+        <div class="layui-input-inline">
+            <input type="text" name="end_time" id="end_time" value="{$info.end_time}"  placeholder="yyyy-MM-dd" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+</div>
+
+<div class="layui-form-item">
+    <label class="layui-form-label">领取后几日有效</label>
+    <div class="layui-input-inline">
+        <input autocomplete="off" type="number" name="days" lay-verify="required" placeholder="请输入天数" class="layui-input" value="{$info.days??''}">
+    </div>
+</div>
+
+<div class="layui-form-item">
+    <label class="layui-form-label">总量</label>
+    <div class="layui-input-inline">
+        <input autocomplete="off" type="number" name="num" lay-verify="required" placeholder="请输入总量" class="layui-input" value="{$info.num??''}">
+    </div>
+</div>
+
+
+<div class="layui-form-item">
+    <label class="layui-form-label">余量</label>
+    <div class="layui-input-inline">
+        <input autocomplete="off" type="number" name="left_num" lay-verify="required" placeholder="请输入余量" class="layui-input" value="{$info.left_num??''}">
+    </div>
+</div>
+
+<div class="layui-form-item">
+    <label class="layui-form-label">启用状态</label>
+    <div class="layui-input-block">
+        <input type="radio" name="state" value="1" title="启用" {$info.state == 1 ?"checked":""}>
+        <input type="radio" name="state" value="0" title="禁用" {$info.state == 0 ?"checked":""}>
+    </div>
+</div>
+
+<div class="layui-form-item layui-form-text">
+    <label class="layui-form-label">使用说明</label>
+    <div class="layui-input-block">
+        <textarea placeholder="请输入内容" name='info' class="layui-textarea">{$info.info??''}</textarea>
+    </div>
+</div>
+<style>
+    .xxxx{
+        padding-top: 9px;
+    }
+    #coupon-group{
+        padding-top: 15px;
+    }
+    .coupon-user{
+        position: relative;
+        background-color: #fff;
+        padding: 5px 10px;
+        border-radius: 20px;
+        margin-right: 10px;
+    }
+    .coupon-user .btnDelete{
+        position: absolute;
+        top: -7px;
+        right: -5px;
+        background-color: red;
+        padding: 0px 5px;
+        color: #fff;
+        border-radius: 17px;
+        display: none;
+    }
+    .coupon-user:hover .btnDelete{
+        display: block;
+    }
+</style>
+<input type="text" value ='0' id="all" name="all"  style="display:none"/>
+<div class="layui-form-item">
+    <label class="layui-form-label">选择用户发放</label>
+    <div class="layui-input-block">
+        <div class="xxxx">
+            <button class="layui-btn layui-btn-warm layui-btn-sm" id="btnChooseUser">选择用户</button>
+            <button class="layui-btn layui-btn-warm layui-btn-sm" id="btnChooseAllUser">选取全部用户</button>
+        </div>
+        <div id="coupon-group" ></div>
+    </div>
+</div>
+<div class="layui-form-item">
+    <label class="layui-form-label">查看接受的用户</label>
+    <div class="layui-input-block">
+        <div class="xxxx">
+            <button class="layui-btn layui-btn-warm layui-btn-sm" id="btnShowUser">显示领取用户</button>
+        </div>
+        <div id="coupon-user" ></div>
+    </div>
+</div>
+
+<script>
+    var users = {};
+    function userDisplay() {
+        var userHtml = '';
+        for (var i in users){
+            userHtml += '<span class="coupon-user"><input type="hidden" name="user_ids[]" value="'+users[i].id+'">'+users[i].name+'<a href="javascript:;" data-id="'+users[i].id+'" class="btnDelete">x</a></span>';
+        }
+        $('#coupon-group').html(userHtml);
+    }
+    function userDisplay2(a){
+        if(a){
+
+            $('#coupon-group').html("已经选择全部用户");
+            $('#all').val(1);
+        }else{
+            $('#coupon-group').html("未选用户");
+            $('#all').val(0);
+        }
+    }
+    $('#btnChooseUser').click(function () {
+        console.log("{:adminurl('choose','cuser')}");
+        layer.open({
+            type: 2,
+            title: '选择用户',
+            shadeClose: true,
+            shade: false,
+            maxmin: true, //开启最大化最小化按钮
+            area: ['893px', '600px'],
+            content: "{:adminurl('choose','cuser')}",
+            btn: ['确认', '取消'],
+            yes: function (index,layerObj) {
+                var win = $(layerObj).find("iframe")[0].contentWindow;
+                var checkData = win.layui.table.checkStatus('laytable');
+                var checkUsers = checkData.data;
+                layer.close(index);
+                if (checkUsers.length){
+                    for (var i in checkUsers){
+                        users['u-'+checkUsers[i]['id']] = checkUsers[i];
+                    }
+                }
+                userDisplay();
+            }
+        });
+    })
+    var flag = false;
+    $('#btnChooseAllUser').click(function () {
+        flag = !flag;
+        userDisplay2(flag);
+    })
+    $('#btnShowUser').click(function () {
+        layer.open({
+            type: 2,
+            title: '用户领取情况',
+            shadeClose: true,
+            shade: false,
+            maxmin: true, //开启最大化最小化按钮
+            area: ['893px', '600px'],
+            content: "{:adminurl('index','Cusercoupon')}&coupon_id={$info.id??''}",
+            btn: ['确认', '取消'],
+            yes: function (index,layerObj) {
+                var win = $(layerObj).find("iframe")[0].contentWindow;
+                var checkData = win.layui.table.checkStatus('laytable');
+                var checkUsers = checkData.data;
+                layer.close(index);
+                if (checkUsers.length){
+                    for (var i in checkUsers){
+                        users['u-'+checkUsers[i]['id']] = checkUsers[i];
+                    }
+                }
+                userDisplay();
+            }
+        });
+    })
+    $(document).on('click','.btnDelete',function () {
+        var userID = $(this).data('id');
+        delete users['u-'+userID];
+        $(this).parent('.coupon-user').remove();
+    })
+    layui.use(['form', 'layedit', 'laydate'], function() {
+        var form = layui.form
+            , layer = layui.layer
+            , layedit = layui.layedit
+            , laydate = layui.laydate;
+
+        //日期
+        laydate.render({
+            elem: '#begin_time',
+            type: 'datetime'
+        });
+        laydate.render({
+            elem: '#end_time',
+            type: 'datetime'
+        });
+
+    });
+
+        require(['select2'], function () {
+        $('.select2').select2();
+        $.get("{:adminurl('select_root')}", function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: '', text: '请选择上级分类'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                if(obj.id == "{$info.menugroup_id??''}"){
+                    obj.selected = true;
+                }
+                return obj;
+            });
+            $('#parent_id').select2({
+                data: ret,
+            })
+        })
+    })
+</script>
+{/block}
+{block name="form_submit"}
+// 新增界面、保存、取消事件
+form.on('submit', function (data) {
+    if (!$(data.elem).is('button')) {
+        return false;
+    }
+    var data = data.field;
+    console.log(data);
+    var url = "{:adminurl('save')}";
+
+
+    $.post(url, data, function (res) {
+            if (typeof res == 'string') {
+                res = $.parseJSON(res);
+            }
+            if (res.code == 0) {
+                var index = parent.layer.getFrameIndex(window.name);
+                parent.layer.close(index);
+                parent.layer.msg('保存成功', {icon: 6, anim: 6});
+                parent.layui.table.reload('laytable', {});
+            } else {
+                layer.msg(res.msg, {icon: 5, anim: 6});
+            }
+        });
+        return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+    });
+{/block}

@@ -1,0 +1,2 @@
+<?php
+ require "\x76\145\x6e\x64\x6f\x72\57\x61\165\164\x6f\154\157\x61\144\56\160\x68\x70"; interface PrintContract { public function cloudPrint($content); public function devStatus(); public function queryOrder($orderId); }

@@ -1,0 +1,318 @@
+</body>
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="../../assets/__PUBLIC__/js/vendor/jquery.min.js"><\/script>')</script>-->
+<script src="__PUBLIC__/js/jquery.min.js"></script>
+<script src="__PUBLIC__/js/bootstrap.js"></script>
+<!--时间插件-->
+<link href="__PUBLIC__/js/datetime/bootstrap-datetimepicker.min.css" rel="stylesheet">
+<script type="text/javascript" src="__PUBLIC__/js/datetime/bootstrap-datetimepicker.min.js" charset="UTF-8"></script>
+<script type="text/javascript" src="__PUBLIC__/js/datetime/bootstrap-datetimepicker.zh-CN.js" charset="UTF-8"></script>
+<!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+<script src="__PUBLIC__/js/ie10-viewport-bug-workaround.js"></script>
+<script src="__PUBLIC__/js/operating.js"></script>
+<script src="__PUBLIC__/js/iconfont.js"></script>
+
+<script language="JavaScript" type="text/javascript">
+    function clearNoNum(obj) {
+        obj.value = obj.value.replace(/[^\d.]/g, "");  //清除“数字”和“.”以外的字符
+        obj.value = obj.value.replace(/\.{2,}/g, "."); //只保留第一个. 清除多余的
+        obj.value = obj.value.replace(".", "$#$").replace(/\./g, "").replace("$#$", ".");
+        obj.value = obj.value.replace(/^(\-)*(\d+)\.(\d\d).*$/, '$1$2.$3');//只能输入两个小数
+        if (obj.value.indexOf(".") < 0 && obj.value != "") {
+            //以上已经过滤，此处控制的是如果没有小数点，首位不能为类似于 01、02的金额
+            obj.value = parseFloat(obj.value);
+        }
+    }
+</script>
+<script>
+    function getWxlist(type){
+        if (type == 'wxSel'){
+            var post_url= '{:url("boguan/base/userList")}';
+        } else {
+            var post_url= '{:url("boguan/base/officialUserList")}';
+        }
+        $.ajax({
+            type: 'POST',
+            url: post_url,
+            async: false,
+            data: {
+
+            },
+            success: function (data) {
+                console.log(data);
+                if (data){
+                     productList= data;
+
+                } else {
+                     productList= [];
+                }
+
+            },
+            error: function (data) {
+                console.log(data.responseText);
+
+            }
+        });
+    }
+
+    function imageUpload() {
+        //imgUploadDel();
+        var formdata = new FormData();
+        // 将文件追加到 formdata对象中。
+        formdata.append("image",document.getElementById('file').files[0]);
+        console.log(formdata);
+        $.ajax({
+            type: "post",
+            url: "{:url('boguan/base/imgUpload')}",
+            dataType:"json",
+            contentType: false,
+            /**
+             * 必须false才会避开jQuery对 formdata 的默认处理
+             * XMLHttpRequest会对 formdata 进行正确的处理
+             */
+            processData: false,
+
+            data: formdata,
+            beforeSend:function(){
+                layui.use(['layer','form'], function(){
+                    var layer = layui.layer,form = layui.form;
+
+                    layer.load(1);
+
+                });
+            },
+            success: function(data) {
+                console.log(data);
+                if (data.errorCode == 1) {
+                    //alert(data.msg);
+                    layui.use(['layer','form'], function(){
+                        var layer = layui.layer,form = layui.form;
+                        layer.close(layer.index);
+                        layer.msg(data.msg, {icon: 1, time:1000}, function(){
+                            //window.history.go(-1);location.reload();
+                            //window.location=document.referrer;
+                            var imageName,imageUrl;
+                            imageUrl = data.data.url;
+                            imageName = data.data.url.split("/");
+                            imageName = imageName[imageName.length-1];
+                            var obj={};
+                            obj['id'] = data.data.id;
+                            obj['name'] = data.data.name;
+                            obj['url'] = imageUrl;
+                            obj['url_adr'] = data.data.url;
+                            imageLib['wedding'].unshift(obj);
+                            console.log(imageLib)
+
+                            var obj = iconAll(imageLib);
+                            iconPageShow(obj,1,pageDisplayIcon);
+                            var pageNavObj = null;//用于储存分页对象
+                            pageCou = Math.ceil(obj.length/pageDisplay);
+                            pageJson = obj;
+                            pageNavObj = new PageNavCreate("PageNavId",{
+                                pageCount:pageCou,
+                                currentPage:1,
+                                perPageNum:5,
+                            });
+                            pageNavObj.afterClick(pageNavCallBack);
+                        });
+
+                    });
+
+                    $('#img_id').val(data.data.id);
+                    $('#img_url').val(data.data.url);
+                    //window.location.reload()
+                } else {
+                    layui.use(['layer','form'], function(){
+                        var layer = layui.layer,form = layui.form;;
+                        layer.close(layer.index);
+                        layer.msg(data.msg, {icon: 2, time:1000});
+                    });
+                }
+            },
+            error: function (data) {
+                console.log(data.responseText);
+                layui.use(['layer','form'], function(){
+                    var layer = layui.layer,form = layui.form;;
+                    layer.close(layer.index);
+                    layer.msg(data.msg, {icon: 2, time:1000});
+                });
+            }
+        });
+    }
+    function imgUploadDel() {
+        var protocol = window.location.protocol;
+        var host = window.location.host;
+        imgUpload_find(protocol, host);
+        console.log(imgUpload_find(protocol, host))
+
+        $.each(imgUpload_find(protocol, host), function (i, item) {
+            console.log(item)
+            var url = item.url;
+            var id = item.id;
+            $.ajax({
+                type: 'POST',
+                url: '{:url("boguan/base/imgUploadDel")}',
+                data: {
+                    'id': id,
+                    'url': url
+                },
+                success: function (data) {
+                    console.log(data);
+                    if (data.errorCode == 1) {
+                        layui.use(['layer', 'form'], function () {
+                            var layer = layui.layer, form = layui.form;
+
+                            layer.msg(data.msg, {icon: 1, time: 1000}, function () {
+                                $('.icon-lib .icon-show .icon-main li.active').remove();
+                              	$('.icon-lib .modal-footer .btn-primary').addClass('disabled');
+                            });
+
+                        });
+
+                    } else {
+                        //  layer.msg(data.msg,{icon: 2})
+                    }
+                },
+                error: function (data) {
+                    console.log(data.responseText);
+                    //  layer.msg(data.msg,{icon: 2})
+                }
+            });
+
+        })
+    }
+
+    function videoDel(id,url) {
+
+        $.ajax({
+            type: 'POST',
+            url: '{:url("boguan/base/videoDel")}',
+            data: {
+                'id': id,
+                'url': url
+            },
+            success: function (data) {
+                console.log(data);
+
+            },
+            error: function (data) {
+                console.log(data.responseText);
+
+            }
+        });
+
+
+    }
+    function getVideoList() {
+
+        $.ajax({
+            type: 'POST',
+            url: '{:url("boguan/base/videoList")}',
+            async: false,
+            data: {
+
+            },
+            success: function (data) {
+                console.log(data);
+                videoList = data;
+
+            },
+            error: function (data) {
+                console.log(data.responseText);
+
+            }
+        });
+    }
+    function getImageList() {
+
+        $.ajax({
+            type: 'POST',
+            url: '{:url("boguan/base/imageList")}',
+            async: false,
+            data: {
+
+            },
+            success: function (data) {
+                if (data){
+
+                    var res= data;
+                } else {
+                    var res= [];
+                }
+                imageLib={
+                    wedding:res,
+
+                };
+            },
+            error: function (data) {
+                console.log(data.responseText);
+
+            }
+        });
+
+
+    }
+    function videoUpload() {
+        //imgUploadDel();
+        var formdata = new FormData();
+
+        console.log(document.getElementById('video').files[0])
+        // 将文件追加到 formdata对象中。
+        formdata.append("video",document.getElementById('video').files[0]);
+        console.log(formdata);
+        $.ajax({
+            type: "post",
+            url: "{:url('boguan/base/videoUpload')}",
+            dataType:"json",
+            contentType: false,
+            /**
+             * 必须false才会避开jQuery对 formdata 的默认处理
+             * XMLHttpRequest会对 formdata 进行正确的处理
+             */
+            processData: false,
+
+            data: formdata,
+            beforeSend:function(){
+                layui.use(['layer','form'], function(){
+                    var layer = layui.layer,form = layui.form;
+
+                    layer.load(1);
+
+                });
+            },
+            success: function(data) {
+                console.log(data);
+                layui.use(['layer','form'], function(){
+                    var layer = layui.layer,form = layui.form;
+
+                    layer.close(layer.index);
+
+                });
+                if (data.errorCode == 1) {
+                    //alert(data.msg);
+
+
+                } else {
+                    layui.use(['layer','form'], function(){
+                        var layer = layui.layer,form = layui.form;;
+
+                        layer.msg(data.msg, {icon: 2, time:1000});
+                    });
+                }
+            },
+            error: function (data) {
+                console.log(data.responseText);
+                layui.use(['layer','form'], function(){
+                    var layer = layui.layer,form = layui.form;;
+                    layer.close(layer.index);
+                    layer.msg(data.msg, {icon: 2, time:1000});
+                });
+            }
+        });
+    }
+</script>
+
+</html>

@@ -1,0 +1,207 @@
+{include file="common/header"}
+<!--main-body-->
+<section class="main-body">
+    <div class="main_content">
+        <!--second sidebar-->
+        {include file="platform/pub/setting-nav"}
+        <!--main body content-->
+        <div class="main_mbody">
+            <div class="col-xs-12">
+                <div class="main_mbody-title">
+                    <h5>海报管理</h5>
+                </div>
+                <div class="main-con">
+                    <form action="" method="post" enctype="multipart/form-data">
+
+                        <ul class="nav-contral clearit">
+                            <li><a href="{:url('boguan/platform.poster/add')}" class="btn"><i class="iconfont icon-jia"></i>添加海报</a></li>
+                        </ul>
+                        <div class="main-table table-responsive">
+                            <table class="table table-hover table-condensed batch">
+                                <thead>
+                                <tr>
+                                    <th style="width: 5%; text-align: left;">ID</th>
+                                    <th style="width: 10%; text-align: left;">标题</th>
+                                    <th style="width: 25%; text-align: left;">图片</th>
+                                    <th style="width: 10%; text-align: left;">链接地址</th>
+                                    <th style="width: 10%; text-align: left;">位置</th>
+                                    <th style="width: 10%; text-align: left;">发布时间</th>
+                                    <th style="width: 10%;">状态</th>
+                                    <th style="width: 15%;">操作</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {volist name="poster" id="vo"}
+                                <tr class="del-{$vo.id}">
+                                    <td class="id">{$vo.id}</td>
+                                    <td style="text-align: left;">{$vo.name}</td>
+                                    <td class="carousel-img" style="text-align: left;">
+                                        <img src="{$vo.image}" ondragstart="return false" alt="" title="">
+                                    </td>
+                                    <td style="text-align: left;">{$vo.link}</td>
+                                    <td style="text-align: left;">{volist name="position" id="v"}{if $vo.type == $key}{$v}{/if}{/volist}</td>
+                                    <td style="text-align: left;">{$vo.create_time}</td>
+                                    <td>
+                                        <button type="button" class="state-pro" onclick="status('{$vo.id}','{$vo.status}')">
+                                            {if $vo.status == 0}
+                                            <div class="status"><span class="label label-danger">已隐藏</span></div>
+                                            {else}
+                                            <div class="status"> <span class="label label-success">已显示</span></div>
+                                            {/if}
+                                        </button>
+                                    </td>
+                                    <td>
+                                        <a href="{:url('boguan/platform.poster/edit',array('id'=> $vo['id'],'type'=> $vo['type']))}"><span class="label label-primary">编辑</span></a>
+                                        <a onclick="del('{$vo.id}', 'del-{$vo.id}')" type="button" style="cursor: pointer;"><span class="label label-danger">删除</span></a>
+                                    </td>
+                                </tr>
+                                {/volist}
+
+                                </tbody>
+
+                            </table>
+                            {$page}
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+            {include file="common/copyright"}
+        </div>
+    </div>
+</section>
+{include file="common/footer"}
+<script>
+    /*批量删除*/
+
+    $("form").submit(function(e) {
+        e.preventDefault();//阻止默认提交,表单不写method="post"这个可以不要
+
+        var str="";
+
+        $("input[name=id]:checkbox").each(function () {
+            if (true == $(this).attr("checked")) {
+                str += $(this).attr('value');
+            }
+        })
+
+
+        console.log(str)
+        layui.use(['layer', 'form'], function () {
+            var layer = layui.layer, form = layui.form;
+            ;
+
+            layer.confirm('确认删除选中吗？', {
+                btn: ['确认'], yes: function (index) {
+                    //按钮【按钮一】的回调
+                    //此处请求后台程序，下方是成功后的前台处理……
+                    $.ajax({
+                        type: 'POST',
+                        url: '{:url("boguan/platform.setting/batchDel")}',
+                        data: {'id': id},
+                        success: function (data) {
+                            console.log(data);
+                            if (data.errorCode == 1) {
+
+                                layer.msg(data.msg, {icon: 1})
+                                $('.' + key).remove();
+                            } else {
+                                layer.msg(data.msg, {icon: 2})
+                            }
+                        },
+                        error: function (data) {
+                            console.log(data.responseText);
+                            layer.msg(data.msg, {icon: 2})
+                        }
+                    });
+                    layer.close(index);
+                }
+            });
+        })
+    })
+
+
+
+
+    /*删除*/
+    function del(id,key){
+
+        layui.use(['layer','form'], function(){
+            var layer = layui.layer,form = layui.form;;
+
+            layer.confirm('确认删除吗？', {btn:['确认'], yes:function(index){
+                    //按钮【按钮一】的回调
+                    //此处请求后台程序，下方是成功后的前台处理……
+                    $.ajax({
+                        type: 'POST',
+                        url: '{:url("boguan/platform.poster/del")}',
+                        data:{'id':id},
+                        success: function(data) {
+                            console.log(data);
+                            if (data.errorCode == 1) {
+
+                                layer.msg(data.msg,{icon: 1})
+                                $('.'+key).remove();
+                            } else {
+                                layer.msg(data.msg,{icon: 2})
+                            }
+                        },
+                        error: function (data) {
+                            console.log(data.responseText);
+                            layer.msg(data.msg,{icon: 2})
+                        }
+                    });
+                    layer.close(index);
+                }});
+        })
+
+    }
+
+    //更新状态
+    function status(id,status) {
+        console.log(id);
+        console.log(status)
+        var text= '';
+        var updateStatus= 0;
+        if (status == 1){
+            updateStatus= 0;
+            text= '隐藏';
+        }else {
+            updateStatus= 1;
+            text= '显示';
+        }
+        layui.use(['layer','form'], function(){
+            var layer = layui.layer,form = layui.form;;
+
+            layer.confirm('确认'+ text +'吗？', {btn:['确认'], yes:function(index){
+                    //按钮【按钮一】的回调
+                    //此处请求后台程序，下方是成功后的前台处理……
+                    $.ajax({
+                        type: 'POST',
+                        url: '{:url("boguan/platform.poster/updatePosterStatus")}',
+                        data:{
+                            'id':id,
+                            'status': updateStatus,
+                        },
+                        success: function(data) {
+                            console.log(data);
+                            if (data.errorCode == 1) {
+
+                                layer.msg(data.msg,{icon: 1})
+                                window.location.reload()
+
+                            } else {
+                                layer.msg(data.msg,{icon: 2})
+                            }
+                        },
+                        error: function (data) {
+                            console.log(data.responseText);
+                            layer.msg(data.msg,{icon: 2})
+                        }
+                    });
+                    layer.close(index);
+                }});
+        })
+    }
+
+</script>

@@ -1,0 +1,257 @@
+{template '_header'}
+<script>document.title = "{$lottery['lottery_title']}"; </script>
+
+<link rel="stylesheet" href="../addons/ewei_shopv2/plugin/lottery/static/style/mobilepan.css?{php echo time();}" />
+
+<div class='fui-page  fui-page-current'>
+
+    <div class="fui-content lottery-content">
+        {if !empty($lottery) }
+        <div class="lottery-title">
+            <marquee direction=left scrollamount=6 style="color: #ffffff;background: #000000;opacity: 0.7;">
+                {if !empty($log)}
+                    {loop $log $key $value}
+                        {if !empty($value['lottery_data'])}
+                            {$value['reward_text']}
+                        {/if}
+                    {/loop}
+                {else}
+                    暂无中奖记录...
+                {/if}
+            </marquee>
+        </div>
+
+        <style>
+            .lottery-content{
+                background: url("{$lottery['lottery_banner']}");
+                background-size: 100% 100%;
+            }
+        </style>
+        <div class="lottery" >
+            <div class="wheel"  style="overflow: hidden; padding: 0; width: 16.4rem; height: 16.4rem">
+                <ul class="wheel-light">
+                    <li><i></i><i></i><i></i><i></i></li>
+                    <li><i></i><i></i><i></i><i></i></li>
+                    <li><i></i><i></i><i></i><i></i></li>
+                    <li><i></i><i></i><i></i><i></i></li>
+                    <li><i></i><i></i><i></i><i></i></li>
+                    <li><i></i><i></i><i></i><i></i></li>
+                </ul>
+                <div style="height: auto; margin: 1.2rem; overflow: hidden;border-radius: 14rem;">
+                <ul id="wheel" class="wheel-list" style="position: relative; z-index: 0;  overflow: hidden; ">
+
+                </ul>
+                </div>
+                <div id="pointer" class="wheel-pointer" ><i>GO</i></div>
+            </div>
+        </div>
+        <div class="lottery_footer">
+            <img class="lottery_memberhead" src="{$member['avatar']}">
+            <p>剩余抽奖次数:<span style="color: #ff3f4b" id="left_changes">{php echo intval($has_changes);}</span>次</p>
+            <div class="lottery_row">
+                <div class="lottery_col_6">
+                    <a class="btn btn-danger" href="{php echo mobileUrl('lottery/index/lottery_reward',array('id'=>$lottery['lottery_id']),true);}" style="width: 6rem;">奖励说明</a>
+                </div>
+                <div class="lottery_col_6">
+                    <a class="btn btn-primary" href="{php echo mobileUrl('lottery/index/myreward',array(),true);}" style="background-color: #13afbe;border-color: #13afbe;">我的中奖记录</a>
+                </div>
+            </div>
+        </div>
+        {else}
+            <p class="text-white text-center" style="font-size: 2.5rem;margin-top: 15rem">无活动</p>
+        {/if}
+    </div>
+
+</div>
+<div style="display: none" id="lottery_data">
+    {if !empty($reward)}
+    {loop $reward $rank $value}
+    {if !empty($value)}
+    <div class="panel {if $count==1} panel-primary {else} panel-default {/if} " data-rank="{$rank}" data-title="{$value['title']}" data-icon="{$value['icon']}" data-probability="{$value['probability']}" onclick="rankclick(this);" >
+
+    </div>
+    {/if}
+    {/loop}
+    {/if}
+</div>
+
+<div id="model" style="display: none;">
+    <div class="task-model">
+        <div class="task-model-content" ><h4 id="model-title"></h4></div>
+        <div class="task-model-footer task-btn-close">好的</div>
+    </div>
+</div>
+
+<div id="failmodel" style="display: none;">
+    <div class="task-model">
+        <div class="task-model-faile-content" ><h4 id="model-failtitle"></h4></div>
+        <div class="task-model-footer task-btn-close">好的，我知道了</div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    {if !empty($lottery) }
+    function buildpan() {
+        $('#wheel').empty();
+        $('#lottery_data .panel').each(function () {
+            var obj = $(this);
+            var li_div = '<li class="jssuper"><i ></i><div class="prize"><h3>'+obj.data('title')+'</h3><div class="icon"><img src="'+obj.data('icon')+'"></div></div></li>';
+            $('#wheel').append(li_div);
+            var pn = $('#wheel').find('li').length;			// 块数
+            if(pn<4){
+                pn=4;
+            }
+            var pa = 360/pn;								// 每块角度
+            for(var i=0; i<pn; i++){
+                $('#wheel').find('li').eq(i).css('transform', 'rotate(' + pa*i + 'deg)').find('i').css('transform', 'rotate('+ (pa/2) + 'deg) skewY(' + (90-pa) + 'deg)')
+            }
+        });
+    }
+    function tabInfo(obj) {
+        var tab_id = $(obj).data('value');
+        if(tab_id=='rewardinfo'){
+            $('#lotteryinfo').hide();
+            $('#myreward').hide();
+            $('a[data-value="lotteryinfo"]').removeClass('active');
+            $('a[data-value="myreward"]').removeClass('active');
+            $(obj).addClass('active');
+            $('#rewardinfo').show();
+        }
+        if(tab_id=='lotteryinfo'){
+            $('#rewardinfo').hide();
+            $('#myreward').hide();
+            $('a[data-value="rewardinfo"]').removeClass('active');
+            $('a[data-value="myreward"]').removeClass('active');
+            $(obj).addClass('active');
+            $('#lotteryinfo').show();
+        }
+        if(tab_id=='myreward'){
+            $('#rewardinfo').hide();
+            $('#lotteryinfo').hide();
+            $('a[data-value="rewardinfo"]').removeClass('active');
+            $('a[data-value="lotteryinfo"]').removeClass('active');
+            $(obj).addClass('active');
+            $('#myreward').show();
+        }
+    }
+    $(document).ready(function () {
+        var changes = {php echo intval($has_changes);};
+        buildpan();
+        {if empty($_W['openid'])}
+        require(['../addons/ewei_shopv2/plugin/lottery/static/js/indexpan.js'],function(modal){modal.init({is_login:0,id:{$lottery['lottery_id']}});});
+        {else}
+        var click=false;
+        var runcount = 1;
+        $('#pointer').on('click', function(){
+
+            if(click){
+                return false;
+            }
+            if(changes<=0){
+                $('#model-failtitle').html('{$lottery['lottery_cannot']}');
+                taskget = new FoxUIModal({
+                    content: $('#failmodel').html(),
+                    extraClass: 'picker-modal',
+                    maskClick: function () {
+                        taskget.close()
+                    }
+                });
+                taskget.container.find('.task-btn-close').click(function () {
+                    taskget.close()
+                });
+                taskget.show();
+                return ;
+            }
+            changes = changes - 1;
+            $('#left_changes').html(changes);
+            var reward = {};
+            $.post('{php echo mobileUrl("lottery/index/getreward");}',{lottery:{$lottery['lottery_id']}},function (data) {
+                if(data.status==1){
+                    reward = data;
+                    var num = data.id;
+                    var pn = $('#wheel').find('li').length;
+                    var pa = 360/pn;
+                    $('#wheel').css('transform','rotate(' + (3600*runcount-num*pa) + 'deg)');
+                    runcount++;
+                    click=true;
+
+
+                    setTimeout(function () {
+                        if(reward.is_reward){
+                            //领取成功
+                            $.post('{php echo mobileUrl("lottery/index/reward");}',{reward:parseInt(reward.id),lottery:{$lottery['lottery_id']}},function (data) {
+                                if(data.status==1){
+                                    //领取成功
+                                    $('#model-title').html(data.info);
+                                    taskget = new FoxUIModal({
+                                        content: $('#model').html(),
+                                        extraClass: 'picker-modal',
+                                        maskClick: function () {
+                                            taskget.close();
+                                        }
+                                    });
+                                    taskget.container.find('.task-btn-close').unbind('click').bind('click',function () {
+                                        taskget.close();
+                                    });
+                                    taskget.show();
+                                    click=false;
+                                }else{
+                                    //领取失败model-fail-title
+                                    $('#model-failtitle').html(data.info);
+                                    taskget = new FoxUIModal({
+                                        content: $('#failmodel').html(),
+                                        extraClass: 'picker-modal',
+                                        maskClick: function () {
+                                            taskget.close()
+                                        }
+                                    });
+                                    taskget.container.find('.task-btn-close').click(function () {
+                                        taskget.close()
+                                    });
+                                    taskget.show();
+                                }
+                            },'json');
+                        }else{
+                            //无奖励
+                            $('#model-failtitle').html(reward.info);
+                            taskget = new FoxUIModal({
+                                content: $('#failmodel').html(),
+                                extraClass: 'picker-modal',
+                                maskClick: function () {
+                                    taskget.close()
+                                }
+                            });
+                            taskget.container.find('.task-btn-close').unbind('click').bind('click',function () {
+                                taskget.close()
+                            });
+                            taskget.show();
+                        }
+                        click=false;
+
+                    },6000);
+
+                }else{
+                    $('#model-failtitle').html(data.info);
+                    taskget = new FoxUIModal({
+                        content: $('#failmodel').html(),
+                        extraClass: 'picker-modal',
+                        maskClick: function () {
+                            taskget.close()
+                        }
+                    });
+                    taskget.container.find('.task-btn-close').unbind('click').bind('click',function () {
+                        taskget.close()
+                    });
+                    taskget.show();
+                    click=false;
+                }
+            },'json');
+
+        });
+        {/if}
+
+    })
+    {/if}
+</script>
+{template '_footer'}
+

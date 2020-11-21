@@ -1,0 +1,139 @@
+{% extends 'common/layout.twig' %}
+{% block title %}{{ data.title }}{% endblock %}
+{% block css %}
+    <link rel="stylesheet" href="{{ basePath }}/css/color.css?v={{ date }}">
+    <link rel="stylesheet" href="{{ basePath }}/css/common.css">
+    <link rel="stylesheet" href="{{ basePath }}/css/activity/seckill-list.css">
+{% endblock %}
+{% block content %}
+<body class="red">
+<div class="seckill-box">
+    {% include 'common/nav.twig' %}
+
+        <div class="tab-label inner">
+            <span id="getcodeurl" style="display: none">{{ pcUrl('pc/getCode')}}</span>
+            {% for roomitem in data.info.rooms %}
+                <a href="{{ pcUrl('pc.list.seckill',{'roomid':roomitem.id}) }}">
+                    <span  class="{% if roomitem.id == data.info.roomid %}current{% endif %}" style="text-align: center;">{{ roomitem.title }}</span>
+                </a>
+
+            {% endfor %}
+        </div>
+        <!--秒杀时间组-->
+        <div class="seckill-time inner flex">
+            {% for timestiem in data.info.times %}
+                <a href="{{ pcUrl('pc.list.seckill',{'timeid':timestiem.id,'roomid':data.info.roomid}) }}">
+                    <div class="item {% if timestiem.id == data.info.timeid %}current{% endif %}">
+                        <p><span class="time" >{{ timestiem.time }}:00</span><span>
+                        {% if timestiem.status ==0 %}
+                            抢购中
+                             <input type="hidden" value="{{ data.endtime - time() }}" id="seckill_end_time">
+                             <div class="seckill" style="display: none">
+                                    <span>距结束</span>
+                                        <span id="hour_show">  00</span>:
+                                        <span id="minute_show">00</span>:
+                                        <span id="second_show">00</span>
+                                    </div>
+                        {% elseif timestiem.status ==1 %}
+                            尚未开始
+                        {% else %}
+                            已经结束
+                        {% endif %}
+                    </span></p>
+                    </div>
+                </a>
+            {% else %}
+                今日没有秒杀，请明天再来吧~
+            {% endfor %}
+        </div>
+        <!--秒杀列表-->
+        <div class="seckill-list inner flex">
+            {% for goodsitem in data.goods %}
+            <div class="item">
+                <div class="img">
+                    <img src="{{ goodsitem.thumb }}" />
+                </div>
+                <p>{{ goodsitem.title }}</p>
+                {% if goodsitem.percent ==100 %}
+                <div class="progress">
+                    <div class="skill flex">
+                        <div class="skillbar">
+                            <div class="filled" data-width="100%"></div>
+                        </div>
+                        <span class="percent"><span>已抢</span>100%</span>
+                    </div>
+                </div>
+                    <div class="price">
+                        <span class="seckill-price">￥{{ goodsitem.price }}</span>
+                        <span class="origin-price">￥{{ goodsitem.marketprice }}</span>
+                        <button class="take" type="button">已抢完</button>
+                    </div>
+            {% else %}
+                <div class="progress">
+                    <div class="skill flex">
+                        <div class="skillbar">
+                            <div class="filled" data-width="{{ goodsitem.percent }}%"></div>
+                        </div>
+                        <span class="percent"><span>已抢</span>{{ goodsitem.percent }}%</span>
+                    </div>
+                </div>
+                <div class="price">
+                    <span class="seckill-price">￥{{ goodsitem.price }}</span>
+                    <span class="origin-price">￥{{ goodsitem.marketprice }}</span>
+                    {% if goodsitem.timestatus==1 %}
+                    <button class="take" type="button">尚未开始</button>
+                    {% else %}
+                        <button type="button" type="button"  onclick="getCode({{ goodsitem.goodsid }})">去抢购</button>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+             {% endfor %}
+        </div>
+
+</div>
+<div class="qrcode show">
+    <div class="block">
+        <span class="close iconfont">&#xe635;</span>
+        <p>请扫码前往手机端操作</p>
+        <div class="code">
+            <img src="{{ basePath }}/img/goods-list.jpg" class="img"/>
+        </div>
+    </div>
+</div>
+<script src="{{ basePath }}/js/jquery-1.10.2.min.js"></script>
+<script src="{{ basePath }}/js/an-skill-bar.js"></script>
+<script src="{{ basePath }}/js/page/index/index.js"></script>
+<script>
+    $(document).ready(function () {
+        $('.skillbar').skillbar({
+            speed: 1000,
+        });
+    });
+    function getCode(id){
+        var url =   $("#getcodeurl").text();
+        $.ajax({
+            type : 'post',
+            url : url,
+            data : {'id':id,'url':'goods.detail'},
+            dataType : 'json',
+            success : function(ret){
+                if (ret.status == 1) {
+                    var imgPath = ret.img;
+                    $('.img').attr('src', imgPath);
+                    $('.qrcode').removeClass("show");
+                    return;
+                }
+            }},JSON)
+    }
+    $(function () {
+        $('.close').click(function () {
+            $('.qrcode').addClass("show");
+            return;
+        });
+        height = $('html').height() - 182 - $('.footer').innerHeight();
+        $('.content').css('height', height);
+    });
+</script>
+</body>
+{% endblock %}

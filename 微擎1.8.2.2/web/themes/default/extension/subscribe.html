@@ -1,0 +1,62 @@
+{template 'common/header-gw'}
+<style>
+	.js-test .item:hover{background-color:#f5f5f5;}
+</style>
+	<ol class="breadcrumb">
+		<li><a href="./?refresh"><i class="fa fa-home"></i></a></li>
+		<li><a href="{url 'system/welcome'}">系统</a></li>
+		<li class="active">订阅管理</li>
+	</ol>
+<div class="alert alert-info">
+如果模块测试订阅消息失败，为了不影响系统整体通知，请禁用这些通知失败的模块
+</div>
+{loop $module_subscribes $module_name $module_value}
+	<div class="panel panel-default js-test" modulename="{$module_name}">
+		<div class="panel-heading clearfix">
+			<div class="pull-right">
+				<input class="js-flag" type="checkbox" modulename="{$module_name}" {if !in_array($module_name, $module_ban)} checked="checked" {/if}/>
+			</div>
+			{$modules[$module_name]['title']} ({$module_name})
+		</div>
+		<div class="panel-body clearfix">
+			{loop $module_value $v}
+			{if $v != 'text' && $v != 'enter'}
+			<div class="col-md-3 col-sm-4 col-xs-6 item" style="line-height: 30px; cursor:pointer;">
+				{$mtypes[$v]}
+				<p class="pull-right"></p>
+			</div>
+			{/if}
+			{/loop}
+		</div>
+	</div>
+{/loop}
+
+<script type="text/javascript">
+
+require(['bootstrap.switch'],function($){
+	$('.js-flag:checkbox').bootstrapSwitch({onText: '启用', offText: '禁用'});
+	$('.js-flag:checkbox').on('switchChange.bootstrapSwitch', function(event, state) {
+		var modulename = $(this).attr('modulename');
+		var ban = state ? 1 : 0;
+		$.getJSON("{php echo url('extension/subscribe/ban')}", {modulename:modulename, ban:ban}, function(data) {
+			var data = eval(data.message);
+		});
+	});
+});
+
+$(function() {
+	$('.js-test').each(function() {
+		var modulename = $(this).attr('modulename');
+		var result = $(this).find('p');
+		var module_subscribe = $(this).children('.item');
+		$.post("{php echo url('extension/subscribe/check')}", {modulename:modulename}, function(data){
+			if(data != 'success') {
+				result.html('<span class="label label-danger"> 失败</span>');
+			} else {
+				result.html('<span class="label label-success"> 正常</span');
+			}
+		});
+	});
+});
+</script>
+{template 'common/footer-gw'}

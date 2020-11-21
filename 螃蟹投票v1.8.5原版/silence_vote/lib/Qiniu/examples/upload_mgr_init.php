@@ -1,0 +1,2 @@
+<?php
+ require_once __DIR__ . "\x2f\x2e\56\x2f\x61\165\164\157\154\x6f\141\144\x2e\160\x68\160"; use Qiniu\Auth; use Qiniu\Storage\UploadManager; goto xzUdj; I06qC: $bucket = "\102\x75\143\153\x65\164\137\116\141\x6d\x65"; goto RkFDB; xzUdj: $accessKey = "\x41\143\x63\x65\x73\163\x5f\113\145\x79"; goto Awb7D; RkFDB: $token = $auth->uploadToken($bucket); goto wL4Fw; Awb7D: $secretKey = "\x53\x65\x63\x72\145\x74\x5f\113\x65\171"; goto DYQmC; DYQmC: $auth = new Auth($accessKey, $secretKey); goto I06qC; wL4Fw: $uploadMgr = new UploadManager();

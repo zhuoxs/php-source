@@ -1,0 +1,146 @@
+{php include wl_template('common/header');}
+<div class="page-group">
+    <div class="page page-current" id="page-apply_card">
+    	<header class="bar bar-nav">
+			<h1 class="title">申请列表</h1>
+		</header>
+		<div class="content native-scroll">
+			<div class="weui_tabbar">
+		        <a href="#" class="weui_actionsheet_cell" style="width: 100%;background-color: white;">申请挪车卡</a>
+		    </div>
+			<div class="list-block media-list">
+		      <ul>
+		      	{loop $order $addres}
+		        <li class="item-content">
+		            <div class="item-inner">
+		              <div class="item-title-row">
+		                <div class="item-title">{$addres['name']} - {$addres['mobile']}</div>
+		                <div class="item-after"><a href="javascript:;" class="weui_btn weui_btn_mini weui_btn_default">{if $addres['status'] == 1}待发货{elseif $addres['status'] == 2}待收货{elseif $addres['status'] == 3}已收货{elseif $addres['status'] == 4}已取消{elseif $addres['status'] == 5}待付款{/if}</a></div>
+		              </div>
+		              <div class="item-subtitle">{$addres['area']}{$addres['address']}</div>
+		              <div class="item-title-row">
+		                <div class="item-title" style="font-weight: 300;">{php echo date('Y-m-d H:i:s',$addres['createtime'])}</div>
+		                <div class="item-after">
+		                	{if $addres['status'] == 1}
+		                	<a href="#" class="button button-danger" id="cancel_order" addid='{$addres['id']}'>取消订单</a>
+		                	{elseif $addres['status'] == 5}
+		                	<a href="#" class="button button-info" id="pay_order" addid='{$addres['ordersn']}'>支付订单</a>
+		                	{elseif $addres['status'] == 2}
+		                	<p class="buttons-row"><a href="http://m.kuaidi100.com/index_all.html?type={$addres['express']}&postid={$addres['expresssn']}#input" class="button button-success" id="v_order" addid='{$addres['id']}'>查看物流</a><a href="#" class="button adddel button-success" id="confirm_order" addid='{$addres['id']}'>确认收货</a></p>
+		                	{/if}
+		                </div>
+		              </div>
+		            </div>
+		        </li>
+		        {/loop}
+		      </ul>
+		    </div>
+		</div>
+	</div>
+</div>
+<script>
+$(function() {
+	$(document).on('click','.weui_actionsheet_cell',function () {
+		var buttons1 = [
+	        {
+	          text: '请选择申请方式',
+	          label: true
+	        },
+	        {if $_W['wlsetting']['apply']['sendstatus'] != 1}
+	        {
+	          text: '邮寄挪车卡，支付邮费',
+	          bold: true,
+	          onClick: function() {
+	            {if !empty($_W['wlsetting']['apply']['times']) && $times >= $_W['wlsetting']['apply']['times']}
+				$.toast("您申请次数已超过最大次数");
+				{else}
+				location.href = '{php echo app_url("app/apply/post")}';
+				{/if}
+	          }
+	        },
+	        {/if}
+	        {if $_W['wlsetting']['apply']['mailstatus'] == 2}
+	        {
+	          text: '发送到邮箱，自行打印',
+	          onClick: function() {
+	            send_mail();
+	          }
+	        },
+	        {/if}
+	        {if $_W['wlsetting']['apply']['storestatus'] == 2}
+	        {
+	          text: '线下合作点，免费领取',
+	          color: 'danger',
+	          onClick: function() {
+	            location.href = '{php echo app_url("app/apply/storelist")}';
+	          }
+	        }
+	        {/if}
+	    ];
+	    var buttons2 = [
+	        {
+	          text: '取消',
+	          bg: 'danger'
+	        }
+	    ];
+	    var groups = [buttons1, buttons2];
+	    $.actions(groups);
+	});
+	
+	function send_mail(){
+		$.post("{php echo app_url('app/apply/send_mail')}",{},function(d){
+			if(d.result == 1){
+			    location.href = "{php echo app_url('app/apply/send_mail')}";
+			}else if(d.result == 2){
+				$.alert(d.msg, function () {
+			        location.href = d.url;
+			    });
+			}else if(d.result == 3){
+				$.alert(d.msg);
+			}else{
+				$.toast("未知错误");
+			}
+		},"json");
+	}
+	
+	$(document).on('click','#cancel_order',function () {
+		var $this = $(this);
+		var id = $this.attr('addid');
+		$.post("{php echo app_url('app/apply/get',array('type' => 1))}",{id:id},function(d){
+			if(d.result == 1){
+				$.alert('取消订单成功', function () {
+			        location.href = "{php echo app_url('app/apply/list')}";
+			    });
+			}else if(d.result == 2){
+				$.toast("取消订单失败，请重试");
+			}else{
+				$.toast("未知错误");
+			}
+		},"json");
+	});
+	$(document).on('click','#confirm_order',function () {
+		var $this = $(this);
+		var id = $this.attr('addid');
+		$.post("{php echo app_url('app/apply/get',array('type' => 2))}",{id:id},function(d){
+			if(d.result == 1){
+				$.alert('确认收货成功', function () {
+			        location.href = "{php echo app_url('app/apply/list')}";
+			    });
+			}else if(d.result == 2){
+				$.toast("确认收货失败，请重试");
+			}else{
+				$.toast("未知错误");
+			}
+		},"json");
+	});
+	$('#pay_order').click(function(){
+		var $this = $(this);
+		var orderno = $this.attr('addid');
+		$.alert('正在前往支付页面', function () {
+			location.href = "{php echo app_url('app/apply/pay');}&orderno="+orderno;
+		});
+	});
+	$.init();
+});
+</script>
+{php include wl_template('common/footer');}

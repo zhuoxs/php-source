@@ -1,0 +1,179 @@
+{template 'common/header'}
+
+<div>
+
+	<!-- Nav tabs -->
+	<ul class="nav nav-tabs" role="tablist">
+		<li role="presentation" class="active">
+			<a href="#home" aria-controls="home" role="tab" data-toggle="tab">短信群管理</a>
+		</li>
+		<li role="presentation">
+			<a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">添加短信群</a>
+		</li>
+	</ul>
+
+	<!-- Tab panes -->
+	<div class="tab-content">
+		<div role="tabpanel" class="tab-pane active" id="home">
+			<div class="panel panel-success">
+
+				<!-- Default panel contents -->
+				<div class="panel-heading">短信群管理</div>
+				<div class="panel-body">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>ID</th>
+								<th>群名称</th>
+								<th>群人数</th>
+								<th>状态</th>
+								<th>操作</th>
+							</tr>
+						</thead>
+						<tbody>
+							{loop $grouplist $key $item}
+							<tr>
+								<td>{$item['gid']}</td>
+								<td>{$item['gname']}</td>
+								<td>{php echo getgroupmn($item['weid'],$item['gid'])}</td>
+								<td>
+									{if $item['gstatus']=='0'}<button class="btn btn-success" type="button">正常</button> {elseif $item['gstatus']=='1'}<button class="btn btn-danger" type="button">禁用</button> {else} {/if}
+								</td>
+								<td>
+									<a href="{php echo $this->createWebUrl('group_edit',array('gid'=>$item['gid']));}">
+										<button type="button" class="btn btn-info">编辑</button>
+									</a>
+									<a href="{php echo $this->createWebUrl('group_del',array('gid'=>$item['gid']));}">
+										<button type="button" class="btn btn-info">删除</button>
+									</a>
+								</td>
+							</tr>
+							{/loop}
+						</tbody>
+					</table>
+				</div>
+
+			</div>
+
+		</div>
+		<div role="tabpanel" class="tab-pane" id="profile">
+			<div class="panel panel-success">
+
+				<!-- Default panel contents -->
+				<div class="panel-heading">添加短信群</div>
+				<div class="panel-body">
+					<div class="container-fluid">
+						<div class="row">
+							<div class="col-xs-8">
+								<form action="" method="post" class="form-horizontal">
+									<div class="form-group">
+										<label for="gname" class="col-sm-2 control-label tx-r">短信群名称</label>
+										<div class="col-sm-10">
+											<input type="text" class="form-control" id="gname" name="gname" placeholder="请输入短信群名称">
+										</div>
+									</div>
+									<div class="form-group">
+										<label for="" class="col-sm-2 control-label tx-r"></label>
+										<div class="col-sm-10">
+											<input type="checkbox" name="allChecked" id="allChecked" onclick="DoCheck()"/>全选/取消
+										</div>
+									</div>
+									<div class="form-group">
+										<label for="gmember" class="col-sm-2 control-label tx-r">请选择群成员</label>
+										<div class="col-sm-10">
+											{loop $member $key $item}
+											<label class="checkbox-inline">
+  												<input type="checkbox" name="gmember" value="{php echo $item['tel']}"> {$item['realname']}
+											</label>						
+											{/loop}
+
+										</div>
+									</div>
+
+
+
+									<div class="form-group" style="margin-top:100px;">
+										<label for="" class="col-sm-2 control-label tx-r"></label>
+										<div class="col-sm-10">
+											<button class="btn btn-default" type="button" onclick="subgroup();">保存</button>
+										</div>
+									</div>
+								</form>
+								
+
+							</div>
+							<div class="col-xs-4">
+
+							</div>
+						</div>
+					</div>
+
+				</div>
+
+			</div>
+
+		</div>
+
+	</div>
+
+</div>
+
+{template 'common/footer'}
+
+<script src="{MODULE_URL}myui/js/mui.min.js"></script>
+<script>
+
+	function DoCheck(){
+		var ch=document.getElementsByName("gmember");
+		if(document.getElementsByName("allChecked")[0].checked==true){
+			for(var i=0;i<ch.length;i++){
+				ch[i].checked=true;
+			}
+		}else{
+			for(var i=0;i<ch.length;i++){
+				ch[i].checked=false;
+			}
+		}
+	}
+
+	function subgroup(){
+		var gname=document.getElementById('gname').value; 
+		if(gname==''){
+			alert('群名称不能为空哦~');
+			return;
+		}
+		var obj=document.getElementsByName('gmember'); 
+		var s=''; 
+			for(var i=0; i<obj.length; i++){ 
+				if(obj[i].checked) s+=obj[i].value+','; //如果选中，将value添加到变量s中 
+			} 
+		if(s==''){
+			alert('您还没有选择任何成员~');
+			return;
+		}
+		
+		//alert(s);
+		
+		mui.ajax({
+                    type: "get",
+                    dataType: "json",
+                    url: "{php echo $this->createWebUrl('creategroup',array())}",
+                    data: {
+                    	gname:gname,
+                    	tels:s    	
+                    },
+                 
+                    success: function(msg){
+                    	console.log(JSON.stringify(msg));
+						if(msg.status=='1'){
+							alert(msg.log);
+							window.location.href = "{php echo $this->createWebUrl('group',array())}";
+						}else{
+							alert(msg.log);
+							window.location.href = "{php echo $this->createWebUrl('group',array())}";
+						}
+                    }
+                });  
+		
+	}
+</script>

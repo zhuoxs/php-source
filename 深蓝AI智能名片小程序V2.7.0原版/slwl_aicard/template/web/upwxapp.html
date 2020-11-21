@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{$_W['slwl']['lang']['sys_name']}</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="">
+    {template 'public/header'}
+
+    <style>
+        .div-show { position: relative; background: #eee; line-height: 38px; height: 36px; border: 1px solid #e7e7eb; color: #555; font-size: 14px; padding: 0 10px; }
+        .div-show .dlink { position: absolute; top: 0; right: 10px; display: block; line-height: 38px; color: #1E9FFF; }
+
+        .box-code { display: none; padding: 14px; }
+        .box-code .box-img { width: 256px; height: 256px; }
+        .img-xs img { width: 22px; height: 22px; vertical-align: -6px; }
+    </style>
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+    {template 'public/top'}
+    {template 'public/left'}
+
+    <div class="layui-body">
+        <div class="layui-main">
+
+            <form class="layui-form fixed" action="" method="post" enctype="multipart/form-data" id="data-form">
+                <input type="hidden" name="appid" id="appid" value="{$app_id}" />
+                <input type="hidden" name="plugin" id="plugin" value="{$_W['current_module']['name']}" />
+                <input type="hidden" name="uniacid" id="uniacid" value="{$_W['uniacid']}" />
+                <input type="hidden" name="siteroot" id="siteroot" value="{$_W['slwl']['domain']['https_url']}app/index.php" />
+                <input type="hidden" name="version" id="version" value="{SLWL_VERSION}" />
+                <div class="layui-tab layui-tab-brief" lay-filter="tab">
+                    <ul class="layui-tab-title">
+                        <li class="layui-this">上传小程序</li>
+                    </ul>
+                    <div class="layui-tab-content">
+                        <!-- 上传小程序 -->
+                        <div class="layui-tab-item layui-show">
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">版本号</label>
+                                <div class="layui-input-block">
+                                    <input type="text" class="layui-input" id="ver" name="ver" value="{SLWL_VERSION}" placeholder="版本号如：1.0.0" />
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">版本描述</label>
+                                <div class="layui-input-block">
+                                    <textarea name="intro" class="layui-textarea" id="desc" placeholder="版本描述">{$_W['slwl']['lang']['sys_name']}</textarea>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">跳转小程序</label>
+                                <div class="layui-input-block">
+                                    <div class="div-show">
+                                        <span style="padding-right: 100px;">{$mod_count}</span>
+                                        <a class="dlink" href="{php echo webUrl('mod_wxapp'); }">去添加</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <div class="layui-input-block">
+                                    <!-- <button class="layui-btn" lay-submit="" lay-filter="upwxapp">提交</button> -->
+                                    <a href="javascript:;" class="layui-btn a-upwxapp" title="提交">提交</a>
+                                    <input type="hidden" name="token" value="{$_W['token']}" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <script>
+                layui.use('form', function(){
+                    var form = layui.form;
+                    var $page_clock = 0;
+                    var $page_clock_num = 0;
+
+                    // 显示扫码
+                    $(document).on('click', '.a-upwxapp', function () {
+                        $page_clock_num = 0;
+                        $obj = $(this);
+                        // $obj_main = $obj.closest('.layui-main');
+                        let $url = "{php echo webUrl('upwxapp', array('op'=>'post'))}";
+
+                        let $app_id = $('#appid').val();
+                        let $plugin = $('#plugin').val();
+                        let $ver = $('#ver').val();
+                        let $version = $('#version').val();
+                        let $desc = $('#desc').val();
+                        let $uniacid = $('#uniacid').val();
+                        let $siteroot = $('#siteroot').val();
+
+                        if ($app_id == undefined || $app_id == '') { layer.alert('appid不能为空', {offset: '20%'}); return false; }
+                        if ($plugin == undefined || $plugin == '') { layer.alert('插件模块不能为空', {offset: '20%'}); return false; }
+                        if ($ver == undefined || $ver == '') { layer.alert('版本号不能为空', {offset: '20%'}); return false; }
+                        if ($version == undefined || $version == '') { layer.alert('系统版本号不能为空', {offset: '20%'}); return false; }
+                        if ($desc == undefined || $desc == '') { layer.alert('版本描述不能为空', {offset: '20%'}); return false; }
+                        if ($uniacid == undefined || $uniacid == '') { layer.alert('程序ID不能为空', {offset: '20%'}); return false; }
+                        if ($siteroot == undefined || $siteroot == '') { layer.alert('网站URL不能为空', {offset: '20%'}); return false; }
+
+                        if (!$obj.hasClass('lock')) {
+                            $obj.addClass('lock'); // 不能再点击
+                            let layer_index = layer.msg('正在获取二维码,请耐心等待...', {
+                                icon: 16,
+                                offset: '20%',
+                                time: 0,
+                                shade: 0.1,
+                            });
+
+                            $.ajax({
+                                type: "POST",
+                                url: $url,
+                                dataType: 'json',
+                                data: {
+                                    app_id: $app_id,
+                                    plugin: $plugin,
+                                    ver: $ver,
+                                    version: $version,
+                                    desc: $desc,
+                                    uniacid: $uniacid,
+                                    siteroot: $siteroot,
+                                },
+                                success: function (rs) {
+                                    console.log(rs);
+                                    layer.close(layer.index);
+                                    if (rs.message.errno == '0') {
+                                        $('#qrcode').find('img').attr('src', rs.message.message.data);
+
+                                        layer.open({
+                                            area: '350px',
+                                            type: 1,
+                                            title: '请扫描二维码，确认后将直接上传代码',
+                                            shift: 2,
+                                            offset: '20%',
+                                            content: $('#qrcode'),
+                                        });
+
+                                        setTimeout( function() { fun_check_up(); }, 1000);
+                                    } else {
+                                        layer.alert(rs.message.message, {
+                                            offset: '20%',
+                                        });
+                                    }
+                                    $obj.removeClass('lock');
+                                },
+                                error: function () {
+                                    layer.close(layer.index);
+                                    layer.msg('提交过程发生错误，请与管理员联系', {
+                                        offset: '20%',
+                                    });
+                                    $obj.removeClass('lock');
+                                }
+                            });
+                        }
+                    });
+
+                    // 上传
+                    function fun_check_up()
+                    {
+                        $obj = $(this);
+                        let $url = "{php echo webUrl('upwxapp', array('op'=>'check_up'))}";
+
+                        let $app_id = $('#appid').val();
+                        let $plugin = $('#plugin').val();
+                        let $ver = $('#ver').val();
+                        let $version = $('#version').val();
+                        let $desc = $('#desc').val();
+                        let $uniacid = $('#uniacid').val();
+                        let $siteroot = $('#siteroot').val();
+
+                        $.ajax({
+                            type: "POST",
+                            url: $url,
+                            dataType: 'json',
+                            data: {
+                                app_id: $app_id,
+                                plugin: $plugin,
+                                ver: $ver,
+                                version: $version,
+                                desc: $desc,
+                                uniacid: $uniacid,
+                                siteroot: $siteroot,
+                            },
+                            success: function (rs) {
+                                console.log(rs);
+                                // layer.close(layer.index);
+                                if (rs.message.errno == '0') {
+                                    clearTimeout($page_clock);
+                                    layer.close(layer.index);
+                                    $('#qrcode').find('img').attr('src', '');
+
+                                    let layer_index = layer.msg('登录成功,正在上传中...', {
+                                        icon: 16,
+                                        offset: '20%',
+                                        time: 0,
+                                        shade: 0.1,
+                                    });
+                                    fun_check_preview();
+
+                                } else if (rs.message.errno == '1') {
+                                    if ($page_clock_num < 20) {
+                                        $page_clock_num += 1;
+                                        setTimeout( function() { fun_check_up(); }, 1000);
+                                    } else {
+                                        layer.alert('扫码时间过长，不能超过15秒，请刷新页面重试一次...', {
+                                            area: '500px',
+                                            offset: '20%',
+                                        });
+                                        $page_clock_num = 0;
+                                    }
+                                } else {
+                                    layer.alert(rs.message.message, {
+                                        area: '500px',
+                                        offset: '20%',
+                                    });
+                                }
+                            },
+                            error: function () {
+                                // layer.close(layer.index);
+                                layer.msg('提交过程发生错误，请与管理员联系', {
+                                    offset: '20%',
+                                });
+                                clearTimeout($page_clock);
+                            }
+                        });
+                    }
+
+                    // 预览
+                    function fun_check_preview()
+                    {
+                        $obj = $(this);
+                        let $url = "{php echo webUrl('upwxapp', array('op'=>'check_preview'))}";
+
+                        let $app_id = $('#appid').val();
+                        let $plugin = $('#plugin').val();
+                        let $ver = $('#ver').val();
+                        let $version = $('#version').val();
+                        let $desc = $('#desc').val();
+                        let $uniacid = $('#uniacid').val();
+                        let $siteroot = $('#siteroot').val();
+
+                        $.ajax({
+                            type: "POST",
+                            url: $url,
+                            dataType: 'json',
+                            data: {
+                                app_id: $app_id,
+                                plugin: $plugin,
+                                ver: $ver,
+                                version: $version,
+                                desc: $desc,
+                                uniacid: $uniacid,
+                                siteroot: $siteroot,
+                            },
+                            success: function (rs) {
+                                console.log(rs);
+                                // layer.close(layer.index);
+                                if (rs.message.errno == '0') {
+                                    clearTimeout($page_clock);
+                                    $('#qrcode').find('img').attr('src', 'data:image/jpeg;base64,' + rs.message.message.data);
+                                    $('#qrcode').find('.box-show-ok').removeClass('none');
+                                    layer.close(layer.index);
+
+                                    layer.open({
+                                        area: '500px',
+                                        type: 1,
+                                        title: '扫二维码预览小程序',
+                                        shift: 2,
+                                        offset: '15%',
+                                        content: $('#qrcode'),
+                                        cancel: function () {
+                                            $('#qrcode').find('.box-show-ok').addClass('none');
+                                        }
+                                    });
+                                } else {
+                                    if ($page_clock_num < 20) {
+                                        $page_clock_num += 1;
+                                        setTimeout( function() { fun_check_preview(); }, 1000);
+                                    } else {
+                                        layer.alert('扫码时间过长，不能超过15秒，请刷新页面重试一次...', {
+                                            area: '500px',
+                                            offset: '20%',
+                                        });
+                                        $page_clock_num = 0;
+                                    }
+                                }
+                            },
+                            error: function () {
+                                // layer.close(layer.index);
+                                layer.msg('提交过程发生错误，请与管理员联系', {
+                                    offset: '20%',
+                                });
+                                clearTimeout($page_clock);
+                            }
+                        });
+                    }
+
+                    $(document).on('click', '.btn-build', function () {
+                        fun_check_preview();
+                    });
+                });
+            </script>
+
+        </div>
+    </div>
+
+    {template 'public/copyright'}
+</div>
+
+    {if $operation == 'display'}
+        <div id="qrcode" class="box-code">
+            <div style="text-align: center;padding: 20px 0;"><img class="box-img" src=""></div>
+            <div class="box-show-ok none" style="padding-top: 10px; text-align: center;">
+                <div style="line-height: 30px;">上传代码成功，请到微信开发平台小程序后台预览，提交审核应用。</div>
+                <div style="line-height: 30px; margin-bottom: 10px;">
+                    <span>微信开发平台小程序后台</span>
+                    <a style="color: #1E9FFF;" target="_blank" href="https://mp.weixin.qq.com/">https://mp.weixin.qq.com/</a>
+                </div>
+                <a class="layui-btn" target="_blank" href="https://mp.weixin.qq.com/">去提交审核</a>
+            </div>
+        </div>
+    {/if}
+
+{template 'public/footer'}
+</body>
+</html>

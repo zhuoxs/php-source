@@ -1,0 +1,286 @@
+<div class="side">
+    <!--afterMood-->
+    <!--全网：相关新闻下的搜索-->
+    <div class="search-bar" style="display: none">
+        <form action="" method="get" class="search-form">
+            <input type="hidden" name="from">
+            <input type="hidden" name="channel">
+            <input type="text" name="q" class="search-txt" value="">
+            <i class="search-icon"></i>
+            <input type="submit" class="search-btn" value="">
+            <div id="selectWrap" class="selectWrap">
+                <select name="jmty"> <option value="1">网页</option> </select>
+            </div>
+        </form>
+    </div>
+    <!-- 全网：资讯热点-->
+    <div class="mod mOrder">
+        <section class="od od_xs_2 od_sm_1 od_md_1 hotSpotC">
+            <header class="titlebar tb-o not-bd-b">
+                <h2 class="titlebar-t"><i></i>热点</h2>
+                <!--<a href="/NewsList/index/pn/0?chn=shared" class="titlebar-r commentMore more">更多资讯<i></i></a>-->
+            </header>
+            <div class="switch sw-news">
+                <div class="sw-cont">
+
+                    <div class="slider-list-{$key} sw-area <?php if($key==0){ ?>hover<?php } ?>">
+                        <ul class="list list-order">
+                            <?php foreach($list as $k => $v){ ?>
+                            <li class="li{$k}">
+                                <i></i>
+                                <a href="<?php echo $v['jump'] ? $v['url'] : $this->createMobileUrl('detail',['category_id' => $value['category']['id'],'id' => $v['id']]);?>">{$v['title']}</a>
+                            </li>
+                            <?php } ?>
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+<!--<script src="{STATIC_ROOT}/js/zepto.js"></script>-->
+<script src="{STATIC_ROOT}/js/jquery-3.3.1.min.js"></script>
+<script type="text/template" id="template_reward">
+    <li>
+        <img src="{headimgurl}" class="img-radius" alt="{nickname}">
+    </li>
+</script>
+<script>
+    function formatTemplate(dta, tmpl) {
+        var format = {
+            name: function(x) {
+                return x
+            }
+        };
+        return tmpl.replace(/{([a-zA-Z_0-9]+)}/g, function(m1, m2) {
+            if (!m2) {
+                return "";
+            }
+            return (format && format[m2]) ? format[m2](dta[m2]) : dta[m2];
+        });
+    }
+    $(".slider-category").click(function () {
+        var id = $(this).attr('data-id');
+        $(".slider-category").removeClass('first').find('a').removeClass('cur');
+        $(this).addClass('first').find('a').addClass('cur');
+        $('.sw-area').removeClass('hover');
+        $('.slider-list-'+id).addClass('hover');
+    });
+    $(function() {
+        var e = $(document).scrollTop()
+            , t = $(".header").height();
+        $(window).scroll(function() {
+
+            var o = $(document).scrollTop();
+            if ($(".menuList").hasClass("on"))
+                return !1;
+            o > e ? ($(".header").removeClass("sabit"),
+                $(".fixnav").removeClass("sabit_b"),
+                $(".goTop,.feedbackside").removeClass("navshow")) : ($(".header").addClass("sabit"),
+                $(".fixnav").addClass("sabit_b"),
+                $(".goTop,.feedbackside").removeClass("navshow").addClass("navshow")),
+                o > t ? ($(".header").addClass("gizle"),
+                    $(".fixnav").addClass("gizle_b"),
+                    $(".goTop,.feedbackside").removeClass("navhide").addClass("navhide")) : ($(".header").removeClass("gizle"),
+                    $(".fixnav").removeClass("gizle_b"),
+                    $(".goTop,.feedbackside").removeClass("navshow").addClass("navhide")),
+                e = $(document).scrollTop()
+        })
+    });
+
+
+
+    var comment_url="{php echo $this->createMobileUrl('detail',['category_id' => $category['id'],'_wg' => 'comment']);}";
+    var index_url="{php echo $this->createMobileUrl('shop');}";
+    var article_id={php echo $article['id'];};
+    $("#submit-comment").click(function () {
+        if($.trim($('#content').val()) == '') {
+            alert('评论不能为空');
+            return false;
+        }
+        $.getJSON(comment_url,
+            {
+                content:$('#content').val(),
+                article_id:article_id
+            },
+            function(data) {
+                if(data.code==0) {
+                    $('#content').val('');
+                    alert('评论成功');
+                } else {
+                    alert('评论失败');
+                }
+            },'JSON');
+    });
+    function menuFun(e) {
+        "close" == e ? ($(".header .treturn").removeClass("closeChannel"),
+            $(".sitename").text(""),
+            setTimeout(function() {
+                $(".header .treturn").addClass("gohistory")
+            }, 500),
+            $(".gochannels").removeClass("on"),
+            $(".menuList").removeClass("on")) : ($(".sitename").text("\u5168\u7ad9\u5bfc\u822a"),
+            $(".header .treturn").removeClass("gohistory").addClass("closeChannel"),
+            $(".gochannels").addClass("on"),
+            $(".menuList").addClass("on"))
+    }
+    $(".gochannels").click(function() {
+        menuFun($(".gochannels").hasClass("on") ? "close" : "open")
+    });
+    $('.treturn').click(function (e) {
+        if($(this).hasClass('closeChannel')){
+            menuFun('close');
+        } else {
+            if(history.length<=1){
+                location.href = index_url;
+            }else {
+                history.go(-1);
+                e.stopPropagation();
+                e.preventDefault();
+            }
+
+        }
+    });
+
+    var comment_praise_url="{php echo $this->createMobileUrl('detail',['category_id' => $category['id'],'_wg' => 'praise']);}";
+    $(function () {
+        $('.commup').click(function () {
+            var praise_dom = $(this);
+            var id = praise_dom.parent().attr('data-id');
+            var times = parseInt(praise_dom.attr('praise-times'));
+            $.getJSON(comment_praise_url,
+                {
+                    id:id,
+                    category_id:category_id
+                },
+                function(data) {
+                    if(data.code==0) {
+                        times++;
+                        praise_dom.attr('praise-times', times);
+                        praise_dom.html(times+'<i></i>');
+                    }
+                },'JSON');
+        });
+    });
+    //打赏
+    $('#pay-reward').click(function () {
+        $('#zan-pop').show();
+    });
+    $('#zan-other').click(function () {
+        $('#zan-other-pop').show();
+        $('#detail-money').hide();
+    });
+    $('.zan-close').click(function () {
+        $('#zan-pop').hide();
+    });
+    var pay_url="{php echo $this->createMobileUrl('order',['_wg' => 'ajaxGetOrder']);}";
+    $('.donate-money').click(function () {
+        var money = $(this).attr('data-money');
+        if($(this).attr('id') == 'donate-submit') {
+            money = $('#rewardNum').val();
+        }
+        if(money <=0 ) {
+            alert('金额错误');
+            return false;
+        }
+        $.post(pay_url,
+            {
+                article_id:article_id,
+                money:money
+            },
+            function(data) {
+                if(data.ec !=0) {
+                    alert('支付失败:'+data.ec);
+                    return false;
+                }
+                pay_params = data.data;
+                callpay();
+            },'JSON');
+    });
+
+    function callpay()
+    {
+        if (typeof WeixinJSBridge == "undefined") {
+            if (document.addEventListener) {
+                document.addEventListener('WeixinJSBridgeReady', jsApiCall, false);
+            } else if (document.attachEvent) {
+                document.attachEvent('WeixinJSBridgeReady', jsApiCall);
+                document.attachEvent('onWeixinJSBridgeReady', jsApiCall);
+            }
+        } else {
+            jsApiCall();
+        }
+    }
+    function jsApiCall()
+    {
+        WeixinJSBridge.invoke(
+            'getBrandWCPayRequest',
+            {
+                'appId' : pay_params.appId,
+                'timeStamp': pay_params.timeStamp,
+                'nonceStr' : pay_params.nonceStr,
+                'package' : pay_params.package,
+                'signType' : pay_params.signType,
+                'paySign' : pay_params.paySign
+            },
+            function (res) {
+                WeixinJSBridge.log(res.err_msg);
+                if (res.err_msg == "get_brand_wcpay_request:ok") {
+                    $('#zan-pop').hide();
+                } else {
+                    //返回跳转到订单详情页面
+                    alert('支付失败');
+                }
+            }
+        );
+    }
+
+    //文章praise
+    var article_praise_url="{php echo $this->createMobileUrl('detail',['op' => 'praisearticle']);}";
+    $(function () {
+        $('.praise-btn').click(function () {
+            var praise_dom = $(this);
+            var times = parseInt(praise_dom.html());
+            $.getJSON(article_praise_url,
+                {
+                    id:article_id
+                },
+                function(data) {
+                    if(data.code==0) {
+                        times++;
+                        praise_dom.html(times);
+                    }
+                },'JSON');
+        });
+    });
+    //文章praise
+    var reward_more_url="{php echo $this->createMobileUrl('detail',['category_id' => $category['id'],'article_id' => $article['id'],'_wg' => 'reward']);}";
+    var more_reward = true;
+    var template_reward = $('#template_reward').html();
+    function getReward(id) {
+        if(!more_reward) {
+            return false;
+        }
+        $.getJSON(reward_more_url,
+            {
+                id:id
+            },
+            function(data) {
+                if(!data.more) {
+                    more_reward = false;
+                    $('#more-reward').hide();
+                }
+                $.each(data.list, function (key, dat) {
+                    last_id = dat.id;
+                    $('#reward-list').append(formatTemplate(dat,template_reward));
+                });
+            },'JSON');
+    }
+    <?php if($config['pay'] && ( $this->special['pay'] & $article['special']) ){ ?>
+        getReward(0);
+        $('#more-reward').click(function () {
+            getReward(last_id);
+        });
+    <?php } ?>
+</script>

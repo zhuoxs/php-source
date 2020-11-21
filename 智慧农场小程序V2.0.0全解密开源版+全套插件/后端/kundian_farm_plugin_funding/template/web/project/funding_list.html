@@ -1,0 +1,119 @@
+{template 'web/common/common'}
+{template 'web/common/navbar'}
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm_plugin_funding/resource/css/layui.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm_plugin_funding/resource/css/new-common.css" />
+<blockquote class="layui-elem-quote layui-text">
+    众筹列表
+</blockquote>
+<div class="new-style">
+    <div class="layui-form">
+        <button type="button" class="layui-btn layui-btn-xs" id="shareOutBonus" data-pid="{$pid}">一键全部分红</button>
+        <table class="layui-table" lay-even="" lay-skin="nob">
+            <thead>
+            <tr>
+                <th>订单编号</th>
+                <th>头像</th>
+                <th>姓名</th>
+                <th>联系电话</th>
+                <th>众筹类型</th>
+                <th>众筹档位</th>
+                <th>收益发放时间</th>
+                <th>分红状态</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $fundList $k $v}
+            <tr>
+                <td>{$v['order_number']}</td>
+                <td><img src="{$v['user']['avatarurl']}" style="width: 40px;height: 40px;" alt="封面"></td>
+                <td>{$v['user']['nickname']}</td>
+                <td>{$v['address']['phone']}</td>
+                <td>
+                    {if $v['return_type']==1}
+                    投资分红
+                    {else}
+                    众筹原物
+                    {/if}
+                </td>
+                <td>￥{$v['spec']['price']}</td>
+                <td>{$v['project']['profit_send_time']}</td>
+                <td>
+                    {if $v['is_return']==1}
+                    已分红
+                    {else}
+                    未分红
+                    {/if}
+                </td>
+                <td>
+                    {if $v['is_pay']==1 && $v['return_type']==1}
+                    {if $v['is_return']==0}
+                    <!--<a href="{url 'site/entry/order',array('m'=>'kundian_farm_plugin_funding','op'=>'return_order','id'=>$v['id'],'version_id'=>$_GPC['version_id'],'cate_id'=>$_GPC['cate_id'])}">-->
+                        <button type="button" data-id="{$v['id']}" class="layui-btn layui-btn-sm layui-btn-danger returnOrder">立即分红</button>
+                    <!--</a>-->
+                    {/if}
+                    {/if}
+                </td>
+            </tr>
+            {/loop}
+            </tbody>
+        </table>
+        <div style="text-align: right;">
+            {$pager}
+        </div>
+    </div>
+</div>
+<script src="../addons/kundian_farm/resource/layui.js" charset="utf-8"></script>
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form,layer = layui.layer,layedit = layui.layedit,laydate = layui.laydate;
+
+        //一键全部分红
+        $("#shareOutBonus").click(function () {
+            var pid=$(this).attr("data-pid");
+            layer.confirm('确认将该项目下的众筹全部分红吗？',function (index) {
+                var load=layer.load();
+                $.ajax({
+                    url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'shareOutBonus','version_id'=>$_GPC['version_id'])}",
+                    data:{pid:pid},
+                    method:'post',
+                    dataType:'json',
+                    success:function (res) {
+                        console.log(res.msg);
+                        layer.msg(res.msg);
+                        layer.close(load);
+                        layer.close(index);
+
+
+                    }
+                })
+
+            })
+        })
+
+        //单个订单分红
+        $(".returnOrder").click(function () {
+            var id=$(this).attr("data-id");
+            console.log(id);
+            layer.confirm('确认对该众筹进行分红吗？',function (index) {
+                var load=layer.load();
+                $.ajax({
+                    url:"{url 'site/entry/order',array('m'=>$_GPC['m'],'op'=>'return_order','version_id'=>$_GPC['version_id'])}",
+                    data:{order_id:id},
+                    method:'post',
+                    dataType:'json',
+                    success:function (res) {
+                        console.log(res.msg);
+                        layer.msg(res.msg);
+                        layer.close(load);
+                        layer.close(index);
+                    }
+                })
+
+            })
+        })
+
+
+    });
+</script>

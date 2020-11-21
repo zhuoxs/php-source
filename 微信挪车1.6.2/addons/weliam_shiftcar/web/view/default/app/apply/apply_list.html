@@ -1,0 +1,290 @@
+{php include wl_template('common/header');}
+<style type='text/css'>
+    .trbody td {text-align: center; vertical-align:top;border-left:1px solid #ccc; border-bottom: 1px solid #ddd;}
+	.order-rank img{width:16px; height:16px;}
+	.js-remark,.js-admin-remark{word-break:break-all; overflow:hidden; background: #FDEEEE;color: #ED5050;padding: 5px 10px;}
+	td.goods-info{position:relative; padding-left:60px;}
+	.goods-info .img{position:absolute;top:50%; margin-top:-25px; background: url({IMAGE_LOADING}) center center no-repeat; width:50px;height:50px; }
+	.goods-info span {white-space: nowrap;overflow: hidden;text-overflow: ellipsis;display: block;}
+	.status-text{cursor:pointer;}
+	.table>thead>tr>th, .table>tbody>tr>th, .table>tfoot>tr>th, .table>thead>tr>td, .table>tbody>tr>td, .table>tfoot>tr>td {border-top: 1px solid rgba(221, 221, 221, 0);}
+</style>
+<ul class="nav nav-tabs">
+	<li {if $status == '' }class="active"{/if}>
+        <a href="{php echo web_url('app/apply/list')}">全部订单({$all})</a>
+    </li>
+    <li {if $status == '5'}class="active"{/if}>
+        <a href="{php echo web_url('app/apply/list', array('status' => 5))}">待付款({$status0})</a>
+    </li>
+	<li {if $status == '1'}class="active"{/if}>
+        <a href="{php echo web_url('app/apply/list', array('status' => 1))}">待发货({$status1})</a>
+    </li>
+	<li {if $status == '2'}class="active"{/if}>
+        <a href="{php echo web_url('app/apply/list', array('status' => 2))}">待收货({$status2})</a>
+    </li>
+	<li {if $status == '3'}class="active"{/if}>
+        <a href="{php echo web_url('app/apply/list', array('status' => 3))}">已签收({$status3})</a>
+    </li>
+    <li {if $status == '4'}class="active"{/if}>
+        <a href="{php echo web_url('app/apply/list', array('status' => 4))}">已取消({$status4})</a>
+    </li>
+</ul>
+<div class="main">
+    <div class="panel panel-default">
+	    <div class="panel-heading">筛选</div>
+	    <div class="panel-body">
+            <form action="" method="get" class="form-horizontal" role="form" id="form1">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="{WL_NAME}" />
+                <input type="hidden" name="do" value="app" />
+                <input type="hidden" name="ac" value="apply" />
+                <input type="hidden" name="op" value="list"/>
+                <input type="hidden" name="status" value="{$status}"/>
+                
+                <div class="form-group">
+					<label class="col-md-4 col-lg-1 control-label">订单号</label>
+                    <div class="col-md-4">
+                        <input class="form-control" name="keyword" id="" type="text" value="{$_GPC['keyword']}" placeholder="可查询订单号">
+                    </div>
+                    <label class="col-md-4 col-lg-1 control-label">用户信息</label>
+                    <div class="col-md-4">
+                        <input class="form-control" name="member" id="" type="text" value="{$_GPC['member']}" placeholder="可查询手机号 / 姓名">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-4 col-lg-1 control-label">下单时间</label>
+                    <div class="col-sm-4">
+                        {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d H:i:s', $starttime),'endtime'=>date('Y-m-d H:i:s', $endtime)),true);}
+                    </div>
+                    <label class="col-md-4 col-lg-1 control-label">操作</label>
+                    <div class="col-md-4">
+                        <button class="btn btn-default min-width" name="submit" type="submit"><i class="fa fa-search"></i> 搜索</button>
+                        <button class="btn btn-default min-width" name="export" type="submit" value="export"><i class="fa fa-download"></i> 导出订单</button>
+                    </div>
+                </div>
+            </form>
+	    </div>
+	</div>
+	
+	<div class="order-list">
+		<div class="panel-body table-responsive collapse in" id="order-template-item-4" style="padding: 0;">
+			<table class="table table-bordered">
+				<thead style="background-color: #FFFFFF;">
+					<tr>
+						<th style="width:50px;" class="text-center"><input type="checkbox" onclick="var ck = this.checked;$(':checkbox').each(function(){this.checked = ck});" /></th>
+						<th style="width:150px; text-align:center;">用户信息</th>
+						<th style="width:150px; text-align:center;">地址</th>
+						<th style="width:110px; text-align:center;">下单时间</th>
+						<th style="width:120px; text-align:center;">订单状态</th>
+						<th style="width:100px; text-align:center;">物流</th>
+						<th style="width:110px; text-align:center;">发货时间</th>
+					</tr>
+				</thead>
+			</table>
+		</div>
+		{loop $list $y $item}
+		<div class="panel panel-default">
+			<div class="panel-heading clearfix" style="padding: 10px 15px;">
+				<div class="pull-left">
+					<b>订单号: {$item['ordersn']}</b>
+				</div>
+				<div class="pull-right">
+					<span class="text-muted"></span>&nbsp;&nbsp;
+					<!--<a href="{php echo web_url('order/order/detail', array('id' => $item['id']))}" target="_blank">查看详情</a> --->
+					{if $item['status'] == '待发货'}
+					<a href="javascript:editInfo({$item['id']});" class="confirmsend">确认发货</a> -
+					{/if}
+					<a href="javascript:;" class="js-remove" order-id="{$item['id']}" >删除</a>
+				</div>
+			</div>
+			<div class="panel-body table-responsive" style="padding: 0px;">
+				<table class="table table-bordered">
+					<tbody >
+						<tr>
+							<td class="text-center" style="width:50px;">
+								<center><input type="checkbox" name="checkbox[]" class="checkbox" value="{$item['id']}" /></center>
+							</td>
+							<td class="goods-info line-feed" style="width:150px;padding-left: 10px;">
+								<div class="img"><img class="oscrollLoading" src="{php echo tomedia($item['avatar'])}" height="50" width="50" onerror="this.src='{IMAGE_NOPIC_SMALL}'" ></div>
+								<div class="title" style="padding-left: 60px;">
+									<span>{$item['name']}</span>
+									<p class="text-muted">{$item['mobile']}</p>
+								</div>
+							</td>
+							<td class="text-center" style="width:150px;">
+								{$item['area']}<br>
+								{$item['address']}
+							</td>
+							<td class="text-center" style="width:110px;">{php echo date('Y-m-d', $item['createtime'])}<br>{php echo date('H:i:s', $item['createtime'])}</td>
+							<td class="text-center" style="width:120px;">
+								<span class="label label-{$item['statuscss']}">{$item['status']}</span>
+							</td>
+							<td class="text-center" style="width:100px;">
+								{if !empty($item['express'])}
+								{$item['express']}<br>
+								{$item['expresssn']}
+								{else}
+								暂无
+								{/if}
+							</td>
+							<td class="text-center" style="width:110px;">{if $item['sendtime']}{php echo date('Y-m-d', $item['sendtime'])}<br>{php echo date('H:i:s', $item['sendtime'])}{else}暂无{/if}</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		{/loop}
+	</div>
+	{$pager}
+	<div id="de1" style="margin-top: 15px;">
+		<a href="javascript:;" class="btn btn-default min-width js-batch js-delete">删除选中订单</a>
+	</div>
+</div>
+<!-- 确认发货 -->
+<div id="modal-confirmsend" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button aria-hidden="true" data-dismiss="modal" class="close" type="button">×</button>
+				<h3>快递信息</h3>
+			</div>
+			<div class="modal-body">
+				<div class="form-group" style="height: 50px;">
+					<label class="col-xs-10 col-sm-3 col-md-3 control-label">是否需要快递</label>
+					<div class="col-xs-12 col-sm-9 col-md-8 col-lg-8">
+						<label for="radio_1" class="radio-inline">
+							<input type="radio" name="isexpress" value="1" onclick="$('#expresspanel').show();" checked> 是
+						</label>
+						<label for="radio_2" class="radio-inline">
+							<input type="radio" name="isexpress" value="0" onclick="$('#expresspanel').hide();"> 否
+						</label>
+					</div>
+				</div>
+				<div id="expresspanel">
+					<div class="form-group" style="height: 50px;">
+						<label class="col-xs-10 col-sm-3 col-md-3 control-label">快递公司</label>
+						<div class="col-xs-12 col-sm-9 col-md-8 col-lg-8">
+							<select class="form-control" name="express" id="express">
+								<option value="" data-name="">其他快递</option>
+								<option value="顺丰" data-name="顺丰">顺丰</option>
+								<option value="申通" data-name="申通">申通</option>
+								<option value="韵达快运" data-name="韵达快运">韵达快运</option>
+								<option value="天天快递" data-name="天天快递">天天快递</option>
+								<option value="圆通速递" data-name="圆通速递">圆通速递</option>
+								<option value="中通速递" data-name="中通速递">中通速递</option>
+								<option value="ems快递" data-name="ems快递">ems快递</option>
+								<option value="汇通快运<" data-name="汇通快运">汇通快运</option>
+								<option value="全峰快递" data-name="全峰快递">全峰快递</option>
+								<option value="宅急送" data-name="宅急送">宅急送</option>
+								<option value="aae全球专递" data-name="aae全球专递">aae全球专递</option>
+								<option value="安捷快递" data-name="安捷快递">安捷快递</option>
+								<option value="安信达快递" data-name="安信达快递">安信达快递</option>
+								<option value="彪记快递" data-name="彪记快递">彪记快递</option>
+								<option value="bht" data-name="bht">bht</option>
+								<option value="百福东方国际物流" data-name="百福东方国际物流">百福东方国际物流</option>
+								<option value="coe" data-name="中国东方（COE）">中国东方（COE）</option>
+								<option value="长宇物流" data-name="长宇物流">长宇物流</option>
+								<option value="大田物流" data-name="大田物流">大田物流</option>
+								<option value="德邦物流" data-name="德邦物流">德邦物流</option>
+								<option value="dhl" data-name="dhl">dhl</option>
+								<option value="dpex" data-name="dpex">dpex</option>
+								<option value="dsukuaidi" data-name="d速快递">d速快递</option>
+								<option value="递四方" data-name="递四方">递四方</option>
+								<option value="fedex" data-name="fedex（国外）">fedex（国外）</option>
+								<option value="飞康达物流" data-name="飞康达物流">飞康达物流</option>
+								<option value="fenghuangkuaidi" data-name="凤凰快递">凤凰快递</option>
+								<option value="feikuaida" data-name="飞快达">飞快达</option>
+								<option value="国通快递" data-name="国通快递">国通快递</option>
+								<option value="百世汇通" data-name="百世汇通">百世汇通</option>
+							</select>
+							<input type='hidden' id='orderid' />
+						</div>
+					</div>
+					<div class="form-group"  style="height: 50px;">
+						<label class="col-xs-10 col-sm-3 col-md-3 control-label">快递单号</label>
+						<div class="col-xs-12 col-sm-9 col-md-8 col-lg-8">
+							<input type="text" id="expresssn" name="expresssn" class="form-control" />
+						</div>
+					</div>
+				</div>
+				<div id="module-menus"></div>
+			</div>
+			<div class="modal-footer">
+				<button  class="btn btn-primary span2 js-confirmsend" >确认发货</button>
+				<a href="#" class="btn btn-default" data-dismiss="modal" aria-hidden="true">关闭</a>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- 确认发货 -->
+<script type="text/javascript">
+	require(['daterangepicker'], function($){
+		$('.daterange').on('apply.daterangepicker', function(ev, picker) {
+			$('#form1')[0].submit();
+		});
+	});
+	$('.js-confirmsend').click(function(e) {
+		var id = $('#orderid').val();
+		var express = $('#express').val();
+		var expresssn = $('#expresssn').val();
+		var radio_2 = $('input[name=isexpress]:checked').val();
+		if(radio_2==1){
+			if(expresssn==''){
+				layer.alert("未填快递单号!");return false;
+			}
+		}
+		location.href = "{php echo web_url('app/apply/confirmsend')}&id="+id+"&express="+express+"&expresssn="+expresssn;
+	});
+	function editInfo(orderid) {  
+		$('#orderid').val(orderid);
+	    $('#modal-confirmsend').modal('show');  
+	}  
+	$(function(){
+		//删除
+		$('.order-list').delegate('.js-remove', 'click', function(e){
+			e.stopPropagation();
+			var $this = $(this);
+			var id = $this.attr('order-id');
+			layer.confirm('确认删除订单？', {
+				btn: ['确认','取消'] //按钮
+			}, function(){
+				$.post("{php echo web_url('app/apply/delete')}", { id : id }, function(data){
+					if(!data.errno){
+						$this.parent().parent().parent().remove();
+						layer.alert('删除成功！', function(index){layer.close(index);});  
+					};
+				}, 'json');
+			}, function(){
+				layer.msg('取消删除');
+			});
+		});
+		$('#de1').delegate('.js-delete','click',function(e){
+			e.stopPropagation();
+			var order_ids = [];
+			var $checks=$('.checkbox:checkbox:checked');
+			$checks.each(function() {
+				if (this.checked) {
+					order_ids.push(this.value);
+				};
+			});
+			var $this = $(this);
+			var ids = order_ids;
+			layer.confirm('确认删除所有选中的订单？', {
+				btn: ['确认','取消'] //按钮
+			}, function(){
+				$.post("{php echo web_url('app/apply/delete')}", { ids : ids }, function(data){
+					if(!data.errno){
+						layer.alert('删除成功！', function(index){
+							layer.close(index);
+							location.reload();
+						});
+					};
+				}, 'json');
+			}, function(){
+				layer.msg('取消删除');
+			});
+		});
+	});
+</script>
+{php include wl_template('common/footer');}

@@ -1,0 +1,2 @@
+<?php
+ goto Qd7cI; AWd4q: global $_W, $_GPC; goto dAWQ4; Qd7cI: defined("\x49\116\137\111\101") or exit("\101\143\143\x65\163\163\40\104\145\156\x69\145\144"); goto AWd4q; dAWQ4: include $this->template("\x65\x64\x69\164\x69\x6f\156");

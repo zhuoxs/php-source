@@ -1,0 +1,145 @@
+{template 'common/header'}
+<div class="we7-page-title"> &nbsp; </div>
+<ul class="we7-page-tab">
+<li><a href="{php echo $this->createWebUrl('bbstopic');}">话题管理</a></li>
+<li><a href="{php echo $this->createWebUrl('bbscate');}">话题分类管理 </a></li>
+<li class="active"><a href="{php echo $this->createWebUrl('bbszan');}">点赞管理 </a></li>
+<li><a href="{php echo $this->createWebUrl('bbsreply');}">回复管理 </a></li>
+<li><a href="{php echo $this->createWebUrl('bbscollect');}">收藏管理 </a></li>
+</ul>
+
+<div class="btn-group we7-btn-group we7-margin-bottom">
+<a class="btn {php echo $op=='display'?'active':'';}" href="{php echo $this->createWebUrl('bbszan');}">点赞管理</a>
+</div>
+
+{if $op == 'display'}
+<div class="panel panel-default">
+<div class="panel-heading">筛选</div>
+<div class="panel-body">
+<form action="" method="get" class="form-horizontal form" role="form">
+<input type="hidden" name="c" value="site" />
+<input type="hidden" name="a" value="entry" />
+<input type="hidden" name="m" value="vlinke_cparty" />
+<input type="hidden" name="do" value="bbszan" />
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label">话题分类</label>
+        <div class="col-sm-4">
+            <select class="form-control" name="cateid">
+                <option value="0" {if $cateid==0} selected {/if}>全部分类</option>
+                {loop $bbscate $row}
+                <option value="{$row['id']}" {if $cateid==$row['id']} selected {/if}>{$row['name']}</option>
+                {/loop}
+            </select>
+        </div>
+        <label class="col-sm-2 control-label">党员姓名</label>
+        <div class="col-sm-4">
+            <input class="form-control" name="realname" type="text" placeholder="党员真实姓名..." value="{$realname}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-sm-2 control-label">话题标题</label>
+        <div class="col-sm-5">
+            <input class="form-control" name="title" type="text" placeholder="话题标题..." value="{$title}">
+        </div>
+        <div class="col-sm-5">
+            <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+            <button type="button" class="btn btn-default">总记录数：{$total}</button>
+        </div>
+    </div>
+</form>
+</div>
+</div>
+
+<table class="table we7-table table-hover vertical-middle">
+<thead class="navbar-inner">
+    <tr>
+        <th style="width:10%;">ID</th>
+        <th style="width:10%;">头像</th>
+        <th style="width:45%;">信息</th>
+        <th style="width:20%;">点赞时间</th>
+        <th style="width:15%; text-align:right;">操作</th>
+    </tr>
+</thead>
+<tbody>
+    {loop $list $row}
+    <tr> 
+        <td><input type="checkbox" name="check" value="{$row['id']}"> {$row['id']}</td>
+        <td><img class="img-responsive" style="max-width:60px;" src="{php echo tomedia($row['headpic']);}"/></td>
+        <td>
+            <p><strong>{$row['realname']}-{$row['mobile']}</strong></p>
+            {$row['title']}
+        </td>
+        <td>{php echo date('Y-m-d H:i',$row['createtime'])}</td>
+        <td class="text-right">
+            <a class="btn btn-default btn-sm" href="javascript:funDelete({$row['id']});"><i class="fa fa-times"></i> 删除</a>
+        </td>
+    </tr>
+    {/loop}
+    <tr>
+        <td class="text-left" colspan="5">
+          <span class="btn btn-success btn-sm checkall" id="checkall"><i class="icon-edit"></i>全选</span>
+          <span class="btn btn-success btn-sm uncheckall" id="uncheckall"><i class="icon-edit"></i>全不选</span>
+          <input type="button" class="btn btn-primary btn-sm deleteall" id="deleteall" name="deleteall" value="删除选择的" />
+        </td>
+    </tr>
+</tbody>
+</table>
+<div class="pull-right">{$pager}</div>
+<script>
+    function funDelete(id) {
+        if(confirm("删除后不能恢复，确定要删除吗？")){
+            $.post("<?php echo $this->createWebUrl('bbszan',array('op'=>'delete')); ?>",{id:id},         
+                function(data){
+                    if(data == 'error'){
+                       alert('删除失败！');
+                       location.reload();
+                    }else{
+                       alert('删除成功！');
+                       location.reload();
+                    }
+                }
+            );
+        }
+    }
+
+    $(function(){
+        $('.checkall').bind('click',function(){
+            $("input[name='check']").each(function(){
+               $(this).prop("checked","checked");
+            });
+        });
+        $('.uncheckall').bind('click',function(){
+            $("input[name='check']").each(function(){
+               $(this).prop("checked",false);
+            });
+        });
+
+        $('#deleteall').click(function(){
+            var check = $("input:checked");
+            if(check.length<1){
+                alert("请选择要删除的记录!");
+                return false;
+            }
+            if(confirm("删除话题会同时删除该话题相关的点赞、收藏、回复记录，删除后不能恢复，确定要删除吗？")){
+                var id = new Array();
+                check.each(function(i){ id[i] = $(this).val(); });
+                $.post("<?php echo $this->createWebUrl('bbszan',array('op'=>'deleteall')); ?>",{idArr:id},         
+                    function(data){
+                        if(data == 'error'){
+                           alert('删除失败！');
+                           location.reload();
+                        }else{
+                           alert('删除成功！');
+                           location.reload();
+                        }
+                    }
+                );
+            }
+        });
+
+    });
+</script>
+
+{/if}
+{template 'common/footer'}

@@ -1,0 +1,204 @@
+{php include wl_template('common/header');}
+<link rel="stylesheet" href="{URL_MODULE}/plugin/pocket/app/resource/css/index.css" />
+<div class="page-group">
+	{php include wl_template('pocket/search');}
+	<div class="page page-current">
+		{php include wl_template('pocket/footerbar');}
+		<header class="bar bar-nav newheader">
+		    <a class="button button-link button-nav pull-left back" href="javascript:window.history.back(-1);">
+		      <span class="icon icon-left"></span>
+		      返回
+		    </a>
+		    <h1 class="title">{$typename}</h1>
+		    <a class="button button-link button-nav pull-right open-popup" data-popup=".popup-search">搜索</a>
+		</header>
+		<div class="FL_list" style="margin-top: 2.2rem;">
+			<div class="FL_list01">
+			    <ol class="FL_list011">
+			      <li class="FL_listnow">{$typename}</li>
+			        <div class="Fl_container">
+			            <div class="swiper-wrapper">
+			            {loop $type $ty}	
+			              <li class="swiper-slide" >
+							<a href="{php echo app_url('pocket/pocket/catepage',array('id'=>$ty['id']))}">{$ty['title']}</a>
+			              </li>
+			            {/loop}  
+			            </div>
+			        </div>
+			    </ol>
+			</div>
+		</div>
+		<script type="text/javascript">
+		    $(function(){
+		        var swiper = new Swiper('.Fl_container', {
+		            scrollbarHide: true,
+		            slidesPerView:'auto',
+		            loop:true,
+		            grabCursor: true,
+		            autoplay: 2000,
+		            autoplayDisableOnInteraction: false,
+		            paginationClickable: true
+		        });
+		    })
+		</script>
+		<div class="content infinite-scroll-bottom infinite-scroll" style="margin-top:50px;">
+			{if $second}
+			<div class="cat-small" id="cat-small">
+			  	<div class="item-list">
+			    {loop $second $sec}	
+			        <a href="javascript:;" {if $secondid == $sec['id']} style = "border-color:#fe433f;color:#fe433f;"  class="secdiv ace" {else} class="secdiv" {/if}  twoid="{$sec['id']}">{$sec['title']}</a>
+			    {/loop}    
+			  	</div>
+			  	<div class="clear10"></div>
+			</div>
+			{/if}
+			<ol id="FL_detail">
+			  <li class="FL_detailnow">
+			    <ul class="Tz_box" id="section-linemove"  data-total-pages="0" data-page="0" data-s="0" >
+			
+			    </ul>
+			    <section id="loading" style="text-align:center;color:#A1A1A1;height:32px;line-height:32px;margin-top:12px;font-size:15px;display:none;clear:both;">
+			        <img src="{URL_MODULE}/plugin/pocket/app/resource/images/loading.gif" style="width:17px;" /> 拼命加载中…
+			    </section>
+			    <div id="prompt" style="text-align:center;height:40px;line-height:40px;color:#999;display:none;font-size:14px;clear:both;">无更多信息</div>
+			    <div class="myOrder" style="font-size:14px;clear:both;display: none;" id="emptymyorder">
+			        <div class="no-order text-center">
+			        <p> <img src="{URL_MODULE}/plugin/pocket/app/resource/images/none.png"><Br />暂时没有信息，请稍候再试</p>
+			        </div>
+			    </div>
+			  </li>
+			</ol>
+		
+		</div>
+	</div>
+</div>
+{php include wl_template('htmltpl/pocketlist');}
+<script>
+	//初始化加载
+	var pagesize = 10,
+		loading = false,
+		page = 1,
+		twoid = {$secondid},
+		endmark = 1,
+		hisflag= 0;
+
+		
+		if(sessionStorage.hisData){
+			var hisData = JSON.parse(sessionStorage.hisData);
+			hisData.forEach(function(item, index){
+				if(item.hisUrl == encodeURI(window.location.href+"&aid={$_W['aid']}")){
+					if(item.data.length<50){
+						asd(twoid);
+					}else{
+						$('.Tz_box').html(item.data);
+						$('.infinite-scroll').scrollTop(item.scrollTop);
+						page = item.page;
+						twoid = item.twoid;
+						$('.secdiv').removeClass('ace');
+						$('.secdiv').css('border-color','#E0E0E0');
+						$('.secdiv').css('color','#666');
+						$('.secdiv').each(function(){
+							if($(this).attr('twoid') == item.twoid){
+								$(this).addClass('ace');
+								$(this).css('border-color','#fe433f');
+								$(this).css('color','#fe433f');
+							}
+						});
+						hisflag = 1;
+					}
+				}
+			});
+			if(hisflag == 0){
+				asd(twoid);
+			}
+		}else{
+			asd(twoid);
+		}
+		
+	$('.secdiv').click(function(){
+		$('.secdiv').each(function(){
+			$(this).removeClass('ace');
+			$(this).css('border-color','#E0E0E0');
+			$(this).css('color','#666');
+		});
+		$(this).addClass('ace');
+		$(this).css('border-color','#fe433f');
+		$(this).css('color','#fe433f');
+		twoid = $(this).attr('twoid');
+      	page = 1;
+		$('#section-linemove').html('');
+		asd(twoid);
+	});
+	function asd(twoid){
+		var keyword = $('#keyword').val();
+		$.post("{php echo app_url('pocket/pocket/getinform',array('oneid'=>$id))}",{page:page,pagesize:pagesize,twoid:twoid,keyword:keyword},function(data){
+			addItems(data);
+		},"json");
+	}
+	//渲染页面
+	function addItems(data){
+	    console.log(data);
+		if(data.length){
+			var gettpl = document.getElementById('pocketlist_tpl').innerHTML;
+			laytpl(gettpl).render(data, function(html) {
+				$('#section-linemove').append(html);
+			});
+		}else{
+			$('#prompt').show();
+			endmark = 0;
+		}
+		$('#loading').hide();
+		loading = false;
+	}
+	//下拉加载
+	$(document).on('infinite', '.infinite-scroll-bottom', function() {
+		if(loading) return;
+		loading = true;
+		if(endmark){
+			page ++;
+			$('#loading').show();
+			setTimeout(function() {
+				asd(twoid);
+			}, 800);
+		}
+	});
+	//点赞
+	function dianzan(o,tid){
+		o.children("em").children("img").attr("src","{URL_MODULE}/plugin/pocket/app/resource/images/zan2.png");
+		o.css("color","#ed414a");
+		$.post("{php echo app_url('pocket/pocket/dianzan_ajax')}", {cid:tid}, function(result){
+			if(result.errno != 0) {
+				$.toast(result.message);
+			} else {
+				var zans=parseInt(o.children("i").text());
+				o.children("i").text(zans+1);
+				$.toast('点赞成功');
+			}
+			return false;
+		}, 'json');
+	}
+	//搜索
+	$('#searchBtn').click(function(){
+		$.closeModal('.popup-search');
+		var twoidd = $('.ace').attr('twoid');
+		$('#section-linemove').html('');
+		if(twoidd){
+			asd(twoidd);
+		}else{
+			asd(0);
+		}
+	});
+	$.init();
+	
+	window.onunload = function(){
+		var hisDataItem = {};
+		hisDataItem.hisUrl = encodeURI(window.location.href+"&aid={$_W['aid']}");
+		hisDataItem.data = $('.Tz_box').html();
+		hisDataItem.scrollTop = $('.infinite-scroll').scrollTop();
+		hisDataItem.page = page;
+		hisDataItem.twoid = twoid;
+		console.log($('.Tz_box').html().length);
+		common.History_pag(hisDataItem);
+	}
+</script>
+{php include wl_template('common/footer');}

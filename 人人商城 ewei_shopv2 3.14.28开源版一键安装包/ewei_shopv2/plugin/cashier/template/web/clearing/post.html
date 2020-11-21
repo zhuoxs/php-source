@@ -1,0 +1,177 @@
+{template '_header'}
+<div class="page-heading">
+	<span class='pull-right'>
+		<a class="btn btn-default  btn-sm" href="{php echo webUrl('cashier/clearing')}">返回列表</a>
+	</span>
+    <h2>申请提现</h2>
+</div>
+
+<div class="panel panel-default">
+    <div class='panel-body'>
+        <div style='height:108px;width:200px;float:left;'>
+            <img src='{php echo tomedia($clearing['logo'])}' style='width:192px;height:108px;border:1px solid #ccc;padding:1px' />
+        </div>
+        <div style='float:left;height:108px;overflow: hidden'>
+            收银台名称: {$clearing['title']} <br/>
+            姓名: {$clearing['name']} <br/>
+            手机号: {$clearing['mobile']}<br/>
+        </div>
+    </div>
+</div>
+
+<form id="setform" action="" method="post" class="form-horizontal form-validate">
+    <div class="col-md-12 col-sm-12">
+        <div class="ibox float-e-margins" style="border: 1px solid #e7eaec">
+            <div class="ibox-title">
+                <h5>申请提现金额为(<span class="text-danger">{$total_money}</span>)元 {if !empty($list)}(实际提现金额 <span class="text-danger">{$clearing['money']}</span> 元){/if}</h5>
+            </div>
+            <div class="ibox-title">
+                <h5>以下为申请详情单</h5>
+            </div>
+            <div class="ibox-content">
+                <table class="table table-hover no-margins">
+                    <thead>
+                    <tr>
+                        <th class="col-sm-1">状态</th>
+                        <th class="col-sm-2">日期</th>
+                        <th class="col-sm-1">金额</th>
+                        <th class="col-sm-2">用户</th>
+                        <th class="col-sm-3">订单号</th>
+                        <th class="col-sm-2">是否结算</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {loop $list $key $value}
+                    <tr>
+                        <td>{if $value['status']}<span class="label label-primary">已支付</span>{else}<span class="label label-default">未支付</span>{/if}
+                        </td>
+                        <td>{php echo date('Y-m-d H:i',$value['createtime'])}</td>
+                        <td class="text-navy">{php echo $value['money']+$value['deduction']}</td>
+                        <td>{$user[$value['openid']]['nickname']}</td>
+                        <td class="text-navy">{$value['logno']}</td>
+                        <td>{if $value['is_applypay']=='0'}<span class="label label-default">未结算</span>{elseif $value['is_applypay']=='1'}<span class="label label-warning">申请中</span>{elseif $value['is_applypay']=='2'}<span class="label label-danger">已结算</span>{/if}</td>
+                    </tr>
+                    {/loop}
+                    </tbody>
+                </table>
+                <div class="text-center">{$pager}</div>
+            </div>
+        </div>
+    </div>
+
+    {if $clearing['charge']!=0 }
+    <div class="form-group">
+        <label class="col-sm-2 control-label">收银台提现手续费</label>
+        <div class="col-sm-9 col-xs-12">
+            <div class="input-group">
+                <input type="text" class="form-control" value="{$clearing['charge']}" disabled/>
+                <div class="input-group-addon">%</div>
+            </div>
+            <span class="help-block">收银台提现时,扣除手续费</span>
+        </div>
+    </div>
+    {/if}
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label">结算方式</label>
+        <div class="col-sm-8">
+            <label class="radio-inline"><input type="radio"  name="paytype" value="0" {if empty($clearing['paytype'])}checked="true"{/if} {if !empty($clearing)}disabled{/if}/> 微信</label>
+            <label class="radio-inline"><input type="radio"  name="paytype" value="1" {if $clearing['paytype']=='1'}checked="true"{/if} {if !empty($clearing)}disabled{/if}/> 支付宝</label>
+            <label class="radio-inline"><input type="radio"  name="paytype" value="2" {if $clearing['paytype']=='2'}checked="true"{/if} {if !empty($clearing)}disabled{/if}/> 银行卡</label>
+        </div>
+    </div>
+
+    <div class="form-group paytype1" {if $clearing['paytype'] != '1'}style="display: none"{/if}>
+    <label class="col-sm-2 control-label">支付宝姓名</label>
+    <div class="col-sm-8">
+        <input type="text" name="data[alipayname]" class="form-control" value="{$payinfo['alipayname']}"  placeholder="例如:张三(请填写支付宝账户所对应的姓名,以免打错)" {if !empty($clearing)}disabled{/if}/>
+    </div>
+    </div>
+
+    <div class="form-group paytype1" {if $clearing['paytype'] != '1'}style="display: none"{/if}>
+    <label class="col-sm-2 control-label">支付宝账号</label>
+    <div class="col-sm-8">
+        <input type="text" name="data[alipaynum]" class="form-control" value="{$payinfo['alipaynum']}"  {if !empty($clearing)}disabled{/if}/>
+    </div>
+    </div>
+
+    <div class="form-group paytype2" {if $clearing['paytype'] != '2'}style="display: none"{/if}>
+    <label class="col-sm-2 control-label">银行名称</label>
+    <div class="col-sm-8">
+        <input type="text" name="data[cardtitle]" class="form-control" value="{$payinfo['cardtitle']}"  placeholder="例如:中国银行" {if !empty($clearing)}disabled{/if}/>
+    </div>
+    </div>
+
+    <div class="form-group paytype2" {if $clearing['paytype'] != '2'}style="display: none"{/if}>
+    <label class="col-sm-2 control-label">收款人</label>
+    <div class="col-sm-8">
+        <input type="text" name="data[cardname]" class="form-control" value="{$payinfo['cardname']}" placeholder="例如:张三(请填写银行账户所对应的姓名,以免打错)" {if !empty($clearing)}disabled{/if} />
+    </div>
+    </div>
+
+    <div class="form-group paytype2" {if $clearing['paytype'] != '2'}style="display: none"{/if}>
+    <label class="col-sm-2 control-label">银行账户</label>
+    <div class="col-sm-8">
+        <input type="text" name="data[cardnum]" class="form-control" value="{$payinfo['cardnum']}" {if !empty($clearing)}disabled{/if} />
+    </div>
+    </div>
+
+    {if $clearing['status']=='1'}
+    <div class="form-group">
+        <label class="col-sm-2 control-label">最终打款金额</label>
+        <div class="col-sm-6 col-xs-12">
+            {ife 'cashier.clearing' $clearing}
+            <input type="text" name="realmoney" class="form-control" {if $clearing['status']=='2'}readonly required{/if} value="{$clearing['realmoney']}" />
+            {else}
+            <div class="form-control-static">{$clearing['realmoney']}</div>
+            {/if}
+            <div class="help-block">最终打款金额,如果不填写或者为0,那么就按照申请金额来!</div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label">备注</label>
+        <div class="col-sm-6 col-xs-12">
+            {ife 'cashier.clearing' $clearing}
+            <textarea name="remark" class="form-control">{$clearing['remark']}</textarea>
+            {else}
+            <div class="form-control-static">{$clearing['remark']}</div>
+            {/if}
+        </div>
+    </div>
+    {/if}
+
+{if !empty($id)}
+<div class="form-group">
+    <div class="col-sm-offset-2 col-sm-9 col-xs-12">
+        {if $clearing['status']=='0'}
+        <input type="submit"  value="审核通过" class="btn btn-primary" />
+        {elseif $clearing['status']=='1'}
+            {if $clearing['paytype']=='0'}
+            <input type="submit"  value="确认打款" class="btn btn-primary" />
+            {else}
+            <input type="submit"  value="确认已经手动打款" class="btn btn-primary" />
+            {/if}
+        {/if}
+    </div>
+</div>
+{/if}
+
+</form>
+<script>
+    $(function () {
+        $(":input[name='paytype']").click(function (e) {
+            var $this = $(this);
+            var paytype1 = $(".paytype1");
+            var paytype2 = $(".paytype2");
+            paytype1.hide(),paytype2.hide();
+            if ($this.val()==1){
+                paytype1.show();
+            }
+            if ($this.val()==2){
+                paytype2.show();
+            }
+        });
+    });
+</script>
+{template '_footer'}

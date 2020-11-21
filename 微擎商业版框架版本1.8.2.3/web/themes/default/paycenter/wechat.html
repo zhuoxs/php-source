@@ -1,0 +1,647 @@
+{php $newUI = true;}
+{template 'common/header'}
+<!--收银台-->
+<style>
+	.check-stand .row > div{text-align:center; vertical-align:middle; min-width:300px;}
+	.check-stand .row form{margin-top:100px;}
+	.check-stand .row h6{font-weight:700;}
+	.check-stand .row .qr-area{border:1px dashed #666; width:216px; height:216px; text-align:center; line-height:214px; margin: 5px auto;}
+	.check-stand .row .qr-area .qr-img{width:200px; height:200px;}
+	.check-stand .row .qr-area canvas{vertical-align:middle}
+	.check-stand .row .down-load a{display:block; text-align:center; padding:10px 0;}
+	.table-center td, .table-center th{text-align:center}
+	.table img{cursor:pointer}
+	.table-none-border>tbody>tr>td{border-top:none;}
+</style>
+<ul class="nav nav-tabs">
+	<li {if $do == 'index'}class="active"{/if}><a href="{php echo url('paycenter/wechat/index')}">二维码收款</a></li>
+	<li {if $do == 'qrcode'}class="active"{/if}><a href="{php echo url('paycenter/wechat/qrcode')}">二维码记录</a></li>
+	<li {if $do == 'pay'}class="active"{/if}><a href="{php echo url('paycenter/wechat/pay');}">收款记录</a></li>
+	<li {if $do == 'micro'}class="active"{/if}><a href="{php echo url('paycenter/wechat/micro');}">刷卡收款</a></li>
+	<li {if $action == 'stat' && $do == 'index'}class="active"{/if}><a href="{php echo url('paycenter/stat/index');}">数据统计</a></li>
+</ul>
+{if $do == 'index'}
+<div class="clearfix">
+	<div class="panel panel-default check-stand">
+		<div class="panel-heading">指定金额收款</div>
+		<div class="panel-body row">
+			<div class="col-sm-3">
+				<form action="" method="post" id="form1">
+					<div class="form-group">
+						<input type="text" class="form-control" name="body" placeholder="收款商品名称"/>
+					</div>
+					<div class="form-group">
+						<div class="input-group">
+							<input type="text" class="form-control" name="fee" placeholder="输入金额(至少0.01元)" />
+							<span class="input-group-btn"><button class="btn btn-success btn-submit">生成二维码</button></span>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="col-sm-3">
+				<h6>立刻支付二维码</h6>
+				<div class="qr-area" id="rightNow-qrcode">
+					二维码区域
+				</div>
+				<div>收款:<span id="rightNow-fee">-</span>元</div>
+			</div>
+			<div class="col-sm-3">
+				<h6>永久支付二维码</h6>
+				<div class="qr-area" id="forever-qrcode">
+					二维码区域
+				</div>
+				<div>收款:<span id="forever-fee">-</span>元</div>
+				<div class="down-load"><a href="javascript:;" class="forever-qrcode download" data-name="forever">下载二维码</a></div>
+			</div>
+			<div class="col-sm-3">
+				<h6>自助付款</h6>
+				<div class="qr-area" id="code">
+					<img src="" alt="" class="qr-img"/>
+				</div>
+				<div>买家可自助输入付款金额</div>
+				<div class="down-load"><a  href="javascript:;" class="init-qrcode download">下载二维码</a></div>
+			</div>
+		</div>
+	</div>
+	<div class="panel panel-default">
+		<div class="panel-heading">近期收款情况</div>
+		<div class="panel-body">
+			<table class="table table-hover table-responsive table-center">
+				<thead>
+				<tr>
+					<th>编号</th>
+					<th>付款人</th>
+					<th>付款时间</th>
+					<th>付款金额</th>
+					<th>退款情况</th>
+					<th>操作</th>
+				</tr>
+				</thead>
+				{if !empty($orders)}
+					{loop $orders $order}
+						<tr>
+							<td>{$order['id']}</td>
+							<td>{$order['openid']}</td>
+							<td>{php echo date('Y-m-d H:i:s', $order['paytime']);}</td>
+							<td>{$order['fee']}</td>
+							<td><span class="{$status[$order['status']]['class']}">{$status[$order['status']]['text']}</span></td>
+							<td>
+								<a href="javascript:;" class="btn btn-success btn-sm pay-info" data-id="{$order['id']}">支付详情</a>
+							</td>
+						</tr>
+					{/loop}
+				{/if}
+			</table>
+		</div>
+	</div>
+</div>
+{/if}
+{if $do == 'qrcode'}
+<div class="clearfix">
+	<div class="panel panel-default">
+		<div class="panel-body">
+			<table class="table table-hover table-center table-responsive">
+				<thead>
+				<tr>
+					<th style="text-align:left">编号</th>
+					<th>二维码</th>
+					<th>付款金额(元)</th>
+					<th>生成时间</th>
+					<th>支付状态</th>
+					<th>付款理由</th>
+					<th>操作</th>
+				</tr>
+				</thead>
+				{if !empty($orders)}
+					{loop $orders $order}
+					<tr>
+						<td style="text-align:left">{$order['id']}</td>
+						<td><img src="http://cashier.b0.upaiyun.com/pigcms_static/images/qrcode.png" width="90" class="url-modal" data-pid="{$order['pid']}"></td>
+						<td>{$order['fee']}</td>
+						<td>{php echo date('Y-m-d H:i:s', $order['createtime']);}</td>
+						<td><span class="{$status[$order['status']]['class']}">{$status[$order['status']]['text']}</span></td>
+						<td>{$order['body']}</td>
+						<td>
+							<a href="javascript:;" class="btn btn-success btn-sm pay-info" data-id="{$order['id']}">支付详情</a>
+						</td>
+					</tr>
+					{/loop}
+				{/if}
+			</table>
+		</div>
+	</div>
+	{$pager}
+</div>
+{/if}
+{if $do == 'pay'}
+<div class="clearfix">
+	<div class="panel panel-default">
+		<div class="panel-body">
+			<table class="table table-hover table-center table-responsive">
+				<thead>
+				<tr>
+					<th style="text-align:left">编号</th>
+					<th>付款人</th>
+					<th>付款时间</th>
+					<th>付款理由</th>
+					<th>付款金额(元)</th>
+					<th>退款情况</th>
+					<th>操作</th>
+				</tr>
+				</thead>
+				{if !empty($orders)}
+					{loop $orders $order}
+					<tr>
+						<td style="text-align:left">{$order['id']}</td>
+						<td>{$order['openid']}</td>
+						<td>{php echo date('Y-m-d H:i:s', $order['paytime']);}</td>
+						<td>{$order['body']}</td>
+						<td>{$order['fee']}</td>
+						<td><span class="{$status[$order['status']]['class']}">{$status[$order['status']]['text']}</span></td>
+						<td>
+							<a href="javascript:;" class="btn btn-success btn-sm pay-info" data-id="{$order['id']}">支付详情</a>
+						</td>
+					</tr>
+					{/loop}
+				{/if}
+			</table>
+		</div>
+	</div>
+	{$pager}
+</div>
+{/if}
+{if $do == 'micro'}
+<div class="clearfix" ng-controller="microPay" id="microPay">
+	<div class="panel panel-default">
+		<div class="panel-heading">刷卡收款</div>
+		<div class="panel-body">
+			<div class="col-lg-5">
+				<form action="" class="form" method="post" id="form1">
+					<div class="form-group">
+						<label>商品描述</label>
+						<input type="text" name="body" class="form-control" ng-model="micro.config.body" placeholder="商品名称">
+					</div>
+					<div class="form-group">
+						<label>支付金额</label>
+						<input type="text" name="fee" class="form-control" ng-model="micro.config.fee" ng-init="micro.config.fee" placeholder="支付金额(至少0.01元)">
+					</div>
+					{if !empty($card_set)}
+						<div ng-show="micro.config.body && micro.config.fee">
+							<div class="form-group">
+								<label>会员卡卡号</label>
+								<div class="input-group">
+									<input type="text" name="cardsn" class="form-control" ng-model="micro.config.cardsn" placeholder="输入会员卡卡号">
+									<span class="input-group-btn"><span class="btn btn-success" ng-click="micro.checkCard()">校 验</span></span>
+								</div>
+							</div>
+						</div>
+						<table class="table table-hover table-bordered" ng-show="micro.config.member.uid > 0">
+							<tr>
+								<td colspan="4" style="text-align:center"><h4>{{micro.config.cardsn}}</h4></td>
+							</tr>
+							<tr>
+								<th width="100">姓名</th>
+								<td>{{micro.config.member.realname}}</td>
+								<th>手机号</th>
+								<td>{{micro.config.member.mobile}}</td>
+							</tr>
+							<tr>
+								<th>积分</th>
+								<td>{{micro.config.member.credit1}}</td>
+								<th>余额</th>
+								<td>{{micro.config.member.credit2}}</td>
+							</tr>
+							<tr>
+								<th>会员等级</th>
+								<td>{{micro.config.member.groupname}}</td>
+								<th>优惠信息</th>
+								<td>{{micro.config.member.discount_cn}}</td>
+							</tr>
+						</table>
+						<div class="form-group" ng-show="micro.config.member.uid > 0">
+							<label>实际支付金额</label>
+							<input type="text" name="fact_fee" class="form-control" ng-model="micro.fact_fee" readonly>
+						</div>
+						<div ng-if="micro.fact_fee > 0">
+							<div class="form-group">
+								<label>支付方式</label>
+								<table class="table table-hover table-bordered">
+									<tr>
+										<td>
+											<label class="checkbox-inline"><input type="checkbox" value="1" ng-model="micro.is_credit1_pay" ng-click="micro.checkCredit1()"/> 积分抵现</label>
+											<div class="input-group">
+												<input type="text" class="form-control" value="" ng-model="micro.config.credit1" ng-disabled="!micro.is_credit1_pay"/>
+												<span class="input-group-addon">积分 抵消</span>
+												<input type="text" class="form-control" value="" ng-model="micro.config.offset_money" ng-disabled="!micro.is_credit1_pay"/>
+												<span class="input-group-addon">元</span>
+											</div>
+										</td>
+									</tr>
+									<tr>
+										<td>
+											<label class="checkbox-inline"><input type="checkbox" value="1" ng-model="micro.is_credit2_pay" ng-click="micro.checkCredit2()"/> 余额支付</label>
+											<div class="input-group">
+												<input type="text" class="form-control" value="" ng-model="micro.config.credit2" ng-disabled="!micro.is_credit2_pay"/>
+												<span class="input-group-addon">元</span>
+											</div>
+										</td>
+									</tr>
+									<tr>
+										<td>
+											<label class="checkbox-inline"><input type="checkbox" value="1" ng-model="micro.is_cash_pay" ng-click="micro.checkCash()"/> 现金支付</label>
+											<div class="input-group">
+												<input type="text" class="form-control" value="" ng-model="micro.config.cash" ng-disabled="!micro.is_cash_pay"/>
+												<span class="input-group-addon">元</span>
+											</div>
+										</td>
+									</tr>
+								</table>
+							</div>
+						</div>
+					{/if}
+					<div class="form-group">
+						<label>刷卡授权码</label>
+						<input type="text" name="code" class="form-control" ng-model="micro.code" placeholder="微信刷卡支付授权码(请链接扫码枪扫码)">
+					</div>
+					<div class="form-group text-right">
+						<a class="btn btn-primary" id="micro-submit" ng-click="micro.submit()">确认收款</a>
+						<a class="btn btn-success" style="display:none" id="micro-query">查询支付情况</a>
+					</div>
+				</form>
+			</div>
+			<div class="col-lg-2">
+			</div>
+			<div class="col-lg-5">
+				<table class="table table-hover table-bordered">
+					<tr>
+						<th colspan="3" style="text-align:center"><h4>会员卡信息</h4></th>
+					</tr>
+					<tr>
+						<th style="width:150px">付款返积分比率: </th>
+						<td colspan="2">每消费 1 元赠送 {$card_set['grant_rate']} 积分</td>
+					</tr>
+					<tr>
+						<th width="150">积分抵现金比率: </th>
+						<td colspan="2">{$card_set['offset_rate']} 积分抵 1 元, 单次最多可抵现 {$card_set['offset_max']} 元</td>
+					</tr>
+					{if $card_set['discount_type'] > 0 && !empty($card_set['discount'])}
+						{loop $card_set['discount'] $key $row}
+							<tr>
+								<th width="150">{$_W['account']['groups'][$key]['title']}: </th>
+								{if $card_set['discount_type'] == 1}
+									<td colspan="2">满 {$row['condition']} 元减 {$row['discount']} 元</td>
+								{else}
+									<td colspan="2">满 {$row['condition']} 元打 {php echo $row['discount'] * 10} 折</td>
+								{/if}
+							</tr>
+						{/loop}
+					{/if}
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+{/if}
+
+<div class="modal fade" id="qrcode-modal">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h3 class="modal-title">支付二维码</h3>
+			</div>
+			<div class="modal-body">
+				<div class="qrcode" style="text-align:center; margin:20px 0"></div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="payinfo-modal">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h3 class="modal-title">支付详情</h3>
+			</div>
+			<div class="modal-body"></div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	angular.module('app', []).controller('microPay', function($scope, $http){
+		var card_set_str = '{$card_set_str}';
+		var card = $.parseJSON(card_set_str);
+		$scope.micro = {
+			config: {
+				body: '测试商品',
+				fee: '10',
+				cardsn: '18635132526',
+				card: card,
+				credit1: 0,
+				credit2: 0,
+				offset_money: 0,
+				cash: 0,
+				member: {
+					uid: 0
+				}
+			}
+		};
+		$scope.micro.checkBasic = function() {
+			var body = $.trim($scope.micro.config.body);
+			if(!body) {
+				util.message('商品名称不能为空');
+				return false;
+			}
+			var reg = /^(([1-9]{1}\d*)|([0]{1}))(\.(\d){1,2})?$/;
+			var fee = $.trim($scope.micro.config.fee);
+			if(!reg.test(fee)) {
+				util.message('支付金额不能少于0.01元');
+				return false;
+			}
+		};
+
+		$scope.micro.checkCard = function() {
+			$scope.micro.checkBasic();
+			var cardsn = $.trim($scope.micro.config.cardsn);
+			if(!cardsn) {
+				util.message('卡号不能为空');
+				return false;
+			}
+			$http.post("{php echo url('paycenter/card/check');}", {cardsn: cardsn}).success(function(dat){
+				if(dat.message.errno == -1) {
+					util.message(dat.message.message, '', 'error');
+				} else{
+					$scope.micro.config.member = dat.message.message;
+					$scope.micro.fact_fee = $scope.micro.config.fee;
+					if($scope.micro.config.member.discount_type > 0 && $scope.micro.config.member.discount && ($scope.micro.config.fee >= $scope.micro.config.member.discount.condition)) {
+						if($scope.micro.config.member.discount_type == 1) {
+							$scope.micro.fact_fee = $scope.micro.config.fee - $scope.micro.config.member.discount.discount;
+						} else {
+							$scope.micro.fact_fee = $scope.micro.config.fee * $scope.micro.config.member.discount.discount;
+						}
+						if($scope.micro.fact_fee < 0) {
+							$scope.micro.fact_fee = 0;
+						}
+					}
+					$scope.micro.last_money = $scope.micro.fact_fee;
+					return false;
+				}
+			});
+		};
+
+		$scope.micro.checkCredit1 = function() {
+			$scope.micro.checkLast_money();
+			if(!$scope.micro.is_credit1_pay) {
+				$scope.micro.config.credit1 = 0;
+				$scope.micro.config.offset_money = 0;
+			} else {
+				if($scope.micro.last_money <= 0) {
+					$scope.micro.is_credit1_pay = false;
+					return false;
+				}
+				if($scope.micro.config.card['offset_rate'] > 0 && $scope.micro.config.card['offset_max'] > 0) {
+					var min = Math.min.apply(null, [$scope.micro.config.member.credit1, $scope.micro.config.card.offset_rate * $scope.micro.config.card.offset_max, $scope.micro.config.card.offset_rate * $scope.micro.last_money]);
+					$scope.micro.config.credit1 = min;
+					$scope.micro.config.offset_money = min/$scope.micro.config.card.offset_rate;
+				}
+			}
+			$scope.micro.checkLast_money();
+		}
+
+		$scope.micro.checkCredit2 = function() {
+			$scope.micro.checkLast_money();
+			if(!$scope.micro.is_credit2_pay) {
+				$scope.micro.config.credit2 = 0;
+			} else {
+				if($scope.micro.last_money <= 0) {
+					$scope.micro.is_credit2_pay = false;
+					return false;
+				}
+				$scope.micro.config.credit2 = Math.min.apply(null, [$scope.micro.config.member.credit2, $scope.micro.last_money]);
+			}
+			$scope.micro.checkLast_money();
+		}
+
+		$scope.micro.checkCash = function() {
+			$scope.micro.checkLast_money();
+			if(!$scope.micro.is_cash_pay) {
+				$scope.micro.config.cash = 0;
+			} else {
+				if($scope.micro.last_money <= 0) {
+					$scope.micro.is_cash_pay = false;
+					return false;
+				}
+				$scope.micro.config.cash = $scope.micro.last_money;
+			}
+		}
+
+		$scope.micro.checkLast_money = function() {
+			$scope.micro.last_money = $scope.micro.fact_fee - $scope.micro.config.credit2 - $scope.micro.config.offset_money - $scope.micro.config.cash;
+		}
+
+		$scope.micro.submit = function() {
+			if($scope.micro.config.member.uid > 0) {
+				$scope.micro.checkLast_money();
+				if($scope.micro.last_money != 0) {
+					util.message('支付金额有误', '', 'error');
+					return false;
+				}
+			}
+			if(!$.trim($scope.micro.code)) {
+				util.message('支付授权码不能为空', '', 'error');
+				return false;
+			}
+
+			$http.post("{php echo url('paycenter/wechat/micro');}", $scope.micro.config).success(function(dat){
+				var data = $.parseJSON(data);
+				if(data.message.errno == 0) {
+					util.message('支付成功', '', 'success');
+					$('#form1 :text[name="code"]').val('');
+				} else if(data.message.errno == -1) {
+					util.message('支付失败:' + data.message.message, '', 'error');
+					$('#form1 :text[name="code"]').val('');
+				} else if(data.message.errno == -10) {
+					util.message('支付失败:' + data.message.message + '<br>请点击"查询支付情况"来查询订单支付状态', '', 'error');
+					uniontid = data.message.uniontid;
+					//$('#micro-submit').hide();
+					$('#micro-query').data('uniontid', uniontid);
+					$('#micro-query').show();
+				}
+				return false;
+			});
+		}
+	});
+	angular.bootstrap($('#microPay')[0], ['app']);
+
+	require(['jquery.qrcode'], function(){
+		$('.card-submit').click(function(){
+			var cardsn = $.trim($(':text[name="cardsn"]').val());
+			if(!cardsn) {
+				util.message('卡号不能为空');
+				return false;
+			}
+			$.post("{php echo url('paycenter/card');}", {cardsn: cardsn}, function(data){
+				var data = $.parseJSON(data);
+
+			});
+		});
+
+
+		//刷卡支付
+		$('#micro-submitd').click(function(){
+			var uniontid = '';
+			$('#micro-query').data('uniontid', '');
+			var body = $.trim($('#form1 :text[name="body"]').val());
+			if(!body) {
+				util.message('商品名称不能为空');
+				return false;
+			}
+			var reg = /^(([1-9]{1}\d*)|([0]{1}))(\.(\d){1,2})?$/;
+			var fee = $.trim($('#form1 :text[name="fee"]').val());
+			if(!reg.test(fee)) {
+				util.message('支付金额不能少于0.01元');
+				return false;
+			}
+			var code = $.trim($('#form1 :text[name="code"]').val());
+			if(!code) {
+				util.message('微信刷卡支付授权码不能为空');
+				return false;
+			}
+			$.post("{php echo url('paycenter/wechat/micro');}", {body: body, fee: fee, code: code}, function(data){
+				var data = $.parseJSON(data);
+				if(data.message.errno == 0) {
+					util.message('支付成功', '', 'success');
+					$('#form1 :text[name="code"]').val('');
+				} else if(data.message.errno == -1) {
+					util.message('支付失败:' + data.message.message, '', 'error');
+					$('#form1 :text[name="code"]').val('');
+				} else if(data.message.errno == -10) {
+					util.message('支付失败:' + data.message.message + '<br>请点击"查询支付情况"来查询订单支付状态', '', 'error');
+					uniontid = data.message.uniontid;
+					//$('#micro-submit').hide();
+					$('#micro-query').data('uniontid', uniontid);
+					$('#micro-query').show();
+				}
+				return false;
+			});
+		});
+
+		$('#micro-query').click(function(){
+			var uniontid = $(this).data('uniontid');
+			if(!uniontid) {
+				util.message('订单号错误', '', 'error');
+				return false;
+			}
+			$.post("{php echo url('paycenter/wechat/query');}", {uniontid : uniontid}, function(data){
+				var data = $.parseJSON(data);
+				if(data.message.errno != 0) {
+					util.message(data.message.message);
+					return false;
+				} else {
+					util.message('支付成功', '', 'success');
+					$('#form1 :text[name="code"]').val('');
+					return false;
+				}
+			});
+		});
+
+		//扫码支付
+		$('.btn-submit').click(function(){
+			var body = $.trim($('#form1 :text[name="body"]').val());
+			if(!body) {
+				util.message('付款理由不能为空');
+				return false;
+			}
+			var reg = /^(([1-9]{1}\d*)|([0]{1}))(\.(\d){1,2})?$/;
+			var fee = $.trim($('#form1 :text[name="fee"]').val());
+			if(!reg.test(fee)) {
+				util.message('支付金额不能少于0.01元');
+				return false;
+			}
+			$.post("{php echo url('paycenter/wechat/index');}", {body: body, fee: fee}, function(data){
+				var data = $.parseJSON(data);
+				if(data.message.errno != 0) {
+					util.message(data.message.message);
+					return false;
+				} else {
+					var option = {
+						render: 'canvas',
+						width: 200,
+						height: 200
+					}
+					option.text = data.message.rightNow
+					$('#rightNow-qrcode').html('').qrcode(option);
+					option.text = data.message.forever;
+					$('#forever-qrcode').html('').qrcode(option);
+					$('.forever-qrcode').data('text', data.message.forever);
+					$('.forever-qrcode').data('name', 'forever-pay-' + fee);
+					$('#rightNow-fee, #forever-fee').html(fee);
+				}
+			});
+			return false;
+		});
+
+		$('.download').click(function(){
+			var text = $(this).data('text');
+			if(!text) {
+				util.message('参数错误 ', '', 'error');
+				return;
+			}
+			var name = $(this).data('name');
+			var url = "{php echo url('paycenter/wechat/download');}";
+			text = encodeURIComponent(text);
+			location.href = url + '&text=' + text + '&name=' + name;
+		});
+
+		$('.url-modal').click(function(){
+			var pid = $(this).data('pid');
+			if(!pid) {
+				util.message('商品编号pid错误', '', 'error');
+				return false;
+			}
+			$.post("{php echo url('paycenter/wechat/url');}", {pid: pid}, function(data) {
+				var data = $.parseJSON(data);
+				if(data.message.errno == -1) {
+					util.message(data.message.message, '', 'error');
+					return false;
+				} else {
+					$('#qrcode-modal .qrcode').html('').qrcode({
+						render: 'canvas',
+						width: 350,
+						height: 350,
+						text: data.message.message
+					});
+					$('#qrcode-modal').modal('show');
+					return false;
+				}
+			});
+		});
+
+		$('.pay-info').click(function(){
+			var id = $(this).data('id');
+			if(!id) {
+				util.message('订单编号错误', '', 'error');
+				return false;
+			}
+			$.post("{php echo url('paycenter/wechat/info');}", {id: id}, function(data) {
+				var data = $.parseJSON(data);
+				if(data.message.errno == -1) {
+					util.message(data.message.message, '', 'error');
+					return false;
+				} else {
+					$('#payinfo-modal .modal-body').html(data.message.message);
+					$('#payinfo-modal').modal('show');
+					return false;
+				}
+			});
+		});
+	});
+</script>
+{template 'common/footer'}

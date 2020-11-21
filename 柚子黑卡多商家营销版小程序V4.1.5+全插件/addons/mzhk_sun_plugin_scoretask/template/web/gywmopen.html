@@ -1,0 +1,343 @@
+{template 'public/header'}
+{template 'public/comhead'}
+<link rel="stylesheet" type="text/css" href="../addons/mzhk_sun/template/public/ygcss.css">
+<script charset="utf-8" src="https://map.qq.com/api/js?v=2.exp"></script>
+<script>
+var geocoder,map,defaultmarker = null,marker = null,clickmarker = null;
+var txmap = function() {
+    var coordinates = "{$item['coordinates']}";
+    var isdefault = false;
+    if(coordinates!=''){
+        var lat = "{$item['latitude']}"; //纬度
+        var lng = "{$item['longitude']}";//经度
+    }else{
+        coordinates = "39.916527,116.397128";
+        var lat = "39.916527"; //纬度
+        var lng = "116.397128";//经度
+        isdefault = true;
+        //获取城市列表接口设置中心点 IP
+        citylocation = new qq.maps.CityService({
+            complete : function(result){
+                map.setCenter(result.detail.latLng);
+                //console.log(result.detail);
+                $("#coordinates").val(result.detail.latLng);
+                $("#address").val(result.detail.name);
+                //设置marker标记
+                defaultmarker = new qq.maps.Marker({
+                    map : map,
+                    position : result.detail.latLng
+                });
+            }
+        });
+    }
+    var center = new qq.maps.LatLng(lat,lng);
+    map = new qq.maps.Map(document.getElementById('container'),{
+        center: center,
+        zoom: 15,
+    });
+    //设置marker标记
+    defaultmarker = new qq.maps.Marker({
+        map : map,
+        position : center
+    });
+    if(isdefault){
+        //调用searchLocalCity();方法    根据用户IP查询城市信息。
+        citylocation.searchLocalCity();
+    }
+    
+    //调用地址解析类
+    geocoder = new qq.maps.Geocoder({
+        complete : function(result){
+            $("#coordinates").val(result.detail.location);
+            $("#address").val(result.detail.address);
+            map.setCenter(result.detail.location);
+            if(defaultmarker){
+                defaultmarker.setMap(null);
+            }
+            if(clickmarker){
+                clickmarker.setMap(null);
+            }
+            if(marker){
+                marker.setMap(null);
+            }
+            marker = new qq.maps.Marker({
+                map:map,
+                position: result.detail.location
+            });
+
+        }
+    });
+
+    //添加监听事件   获取鼠标单击事件
+    qq.maps.event.addListener(map, 'click', function(event) {
+        //设置点击标记
+        clickmarker=new qq.maps.Marker({
+            position:event.latLng, 
+            map:map
+        });    
+        qq.maps.event.addListener(map, 'click', function(event) {
+            if(clickmarker){
+                clickmarker.setMap(null);
+            }
+            if(marker){
+                marker.setMap(null);
+            }    
+        });
+        //通过经纬度获取地址名称
+        getClickAddress(event.latLng);
+    });
+}
+
+function codeAddress() {
+    var address = document.getElementById("address").value;
+    //通过getLocation();方法获取位置信息值
+    geocoder.getLocation(address);
+}
+
+function getClickAddress(latLng){
+    geocoder.getAddress(latLng);
+}
+
+
+</script>
+<style type="text/css">
+    input[type="radio"] + label::before {
+        content: "\a0"; /*不换行空格*/
+        display: inline-block;
+        vertical-align: middle;
+        font-size: 16px;
+        width: 1em;
+        height: 1em;
+        margin-right: .4em;
+        border-radius: 50%;
+        border: 2px solid #ddd;
+        text-indent: .15em;
+        line-height: 1; 
+    }
+    input[type="radio"]:checked + label::before {
+        background-color: #444444;
+        background-clip: content-box;
+        padding: .1em;
+        border: 2px solid #444444;
+    }
+    input[type="radio"] {
+        position: absolute;
+        clip: rect(0, 0, 0, 0);
+    }
+</style>
+
+<ul class="nav nav-tabs">    
+    <span class="ygxian"></span>
+    <div class="ygdangq">当前位置:</div>
+    <li class="active"><a href="javascript:void(0);">关于我们设置</a></li>
+    <!--<li><a href="{php echo $this->createWebUrl('groups')}">关于我们列表</a></li>
+    <li><a href="{php echo $this->createWebUrl('addgroups')}">添加关于我们</a></li>-->
+</ul>
+<div class="main">
+    <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+        <!--<input type="hidden" name="parentid" value="{$parent['id']}" />-->
+        <div class="panel panel-default ygdefault">
+            <div class="panel-heading wyheader">
+                关于我们设置
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label for="lastname" class="col-sm-2 control-label">关于我们</label>
+                    <div class="col-sm-10">
+                         <label class="radio-inline">
+                            <input type="radio" id="emailwy1" name="is_gywmopen" value="1" {if $item['is_gywmopen']==1}checked{/if} />
+                            <label for="emailwy1">开启</label>
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="emailwy2" name="is_gywmopen" value="2" {if $item['is_gywmopen']==2}checked{/if} />
+                            <label for="emailwy2">关闭</label>
+                        </label>
+                        <div class="help-block">*是否开启关于我们，选择关闭前端首页无功能</div>
+                    </div>
+                </div>
+            </div>
+           
+          <!--   <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">门店地址</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="address"  class="form-control" value="{$item['address']}" style="width: 740px;"/>
+                    </div>
+                </div>-->
+          
+               <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">门店地址</label>
+                    <div class="col-sm-9">
+                        <input id="address" name="address" type="textbox" value="{$item['address']}" style="height: 35px;line-height: 35px;width: 300px;">
+                        <a href="javascript:void(0);" id="searchmap" style="display: inline-block;padding: 10px 30px;background: #444444;color: #fff;" onclick="codeAddress()">定位</a>
+                        <div style="color: #f00;padding: 5px 0;">地址为空时默认通过ip定位到城市中心，输入地址之后需要点击"定位"按钮进行定位</div>
+                        <div style="width: 50%;height: 400px;" id="container"></div>
+                        <div style=" padding-top: 5px;">经纬度：<input id="coordinates" name="coordinates" type="textbox" value="{$item['coordinates']}" readonly="readonly" style="height: 35px;line-height: 35px;width: 300px;"></div>
+                    </div>
+                    
+                </div>
+          
+          
+          
+             <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">关于我们banner</label>
+                    <div class="col-sm-9"  style="width: 780px;">
+                        {php echo tpl_form_field_image('gywm_banner', $item['gywm_banner'])}
+                        <span class="help-block">建议尺寸大小：750*374</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">客服时间</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="customer_time" placeholder="该文字体现在关于我们客服时间"  class="form-control" value="{$item['customer_time']}" style="width: 740px;"/>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">基础服务</label>
+                        <div class="col-sm-9">
+                            <input type="text" name="provide" class="form-control" value="{$item['provide']}" placeholder="停车位,wifi,微信支付" style="width: 740px;"/>
+                            <span style="color: #999;">*多个请用英文逗号隔开</span>
+                        </div>
+                    </div>
+          
+           <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">图文详情</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_ueditor('shopdes',$item['shopdes']);}
+                    </div>
+                </div>
+          
+         <!--     <div class="form-group" style="width: 90%;margin-left: 15px;">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商店简介</label>
+                    <div class="col-sm-10">
+                        <textarea name="shopdes" class="form-control" cols="30" rows="7">{$item['shopdes']}</textarea>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商店介绍图</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_multi_image('shopdes_img',$shopdes_img);}
+                        建议尺寸大小：750*自适应
+                    </div>
+                </div>
+          
+          
+          <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">关于我们分享标题自定义</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="gywm_title" class="form-control" value="{$item['gywm_title']}" />
+                    </div>
+                </div>
+            </div>--->
+            <!--<div class="panel-body test1">-->
+                <!--<div class="form-group">-->
+                    <!--<label class="col-xs-12 col-sm-3 col-md-2 control-label">未满团购人数退款方式</label>-->
+                    <!--<div  class="col-sm-9">-->
+                        <!--<select id="refund" name="refund" style="margin-left: 20px;width: 300px;">-->
+                            <!--{if $item['refund']==1}-->
+                            <!--<option value="1" selected>买家申请退款</option>-->
+                            <!--<option value="2">自动退款</option>-->
+                            <!--{elseif $item['refund']==2}-->
+                            <!--<option value="1" >买家申请退款</option>-->
+                            <!--<option value="2" selected>自动退款</option>-->
+                            <!--{else}-->
+                            <!--<option value="1" >买家申请退款</option>-->
+                            <!--<option value="2" >自动退款</option>-->
+                            <!--{/if}-->
+                        <!--</select>-->
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="panel-body" id="refund_times">-->
+                    <!--<div class="form-group">-->
+                        <!--<label class="col-xs-12 col-sm-3 col-md-2 control-label">自动退款时间</label>-->
+                        <!--<div class="col-sm-9">-->
+                            <!--<select name="refund_time" style="margin-left: 10px;width: 300px;">-->
+                                <!--{loop $info $index $items}-->
+                                <!--<option value="{$index}" {if $item['refund_time']==$index} selected{/if}>{$items}</option>-->
+                                <!--{/loop}-->
+                            <!--</select>-->
+                            <!--<span style="color: #999">*注：买家申请退款无需选择退款时间</span>-->
+                        <!--</div>-->
+                    <!--</div>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+
+        <div class="form-group">
+            <input type="hidden" id="hidden" value="{$item['refund']}" />
+            <input type="submit" name="submit" value="提交" class="btn col-lg-3" style="color: white;background-color: #444444;margin-left: 400px;"/>
+            <input type="hidden" name="token" value="{$_W['token']}" />
+            <input type="hidden" name="id" value="{$item['id']}" />
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    $(function(){
+        $("#frame-12").show();
+        $("#yframe-12").addClass("wyactive");
+         txmap();
+        var refund = $('#hidden').val();
+        if(refund==2){
+            $('#refund_times').show();
+        }else{
+            $('#refund_times').hide();
+        }
+
+        // var refunds = $(':selected').val();
+        // if(refunds==2){
+        //     var item = $('#hidden').val();
+        //     var refund_time = '<div class="panel-body" id="refund_time">\n' +
+        //         '                    <div class="form-group">\n' +
+        //         '                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">自动退款时间</label>\n' +
+        //         '                        <div class="col-sm-9">\n' +
+        //         '                            <select name="refund_time" class="refund_times" style="margin-left: 10px;width: 300px;">\n' +
+        //         '                                <option value="0">请选择</option>\n' +
+        //         '                                <option value="1">24小时</option>\n' +
+        //         '                                <option value="2">48小时</option>\n' +
+        //         '                                <option value="3">72小时</option>\n' +
+        //         '                                <option value="4">活动结束自动退款</option>\n' +
+        //         '                                <option value="5">不退款，直接发货</option>\n' +
+        //         '                            </select>\n' +
+        //         '                            <span style="color: #999">*注：买家申请退款无需选择退款时间</span>\n' +
+        //         '                        </div>\n' +
+        //         '                    </div>\n' +
+        //         '                </div>'
+        //     $('.test1').after(refund_time)
+        // }else{
+        //     $('#refund_time').hide()
+        // }
+        $('select[name=refund]').change(function () {
+            var refund = $(':selected').val()
+            var refund_time = '<div class="panel-body" id="refund_time">\n' +
+                '                    <div class="form-group">\n' +
+                '                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">自动退款时间</label>\n' +
+                '                        <div class="col-sm-9">\n' +
+                '                            <select name="refund_time" class="refund_times" style="margin-left: 10px;width: 300px;">\n' +
+                '                                <option value="0">24小时</option>\n' +
+                '                                <option value="1">48小时</option>\n' +
+                '                                <option value="2">72小时</option>\n' +
+                '                                <option value="3">活动结束自动退款</option>\n' +
+                '                                <option value="4">不退款，直接发货</option>\n' +
+                '                            </select>\n' +
+                '                            <span style="color: #999">*注：买家申请退款无需选择退款时间</span>\n' +
+                '                        </div>\n' +
+                '                    </div>\n' +
+                '                </div>'
+            if(refund==2){
+                $('.test1').after(refund_time)
+            }else{
+                $('#refund_time').hide()
+                $('#refund_times').hide()
+            }
+
+        })
+    })
+
+
+</script>
+  <style type="text/css">
+    .big-menu{overflow:inherit;}
+</style>

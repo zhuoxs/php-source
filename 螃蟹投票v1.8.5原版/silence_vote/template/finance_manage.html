@@ -1,0 +1,580 @@
+{template 'common/header'}
+<link href="{MODULE_URL}/template/static/css/layui.css" rel="stylesheet">
+<link href="{MODULE_URL}/template/static/css/hujia.css" rel="stylesheet">
+<style>
+	.myinqut
+	{
+		width: 250px;
+		margin-left: 20px;
+	}
+	.myinqut_one
+	{
+		width: 285px;
+		margin-left: 20px;
+	}
+	.mysou
+	{
+		width: 80px;
+		margin-left: 10px;
+	}
+	.kani
+	{
+		margin-left: 18px;
+	}
+</style>
+<ul class="nav nav-tabs">
+    <li {if $operation=='agent'}class="active"{/if}>
+        <a href="{php echo $this->createWebUrl('financemanage', array('op' => 'agent'))}">收益管理-经纪人</a>
+    </li>
+    <li {if $operation=='player'}class="active"{/if}>
+        <a href="{php echo $this->createWebUrl('financemanage', array('op' => 'player'))}">收益管理-选手</a>
+    </li>
+    <li {if $operation=='active'}class="active"{/if}>
+        <a href="{php echo $this->createWebUrl('financemanage', array('op' => 'active'))}">收益管理-活动</a>
+    </li>
+    <li {if $operation=='timezone'}class="active"{/if}>
+        <a href="{php echo $this->createWebUrl('financemanage', array('op' => 'timezone'))}">收益管理-时间段</a>
+    </li>
+</ul>
+
+{if $operation == 'agent'}
+
+        
+
+            <form action="../index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site"/>
+                <input type="hidden" name="a" value="entry"/>
+                <input type="hidden" name="m" value="silence_vote"/>
+                <input type="hidden" name="do" value="financemanage"/>
+                <input type="hidden" name="op" value="agent"/>
+                <div class="xihuan_jjr">
+                    <label class="control-label kani">关键字</label>
+                    <div class="myinqut">
+                        <input class="form-control" name="keyword" placeholder="请输入经纪人姓名" type="text" value="{$keyword}">
+                    </div>
+                    <div class="mysou">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+                
+            </form>
+       
+
+    
+
+    <fieldset class="layui-elem-field" style="margin-top: 30px;">
+  <legend class="guanwo">总数：{$total} <span>(点击收益可查看详细清单)</span> 全局返佣状态：{if $checkrakeback}开启{else}关闭{/if}</legend>
+    <div class="table-responsive panel-body">
+        <form action="" method="post" class="form form-horizontal">
+        	
+        	
+        	<table class="layui-table" lay-skin="line">
+  <colgroup>
+    <col width="70">
+    <col width="150">
+    <col width="150">
+    <col width="150">
+    <col width="150">
+    <col width="140">
+    <col width="140">
+    <col width="140">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>编号</th>
+      <th>经纪人账号</th>
+      <th>经纪人姓名</th>
+      <th>手机号</th>
+      <th>招募选手直接收益</th>
+      <th>一级分销收益</th>
+      <th>二级分销收益</th>
+      <th>三级分销收益</th>
+    </tr> 
+  </thead>
+  <tbody id="level-list">
+  	{loop $totalfee $row}
+    <tr>
+      <td><span class="text-info">{$row['agent_id']}</td>
+      <td>{$row['username']}</td>
+      <td style="color: #428bca;">{$row['realname']}</td>
+      <td>{$row['phonenum']}</td>
+      <td><a style="color: #5cb85c;" href="{php echo $this->createWebUrl('financemanage',array('op'=>'checkplrw','aid'=>$row['agent_id']))}">{$row['playerreward']}</a></td>
+      <td><a style="color: #5cb85c;" href="{php echo $this->createWebUrl('financemanage',array('op'=>'checkfeeone','aid'=>$row['agent_id']))}">{$row['fee_one']}</a></td>
+      <td><a style="color: #5cb85c;" href="{php echo $this->createWebUrl('financemanage',array('op'=>'checkfeetwo','aid'=>$row['agent_id']))}">{$row['fee_two']}</a></td>
+      <td><a style="color: #5cb85c;" href="{php echo $this->createWebUrl('financemanage',array('op'=>'checkfeethree','aid'=>$row['agent_id']))}">{$row['fee_three']}</a></td>
+	  
+    </tr>
+    {/loop}
+    <tr>
+                    <td colspan="8">
+<!--                        <input name="deleteall" type="button" class="btn btn-primary" value="批量删除">-->
+                        <input type="hidden" name="token" value="{$_W['token']}"/>
+                    </td>
+                </tr>
+  </tbody>
+</table>
+        	
+            <div class="pull-right">
+                {$pager}
+            </div>
+
+        </form>
+    </div>
+    </fieldset>
+<!--</div>-->
+<script type="text/javascript">
+    $(function () {
+        $(".check_all").click(function () {
+            $("[type='checkbox']").each(function () {
+                if ($(this).prop("checked")) {
+                    $(this).attr("checked", false);
+                    $(".check_all").prop("checked", false);
+                } else {
+                    if ($(this).attr("disabled") != "disabled") {
+                        $(this).prop("checked", true);
+                        $(".check_all").prop("checked", true);
+                    }
+                }
+            });
+        });
+        $("input[name=deleteall]").click(function () {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if (check.length < 1) {
+                alert('请选择要删除的数据!');
+                return false;
+            }
+            if (confirm("确认要删除选择的数据?")) {
+                var id = new Array();
+                check.each(function (i) {
+                    id[i] = $(this).val();
+                });
+
+                var url = "{php echo $this->createWebUrl('financemanage', array('op' => 'deleteall'))}";
+                $.post(
+                    url,
+                    {idArr: id},
+                    function (data) {
+                        top.location.reload();
+                    }, 'json');
+            }
+        });
+
+
+    });
+</script>
+{elseif $operation == 'checkplrw'}
+<!--<div class="panel panel-default">-->
+    <!--<div class="panel-heading">经纪人id:{$aid}</div>-->
+    <fieldset class="layui-elem-field" style="margin-top: 50px;">
+  <legend class="guanwo">经纪人id:{$aid}</legend>
+    <div class="table-responsive panel-body">
+        <form action="" method="post" class="form form-horizontal">
+        	
+        	<table class="layui-table" lay-skin="line">
+  <colgroup>
+    <col width="120">
+    <col width="150">
+    <col width="150">
+    <col width="150">
+    <col width="150">
+    <col width="140">
+    <col width="140">
+    <col width="140">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>选手编号</th>
+      <th>选手nickname</th>
+      <th>选手name</th>
+      <th>选手礼物总额</th>
+      <th>活动标题</th>
+      <th>活动招募选手返佣比%</th>
+      <th>活动编号</th>
+      <th>rid</th>
+    </tr> 
+  </thead>
+  <tbody id="level-list">
+                {loop $ag_pl $row}
+    <tr>
+        <td><span class="text-info">{$row['id']}</td>
+	    <td>{$row['nickname']}</td>
+	    <td>{$row['name']}</td>
+	    <td>{$row['totalfee']}</td>
+	    <td>{$row['reply_title']}</td>
+	    <td>{$row['rewardagentpercent']}</td>
+	    <td>{$row['reply_id']}</td>
+	    <td>{$row['rid']}</td>
+	  
+    </tr>
+    {/loop}
+    <tr>
+                    <td colspan="8">
+                        <input type="hidden" name="token" value="{$_W['token']}"/>
+                    </td>
+                </tr>
+  </tbody>
+</table>
+        	
+    
+            <div class="pull-right">
+                {$pager}
+            </div>
+
+        </form>
+        <input type=button value=后退 onclick="window.history.go(-1)" class="btn btn-primary col-lg-1"> 
+    </div>
+    </fieldset>
+<!--</div>-->
+{elseif $operation == 'checkfeeone' || $operation == 'checkfeetwo' || $operation == 'checkfeethree'}
+<!--<div class="jiayang">当前经纪人id:{$aid}</div>-->
+<fieldset class="layui-elem-field layui-field-title">
+  <legend class="guanwo">当前经纪人id:{$aid}</legend>
+</fieldset>
+{loop $agpl_data $data}
+<!--<div class="panel panel-default">-->
+    <fieldset class="layui-elem-field" style="margin-top: 30px;">
+    <legend class="guanwo_yi">{if $operation == 'checkfeeone'}一级{elseif $operation == 'checkfeetwo'}二级{elseif $operation == 'checkfeethree'}三级{/if}经纪人id:{$data['agent']['id']},名字:{$data['agent']['realname']},账号:{$data['agent']['username']}</legend>
+    <!--<div class="panel-heading">{if $operation == 'checkfeeone'}一级{elseif $operation == 'checkfeetwo'}二级{elseif $operation == 'checkfeethree'}三级{/if}经纪人id:{$data['agent']['id']},名字:{$data['agent']['realname']},账号:{$data['agent']['username']}</div>-->
+    <div class="table-responsive panel-body">
+        <form action="" method="post" class="form form-horizontal">
+        	
+        	<table class="layui-table" lay-skin="line">
+  <colgroup>
+    <col width="120">
+    <col width="150">
+    <col width="150">
+    <col width="150">
+    <col width="180">
+    <col width="140">
+    <col width="140">
+    <col width="140">
+    <col width="140">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>选手编号</th>
+      <th>选手nickname</th>
+      <th>选手name</th>
+      <th>选手礼物总额</th>
+      <th>活动标题</th>
+      <th>{if $operation == 'checkfeeone'}一级{elseif $operation == 'checkfeetwo'}二级{elseif $operation == 'checkfeethree'}三级{/if}分销返佣比%</th>
+      <th>活动分销层级</th>
+      <th>活动编号</th>
+      <th>rid</th>
+    </tr> 
+  </thead>
+  <tbody id="level-list">
+                {loop $data['player'] $row}
+    <tr>
+        <td><span class="text-info">{$row['id']}</td>
+	    <td>{$row['nickname']}</td>
+	    <td>{$row['name']}</td>
+	    <td>{$row['totalfee']}</td>
+	    <td>{$row['reply_title']}</td>
+	    <td>{if $operation == 'checkfeeone'}{$row['levelonepercent']}{elseif $operation == 'checkfeetwo'}{$row['leveltwopercent']}{elseif $operation == 'checkfeethree'}{$row['levelthreepercent']}{/if}</td>
+	    <td>{$row['reply_rakebacklevel']}</td>
+	    <td>{$row['reply_id']}</td>
+	    <td>{$row['rid']}</td>
+	  
+    </tr>
+    {/loop}
+    <tr>
+                    <td colspan="9">
+                        <input type="hidden" name="token" value="{$_W['token']}"/>
+                    </td>
+                </tr>
+  </tbody>
+</table>
+
+            <div class="pull-right">
+                {$pager}
+                 
+            </div>
+
+        </form>
+        
+    </div>
+    </fieldset>
+<!--</div>-->
+{/loop}
+<input type=button value=后退 onclick="window.history.go(-1)" class="btn btn-primary col-lg-1"> 
+{elseif $operation == "player"}
+<!--<div class="main">
+    <div class="panel panel-info">-->
+    	
+       
+            <form action="../index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site"/>
+                <input type="hidden" name="a" value="entry"/>
+                <input type="hidden" name="m" value="silence_vote"/>
+                <input type="hidden" name="do" value="financemanage"/>
+                <input type="hidden" name="op" value="player"/>
+                <div class="xihuan_jjr">
+                    <label class="control-label kani">关键字</label>
+                    <div class="myinqut">
+                        <input class="form-control" name="keyword" placeholder="请输入选手姓名" type="text" value="{$keyword}">
+                    </div>
+                    <div class="mysou">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+                
+            </form>
+        
+        
+    <!--</div>
+</div>-->
+<!--<div style="color:red;font-weight: bold;">点击编号可查看详细礼物清单</div>-->
+<!--<div class="panel panel-default">
+    <div class="panel-heading">总数：{$total}</div>-->
+    <fieldset class="layui-elem-field" style="margin-top: 30px;">
+  <legend class="guanwo">总数：{$total} <span>(点击编号可查看详细礼物清单)</span></legend>
+    <div class="table-responsive panel-body">
+        <form action="" method="post" class="form form-horizontal">
+        	
+        	<table class="layui-table" lay-skin="line">
+				  <colgroup>
+				    <col width="120">
+				    <col width="150">
+				    <col width="150">
+				    <col width="150">
+				    <col width="150">
+				    <col width="150">
+				    <col width="150">
+				    <col width="150">
+				  </colgroup>
+				  <thead>
+				    <tr>
+				        <th>编号</th>
+					    <th>选手姓名</th>
+					    <th>选手昵称</th>
+					    <th>选手头像</th>
+					    <th>礼物收益</th>
+					    <th>礼物数量</th>
+					    <th>所属经纪人id</th>
+					    <th>rid</th>
+				    </tr> 
+				  </thead>
+				  <tbody id="level-list">
+				     {loop $player $row}
+				    <tr>
+				        <td class="curpe" onclick="checkdetail({$row['id']})"><span class="text-info">{$row['id']}</td>
+				        <td>{$row['name']}</td>
+				        <td>{$row['nickname']}</td>
+				        <td><img src="{$row['avatar']}" style='width:100%;'></td>
+				        <td style="color: #5cb85c;">{$row['gift']['totalfee']}</td>
+				        <td style="color: #428bca;">{$row['gift']['totalcount']}</td>
+				        <td>{$row['agent_id']}</td>
+				        <td>{$row['rid']}</td>
+				    </tr>
+				    {/loop}
+				    <tr>
+				        <td colspan="8">
+				            <input type="hidden" name="token" value="{$_W['token']}"/>
+				        </td>
+				    </tr>
+				  </tbody>
+				</table>
+  
+            <div class="pull-right">
+                {$pager}
+            </div>
+
+        </form>
+    </div>
+  </fieldset>
+<!--</div>-->
+<script>
+//    var checkdetail;
+    $(function(){
+        checkdetail = function(id){
+            console.log(id)
+            $.post('{php echo $this->createWebUrl('financemanage',array('op'=>'playerdetail'))}',{id:id},function(data){
+                alert(data);
+            },'json')
+        }
+    })
+</script>
+{elseif $operation == "active"}
+
+        
+            <form action="../index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site"/>
+                <input type="hidden" name="a" value="entry"/>
+                <input type="hidden" name="m" value="silence_vote"/>
+                <input type="hidden" name="do" value="financemanage"/>
+                <input type="hidden" name="op" value="active"/>
+                <div class="xihuan_jjr">
+                    <label class="control-label kani">关键字</label>
+                    <div class="myinqut">
+                        <input class="form-control" name="keyword" placeholder="请输入活动代号" type="text" value="{$keyword}">
+                    </div>
+                    <div class="mysou">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+                
+            </form>
+   
+    
+<!--<div class="panel panel-default">-->
+	<fieldset class="layui-elem-field" style="margin-top: 30px;">
+  <legend class="guanwo">总数：{$total}</legend>
+    <!--<div class="panel-heading">总数：{$total}</div>-->
+    <div class="table-responsive panel-body">
+        <form action="" method="post" class="form form-horizontal">
+        	
+        	<table class="layui-table" lay-skin="line">
+				  <colgroup>
+				    <col width="120">
+				    <col width="150">
+				    <col width="150">
+				    <col width="150">
+				    <col width="150">
+				    <col width="150">
+				    <col width="150">
+				  </colgroup>
+				  <thead>
+				    <tr>
+				        <th>编号</th>
+	                    <th>活动代号</th>
+	                    <th>活动开始时间</th>
+	                    <th>活动结束时间</th>
+	                    <th>礼物收益</th>
+	                    <th>礼物数量</th>
+	                    <th>rid</th>
+				    </tr> 
+				  </thead>
+				  <tbody id="level-list">
+				     {loop $active $row}
+				    <tr>
+				        <td><span class="text-info">{$row['id']}</td>
+	                    <td>{$row['activecode']}</td>
+	                    <td>{php echo date('Y-m-d H:i:s', $row['starttime'])}</td>
+	                    <td>{php echo date('Y-m-d H:i:s', $row['endtime'])}</td>
+	                    <td style="color: #5cb85c;">{$row['gift']['totalfee']}</td>
+	                    <td style="color: #428bca;">{$row['gift']['totalcount']}</td>
+	                    <td>{$row['rid']}</td>
+				    </tr>
+				    {/loop}
+				    <tr>
+				        <td colspan="7">
+				            <input type="hidden" name="token" value="{$_W['token']}"/>
+				        </td>
+				    </tr>
+				  </tbody>
+				</table>
+        	
+        	
+        	
+            <!--<table class="table table-hover" style="margin-top: 15px;">
+                <thead class="navbar-inner">
+                <tr>
+                    <th style="width:5%;text-align:center;">编号</th>
+                    <th style="width:10%;text-align:center;">活动代号</th>
+                    <th style="width:5%;text-align:center;">活动开始时间</th>
+                    <th style="width:5%;text-align:center;">活动结束时间</th>
+                    <th style="width:10%;text-align:center;">礼物收益</th>
+                    <th style="width:10%;text-align:center;">礼物数量</th>
+                    <th style="width:10%;text-align:center;">rid</th>
+                </tr>
+                </thead>
+                <tbody id="level-list">
+                {loop $active $row}
+                <tr>
+                    <td class="text-center"  ><span class="text-info">{$row['id']}</td>
+                    <td class="text-center">{$row['activecode']}</td>
+                    <td class="text-center">{php echo date('Y-m-d H:i:s', $row['starttime'])}</td>
+                    <td class="text-center">{php echo date('Y-m-d H:i:s', $row['endtime'])}</td>
+                    <td class="text-center">{$row['gift']['totalfee']}</td>
+                    <td class="text-center">{$row['gift']['totalcount']}</td>
+                    <td class="text-center">{$row['rid']}</td>
+                {/loop}
+                <tr>
+                    <td colspan="9">
+                        <input type="hidden" name="token" value="{$_W['token']}"/>
+                    </td>
+                </tr>
+                </tbody>
+            </table>-->
+
+            <div class="pull-right">
+                {$pager}
+            </div>
+
+        </form>
+    </div>
+    </fieldset>
+<!--</div>-->
+{elseif $operation == "timezone"}
+
+            <form action="../index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site"/>
+                <input type="hidden" name="a" value="entry"/>
+                <input type="hidden" name="m" value="silence_vote"/>
+                <input type="hidden" name="do" value="financemanage"/>
+                <input type="hidden" name="op" value="timezone"/>
+                <div class="xihuan_jjr">
+                    <label class="control-label kani">起止时间</label>
+                    <div class="myinqut_one">
+                        {php echo tpl_form_field_daterange('time', array('start'=>date('Y-m-d H:i:s',$begin),'end'=>date('Y-m-d H:i:s',$end)), true)}
+                         <div class="help-block">输入查询的起止时间</div>
+                    </div>
+                    <div class="mysou">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+                
+            </form>
+        
+<fieldset class="layui-elem-field" style="margin-top: 50px;">
+  <legend class="guanwo">总数：{$total}</legend>
+    <!--<div class="panel-heading">总数：{$total}</div>-->
+    <div class="table-responsive panel-body">
+        <form action="" method="post" class="form form-horizontal">
+        	
+        	<table class="layui-table" lay-skin="line">
+				  <colgroup>
+				    <col width="150">
+				    <col width="150">
+				    <col width="150">
+				    <col width="150">
+				  </colgroup>
+				  <thead>
+				    <tr>
+				        <th>开始时间</th>
+	                    <th>结束时间</th>
+	                    <th>礼物收益</th>
+	                    <th>礼物数量</th>
+				    </tr> 
+				  </thead>
+				  <tbody id="level-list">
+				     
+				    <tr>
+				        <td>{php echo date('Y-m-d H:i:s', $timezone['mintime']?:$begin)}</td>
+	                    <td>{php echo date('Y-m-d H:i:s', $timezone['maxtime']?:$end)}</td>
+	                    <td style="color: #5cb85c;">{$timezone['totalfee']}</td>
+	                    <td style="color: #428bca;">{$timezone['totalcount']}</td>
+				    </tr>
+				    
+				    <tr>
+				        <td colspan="4">
+				            <input type="hidden" name="token" value="{$_W['token']}"/>
+				        </td>
+				    </tr>
+				  </tbody>
+				</table>
+        	
+        	
+        	
+            
+
+            <div class="pull-right">
+                {$pager}
+            </div>
+
+        </form>
+    </div>
+</fieldset>
+{/if}
+{template 'common/footer'}

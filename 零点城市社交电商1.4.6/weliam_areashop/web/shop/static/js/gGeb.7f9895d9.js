@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([["gGeb"],{gGeb:function(n,o,e){"use strict";e.r(o);var l=e("KHd+"),i=Object(l.a)({},void 0,void 0,!1,null,null,null);i.options.__file="couponClientOld.vue",o.default=i.exports}}]);

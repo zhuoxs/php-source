@@ -1,0 +1,164 @@
+{template 'common/header'}
+<div class="row">
+    <div class="col-md-12">
+        <div class="mail-toolbar m-b-lg">
+            <div class="btn-group" role="group">
+                <a href="{php echo $this->createWebUrl('user');}" class="btn btn-default">会员管理</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="widget liuer-widget">
+    <header class="widget-header">
+        <h4 class="widget-title liuer-widget-title">筛选</h4>
+    </header>
+    <hr class="widget-separator">
+    <div class="widget-body">
+        <form action="" method="get" class="form-horizontal">
+            <input type="hidden" name="c" value="site">
+            <input type="hidden" name="a" value="entry">
+            <input type="hidden" name="m" value="liuer_mcar">
+            <input type="hidden" name="do" value="user">
+
+            <!--<div class="form-group">
+                <label class="col-sm-2 control-label">时间范围</label>
+                <div class="col-sm-5">
+                    {php echo tpl_form_field_daterange('time',$_GPC['time']);}
+                </div>
+            </div>-->
+            <div class="form-group">
+                <label class="col-sm-2 control-label">所属代理商</label>
+                <div class="col-sm-3">
+                    <?php $agentArr = Table::fetchAllAgent(); ?>
+                    <select name="agent_id" class="form-control">
+                        <option value="" selected="selected">不限</option>
+                        <?php foreach($agentArr as $agent): ?>
+                        <?php if($_GPC['agent_id']!== '' && $_GPC['agent_id'] == $agent['id']): ?>
+                        <option value="<?php echo $agent['id'] ?>" selected><?php echo $agent['name'] ?></option>
+                        <?php else: ?>
+                        <option value="<?php echo $agent['id'] ?>"><?php echo $agent['name'] ?></option>
+                        <?php endif; ?>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="" class="col-sm-2 control-label">车牌号</label>
+                <div class="col-sm-3">
+                    <input type="text" class="form-control" name="chepaihao" placeholder="输入车牌号" value="{$_GPC['chepaihao']}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="" class="col-sm-2 control-label">挪车码ID</label>
+                <div class="col-sm-3">
+                    <input type="text" class="form-control" name="code_id" placeholder="输入挪车码ID" value="{$_GPC['code_id']}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="" class="col-sm-2 control-label">手机号</label>
+                <div class="col-sm-3">
+                    <input type="text" class="form-control" name="mobile" placeholder="输入手机号" value="{$_GPC['mobile']}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">状态</label>
+                <div class="col-sm-2">
+                    <select name="status" class="form-control">
+                        <option value="" selected="selected">不限</option>
+                        <option value="9" {if $_GPC['status'] == '9'} selected{/if}>正常</option>
+                        <option value="2" {if $_GPC['status'] == '2'} selected{/if}>已禁用</option>
+                    </select>
+                </div>
+                <div class="col-sm-3">
+                    <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="widget">
+            <header class="widget-header">
+                <h4 class="widget-title">&nbsp;</h4>
+            </header>
+            <hr class="widget-separator">
+            <div class="widget-body">
+                <table class="table table-hover liuer-table">
+                    <thead>
+                    <th nowrap="nowrap">编号</th>
+                    <th>挪车码ID</th>
+                    <th>车牌号</th>
+                    <th>手机号</th>
+                    <th>所属代理商</th>
+                    <th>车主昵称</th>
+                    <th>车主头像</th>
+                    <th class="text-left">状态</th>
+                    <th style="width: 150px;">绑定时间</th>
+                    <th style="text-align: right">操作</th>
+                    </thead>
+                    <tbody>
+                    {if $data}
+                    {loop $data $no $v}
+                    <tr>
+                        <td>{php echo getNo($no)}</td>
+                        <td>{$v['code_id']}</td>
+                        <td>{$v['chepaihao']}</td>
+                        <td>{$v['mobile']}</td>
+                        <td>
+                            <?php if(($agentId = fetchAgentIdByCodeId($v['code_id'])) == 0): ?>
+                            <span class="label label-default">{php echo Table::fetchAllAgent($agentId)}</span>
+                            <?php else: ?>
+                            <span class="label label-success">{php echo Table::fetchAllAgent($agentId)}</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>{php echo get_user_nickname($v['openid'])}</td>
+                        <td>
+                            <span class="avatar avatar-sm">
+                                <img src="{php echo get_user_avatar($v['openid'])}"/>
+                            </span>
+                        </td>
+                        <td>
+                            <?php if($v['status'] == Table::USER_NORMAL): ?>
+                            <span class="label label-success">正常</span>
+                            <?php elseif($v['status'] == Table::USER_LOCK): ?>
+                            <span class="label label-default">已禁用</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>{php echo date("Y/m/d H:i",$v['created_at']);}</td>
+                        <td class="liuer-do">
+                            <?php if($v['status'] == Table::USER_NORMAL): ?>
+                            <a href="{php echo $this->createWebUrl('user',['id'=>$v['id'],'op'=>'abandon'])}" class="btn btn-xs btn-default liuer-abandon">封禁</a>
+                            <?php elseif($v['status'] == Table::USER_LOCK): ?>
+                            <a href="{php echo $this->createWebUrl('user',['id'=>$v['id'],'op'=>'unabandon'])}" class="btn btn-xs btn-default">解封</a>
+                            <?php endif; ?>
+                            <a href="<?php echo $this->createWebUrl('user',['id'=>$v['id'],'op'=>'remove']) ?>" class="btn btn-xs btn-danger liuer-delete">删除</a>
+                            <!--<a href="{php echo $this->createWebUrl('detail',['id'=>$v['id']])}">查看</a>-->
+                        </td>
+                    </tr>
+                    {/loop}
+                    {else}
+                    <tr>
+                        <td colspan="9" style="text-align: center;">暂无记录</td>
+                    </tr>
+                    {/if}
+
+                    </tbody>
+                </table>
+            </div>
+
+            <footer class="widget-footer">
+                {if $total}
+                <div id="liuer_footer" class="panel-footer">
+                    <div class="pull-left">
+                        <div class="summary">共<b>{$total}</b>条数据</div>
+                    </div>
+                    <div class="pull-right">{$pager}</div>
+                </div>
+                {/if}
+            </footer>
+
+        </div>
+    </div>
+</div>
+{template 'common/footer'}

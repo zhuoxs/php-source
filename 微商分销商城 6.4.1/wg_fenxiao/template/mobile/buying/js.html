@@ -1,0 +1,91 @@
+<script src="{STATIC_ROOT}/js/jquery-3.3.1.min.js"></script>
+<script type="text/template" id="template_item">
+    <li><div class="content">
+        <a href="{url}">
+            <div class="img_box">
+                <img src="{image}" style="opacity: 1; transition: opacity 0.3s;">
+            </div>
+        </a>
+        <div class="info_box flex1">
+            <a href="{url}">
+                <p class="title ellipsis_two">
+                    <span class="tag" style="display: {display}">{label}</span>
+                    {goodsname}
+                </p>
+                <div class="sale_wrap">
+                </div>
+            </a>
+            <div class="price_box ">
+                <strong>¥{marketprice}</strong>
+                <del>¥{marketprice}</del>
+            </div>
+
+            <div class="detail_box">
+                <p class="desc_text">
+                    仅剩{remain}件
+                </p>
+                <div class="progress_bar">
+                    <div class="bar" style="width:{percent}%;"></div>
+                </div>
+            </div>
+
+            <button onclick="location='{url}';" class="btn btn_solid">马上抢</button>
+
+        </div>
+    </div>
+    </li>
+</script>
+<script>
+    var template_item = $('#template_item').html()
+    function formatTemplate(dta, tmpl) {
+        var format = {
+            name: function(x) {
+                return x
+            }
+        };
+        return tmpl.replace(/{([a-zA-Z_0-9]+)}/g, function(m1, m2) {
+            if (!m2) {
+                return "";
+            }
+            return (format && format[m2]) ? format[m2](dta[m2]) : dta[m2];
+        });
+    }
+    var more_url = "{php echo $this->createMobileUrl('buying',['op' => 'more'])}";
+    var page = 2;
+    function moreData() {
+        if (totalheight = parseFloat($(window).height()) + parseFloat($(window).scrollTop()),
+            $(document).height() <= totalheight + max) {
+            if (loading) {
+                return;
+            }else {
+                loading = true;
+                loadingdata();
+            }
+
+
+        }
+    }
+    function loadingdata() {
+        $("#no_more").show(),
+            $.get(more_url,
+                {
+                    page: page
+                },
+                function(data) {
+                    data = data.data;
+                    $("#no_more").hide();
+                    page = data.page;
+                    $.each(data.list, function (key, dat) {
+                        $('#product_list').append(formatTemplate(dat,template_item));
+                    });
+                    loading= false;
+                    if(!data.more) {
+                        $("#no_more").show();
+                        $('.nomore').html('没有更多了');
+                        loading = true;
+                    }
+                },'JSON');
+    }
+    var max = 70, loading= false;
+    window.addEventListener("scroll", moreData);
+</script>

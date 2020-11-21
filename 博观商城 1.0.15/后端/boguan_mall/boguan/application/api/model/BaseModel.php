@@ -1,0 +1,2 @@
+<?php
+ namespace app\api\model; use think\Model; class BaseModel extends Model { protected $autoWriteTimestamp = true; protected $updateTime = false; protected function prefixImgUrl($value, $data) { goto RknFu; UAMbk: return SITE_URL . $value; goto PqwEG; d5eci: ZibC5: goto xwgOG; oAXen: return $value; goto d5eci; RknFu: if ($data["\x66\162\157\x6d"] == 1) { goto F1b2Y; } goto UAMbk; PqwEG: goto ZibC5; goto aliIi; aliIi: F1b2Y: goto oAXen; xwgOG: } }

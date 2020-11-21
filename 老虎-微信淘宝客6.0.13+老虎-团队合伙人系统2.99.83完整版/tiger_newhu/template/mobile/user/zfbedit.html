@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+    <meta name="renderer" content="webkit" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>修改支付宝</title>
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <link rel="stylesheet" href="{$_W['siteroot']}addons/tiger_wxdaili/template/mobile/public/css/style.css" />
+</head>
+
+<body class="">
+    <div class="header  ">
+        <p></p>
+        <h3 class="tit">修改支付宝</h3>
+        <a href="javascript:void(0);" onclick="history.go(-1);" class="return"></a>
+        <div class="m-select">
+            <a href="javascript:void;" class="all">全部</a>
+            <div class="con">
+                <a href="">111</a>
+                <a href="">222</a>
+            </div>
+        </div>
+        <div class="m-calendar"></div>
+    </div>
+    <div class="m-alter">
+            <div class="desc">
+                <span class="sp1">真实姓名</span>
+                <input class="inp js-inp" type="text" name="tname" id="tname" placeholder="请输入您的姓名" value="{$member['tname']}" />
+                <i class="del js-del"></i>
+            </div>
+            <div class="desc">
+                <span class="sp1">支付宝账号</span>
+                <input class="inp js-inp" type="text" name="zfbuid" id="zfbuid" placeholder="请输入您的支付宝账号" value="{$member['zfbuid']}"   />
+                <i class="del js-del"></i>
+            </div>
+            <div class="desc">
+                <span class="sp1">手机号码</span>
+                <input class="inp" type="text" name="pcuser" id="pcuser" placeholder=""  readonly="readonly" value="{$member['pcuser']}" />
+            </div>
+			{if $cfg['smskgtype']==1}
+            <div class="desc">
+                <span class="sp1">验证码</span>
+                <input class="inp" type="text" name="code" id="code" placeholder="请输入验证码" />
+                <input class="inp2" id="btnSendCode" type="button" value="获取验证码" onClick="sendMessage()" />
+            </div>
+			{/if}
+    </div>
+    <a href="javascript:void(0);" id="btnedit" class="btn-alter">立即修改</a>
+    <script src="{$_W['siteroot']}addons/tiger_wxdaili/template/mobile/public/js/jquery.min.js"></script>
+    <script src="{$_W['siteroot']}addons/tiger_wxdaili/template/mobile/public/js/lib.js"></script>
+		<script type="text/javascript" src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/js/layer_mobile/layer.js"></script>
+    <script>
+        // 点击删除 清空输入框的内容
+        $('.js-del').click(function() {
+            $(this).parents('.desc').find('.js-inp').val('');
+        });
+    </script>
+    <script>
+		var pctel="{$member['pcuser']}";
+		if(!pctel){
+			layer.open({
+				content: '请先绑定手机号码？'
+				,btn: ['绑定']
+				,yes: function(index){
+				window.location.href="{php echo $this->createMobileUrl('reg')}";			 
+				}
+			});
+		}
+		
+		
+        // 验证码倒计时
+        var InterValObj; //timer变量，控制时间
+        var count = 30; //间隔函数，1秒执行
+        var curCount; //当前剩余秒数
+        var code = ""; //验证码
+        var codeLength = 6; //验证码长度
+        function sendMessage() {
+            curCount = count;
+            var uid = "{$member[id]}"; //用户uid        
+            //产生验证码
+            for (var i = 0; i < codeLength; i++) {
+                code += parseInt(Math.random() * 9).toString();
+            }
+            //设置button效果，开始计时
+            $("#btnSendCode").attr("disabled", "true");
+            $("#btnSendCode").val(+curCount + "秒再获取");
+            InterValObj = window.setInterval(SetRemainTime, 1000); //启动计时器，1秒执行一次
+            //向后台发送处理数据
+			//alert(111);
+            $.ajax({
+				url:"{php echo $this->createMobileUrl('sms')}",
+				method: 'post',
+				data: {'tel':$("#pcuser").val(),'uid':"",'type':2},
+				success:function(res){
+						
+				}
+            });
+        }
+        //timer处理函数
+        function SetRemainTime() {
+            if (curCount == 0) {
+                window.clearInterval(InterValObj); //停止计时器
+                $("#btnSendCode").removeAttr("disabled"); //启用按钮
+                $("#btnSendCode").val("重新发送验证码");
+                code = ""; //清除验证码。如果不清除，过时间后，输入收到的验证码依然有效    
+            } else {
+                curCount--;
+                $("#btnSendCode").val(+curCount + "秒再获取");
+            }
+        }
+		
+		
+		$('#btnedit').on('click', function() {
+			//alert(111);
+			var uid = "{$member['id']}";//用户uid
+			var tname=$("#tname").val();
+			var zfbuid=$("#zfbuid").val();
+			var code=$("#code").val();
+			var pcuser=$("#pcuser").val();
+			//alert(uid);
+			
+			$.ajax({
+					type:'post',
+					url:"{php echo $this->createMobileUrl('zfbedit')}",
+					dataType:'json',
+					data:{"uid":uid,"tname":tname,"zfbuid":zfbuid,"code":code,"pcuser":pcuser},
+					success:function(res){
+						//alert(res);
+						if(res.status==1){
+							layer.open({
+									content: res.msg
+									,skin: 'msg'
+									,time: 6 //2秒后自动关闭
+								});
+							location.reload();
+							//alert(res.tzurl);
+							return false;
+						}else{
+							// alert(JSON.stringify(res));
+							layer.open({
+								content: res.msg
+								,skin: 'msg'
+								,time: 3 //2秒后自动关闭
+							});
+						return false;
+						}
+						
+					}
+				});
+						
+		});
+    </script>
+</body>
+
+</html>

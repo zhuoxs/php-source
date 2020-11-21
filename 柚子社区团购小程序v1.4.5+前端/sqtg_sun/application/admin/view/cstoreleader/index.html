@@ -1,0 +1,83 @@
+{extend name="common/index" /}
+{block name="tool_box"}
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnChooseLeader" class="layui-btn layui-btn-primary layui-btn-sm">选择团长</a>
+    </div>
+</div>
+{/block}
+{block name="tool_template"}
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    <!--<a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnEdit">编辑</a>-->
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDelete">删除</a>
+    {{# if(d.check_state == 1){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnChecked">通过</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnCheckedFail">打回</a>
+    {{# } }}
+</script>
+{/block}
+{block name="table_config"}
+<script>
+    layui.use('table', function () {
+        var table = layui.table;
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_list')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'name', width:180, title: '名称',fixed:'left',sort:true},
+                {field:'pic', width:80, title: '头像',sort:true,templet: '#dataPic'},
+                {field:'tel', width:120, title: '电话',sort:true},
+                {field:'community', width:120, title: '小区'},
+                {field:'address', width:180, title: '地址',sort:true},
+                {field:'o',fixed:'right',width:220, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+        $('#btnChooseLeader').click(function () {
+            layer.open({
+                type: 2,
+                title: '选择团长',
+                shadeClose: true,
+                shade: false,
+                maxmin: true, //开启最大化最小化按钮
+                area: ['893px', '600px'],
+                content: "{:adminurl('choose','cleader')}",
+                btn: ['确认', '取消'],
+                yes: function (index,layerObj) {
+                    var win = $(layerObj).find("iframe")[0].contentWindow;
+                    var checkData = win.layui.table.checkStatus('laytable');
+                    var ids = [];
+                    for (var i in checkData.data){
+                        if(ids.indexOf(checkData.data[i]['id']) == -1){
+                            ids.push(checkData.data[i]['id']);
+                        }
+                    }
+                    if (!ids.length){
+                        layer.msg('请选择团长',{icon: 5,anim: 6});
+                        return;
+                    }
+                    var url = "{:adminurl('batchadd')}";
+                    $.post(url, {ids:ids.join(',')}, function(data){
+                        if (data.code == 0) {
+                            layer.close(index);
+                            layer.msg('添加成功',{icon: 6,anim: 6});
+                            table.reload('laytable',{});
+                        }else{
+                            layer.msg(data.msg,{icon: 5,anim: 6});
+                        }
+                    }, 'json');
+                }
+            });
+        })
+    })
+</script>
+{/block}

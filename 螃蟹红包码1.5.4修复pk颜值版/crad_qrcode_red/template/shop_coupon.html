@@ -1,0 +1,359 @@
+{template 'common/header'}
+<div class='container' style='padding: 0 5px 10px; margin: 0; width: 100%'>
+
+    <ul class="nav nav-tabs">
+        <li {if $op== 'display'}class="active"{/if}><a href="{php echo $this->createWebUrl('shop_coupon',array('shopid'=>$shopid))}">卡券管理</a></li>
+        <li {if $op== 'post'}class="active"{/if}>
+            {if empty($id)}
+            <a href="{php echo $this->createWebUrl('shop_coupon',array('op'=>'post','shopid'=>$shopid))}">添加卡券</a>
+            {else}
+            <a href="{php echo $this->createWebUrl('shop_coupon',array('op'=>'post','id'=>$id,'shopid'=>$shopid))}">编辑卡券</a>
+            {/if}
+        </li> 
+    </ul>
+    {if $op=='display'}
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="crad_qrcode_red" />
+                <input type="hidden" name="do" value="shop_coupon" />
+                <input type="hidden" name="shopid" value="{$shopid}" />
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">卡券类型</label>
+                    <div class="col-sm-7 col-lg-8 col-md-8 col-xs-12">
+                        <a href="{php echo filter_url('coupon_type:0')}" class="btn btn-{if empty($_GPC['coupon_type'])}primary{else}default{/if}">全部</a>
+                        <a href="{php echo filter_url('coupon_type:1')}" class="btn btn-{if $_GPC['coupon_type'] == 1}primary{else}default{/if}">折扣券</a>
+                        <a href="{php echo filter_url('coupon_type:2')}" class="btn btn-{if $_GPC['coupon_type'] == 2}primary{else}default{/if}">现金券</a>
+                        <a href="{php echo filter_url('coupon_type:3')}" class="btn btn-{if $_GPC['coupon_type'] == 3}primary{else}default{/if}">礼品券</a>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">关键字</label>
+                    <div class="col-sm-8 col-lg-3">
+                        <input class="form-control" name="keyword" id="" placeholder="输入卡券名称" type="text" value="{$_GPC['keyword']}">
+                    </div>
+                    <div class=" col-xs-12 col-sm-2 col-lg-2">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">卡券列表-{$shop_name}  总数：{$total}</div>
+
+        <div class="panel-body table-responsive">
+
+            <form action="" id="form1" method="post" class="form-horizontal form" enctype="multipart/form-data">
+
+                <table class="table table-hover">
+
+                    <thead class="navbar-inner">
+
+                        <tr>
+                            <th style="width: 5%;" class="row-first">选择</th>
+                            <th style="width: 6%;">ID</th>
+                            <th style="width: 15%;">卡券名称</th>
+                            <th style="width: 20%;">卡券内容</th>
+                            <th style="width: 20%;">卡券时间</th>                   
+                            <th style="width: 8%;">卡券状态</th>
+                            <th style="width: 20%;">操作</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="main">
+
+                        {loop $list $row}
+
+                        <tr>
+                            <td><input type="checkbox" name="ids[]" value="{$row['id']}" /></td>
+                            <td style="white-space: normal; word-break: break-all">{$row['id']}</td>
+                            <td style="white-space: normal; word-break: break-all">{$row['name']}</td>
+                            <td style="white-space: normal; word-break: break-all">{$row['coupon_content']}{if $row['use_condition']}</br>使用需：{$row['use_condition']}{/if}</td>
+                            <td style="white-space: normal; word-break: break-all">{$row['coupon_validity']}</td>
+                            <td style="white-space: normal; word-break: break-all">{if $row['status']==1}正常{else}失效{/if}</td>
+                            <td style="white-space: normal; word-break: break-all">
+                                <a class="btn  btn-default" title="领券记录" href="{php echo $this->createWebUrl('coupon',array('cid'=>$row['id']))}">领券记录</a>
+                                
+                                {if $row['wechat_coupon']==1}
+                                                                <a class="btn  btn-default" href="{php echo $this->createWebUrl('wechat_coupon', array('op' => 'detail','id' => $row['id']))}" class="btn btn-default btn-sm"  title="查看卡券详情">查看</a>
+{else}
+                                <a class="btn  btn-default" title="编辑" href="{php echo $this->createWebUrl('shop_coupon',array('op'=>'post','shopid'=>$shopid,'id'=>$row['id']))}" ><i class="fa fa-edit"></i></a>
+      {/if}
+                                <a class="btn  btn-danger" href="{php echo $this->createWebUrl('shop_coupon', array('op' => 'del','shopid'=>$shopid,'id' => $row['id']))}" onclick="return confirm('该操作将会删除本条数据，是否确认操作？');return false;" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="删除"><i class="fa fa-times"></i></a>
+                            </td>
+                        </tr>
+                        {/loop}
+
+                        <tr>
+                            <td colspan="10">
+                                <input name="op" id="op" type="hidden" value="" />
+                                <input name="token" type="hidden" value="{$_W['token']}" />
+                                <button type="button" class="btn btn-primary" name="btndeleteall" id="btndeleteall" value=""/>批量删除</button> 
+                                <button  type="button" class="btn btn-danger" onclick="delete_all()">清空（删除所有记录）</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </form>
+        </div>
+        {$pager}
+    </div>
+    <script type="text/javascript">
+        function delete_all() {
+            if (confirm('确认删除 所有信息吗,删除完不可恢复?')) {
+                var shopid = $("#shopid").val();
+                var keyword = $("#keyword").val();
+                window.location.href = "{php echo $this->createWebUrl('shop_coupon',array('op'=>'deleteall'))}" + "&shopid=" + shopid + "&keyword=" + keyword;
+            }
+        }
+        $(function () {
+            $(".check_all").click(function () {
+                var checked = $(this).get(0).checked;
+                $("input[type=checkbox]").attr("checked", checked);
+            });
+            $("#btndeleteall").click(function () {
+                var check = $("input[type=checkbox][class!=check_all]:checked");
+                if (check.length < 1) {
+                    alert('请选择要删除的数据!');
+                    return false;
+                }
+                if (confirm("确认要删除选择的数据?删除后不可恢复")) {
+                    $('#op').val('deleteids');
+                    $('#form1').submit();
+                }
+            });
+        });
+
+    </script>
+
+    {/if} 
+
+    {if $op=='post'}
+    <div class="main">
+        <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+            <div class="panel panel-default">
+                <div class="panel-heading">{if empty($id)}添加{else}编辑{/if}卡券</div>
+                <div class="panel-body">
+
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label"><span class="text-danger">*</span> 卡券名称</label>
+                        <div class="col-sm-6 col-xs-12">
+                            <input type="text" name="name" class="form-control" value="{$set['name']}" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">卡券类型</label>
+                        <div class="col-sm-5">
+                            <label class="radio-inline">
+                                <input type="radio" name="coupon_type" value="1" {if $set['coupon_type']==1} checked="checked"{/if} />折扣券
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="coupon_type" value="2" {if $set['coupon_type']==2} checked="checked"{/if} />现金券
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="coupon_type" value="3" {if $set['coupon_type']==3} checked="checked"{/if} />礼品券
+                            </label>
+                            <span class="help-block">礼品券字数在10个内</span>
+                        </div>
+                    </div>
+                    <div class="form-group display_0" style="display:{if $set['coupon_type'] == 0}none;{/if}">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">是否用作联盟卡券</label>
+                        <div class="col-sm-9">
+                            <label class="radio-inline">
+                                <input name="coupon_friend" value="1" type="radio" {if $set['coupon_friend']==1} checked="checked"{/if}> 是
+                            </label>
+                            <label class="radio-inline">
+                                <input name="coupon_friend" value="0" type="radio" {if !$set['coupon_friend']} checked="checked"{/if}> 否
+                            </label>
+                            <span class="help-block">设置此卡券作为联盟卡券 商家其他卡券将取消联盟卡券 联盟卡券同一商家只能设置一张</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-1 col-sm-1 col-md-2 control-label">卡券数量</label>
+                        <div class="col-sm-6 col-xs-12">
+                            <input type="number" name="coupon_num" class="form-control" value="{$set['coupon_num']}"/>
+                            <span class="help-block">整数，不填无数量限制</span></div>
+                    </div>
+                      <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">卡券展示概率</label>
+                        <div class="col-sm-9 col-xs-12">
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="coupon_probability" value="{$set['coupon_probability']}"/>
+                                <span class="input-group-addon">‱</span>
+                            </div>
+                            <div class="help-block">单位万分之，[1,10000]，不填则作为主卡券展示</br>设置概率展示的卡券不能作为联盟卡券使用</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">领取次数限制</label>
+                        <div class="col-sm-9 col-xs-12" >
+                            <div class="input-group">
+                                <span class="input-group-addon">商家劵</span>
+                                <input type="number" class="form-control" name="coupon_times" value="{$set['coupon_times']}"/>
+                                <span class="input-group-addon">联盟券</span>
+                                <input type="number" class="form-control" name="friend_coupon_times" value="{$set['friend_coupon_times']}"/>
+
+                            </div>
+                            <span class="help-block">同一用户的领券限制。整数，不填无次数限制</span>
+                        </div>
+                    </div>
+                      <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">卡券核销方式</label>
+                        <div class="col-sm-9">
+                             <label class="radio-inline">
+                                <input name="consume_type" value="0" type="radio" {if !$set['consume_type']} checked="checked"{/if}> 核销码
+                            </label>
+                            <label class="radio-inline">
+                                <input name="consume_type" value="1" type="radio" {if $set['consume_type']==1} checked="checked"{/if}> 二维码
+                            </label>
+                            <label class="radio-inline">
+                                <input name="consume_type" value="2" type="radio" {if $set['consume_type']==2} checked="checked"{/if}> 卡密核销（定制功能）
+                            </label>
+                            <span class="help-block">选择核销码方式：用户输入核销码核销</br>选择二维码方式：用户出示卡券核销二维码，商家扫码后直接核销</br>选择卡密方式：此方式为定制版使用，非定制版不要开启，选择此项需接口支持，卡密会展示给用户，用户到其他平台输入卡密核销</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group consume_type" style="display:{if $set['consume_type'] >0}none;{/if}">
+                        <label class="col-xs-1 col-sm-1 col-md-2 control-label">卡券核销码</label>
+                        <div class="col-sm-6 col-xs-12">
+                            <input type="text" name="consume_code" class="form-control" value="{$set['consume_code']}"/>
+                            <span class="help-block">例如：123456，用于用户核销卡券时使用，不填则用户可以直接核销</span></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-xs-1 col-sm-1 col-md-2 control-label">卡券使用门槛</label>
+                        <div class="col-sm-6 col-xs-12">
+                            <input type="text" name="use_condition" class="form-control" value="{$set['use_condition']}"/>
+                            <span class="help-block">例如：满xxx元/买xx件商品  不填则表示无门槛</span></div>
+                    </div>
+                     <div class="form-group" >
+                        <label class="col-xs-1 col-sm-1 col-md-2 control-label">卡券使用说明</label>
+                        <div class="col-sm-6 col-xs-12">
+                            <textarea id="use_tip" name="use_tip"  class="form-control richtext" cols="5" rows="5">{$set['use_tip']}</textarea>	
+                            <span class="help-block">针对卡券使用规则的说明</span></div>
+
+                    </div>
+                    <div class="form-group display_1"  id="display_1" style="display:{if $set['coupon_type'] == 1};{else}none;{/if}">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label"><span class="text-danger">*</span> 折扣额度</label>
+                        <div class="col-sm-9 col-xs-12">
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="discount" value="{$coupon_content['discount']}"/>
+                                <span class="input-group-addon">折</span>
+                            </div>
+                            <div class="help-block">表示打折额度（百分比）。填30就是3折。填写整数</div>
+                        </div>
+                    </div>
+                    <div class="form-group display_2" id="display_2" style="display:{if $set['coupon_type'] == 2};{else}none;{/if}">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label"><span class="text-danger">*</span> 现金金额</label>
+                        <div class="col-sm-9 col-xs-12">
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="reduce_cost" value="{$coupon_content['reduce_cost']}"/>
+                                <span class="input-group-addon">元</span>
+                            </div>
+                            <div class="help-block"></div>
+                        </div>
+
+                    </div>
+                    <div class="form-group display_3" id="display_3" style="display:{if $set['coupon_type'] == 3};{else}none;{/if}">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label"><span class="text-danger">*</span> 礼品券详情</label>
+                        <div class="col-sm-4 col-xs-12">
+                            <input type="text" class="form-control" name="gift" value="{$coupon_content['gift']}"/>
+                        </div>
+                        <div class="help-block">六个字内</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label" style="padding-top:15px"> 卡券有效期</label>
+                        <div class="col-sm-9 col-xs-12">
+                            <div class="radio">
+                                <div class="col-sm-3" style="padding-top:6px"><label><input type="radio" value="1" name="time_type" {if $coupon_validity['time_type']==1} checked="checked"{/if} />固定日期 </label></div>
+                                {php echo tpl_form_field_daterange('time_limit',$coupon_validity['time_limit'],true);}
+                            </div>
+                            <div class="radio">
+                                <div class="col-sm-3" style="padding-top:6px"><label><input type="radio" value="2" name="time_type" {if $coupon_validity['time_type']==2} checked="checked"{/if} />领取后 </label></div>
+                                <div class="col-sm-3" style="margin-left:-15px">
+                                    <select name="deadline" id="deadline" class="form-control">
+                                        <?php
+                                        for($i=0; $i<=90; $i++) {
+                                        if(!$i) $n = '当'; else $n = $i;
+                                        $selected='';
+                                        if($i==$coupon_validity['deadline']){
+                                        $selected='selected';
+                                        }
+                                        echo '<option value="'.$i.'" '.$selected.'>'.$n.'天</option>';
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                                <div class="col-sm-3" style="padding-top:6px">有效,有效期</div>
+                                <div class="col-sm-3" style="margin-left:-15px">
+                                    <select name="limit" id="limit" class="form-control">
+                                        <?php
+                                        for($i=1; $i<=90; $i++) {
+                                        $selected='';
+                                        if($i==$coupon_validity['limit']){
+                                        $selected='selected';
+                                        }
+                                        echo '<option value="'.$i.'" '.$selected.'>'.$i.'天</option>';
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+
+                            </div></br>
+                            <span class="help-block">第1种表示领取和使用卡券时间都要在所选范围内</br>第2种主要是验证使用时间，例如领取后1天有效有效期10天：如果2017-1-1领取卡券，2017-1-3到2017-1-12可以使用，低于最小时间可以领取不能使用，超过最大时间不能领取和使用</span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="form-group col-sm-12">
+                        <input type="hidden" name="token" value="{$_W['token']}" /> 
+                        <input type="hidden" name="id" value="{$id}" /> 
+                        <input type="submit" name="submit" value="提交" class="btn btn-primary col-lg-1" />
+                    </div>
+
+                </div>
+        </form>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    $(':radio[name="coupon_type"]').click(function () {
+
+        if ($(this).val() == '1') {
+            $('.display_2').hide();
+            $('.display_3').hide();
+            $('.display_1').show();
+        } else if ($(this).val() == '2') {
+            $('.display_1').hide();
+            $('.display_3').hide();
+            $('.display_2').show();
+        } else if ($(this).val() == '3') {
+            $('.display_1').hide();
+            $('.display_2').hide();
+            $('.display_3').show();
+        }
+    });
+   
+   $(':radio[name="consume_type"]').click(function () {
+                if (this.checked) {
+                    if ($(this).val() == '1') {
+                        $('.consume_type').hide();
+                    } else {
+                        $('.consume_type').show();
+                    }
+                }
+            });
+   
+</script>
+{/if} 
+{template 'common/footer'}

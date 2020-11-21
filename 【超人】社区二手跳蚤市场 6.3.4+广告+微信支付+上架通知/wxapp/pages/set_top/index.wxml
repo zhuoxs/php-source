@@ -1,0 +1,141 @@
+<view class="container" wx:if="{{completed}}">
+    <view class="post-panel" wx:if="{{log}}">
+        <block wx:if="{{payLog.length>0}}" wx:for="{{payLog}}" wx:key="id">
+            <view class="weui-cells__title">支付时间：{{item.paytime}}</view>
+            <view class="weui-cells weui-cells_after-title">
+                <view class="weui-cell">
+                    <view class="weui-cell__bd">置顶地区</view>
+                    <view class="weui-cell__ft">
+                        <block wx:for="{{item.set_top_fields}}" wx:for-index="idx" wx:for-item="field" wx:key="district">
+                            <text>{{field.district}}</text>{{idx!=item.set_top_fields.length-1?'、':''}}
+                            </block>
+                    </view>
+                </view>
+            </view>
+            <view class="weui-cells weui-cells_after-title">
+                <view class="weui-cell">
+                    <view class="weui-cell__bd">置顶时间</view>
+                    <view class="weui-cell__ft">{{item.total}}{{item.type}}</view>
+                </view>
+            </view>
+            <view class="weui-cells weui-cells_after-title">
+                <view class="weui-cell">
+                    <view class="weui-cell__bd">支付金额</view>
+                    <view class="weui-cell__ft">{{item.all_price}} {{item.paytype==1?credit_title:'元'}}</view>
+                </view>
+            </view>
+            <view class="weui-cells weui-cells_after-title">
+                <view class="weui-cell">
+                    <view class="weui-cell__bd">置顶状态</view>
+                    <view class="weui-cell__ft">
+                        <text wx:if="{{item.audit==0}}">待审核</text>
+                        <text wx:if="{{item.audit==1}}">置顶中</text>
+                        <text wx:if="{{item.audit==-1}}">已拒绝</text>
+                        <text wx:if="{{item.audit==-2}}">已过期</text>
+                    </view>
+                </view>
+            </view>
+            <block wx:if="{{item.audit==1||item.audit==-2}}">
+                <view class="weui-cells weui-cells_after-title">
+                    <view class="weui-cell">
+                        <view class="weui-cell__bd">审核时间</view>
+                        <view class="weui-cell__ft">{{item.audittime}}</view>
+                    </view>
+                </view>
+                <view class="weui-cells weui-cells_after-title">
+                    <view class="weui-cell">
+                        <view class="weui-cell__bd">过期时间</view>
+                        <view class="weui-cell__ft">{{item.expiretime}}</view>
+                    </view>
+                </view>
+            </block>
+        </block>
+    </view>
+    <view class="post-panel" wx:else>
+        <form bindsubmit="confirmPay" reportSubmit="true">
+            <view class="weui-cells__title">
+                <text class="margin-right-xs">置顶地区</text>
+                <zan-icon bindtap="showPopup" color="red" type="question"></zan-icon>
+            </view>
+            <view class="weui-cells weui-cells_after-title">
+                <checkbox-group bindchange="districtChange" name="position">
+                    <view class="checkbox-group" wx:for="{{list}}" wx:for-item="cb" wx:key="id">
+                        <label class="weui-cell weui-check__label zan-font-14">
+                            <checkbox checked="{{cb.checked}}" class="weui-check" value="{{cb.district}}"></checkbox>
+                            <view class="weui-cell__hd weui-check__hd_in-checkbox">
+                                <icon class="weui-icon-checkbox_circle" size="20" type="circle" wx:if="{{!cb.checked}}"></icon>
+                                <icon class="weui-icon-checkbox_success" size="20" type="success" wx:if="{{cb.checked}}"></icon>
+                            </view>
+                            <view class="weui-cell__bd">{{cb.district}}</view>
+                        </label>
+                        <view class="ps-list" wx:if="{{cb.checked}}">
+                            <checkbox-group bindchange="positionChange" data-index="{{index}}" name="position">
+                                <label class="weui-cell weui-check__label zan-font-14" wx:for="{{cb.fields}}" wx:key="position">
+                                    <checkbox checked="{{item.checked}}" class="weui-check" value="{{item.position}}"></checkbox>
+                                    <view class="weui-cell__hd weui-check__hd_in-checkbox">
+                                        <icon class="weui-icon-checkbox_circle" size="20" type="circle" wx:if="{{!item.checked}}"></icon>
+                                        <icon class="weui-icon-checkbox_success" size="20" type="success" wx:if="{{item.checked}}"></icon>
+                                    </view>
+                                    <view class="weui-cell__bd">
+                                        {{item.position==1?'最新':'人气'}}
+                                        （<text wx:if="{{cb.paytype==0}}">{{item.price}}元/天或{{item.credit}}{{credit_title}}/天</text>
+                                        <text wx:if="{{cb.paytype==1}}">{{item.credit}}{{credit_title}}/天</text>
+                                        <text wx:if="{{cb.paytype==2}}">{{item.price}}元/天</text>）
+                                    </view>
+                                </label>
+                            </checkbox-group>
+                        </view>
+                    </view>
+                </checkbox-group>
+            </view>
+            <view class="weui-cells weui-cells_after-title bg-white">
+                <view class="weui-cell weui-cell_input">
+                    <view class="weui-cell__hd">
+                        <view class="weui-label">购买数量</view>
+                    </view>
+                    <view class="weui-cell__bd">
+                        <input class="weui-input" name="total" placeholder="单位：天" type="digit"></input>
+                    </view>
+                </view>
+            </view>
+            <view class="weui-cells weui-cells_after-title bg-white">
+                <view class="weui-cell weui-cell_select zan-font-14">
+                    <view class="weui-cell__hd weui-cell__hd_in-select-after">
+                        <view class="weui-label">支付方式</view>
+                    </view>
+                    <view class="weui-cell__bd">
+                        <picker bindchange="changePayType" range="{{payType}}" value="{{payTypeIndex}}">
+                            <view class="weui-select weui-select_in-select-after">{{payTypeIndex!=undefined?payType[payTypeIndex]:'请选择支付方式'}}</view>
+                        </picker>
+                    </view>
+                </view>
+            </view>
+            <view class="padding flex flex-direction">
+                <button class="cu-btn bg-orange lg" formType="submit">确认支付</button>
+                <button bindtap="cancelPay" class="cu-btn bg-red margin-top-sm lg">取消支付</button>
+            </view>
+        </form>
+    </view>
+</view>
+<view class="container-loading" wx:else>
+    <image mode="widthFix" src="{{loadingImg}}"></image>
+</view>
+<zan-toast id="zan-toast"></zan-toast>
+<zan-toptips content="{{content}}" id="zan-toptips"></zan-toptips>
+<zan-popup bindclose="toggleBottomPopup" show="{{showBottomPopup}}" type="top">
+    <view class="item-pop">
+        <view catchtap="toggleBottomPopup" class="pop-close">
+            <text class="iconfont icon-close"></text>
+        </view>
+        <view class="text-center zan-font-16 zan-ellipsis margin-big">置顶规则</view>
+        <view class="zan-font-14 zan-c-gray-dark">
+            <rich-text nodes="{{rule}}" wx:if="{{rule}}"></rich-text>
+            <block wx:else>
+                <view>自6.2版本之后置顶规则发生变化，具体表现为：</view>
+                <view>1、取消置顶位置，改为置顶地区选项，管理员在后台设置可选的置顶地区，用户选择自己要置顶的地区，用户登录小程序后会根据其所在地区显示该地区的置顶物品</view>
+                <view>2、每个地区会对应最多两个显示位置，最新和人气，分别对应首页两种不同的分类，用户可根据自己的需要选择置顶在其中一个或两个位置</view>
+                <view>3、置顶物品的顺序是随机排列的，每次刷新页面顺序都会发生改变</view>
+            </block>
+        </view>
+    </view>
+</zan-popup>

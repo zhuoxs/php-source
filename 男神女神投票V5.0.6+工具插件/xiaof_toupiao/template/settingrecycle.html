@@ -1,0 +1,229 @@
+{template 'common/header'}
+
+<ul class="nav nav-tabs">
+    <li><a href="{php echo $this->createWebUrl('settinglists', array('version_id' => $_GPC['version_id']));}">活动列表</a></li>
+    <li><a href="{php echo $this->createWebUrl('settingedit', array('version_id' => $_GPC['version_id']));}">添加新活动</a></li>
+    <li class="active"><a href="{php echo $this->createWebUrl('settingrecycle', array('version_id' => $_GPC['version_id']));}">回收站</a></li>
+</ul>
+
+<div class="main">
+    <p class="bg-warning" style="padding: 15px; margin:0px; margin-bottom: 13px; color: red;">
+        <span style="font-weight: bold; font-size: 18px;">注意：删除回收站的活动包含整个活动所有相关数据,刪除回收站的活动记得提前备份数据库，否则如果出现其他数据表丢失数据不可找回。</span>
+    </p>
+    <div class="panel panel-info">
+        <div class="panel-heading">搜索</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site">
+                <input type="hidden" name="a" value="entry">
+                <input type="hidden" name="m" value="xiaof_toupiao">
+                <input type="hidden" name="do" value="settinglists">
+                <input type="hidden" name="version_id" value="{$_GPC['version_id']}">
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">主题</label>
+                    <div class="col-xs-12 col-sm-7 col-lg-7">
+                        <input class="form-control" name="key" id="" type="text" value="{$_GPC['key']}">
+                    </div>
+                    <div class="col-xs-12 col-sm-2 col-lg-2">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+	<form action="?{$_SERVER['QUERY_STRING']}" method="post" id="form1">
+        <table class="table table-hover"  style="width:100%;z-index:-10;" cellspacing="0" cellpadding="0">
+            <thead class="navbar-inner">
+            <tr>
+				<th style="width:5%;">删？</th>
+                <th style="width:5%;">编号</th>
+                <th style="width:17%;">主题</th>
+                <th style="width:15%;">投票开始时间</br>投票结束时间</th>
+				<th style="width:28%;">数据统计</th>
+                <th style="width:27%;" class="text-right">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $list $item}
+            <tr>
+				<td><input type="checkbox" name="delete[]" value="{$item['id']}" /></td>
+                <td>{$item['id']} </td>
+                <td>{$item['title']} </td>
+				<td>
+                    <p>{if strtotime($item['start']) < time()}<span class="label label-success">{$item['start']}</span>{else}<span class="label label-danger">{$item['start']}</span>{/if}</p>
+                    <p>{if strtotime($item['end']) > time()}<span class="label label-success">{$item['end']}</span>{else}<span class="label label-danger">{$item['end']}</span>{/if}</p>
+                </td>
+
+				<td>
+                    <p><span class="label label-info">点击：{if empty($item['totals']['vote']['clicks'])}0{else}{$item['totals']['vote']['clicks']}{/if}</span>
+                    <span class="label label-info">投票：{if empty($item['totals']['vote']['goods'])}0{else}{$item['totals']['vote']['goods']}{/if}</span>
+                    <span class="label label-info">分享：{if empty($item['totals']['vote']['shares'])}0{else}{$item['totals']['vote']['shares']}{/if}</span></p>
+                    <p><span class="label label-info">报名：{if empty($item['totals']['vote']['joins'])}0{else}{$item['totals']['vote']['joins']}{/if}</span>
+                    <span class="label label-info">支付：{if empty($item['totals']['fee'])}0{else}{$item['totals']['fee']}{/if}元</span></p>
+                </td>
+                <td class="text-right" style="overflow:visible;">
+					<div class="btn-group">
+						<a href="{php echo $this->createWebUrl('settingrecycle', array('sid'=>$item['id'], 'act'=>'reduction', 'version_id' => $_GPC['version_id']));}" id="{$item['id']}" class="btn btn-default">还原</a>
+					</div>
+                </td>
+            </tr>
+            {/loop}
+            </tbody>
+        </table>
+		
+        <table class="table table-hover">
+            <tr>
+                <td width="30">
+                    <input type="checkbox" onclick="var ck = this.checked;$(':checkbox').each(function(){this.checked = ck});" />
+                </td>
+                <td class="text-left">
+                    <input name="token" type="hidden" value="{$_W['token']}" />
+					<input type="submit" class="btn btn-primary span2" name="pass" value="删除并清除活动数据" /> &nbsp;
+                    <input type="submit" class="btn btn-primary span2" name="del" value="删除" /><span style="font-size: 16px; color: red;"></span>
+                </td>
+            </tr>
+        </table>
+        {$pager}
+	</form>
+</div>
+
+<div class="modal fade" id="myModal" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">活动复制</h4>
+            </div>
+            <div class="modal-body">
+                <form action="" id="users-form" method="post" class="form-horizontal" role="form">
+                    <input type="hidden" name="sid" id="csid" value="">
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">公众号</label>
+                        <div class="col-xs-12 col-sm-8 col-lg-9">
+                            <select name="copyuniacid" class="form-control">
+                                {loop $accounts $items}
+                                <option {if $_W['uniacid'] == $items['uniacid']} selected{/if} value="{$items['uniacid']}">{$items['name']}</option>
+                                {/loop}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">活动主题</label>
+                        <div class="col-xs-12 col-sm-8 col-lg-9">
+                            <input type="text" class="form-control" id="title" name="title" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">报名时间</label>
+                        <div class="col-xs-12 col-sm-8 col-lg-9">
+                            <input name="jointimes[start]" id="joinstart" type="hidden" value="" />
+                            <input name="jointimes[end]" id="joinend" type="hidden" value="" />
+                            <button class="btn btn-default daterange daterange-time" type="button"><span class="date-title"></span> <i class="fa fa-calendar"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">投票时间</label>
+                        <div class="col-xs-12 col-sm-8 col-lg-9">
+                            <input name="times[start]" id="timesstart" type="hidden" value="" />
+                            <input name="times[end]" id="timesend" type="hidden" value="" />
+                            <button class="btn btn-default daterange daterange-time" type="button"><span class="date-title"></span> <i class="fa fa-calendar"></i></button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="users-save btn btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ruleModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="ruleModalLabel">活动入口</h4>
+            </div>
+            <div class="modal-body">
+                <p id="ruleModalurl">
+                </p>
+                <p id="ruleModalqrcode">
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $('.users-save').click(function(){
+        $.post("{php echo $this->createWebUrl('copysetting');}",$("#users-form").serialize(),function(data){
+            $('#myModal').modal('hide');
+            location.reload()
+        });
+    });
+
+    function openrule(sid){
+        var result;
+        $("#ruleModalurl").html('');
+        $("#ruleModalqrcode").html('');
+        $.get("{php echo $this->createWebUrl('getrule');}&sid="+ sid, function(data){
+            result = $.parseJSON(data);
+            $("#ruleModalurl").html('链接入口：<a target="_blank" href="'+result.url+'" class="btn btn-default" style="margin-left: 8px;">点击PC预览</a><br/><p class="bg-success" style="padding: 5px;margin: 13px 0px;">'+result.url+'</p>');
+            $("#ruleModalqrcode").html('二维码入口：<br/><img src="'+result.qrcode+'"/>');
+            $('#ruleModal').modal('show');
+        });
+
+    }
+
+    function openmodal(sid,title,joinstart,joinend,start,end){
+
+        $("#csid").val(sid);
+            $("#title").val(title);
+            $("#joinstart").val(joinstart);
+            $("#joinend").val(joinend);
+            $("#timesstart").val(start);
+            $("#timesend").val(end);
+            require(["jquery","daterangepicker"], function($){
+                $(function(){
+                    $(".daterange.daterange-time").each(function(){
+                        var elm = this;
+                        var startDate =  $(elm).prev().prev().val();
+                        var endDate = $(elm).prev().val();
+                        $(elm).find(".date-title").html(startDate + " 至 " + endDate);
+                        $(this).daterangepicker({
+                            startDate: startDate,
+                            endDate: endDate,
+                            format: "YYYY-MM-DD HH:mm",
+                            timePicker: true,
+                            timePicker12Hour : false,
+                            timePickerIncrement: 1,
+                            minuteStep: 1
+                        }, function(start, end){
+                            $(elm).find(".date-title").html(start.toDateTimeStr() + " 至 " + end.toDateTimeStr());
+                            $(elm).prev().prev().val(start.toDateTimeStr());
+                            $(elm).prev().val(end.toDateTimeStr());
+                        });
+                    });
+                });
+            });
+        $('#myModal').modal('show');
+    }
+
+
+    $('#form1').submit(function(){
+        if($(":checkbox[name='delete[]']:checked").size() > 0){
+            return confirm('请先备份数据库，否则如果出现其他数据表丢失数据不可找回，确定删除吗？');
+        }
+        alert('没有选择活动');
+        return false;
+    });
+</script>
+{template 'common/footer'}

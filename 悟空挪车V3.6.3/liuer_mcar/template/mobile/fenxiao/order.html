@@ -1,0 +1,168 @@
+{template 'header'}
+<style>
+    body{
+        background: #ffffff;
+    }
+    .team-wrap{
+
+    }
+    .team-item{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        border-bottom: 0.5px solid #eaeaea;
+    }
+    .team-item:last-child{
+    }
+    .team-item .item-left{
+        display: flex;
+        justify-content: flex-start;
+
+    }
+    .item-user{
+        height: 55px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+    }
+    .item-right{
+        width: 50px;
+        text-align: center;
+        font-family:'Georgia';
+    }
+    .item-right span{
+        color: #ff3300;
+        font-size: 20px;
+    }
+    .user-mark,.user-time{
+        font-size: 10px;
+    }
+    .no-record{
+        margin-top: 20%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .no-record img{
+        width: 80px;
+        height: 80px;
+    }
+    .no-record span{
+        display: inline-block;
+        margin-top: 5px;
+        font-size: 12px;
+        color: #666666;
+    }
+</style>
+<body>
+<div id="hook-app">
+    <?php if($config['header_isshow']): ?>
+    <div class="header">
+        <yd-navbar title="订单明细">
+            <a href="<?php echo $this->createMobileUrl('fenxiao'); ?>" slot="left">
+                <yd-navbar-back-icon></yd-navbar-back-icon>
+            </a>
+        </yd-navbar>
+    </div>
+    <?php endif; ?>
+    <div class="team-wrap">
+        <?php if(count($yongjinArr) > 0): ?>
+        {loop $yongjinArr $v}
+        <div class="team-item">
+            <div class="item-left">
+                <!--<div class="item-media">
+                    <img src="{$v['avatar']}" alt="">
+                </div>-->
+                <div class="item-user">
+                    <span class="user-nickname">{$v['nickname']}</span>
+                    <span class="user-mark">{$v['ordersn']}</span>
+                    <span class="user-time">{$v['jointime']}</span>
+                </div>
+            </div>
+            <div class="item-right">
+                <span>{$v['price']}</span>
+            </div>
+        </div>
+        {/loop}
+        <?php else: ?>
+        <div class="no-record">
+            <img src="{ASSETS}/images/no_record.png" alt="">
+            <span>暂无记录</span>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<script>
+
+
+    var updateUrl = "{php echo $this->createMobileUrl('car',['op'=>'update'])}";
+    var delUrl = "{php echo $this->createMobileUrl('car',['op'=>'del'])}";
+
+    var reg = /^1[345789][0-9]\d{8}/;
+
+    var app = new Vue({
+        el: '#hook-app',
+        data: {
+            id: '',
+            show: false,
+            chepaihao: '',
+            mydo: [
+                {
+                    label: '编辑车辆',
+                    callback:function(){
+                        location.href = updateUrl + '&id='+app.id;
+                        console.log('edit')
+                    }
+                },
+                {
+                    label: '删除车辆',
+                    callback:function(){
+                        app.$dialog.confirm({
+                            title: '温馨提示',
+                            mes: '确定要删除【'+app.chepaihao+'】吗？',
+                            opts: function() {
+                                app.$dialog.loading.open('删除中...');
+                                $.post(delUrl,{
+                                    id: app.id
+                                }).then(function(resp){
+                                    resp = JSON.parse(resp);
+                                    console.log(resp);
+                                    app.$dialog.loading.close();
+                                    if(!resp.error){
+                                        app.message(resp.msg);
+                                        setTimeout(function(){
+                                            location.reload();
+                                        },1500)
+                                    }else{
+                                        app.message(resp.msg);
+                                        return false;
+                                    }
+                                })
+                            }
+                        });
+                    }
+                },
+            ]
+        },
+        methods: {
+            doaction: function(id,chepaihao){
+                this.id = id;
+                this.chepaihao = chepaihao;
+                this.show = true;
+            },
+            update: function(){
+                location.href = updateUrl;
+            },
+            message:function(msg){
+                this.$dialog.toast({
+                    mes: msg,
+                    timeout: 1500
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+{include file="common/head"}
+    <style>
+        body {background: #f1f2f3;}
+
+    </style>
+
+    <div class="pay-box">
+        <div>
+            <p class="mode"><span>请选择提现方式</span><i class="btn fn-fanhui-copy-copy"></i></p>
+            <div class="mode-box">
+                <ul>
+                    {notempty name="momey_account"}
+                    {volist name="momey_account" id='v'}
+                    <li data-id="{$v['id']}"><span>{$v['title']}</span><a  onclick="pay_way_del('{$v['id']}')" class="btn fn-shanchu1"></a></li>
+                    {/volist}
+                    {else/}
+                    <li class="not-comment not" data-id="0" style="text-align: left;min-height: 40px;height: 40px;">您还没有可以提现的账户哦~</li>
+                    {/notempty}
+                </ul>
+                <p><a href="{:url('member/add_card')}">新增提现账户<i class="btn fn-fanhui-copy-copy"></i></a></p>
+            </div>
+        </div>
+        <p class="out-title">可提现金币数<var style="color: #888;font-size: 12px;font-style: normal;transform: scale(.9);">（{$menber_info['money']}）</var></p>
+        <div class="get-out">
+            <span class="btn fn-jinbi"></span>
+            <input type="hidden" value="0" name="type" id="type">
+            <input type="hidden" value="0" name="money" id="paymoney">
+            <input type="number" placeholder="可转出{$menber_info['money']}个金币" value=""  onblur="get_mun()"  id="fname" />
+        </div>
+        <div class="pay-explain">
+            当前转出金币价值 <span id="money">0</span> 元
+        </div>
+        <div class="reminder">
+            <span><i class="btn fn-wenxintishi" style="font-size: 13px;margin-bottom: 5px;"></i>温馨提示：</span>
+            <p>1、15个金币等于1元，最低提现金币数45个金币。</p>
+            <p>2、提现金币必须是15的整数倍。</p>
+        </div>
+        <button onclick="submitmoney()">提现</button>
+    </div>
+
+<script>
+    var gold_exchange={$gold_exchange_rate};
+    var usermoney=parseInt({$menber_info['money']});
+    $(function () {
+        $("#fname").focus();
+        $(".mode").click(function(){
+            $(".pay-box .mode-box").stop().slideToggle();
+            $(".pay-box li span").click(function () {
+                var id=$(this).parent().data('id');
+                $('#type').val(id);
+                if(id=='0'){
+                   return false;
+                }
+                $(".mode span").html($(this).text());
+                $(".pay-box .mode-box").slideUp();
+            });
+        });
+
+        //to and footer nav setting
+        var navTopTitle="{$navTopTitle|default='视频站'}";
+        $('#navTopTitle').html(navTopTitle);
+        $('.navFooter').removeClass('active');
+        $('.navFooter:nth-child({$curFooterNavIndex|default=2})').addClass('active');
+    });
+    //删除提现方式
+    function pay_way_del(id){
+        var ids=id;
+        layer.open({
+            content: '你确定删除该信息吗？'
+            ,btn: ['删除', '取消']
+            ,skin: 'footer'
+            ,yes: function(index){
+                var data={id:ids}
+                $.post('/api/way_del',data,function(e){
+                    layer.open({content: '删除成功',time:2,end:function(){
+                        window.location.reload();
+                    }})
+                })
+            }
+        });
+
+    }
+    function get_mun(){
+        var gold=parseInt($('#fname').val());
+        if(gold<=0 || isNaN(gold) ) gold=1;
+        if(gold>usermoney) gold=usermoney;
+        var fname=Math.floor(gold/gold_exchange);
+        var upfname=fname*gold_exchange;
+        $('#fname').val(upfname);
+        $('#paymoney').val(fname);
+        $('#money').html(fname);
+    }
+    function submitmoney(){
+        var type=$("#type").val();
+        var paymoney=parseInt($('#paymoney').val());
+        var fname=parseInt($('#fname').val());
+        var stutas='0';
+        if(type=='0'){
+            layer.open({
+                content: '请选择提现方式'
+                ,skin: 'msg'
+                ,time: 2 //2秒后自动关闭
+            });
+            stutas='1';
+        }
+
+        if(fname<0  || isNaN(fname) || usermoney<fname ){
+            layer.open({
+                content: '你的提现金币数有误'
+                ,skin: 'msg'
+                ,time: 2 //2秒后自动关闭
+            });
+            stutas='1';
+        }
+        if(stutas=='0'){
+            var url='/api/get_pay'
+            var data={type:type,gold:fname,money:paymoney}
+            $.post(url,data,function(e){
+                if(e.statusCode==0){
+                    layer.open({
+                        content: e.message
+                        ,skin: 'msg'
+                        ,time: 2 //2秒后自动关闭
+                        ,end:function(){
+                            window.location.reload();//刷新当前页面.
+                        }
+                    });
+                }else {
+                    layer.open({
+                        content: e.message
+                        ,skin: 'msg'
+                        ,time: 2 //2秒后自动关闭
+                    });
+                }
+            },'json')
+        }
+    }
+</script>
+</body>
+</html>

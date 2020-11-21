@@ -1,0 +1,136 @@
+{template 'web/common/common'}
+{template 'web/problem/navbar'}
+ <style type="text/css">
+     .layui-form-select{display: none;}
+ </style>
+<div class="layui-card">
+    <form class="layui-form" method="post" action="">
+        <div class="layui-form-item">
+            <label class="layui-form-label">选择分类</label>
+            <div class="layui-input-block">
+                <select name="parent_id" id="parent_id"  style="width: 200px;display: block;float: left;">
+                    <option value="0">请选择</option>
+                    {loop $data['typeData'] $index $item}
+                    <option value="{$item['id']}" <?php if($data['parentType']['id']==$item['id']){echo 'selected';}?>>{$item['type_name']}</option>
+                    {/loop}
+                </select>
+                <select name="type_id" id="type_id" style="width: 200px;display: block;float: left;">
+                    <option value="0">请选择</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">问题标题 问：</label>
+            <div class="layui-input-block">
+              <input type="text" name="problem_title" value="{$data['list']['problem_title']}" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">问题答案 答：</label>
+            <div class="layui-input-block">
+              <textarea name="problem_value" id="" cols="30" rows="10" class="layui-textarea" style="width: 70%">{$data['list']['problem_value']}</textarea>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">是否显示</label>
+            <div class="layui-input-block">
+                {if $data['list']['status']==1}
+                <input type="checkbox" name="status" value="1" lay-skin="switch" lay-text="ON|OFF" checked="">
+                {else}
+                <input type="checkbox" name="status" value="1" lay-skin="switch" lay-text="ON|OFF">
+                {/if}
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">排序</label>
+            <div class="layui-input-block">
+              <input type="text" name="rank" value="{$data['list']['rank']}" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <input type="hidden" name="id" value="{$data['list']['id']}">
+                <input type="hidden" name="type_old_id" value="{$data['list']['type_id']}">
+                <button class="layui-btn layui-btn-sm" type="button" lay-submit lay-filter="formDemo">保存</button>
+                <button class="layui-btn layui-btn-sm layui-btn-primary" type="button" id="goBack">返回</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form,layer = layui.layer;
+
+        //提交数据
+        form.on('submit(formDemo)', function(data) {
+            var formData = data.field;
+            var url = "{url 'site/entry/admin',array('m'=>$_GPC['m'],'op'=>'problem_list_edit','action'=>'problem')}";
+            var data = {
+                formData: formData
+            };
+            postData(url, data);
+            return false;
+        });
+
+        $('#goBack').click(function () {
+            goBack();
+        })
+    });
+</script>
+<script>
+    require(["../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.js"],function(){
+        $(function () {
+
+            var id=$("input[name='id']").val();
+            if(id) {
+                var pid=$("#parent_id").val();
+                if(pid!=0){
+                    var type_id=$("input[name='type_old_id']").val();
+                    $.ajax({
+                        type:"post",
+                        url:"{url 'site/entry/admin',array('m'=>$_GPC['m'],'op'=>'getTypeData','action'=>'problem')}",
+                        data:{pid:pid},
+                        dataType:'json',
+                        success:function(res){
+                            if(res.typeData){
+                                var typeData=res.typeData;
+                                var str='';
+                                typeData.forEach(function (val) {
+                                    if(type_id==val['id']){
+                                        str+="<option value='"+val['id']+"' selected='selected'>"+val['type_name']+"</option>";
+                                    }else{
+                                        str+="<option value='"+val['id']+"'>"+val['type_name']+"</option>";
+                                    }
+
+                                })
+                                $("#type_id").html(str);
+                            }
+                        }
+                    })
+                }
+
+            }
+
+            $("#parent_id").change(function () {
+                var pid=$(this).val();
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/admin',array('m'=>$_GPC['m'],'op'=>'getTypeData','action'=>'problem')}",
+                    data:{pid:pid},
+                    dataType:'json',
+                    success:function(res){
+                        if(res.typeData){
+                            var typeData=res.typeData;
+                            var str='';
+                            typeData.forEach(function (val) {
+                                str+="<option value='"+val['id']+"'>"+val['type_name']+"</option>";
+                            })
+                            $("#type_id").html(str);
+                        }
+                    }
+                })
+            })
+        })
+    })
+</script>

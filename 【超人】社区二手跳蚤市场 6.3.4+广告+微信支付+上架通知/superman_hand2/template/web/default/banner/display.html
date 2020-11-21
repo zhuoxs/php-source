@@ -1,0 +1,92 @@
+<style>
+    .table>thead>tr>th,.table>tbody>tr>td {
+        vertical-align: middle;
+    }
+</style>
+<div class="main">
+    <form action="" method="post">
+        <div class="panel panel-default">
+            <div class="table-responsive panel-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th width="80">排序</th>
+                            <th>图片</th>
+                            <th>appid</th>
+                            <th>url</th>
+                            <th>是否为默认</th>
+                            <th width="100">结束时间</th>
+                            <th width="140">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {if !empty($list)}
+                    {loop $list $li}
+                    <tr valign="center">
+                        <td>
+                            <input type="text" class="form-control text-center" name="displayorder[{$li['id']}]" value="{$li['displayorder']}">
+                        </td>
+                        <td><img width="100" src="{php echo tomedia($li['thumb'])}" alt=""></td>
+                        <td>{$li['appid']}</td>
+                        <td>{$li['url']}</td>
+                        <td class="tac">
+                            <input class="isdisplay" type="checkbox" name="default" value="{$li['is_default']}" data-id="{$li['id']}" {if $li['is_default'] == 1}checked{/if}/>
+                        </td>
+                        <td>
+                            {if $li['starttime'] > $current_time}
+                            <span class="label label-default">未开始</span>
+                            {else if $li['endtime'] > 0 && $li['endtime'] < $current_time}
+                            <span class="label label-danger">已过期</span>
+                            {else}
+                            {$li['endtime']}
+                            {/if}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{php echo $this->createWebUrl('banner', array('act' => 'post', 'id' => $li['id']))}" title="编辑" class="btn btn-default btn-sm">编辑</a>
+                                <a href="{php echo $this->createWebUrl('banner', array('act' => 'delete', 'id' => $li['id']))}" title="删除" class="btn btn-default btn-sm" onclick="return confirm('此操作不可恢复，确认吗？'); return false;">删除</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {/loop}
+                    {/if}
+                    </tbody>
+                </table>
+            </div>
+            <div class="panel-footer">
+                总共 <strong>{$total}</strong> 条
+            </div>
+        </div>
+        {$pager}
+        {if !empty($list)}
+        <input name="submit" type="submit" value="更新排序" class="btn btn-primary col-lg-1" />
+        <input type="hidden" name="token" value="{$_W['token']}" />
+        {/if}
+    </form>
+</div>
+<script>
+    require(['jquery','bootstrap.switch', 'util'], function($, util){
+        //是否开启
+        var load_bootstrap_switch = function() {
+            $(':checkbox').bootstrapSwitch();
+            $('.isdisplay').on('switchChange.bootstrapSwitch', function(e, state){
+                $this = $(this);
+                var id = $this.attr('data-id');
+                var value = this.checked ? 'insert' : 'delete';
+                var url = window.location.href;
+                $.ajax({
+                    type: 'post',
+                    url: url+'&op='+value+'&id='+id,
+                    success: function (res) {
+                        if (res == 'success') {
+                            util.message('更新成功', '', 'error');
+                        } else {
+                            util.message('更新失败！', '', 'error');
+                        }
+                    }
+                });
+            });
+        };
+        load_bootstrap_switch();
+    });
+</script>

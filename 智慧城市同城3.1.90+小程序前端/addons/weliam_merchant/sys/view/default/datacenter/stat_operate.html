@@ -1,0 +1,384 @@
+{php include wl_template('common/header');}
+<style>
+	.select2-container{min-width: 180px;}
+</style>
+<ul class="nav nav-tabs">
+	<li class="active"><a href="#">运营统计</a></li>
+</ul>
+<div class="app-content">
+	<div class="app-filter">
+		<div class="filter-list">
+			<form action="{if is_agent()}./agent.php{else}./index.php{/if}" method="get" class="form-horizontal" id="form1">
+				{if !is_agent()}
+				<input type="hidden" name="c" value="site" />
+	            <input type="hidden" name="a" value="entry" />
+	            <input type="hidden" name="m" value="{MODULE_NAME}" />
+	            {/if}
+	            <input type="hidden" name="p" value="{$_W['plugin']}" />
+				<input type="hidden" name="ac" value="{$_W['controller']}" />
+				<input type="hidden" name="do" value="{$_W['method']}" />
+				<input type="hidden" name="days" value="{$days}"/>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">时间</label>
+					<div class="col-sm-9 js-daterange" data-form="#form1">
+						<div class="btn-group">
+							<a href="{php echo wl_filter_url('days:0');}" class="btn {if $days == 0}btn-primary{else}btn-default{/if}">今天</a>
+							<a href="{php echo wl_filter_url('days:6');}" class="btn {if $days == 6}btn-primary{else}btn-default{/if}">最近7天</a>
+							<a href="{php echo wl_filter_url('days:29');}" class="btn {if $days == 29}btn-primary{else}btn-default{/if}">最近30天</a>
+							<a href="javascript:;" class="btn js-btn-custom {if $days == -1}btn-primary{else}btn-default{/if}">自定义</a>
+						</div>
+						<span class="btn-daterange js-btn-daterange {if $days != -1}hide{/if}">
+							{php echo tpl_form_field_daterange('stat_day', array('start' => $selstarttime, 'end' => $selendtime));}
+						</span>
+					</div>
+				</div>
+				<div class="form-group form-inline">
+					<label class="col-sm-2 control-label">选项</label>
+					<div class="col-sm-9">
+						<select name="type" class="form-control" id="typese" onchange="changeobj()" >
+							{if !is_agent()}<option {if $_GPC['type'] == 2 || empty($_GPC['type'])} selected {/if} value="2">代理</option>{/if}
+							<option {if $_GPC['type'] == 1 } selected {/if} value="1">商户</option>
+						</select>
+						{if !is_agent()}
+						<div style="display:inline-block;"  id="select-agentid">
+							<select name="agentid" class="select2 js-select2 form-control width-130" >
+								<option value="0">所有代理</option>
+								{loop $agents $agent}
+									<option value="{$agent['id']}" {if $aid == $agent['id']}selected{/if}>{$agent['agentname']}</option>
+								{/loop}
+							</select>
+						</div>
+						{/if}
+						<div id="select-sid" style="display: inline-block;">
+							<select name="sid" class="form-control select2 js-select2 width-130" >
+								<option value="0" {if !$sid}selected{/if}>全部店铺</option>
+								{loop $stores $store}
+									<option value="{$store['id']}" {if $store['id'] == $sid}selected{/if}>{$store['storename']}</option>
+								{/loop}
+							</select>	
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+	
+	<div class="panel panel-stat">
+		<div class="panel-heading">
+			<h3>总览</h3>
+		</div>
+		<div class="panel-body">
+			<div class="col-md-3">
+				<div class="title">
+					营业总额(元)
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-total-fee">￥--</span>
+					</a>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="title">
+					支付客户数
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-final-fee">--</span>
+					</a>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="title">
+					有效订单量
+					<i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="有效订单量（参考公式：有效订单=支付订单 - 退款订单）"></i>
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-total-success-order">--</span>
+					</a>
+					<span class="info" id="html-avg-pre-order">￥--</span>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="title">
+					退款订单量
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-total-cancel-order">--</span>
+					</a>
+					<span class="info" id="html-total-cancel-fee">￥--</span>
+				</div>
+			</div>
+		</div>
+		{if empty($sid)}
+		<div class="panel-body">
+			<div class="col-md-2">
+				<div class="title">
+					一卡通支付金额
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-total-half-fee">￥--</span>
+					</a>
+				</div>
+			</div>
+			<div class="col-md-2">
+				<div class="title">
+					掌上信息支付金额
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-total-pocket-fee">￥--</span>
+					</a>
+				</div>
+			</div>
+			<div class="col-md-2">
+				<div class="title">
+					付费入驻支付金额
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-total-charge-fee">￥--</span>
+					</a>
+				</div>
+			</div>
+			<div class="col-md-2">
+				<div class="title">
+					分销申请支付金额
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-total-distributor-fee">￥--</span>
+					</a>
+				</div>
+			</div>
+			<div class="col-md-2">
+				<div class="title">
+					余额充值支付金额
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-total-recharge-fee">￥--</span>
+					</a>
+				</div>
+			</div>
+		</div>
+		{/if}
+		<div class="panel-body">
+			<div class="col-md-2">
+				<div class="title">
+					抢购支付金额
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-total-rush-fee">￥--</span>
+					</a>
+				</div>
+			</div>
+			<div class="col-md-2">
+				<div class="title">
+					拼团支付金额
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-total-fight-fee">￥--</span>
+					</a>
+				</div>
+			</div>
+			<div class="col-md-2">
+				<div class="title">
+					卡券支付金额
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-total-coupon-fee">￥--</span>
+					</a>
+				</div>
+			</div>
+			<div class="col-md-2">
+				<div class="title">
+					团购支付金额
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-total-groupon-fee">￥--</span>
+					</a>
+				</div>
+			</div>
+			<div class="col-md-2">
+				<div class="title">
+					活动支付金额
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-total-activity-fee">￥--</span>
+					</a>
+				</div>
+			</div>
+			<div class="col-md-2">
+				<div class="title">
+					在线买单
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-total-payonline-fee">￥--</span>
+					</a>
+				</div>
+			</div>
+			{if p('bargain')}
+			<div class="col-md-2">
+				<div class="title">
+					砍价活动
+				</div>
+				<div class="num-wrapper">
+					<a class="num" href="javascript:;">
+						<span id="html-total-bargain-fee">￥--</span>
+					</a>
+				</div>
+			</div>
+			{/if}
+		</div>
+	</div>
+	
+	<div class="panel panel-trend {if !$days}hide{/if}">
+		<div class="panel-heading">
+			<h3>趋势图</h3>
+		</div>
+		<div class="panel-body">
+			<div id="chart-order-holder" style="width: 100%;height:400px;"></div>
+		</div>
+	</div>
+	
+	<div class="app-table-list">
+		<div class="table-responsive">
+			<table class="table table-bordered table-hover">
+				<thead class="navbar-inner">
+					<tr>
+						<th>日期</th>
+						<th>订单数</th>
+						<th>总营业额</th>
+						{if empty($sid)}
+						<th>一卡通</th>
+						<th>掌上信息</th>
+						<th>付费入驻</th>
+						<th>分销商申请</th>
+						<th>余额充值</th>
+						{/if}
+						<th>抢购</th>
+						<th>团购</th>
+						<th>拼团</th>
+						<th>卡券</th>
+						<th>活动</th>
+						<th>买单</th>
+						{if p('bargain')}
+						<th>砍价</th>
+						{/if}
+						<th>总退款</th>
+					</tr>
+				</thead>
+				<tbody>
+				{loop $list $record}
+					<tr>
+						<td><strong>{$record['date']}</strong></td>
+						<td><strong>{$record['ordernum']}</strong></td>
+						<td><strong>{$record['allmoney']}</strong></td>
+						{if empty($sid)}
+						<td><span class="text-info">￥{$record['half']}</span></td>
+						<td><span class="text-info">￥{$record['pocket']}</span></td>
+						<td><span class="text-info">￥{$record['chagre']}</span></td>
+						<td><span class="text-info">￥{$record['dismoney']}</span></td>
+						<td><span class="text-info">￥{$record['recmoney']}</span></td>
+						{/if}
+						<td><span class="text-success">￥{$record['rush']}</span></td>
+						<td><span class="text-success">￥{$record['groupon']}</span></td>
+						<td><span class="text-success">￥{$record['fight']}</span></td>
+						<td><span class="text-success">￥{$record['coupon']}</span></td>
+						<td><span class="text-success">￥{$record['activity']}</span></td>
+						<td><span class="text-success">￥{$record['payonline']}</span></td>
+						{if p('bargain')}
+						<td><span class="text-success">￥{$record['bargain']}</span></td>
+						{/if}
+						<td><strong class="text-danger">￥{$record['reordermoney']}</strong></td>
+					</tr>
+				{/loop}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+<script>
+	$(function(){
+		changeobj();
+		
+		$.post(location.href, function(stat){
+			var data = $.parseJSON(stat);
+			
+			$('#html-total-fee').html('￥'+data.allmoney);
+			$('#html-final-fee').html(data.paymember);
+			$('#html-total-success-order').html(data.ordernum);
+			$('#html-avg-pre-order').html('￥'+data.orderyxmoney);
+			$('#html-total-cancel-order').html(data.reordernum);
+			$('#html-total-cancel-fee').html('￥'+data.reordermoney);
+			$('#html-total-half-fee').html('￥'+data.halfmoney);
+			$('#html-total-pocket-fee').html('￥'+data.pocketmoney);
+			$('#html-total-charge-fee').html('￥'+data.chargemoney);
+			$('#html-total-distributor-fee').html('￥'+data.dismoney);
+			$('#html-total-recharge-fee').html('￥'+data.recmoney);
+			
+			$('#html-total-rush-fee').html('￥'+data.rushmoney);
+			$('#html-total-fight-fee').html('￥'+data.fightmoney);
+			$('#html-total-coupon-fee').html('￥'+data.couponmoney);
+			$('#html-total-groupon-fee').html('￥'+data.grouponmoney);
+			$('#html-total-activity-fee').html('￥'+data.actmoney);
+			$('#html-total-payonline-fee').html('￥'+data.onlinemoney);
+			$('#html-total-bargain-fee').html('￥'+data.bargainmoney);
+		});
+	});
+	
+	function changeobj(){
+		var flag = $('#typese').val();
+		if(flag == 1){
+			$('#select-agentid').hide();
+			$('#select-sid').show();
+		}else if(flag == 2){
+			$('#select-agentid').show();
+			$('#select-sid').hide();
+		}
+	}
+	
+	myrequire(['g2','data-set'],function(){
+		var data = {$imgdatas};
+		var chart = new G2.Chart({
+		  	container: 'chart-order-holder',
+		  	forceFit: true,
+		  	height: 400
+		});
+		chart.source(data, {
+		  	dates: {
+		    	range: [0, 1]
+		  	}
+		});
+		chart.tooltip({
+		  	crosshairs: {
+		    	type: 'line'
+		  	}
+		});
+		chart.axis('money', {
+		  	label: {
+		    	formatter: function formatter(val) {
+		      		return val;
+		    	}
+		  	}
+		});
+		chart.areaStack().position('dates*money').color('name').shape('smooth');
+		chart.lineStack().position('dates*money').color('name').shape('smooth');
+		chart.point().position('dates*money').color('name').size(4).shape('circle').style({
+		  	stroke: '#fff',
+		  	lineWidth: 1
+		});
+		chart.render();
+	})
+</script>
+{php include wl_template('common/footer');}

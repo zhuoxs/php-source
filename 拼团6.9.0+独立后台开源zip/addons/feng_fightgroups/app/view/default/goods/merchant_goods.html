@@ -1,0 +1,141 @@
+{php include wl_template('common/header');}
+<div class="page-group">
+    <div class="page page-current" id="page-goods-list">
+		<div class="content infinite-scroll native-scroll" data-distance="10">
+		<div class="topbar"><h3 class="title">拼团</h3><div class="barfn"><i class="refresh"></i><i class="share"></i></div></div>
+	    <a href="{php echo app_url('goods/list/merchant',array('id'=>$merchant['id']));}">
+	            <div class="mall_goods">
+	                <img src="{php echo tomedia($merchant['thumb'])}">
+	                <div class="mall_sub">
+	                    <span>{$merchant['name']}</span>
+	                    <div class="sales">总销量：{php echo $merchant['salenum']+$merchant['falsenum']}</div>
+	                </div>
+	                <div class="enter_button">
+	                    <img src="http://pinduoduo.b0.upaiyun.com/mall/mall_icon_small.png">
+	                    <span>欢迎进店</span>
+	                </div>
+	            </div>
+	            </a>
+	    <div class="list">
+	        <div class="listCon">
+	        <ul class="ul_1">
+	        </ul>
+	        </div>
+	        <div class="loading_more" style="padding-top: 15px;display: none;"><span class="loading"><i class="icon_load"></i>加载中......</span></div>
+	        <div class="error">加载失败，点击重新加载</div>
+	        <div class="noData">全部数据加载完毕</div>
+	    </div>
+	    <div class="mask"></div>
+		<div class="bg_layer" style="height: 6672px; opacity: 0; display: none;"></div>
+		<div class="dialog_box" style="top: 308px; opacity: 0; display: none;">
+			<div class="zoneList"><h4>选择地区</h4><div class="zoneOuter">
+				<ul>
+					<li class="noBorder " data-actid="3"><div><h5>华北地区</h5><p>北京 天津 河北 山东 山西</p></div></li>
+					<li class="noBorder selected" data-actid="15"><div><h5>全国发货</h5><p>全国大部分区域</p></div></li>
+				</ul>
+			</div></div>
+		</div>
+		</div>
+		
+		{php include wl_template('common/footerbar');}
+	</div>
+</div>
+
+<script type="text/html" id="goodslist">
+{{# for(var i = 0, len = d.list.length; i < len; i++){ }}
+<li class="gli">
+	<a href="{{ d.list[i].a }}" class="external">
+		<div class="img">
+			<!--<span class="brand">2折团</span>--><!--三角形斜角标签样式-->
+			<img src="{{ d.list[i].gimg }}" alt="" style="opacity: 1;">
+				<div class="icon_position" style="display: block;">
+					<div class="discount">
+						<span>{{ ((d.list[i].gprice/d.list[i].mprice)*10).toFixed(1) }}折<br></span>
+					</div>
+					{{# if(d.list[i].goodstab != null && typeof(d.list[i].goodstab.length) != "undefined" && d.list[i].goodstab){ }}
+					<div class="pricedown">{{ d.list[i].goodstab }}</div>
+					{{# } }}
+				</div>
+		{{# var lenn = d.list[i].params.length; if(lenn >= 3){ }}
+		<ul class="desPos">
+			<li class="firstLine " expos="0">{{ d.list[i].params[0].value }}</li>
+			<li class="" expos="0">{{ d.list[i].params[1].value }}</li>
+			<li class="lastLine" expos="0">{{ d.list[i].params[2].value }}</li>
+		</ul>
+		{{# } }}
+		</div>
+		<div class="txt"><h5>{{ d.list[i].gname }}</h5><p>{{ d.list[i].gdesc }}</p>
+			{{# if(d.list[i].isshow == 3){ }}
+			<div class="ico_endi"></div>
+			{{# } }}
+		</div>
+		<div class="fnWrap"><div class="fnZone"><i>
+			{{# if(d.list[i].group_level_status == 2){ }}
+			阶梯团
+			{{# } else { }}
+			{{ d.list[i].groupnum }}{{# if(d.list[i].g_type == 4){ }}{{d.list[i].unit}}{{# } else { }}人{{# } }}团
+			{{# } }}
+		</i>
+			<span style="position: relative;padding-left: 0.3rem;padding-right: 0.3rem;">
+				<b class="price">￥{{ d.list[i].gprice }}</b>
+				<b class="people" style="width: 100px;padding: 0;padding-left: 0.5rem;">已售{{d.list[i].sale}}{{d.list[i].unit}}</b>
+			</span>
+			<span class="btn">去开团 &gt;</span></div>
+		</div>
+	</a>
+</li>
+{{# } }}
+</script>
+<script>
+	$(function() {
+		'use strict';
+		//商品列表页
+		$(document).on("pageInit", "#page-goods-list", function(e, id, page) {
+			var loading = false;
+			var thispagesize = 10;
+			var thispagesizemax = 100;
+			var thispage = 1;
+
+			function addItems(thispage, thispagesize) {
+				var ajaxurl = "{php echo app_url('goods/list/merchant_ajax',array('id' => $id))}" + "&page=" + thispage + "&pagesize=" + thispagesize;
+				$.ajax({
+					type: "POST",
+					url: ajaxurl,
+					dataType: 'json',
+					beforeSend: function(XMLHttpRequest) {},
+					success: function(data) {
+						thispagesizemax = data.total;
+						if (data.list.length > 0) {
+							var gettpl = document.getElementById('goodslist').innerHTML;
+							laytpl(gettpl).render(data, function(html){
+							    $(".ul_1").append(html);
+							});
+						} else {
+							$(".loading_more").remove();
+							$('.noData').show();
+						}
+					},
+					error: function() {
+						$('.error').show();
+					}
+				});
+			}
+			addItems(thispage, thispagesize);
+			$(page).on('infinite', function() {
+				if (loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+					loading = false;
+					thispage++;
+					addItems(thispage, thispagesize);
+					$(".loading_more").hide();
+					$.refreshScroller();
+				}, 1000);
+			});
+		});
+		$.init();
+	});
+</script>
+{php include wl_template('common/footer');}
+	

@@ -1,0 +1,218 @@
+{template 'web/common/common'}
+{template 'web/order/navbar'}
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/style.css" />
+<link rel="stylesheet" type="text/css" href="../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.css" />
+<div class="panel panel-success">
+    <div class="panel-heading">
+        <h3 class="panel-title">
+            订单>编辑
+        </h3>
+    </div>
+    <div class="panel-body">
+        <form id="sign-form" class="form-horizontal" role="form" method="post" action="{url 'site/entry/order',array('m'=>'kundian_farm','op'=>'saveModel','version_id'=>$_GPC['version_id'])}" name="submit" style="padding: 20px 0;">
+            <input type="hidden" name="id" value="{$orderData['id']}">
+            <table class="table-striped table-bordered table-hover dataTables-example table">
+                <thead>
+                    <caption>收货信息</caption>
+                    <tr>
+                        <td>订单编号</td>
+                        <td>订单总价</td>
+                        <td>收货人</td>
+                        <td>联系电话</td>
+                        <td>收货地址</td>
+                        <td>快递单号</td>
+                    </tr>
+                    <tr>
+                        <td>{$orderData['order_number']}</td>
+
+                        <?php if($orderData['status']==0){?>
+                        <td><input type="text" name="total_price" value="{$orderData['total_price']}">
+                            <input type="hidden" name="order_id" value="{$orderData['id']}"></td>
+                        <?php }else{?>
+                        <td><p>总价：￥{$orderData['total_price']}</p><p>优惠：￥{$item['coupon_price']}</p></td>
+                        <?php } ?>
+                        <td>{$orderData['name']}</td>
+                        <td>{$orderData['phone']}</td>
+                        <td>{$orderData['address']}</td>
+                        <td>{$orderData['send_number']}</td>
+                    </tr>
+                <tr>
+                    <td>订单状态</td>
+                    <td>下单时间</td>
+                    <td>支付时间</td>
+                    <td>支付方式</td>
+                    <td>备注</td>
+                </tr>
+                    <tr>
+                        <td>{if $orderData['status']==0}
+                            未支付
+                            {else if $orderData['status']==1}
+                            待配送
+                            {else if $orderData['status']==2}
+                            待确认
+                            {else if $orderData['status']==3}
+                            已完成
+                            {else if $orderData['status']==4}
+                            申请取消
+                            {else}
+                            已取消
+                            {/if}</td>
+                        <td><?php echo date("Y-m-d H:i:s",$orderData['create_time']);?></td>
+                        <td><?php echo date("Y-m-d H:i:s",$orderData['pay_time']);?></td>
+                        <td><?php echo $orderData['pay_method'];?></td>
+                        <td><?php echo $orderData['remark'];?></td>
+                    </tr>
+                </thead>
+
+            </table>
+
+            <table class="table-striped table-bordered table-hover dataTables-example table">
+                <thead>
+                <caption>商品信息</caption>
+                <tr>
+                    <td>id</td>
+                    <td>商品名称</td>
+                    <td>封面</td>
+                    <td>价格</td>
+                    <td>规格</td>
+                    <td>购买数量</td>
+                </tr>
+                <?php foreach($order_detail as $v){?>
+                <tr>
+                    <td><?php echo $v['id'];?></td>
+                    <td><?php echo $v['goods_name'];?></td>
+                    <td><img src="<?php echo $v['cover'];?>" style="width: 70px;height: 70px;" alt=""></td>
+                    <td><?php echo $v['price'];?></td>
+                    <td>
+                        <?php foreach($v['specItem'] as $val){?>
+                             <?php echo $val['name'].":".$val['spec_value']."   "; ?>
+                        <?php } ?>
+                    </td>
+                    <td><?php echo $v['count'];?></td>
+                </tr>
+                <?php } ?>
+                </thead>
+            </table>
+            <?php if($orderData['status']==0 || $orderData['status']==5){?>
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <input type="hidden" name="order_id" value="<?php echo $orderData['id']?>">
+                    <button class="btn" id="deleteOrder" type="button">删除订单</button>
+                </div>
+            </div>
+            <?php }?>
+
+            <?php if($orderData['status']==1){?>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">快递公司</label>
+                <div class="col-sm-8">
+                    <input type="text" class="form-control"  name="express_company" value="{$orderData['express_company']}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">物流编号</label>
+                <div class="col-sm-8">
+                    <input type="text" class="form-control"  name="send_number" value="{$orderData['send_number']}">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <input type="hidden" name="order_id" value="<?php echo $orderData['id']?>">
+                    <button class="btn" id="sendGoods" type="button">开始配送</button>
+                </div>
+            </div>
+            <?php }?>
+
+            <?php if($orderData['status']==2){?>
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <input type="hidden" name="order_id" value="<?php echo $orderData['id']?>">
+                    <button class="btn" id="confirmGoods" type="button">完成配送</button>
+                </div>
+            </div>
+            <?php }?>
+        </form>
+    </div>
+</div>
+<script>
+    require(["../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.js"],function(){
+        $(function(){
+            $("#sendGoods").click(function () {
+                var orderid=$("input[name='order_id']").val();
+                var send_number=$("input[name='send_number']").val();
+                var express_company=$("input[name='express_company']").val();
+                if(send_number==''){
+                    alert("请填写配送单号！");
+                    return false;    
+                }else{
+                    $.ajax({
+                        type:"post",
+                        url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'send_goods','version_id'=>$_GPC['version_id'])}",
+                        data:{order_id:orderid,send_number:send_number,express_company:express_company},
+                        dataType:'json',
+                        success:function(res){
+                            if(res.status==1){
+                                swal('操作成功!', '操作成功!', 'success');
+                            }else{
+                                swal('操作失败!', '操作失败!', 'error');
+                            }
+                        }
+                    })
+                }
+            })
+            $("#confirmGoods").click(function () {
+                var orderid=$("input[name='order_id']").val();
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'confirmGoods','version_id'=>$_GPC['version_id'])}",
+                    data:{order_id:orderid},
+                    dataType:'json',
+                    success:function(res){
+                        if(res.status==1){
+                            swal('操作成功!', '操作成功!', 'success');
+                        }else{
+                            swal('操作失败!', '操作失败!', 'error');
+                        }
+                    }
+                })
+            })
+            $("#deleteOrder").click(function () {
+                var orderid=$("input[name='order_id']").val();
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'deleteOrder','version_id'=>$_GPC['version_id'])}",
+                    data:{order_id:orderid},
+                    dataType:'json',
+                    success:function(res){
+                        if(res.status==1){
+                            swal('操作成功!', '操作成功!', 'success');
+                        }else if(res.status==3){
+                            swal('提示', '订单未完成!', 'error');
+                        }else{
+                            swal('操作失败!', '操作失败!', 'error');
+                        }
+                    }
+                })
+            })
+
+            $("input[name='total_price']").blur(function () {
+                var total_price=$(this).val();
+                var orderid=$("input[name='order_id']").val();
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'change_price','version_id'=>$_GPC['version_id'])}",
+                    data:{order_id:orderid,total_price:total_price},
+                    dataType:'json',
+                    success:function(res){
+                        if(res.status==1){
+                            swal('操作成功!', '操作成功!', 'success');
+                        }else{
+                            swal('操作失败!', '操作失败!', 'error');
+                        }
+                    }
+                })
+            })
+        })
+    })
+</script>
+

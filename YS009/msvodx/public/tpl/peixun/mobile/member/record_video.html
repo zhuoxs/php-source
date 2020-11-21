@@ -1,0 +1,103 @@
+{include file="common/head"}
+<style>
+    .list li{padding: 0;border-bottom: none;}
+</style>
+    <div class="tab-box">
+        <a href="{:url('member/record_video')}" class="cur">视频</a>
+        <a href="{:url('member/record_img')}" >图片</a>
+        <a href="{:url('member/record_novel')}">资讯</a>
+    </div>
+    <div class="sheet">
+        <ul class="list">
+            {notempty name="result"}
+            {volist name='result' id='v'}
+            <li>
+                <div class="show-box">
+                    <span>{$v['title']}</span>
+                    <span>{$v['gold']}金币</span>
+                </div>
+                <ul class="" style="display: none;">
+                    <li><label>标题：</label><a href="{:url('video/play',array('id'=>$v['video_id']))}" >{$v['title']}</a></li>
+                    <li><label>时间：</label>{:date('Y/m/d h:i:s',$v['view_time'])}</li>
+                    <li><label>分类：</label>{$v['name']}</li>
+                    <li><label>操作IP：</label>{$v['user_ip']}</li>
+                </ul>
+            </li>
+            {/volist}
+            {else/}
+            <span class="not-comment not">您还没有消费记录 ~</span>
+            {/notempty}
+        </ul>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        $(".show-box").on("click",function () {
+            //$(".show-box").siblings().stop(true).slideUp();
+            $(this).siblings().stop(true).slideToggle();
+        });
+        $(".show-box").first().click();
+    });
+    var status = 1;
+    var page  = 0;
+    $(window).scroll(function(){
+        var srollPos = $(window).scrollTop();
+        var data = {
+            "page" : page,
+            "offset" : 10,
+        };
+        if(srollPos+$(window).height() > $(document).height() - 80){
+            if(status == 1) {
+                status = 0;
+                $.ajax({
+                    type: "POST",
+                    data: data,
+                    dataType: "JSON",
+                    url: "{:url('Api/record_img')}",
+                    success: function (data) {
+                        if(data.resultCode == 0){
+                            var datas = data.data.list;
+                            if(datas){
+                                var html = '';
+                                datas.forEach(function(item) {
+                                    var  url =  '/video/play/id/'+item['video_id'];
+                                    var view_time = item['view_time'];
+                                    var newDate = new Date(view_time * 1000);
+                                    html +=   '            <li>' ;
+                                    html +=   '                <div class="show-box">';
+                                    html +=   '                    <span><a href="" >'+item['title']+'</a></span>';
+                                    html +=   '                    <span>消费'+item['gold']+'金币</span>';
+                                    html +=   '                </div>';
+                                    html +=   '                <ul class="" style="display: block;">';
+                                    html +=   '                    <li><label>标题：</label><a href="'+url+'" >'+item['title']+'</a></li>';
+                                    html +=   '                    <li><label>时间：</label>'+newDate.getFullYear()+'/'+(newDate.getMonth()+1)+'/'+newDate.getDay()+' '+newDate.getHours()+':'+newDate.getMinutes()+':'+newDate.getSeconds()+'</li>' ;
+                                    html +=   '                    <li><label>分类：</label>'+item['name']+'</li>';
+                                    html +=   '                    <li><label>操作IP：</label>'+item['user_ip']+'</li>';
+                                    html +=   '                </ul>';
+                                    html +=   '            </li>';
+                                });
+                                $('.not-comment').remove();
+                                $('.list').append(html);
+                                $(".show-box").unbind();
+                                $(".show-box").on("click",function () {
+                                    $(this).siblings().stop(true).slideToggle();
+                                });
+                                page++;
+                                status = 1;
+                            }else{
+                                console.log('没有更多数据了！');
+                            }
+                        }else{
+                            console.log('没有更多数据了！');
+                        }
+                    }
+                });
+            }
+        }
+    })
+
+
+</script>
+
+{include file="common/footer"}

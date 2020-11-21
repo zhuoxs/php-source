@@ -1,0 +1,289 @@
+{template 'web/common/common'}
+{template 'web/goods/navbar'}
+<link rel="stylesheet" type="text/css" href="../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/layui.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/new-common.css" />
+<script src="../addons/kundian_farm/resource/layui.js" charset="utf-8"></script>
+<style>
+    .source-con{
+        width: 63%;border: 1px solid #e0e0e0;margin-top: 10px;padding: 20px;
+    }
+    .source{
+        margin-bottom: 20px;
+    }
+    .source-li{
+        width: 100%;margin-top: 10px;border: 1px solid #e0e0e0;padding: 20px;
+    }
+    .layui-form-select{display: none;}
+    .icon-source{
+        width: 30px;height: 30px;background-color: rgba(0,0,0,0.5);border-radius: 50%;text-align: center;color: white;line-height: 32px;margin-right: 5px;
+        cursor: pointer;
+    }
+    .icon-source-con{
+        width: 100px;position: relative;left: 90%;top: 10px;display: flex;
+    }
+
+</style>
+<blockquote class="layui-elem-quote layui-text">
+    产品溯源编辑
+</blockquote>
+<div class="new-style" id="app">
+    <form class="layui-form" method="post" action="">
+        <div class="layui-form-item">
+            <label class="layui-form-label">溯源名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="name" v-model="name"  class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">商品ID</label>
+            <div class="layui-input-block">
+                <select name="goods_id" v-model="goods_id" id=""  style="display: block;width: 70%;">
+                    <option value="">请选择</option>
+                    {loop $data['goodsData'] $key $item}
+                    <option value="{$item['id']}">{$item['goods_name']}</option>
+                    {/loop}
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">生成数量</label>
+            <div class="layui-input-block">
+                {if $_GPC['id']}
+                <input type="number" name="count" v-model="count" readonly class="layui-input" style="background: #f3f3f3">
+                {else}
+                <input type="number" name="count" v-model="count" class="layui-input">
+                {/if}
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">溯源编号开头</label>
+            <div class="layui-input-block">
+                {if $_GPC['id']}
+                <input type="text" name="pre" v-model="pre"  class="layui-input" readonly style="background: #f3f3f3">
+                {else}
+                <input type="text" name="pre" v-model="pre"  class="layui-input">
+                {/if}
+            </div>
+        </div>
+
+        <!--自定义参数-->
+        <div class="custom">
+            <div class="layui-form-item">
+                <label class="layui-form-label">自定义参数</label>
+                <div class="source" v-for="(item,itemIndex) in sourceData">
+                    <div class="layui-input-block" style="display: flex;">
+                        <input type="text" v-model="item.primary_title" placeholder="一级标题，例如：生长记录、土壤成份、施肥数据、农药数据等" name="primary_title" style="width: 64%;"  class="layui-input">
+                        <button class="layui-btn layui-btn-sm" type="button" style="height: 34px;" @click="addSource()"><span class="iconfont icon-add3"></span></button>
+                        <button class="layui-btn layui-btn-sm layui-btn-danger" type="button" style="height: 34px;" @click="delSource(itemIndex)"><span class="iconfont icon-el-icon-dev-delete"></span></button>
+                    </div>
+                    <div class="layui-input-block source-con">
+                        <div class="source-li" v-for="(cus,cusIndex) in item.custom">
+                            <div class="con-li" style="display: flex;margin-bottom: 10px;" v-for="(tVal,tIndex) in cus.content">
+                                <input type="text" v-model="tVal.title" placeholder="二级标题，例如：时间、产量等" name="primary_title" style="width:20%;"  class="layui-input">
+                                <input type="text" v-model="tVal.value" placeholder="说明" name="primary_title" style="width:69%;"  class="layui-input">
+                                <button class="layui-btn layui-btn-sm" type="button" style="height: 34px;" @click="addTitle(itemIndex,cusIndex)"><span class="iconfont icon-add3"></span></button>
+                                <button class="layui-btn layui-btn-sm" type="button" style="height: 34px;" @click="delTitle(itemIndex,cusIndex,tIndex)"><span class="iconfont icon-el-icon-dev-delete"></span></button>
+                            </div>
+                            <div class="con-li" style="margin-top: 20px;display: flex">
+                                <input type="text" style="width:90%;"  class="layui-input">
+                                <button class="layui-btn layui-btn-sm" type="button" style="height: 34px;" @click='uploadMultiImage(this,itemIndex,cusIndex)'>添加图片</button>
+                            </div>
+                            <div class="con-li"  style="margin-top: 10px;">
+                                <img  v-for="(srcs,srcsIndex) in cus.src" :src="srcs"  style="width: 50px;height: 50px;margin-right: 10px;" alt="">
+                            </div>
+
+                            <div class="icon-source-con">
+                                <div class="icon-source" @click="addSourceLi(itemIndex)"><span class="iconfont icon-add3"></span></div>
+                                <div class="icon-source" @click="delSourceLi(itemIndex,cusIndex)"><span class="iconfont icon-el-icon-dev-delete"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">排序</label>
+            <div class="layui-input-block">
+                <input type="text" name="rank" v-model="rank"  class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <input type="hidden" value="{$_GPC['id']}" name="source_id"/>
+                <button class="layui-btn layui-btn-sm" type="button" @click='post()'>保存</button>
+                <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" id="goBack">返回</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form,layer = layui.layer;
+        $("#goBack").click(function () {
+            goBack();
+        })
+    });
+</script>
+
+<script>
+    let id=$("input[name='source_id']").val();
+
+    let list=new Vue({
+        el: '#app',
+        data: {
+            sourceData:[{primary_title:'',custom:[{content:[{title:'',value:''}],src:[]}]}],
+            name:'',
+            goods_id:'',
+            count:'',
+            pre:'',
+            rank:'',
+        },
+        created:function(){
+            if(id){
+                $.ajax({
+                    type:"post",
+                    data:{id:id},
+                    url:"{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'getSourceById','action'=>'trace')}",
+                    dataType:'json',
+                    success:function(res){
+                       list.sourceData=res.content;
+                       list.name=res.name;
+                       list.goods_id=res.goods_id;
+                       list.count=res.count;
+                       list.pre=res.pre;
+                       list.rank=res.rank
+                        console.log(list.sourceData);
+                    }
+                })
+            }
+        },
+        methods:{
+            post:function(){
+                var url="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'sourceEdit','action'=>'trace')}";
+                var data={
+                    name:this.name,
+                    goods_id:this.goods_id,
+                    count:this.count,
+                    pre:this.pre,
+                    rank:this.rank,
+                    sourceData:JSON.stringify(this.sourceData),
+                    id:id,
+                }
+                postData(url,{formData:data});
+            },
+
+            //添加一级标题内容
+            addSource(){
+                list.sourceData.push({primary_title:'',custom:[{content:[{title:'',value:''}],src:[]}]});
+            },
+
+            delSource(index){
+                list.sourceData.splice(index,1);
+            },
+
+            //添加二级标题
+            addSourceLi(index){
+                list.sourceData.map((item,ind)=>{
+                    if(index==ind){
+                        item.custom.push({content:[{title:'',value:''}],src:[]});
+                    }
+                })
+            },
+
+            delSourceLi(index,liIndex){
+                list.sourceData.map((item,ind)=>{
+                    if(index==ind){
+                        item.custom.map((val,key)=>{
+                            if(key==liIndex){
+                                item.custom.splice(liIndex,1);
+                            }
+                        })
+
+                    }
+                })
+            },
+
+            addTitle(index,cusIndex){
+                list.sourceData.map((item,ind)=>{
+                    if(index==ind){
+                        item.custom.map((cusItem,cusInd)=>{
+                            if(cusIndex==cusInd){
+                                cusItem.content.push({title:'',value:''});
+                            }
+                        })
+                    }
+                })
+            },
+
+            delTitle(itemIndex,cusIndex,tIndex){
+                list.sourceData.map((item,ind)=>{
+                    if(itemIndex==ind){
+                        item.custom.map((cusItem,cusInd)=>{
+                            if(cusIndex==cusInd){
+                                cusItem.content.map((tItem,titleIndex)=>{
+                                    if(tIndex==titleIndex){
+                                        cusItem.content.splice(tIndex,1);
+                                    }
+                                })
+
+                            }
+                        })
+                    }
+                })
+            },
+
+            uploadMultiImage(elm,index,liIndex) {
+                var options={'multiple':true,}
+                var name = $(elm).next().val();
+                util.image( "", function(urls){
+                    console.log(urls);
+                    var src=[]
+                    $.each(urls, function(idx, url){
+                        src.push(url.url);
+                    });
+                    list.sourceData.map((item,ind)=> {
+                        if (index == ind) {
+                            item.custom.map((val, key) => {
+                                if (key == liIndex) {
+                                    val.src = src;
+                                }
+                            })
+                        }
+                    })
+                },options );
+            },
+
+            showImageDialog(elm,index,ind,options) {
+                require(["util"], function(util){
+
+                    var btn = $(elm);
+                    var ipt = btn.parent().prev();
+                    var val = ipt.val();
+                    var img = ipt.parent().next().children();
+                    util.image(val, function(url){
+                        console.log(url);
+                        if(url.url){
+                            if(img.length > 0){
+                                img.get(0).src = url.url;
+                            }
+                            list.sourceData[index].custom[ind].src=url
+                            ipt.val(url.attachment);
+                            ipt.attr("filename",url.filename);
+                            ipt.attr("url",url.url);
+                        }
+                        if(url.media_id){
+                            if(img.length > 0){
+                                img.get(0).src = "";
+                            }
+                            ipt.val(url.media_id);
+                        }
+                    }, options);
+                });
+            },
+        },
+    })
+</script>

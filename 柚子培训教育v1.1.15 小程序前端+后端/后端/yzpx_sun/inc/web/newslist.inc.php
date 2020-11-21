@@ -1,0 +1,48 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: lts
+ * Date: 2018/4/27
+ * Time: 17:51
+ */
+global $_GPC, $_W;
+$GLOBALS['frames'] = $this->getMainMenu();
+$where=" WHERE  uniacid=".$_W['uniacid'];
+if($_GPC['keywords']){
+    $op=$_GPC['keywords'];
+    $where.=" and title LIKE  '%$op%'";
+}
+$page = max(1, intval($_GPC['page']));
+$size = intval($_GPC['psize']) ? intval($_GPC['psize']) : 10;
+$start= $page * $size;
+
+$total=pdo_fetchcolumn("select count(*) from " . tablename("yzpx_sun_news") .$where);
+$pager = pagination($total, $page, $size);
+
+$sql = 'SELECT * FROM '.tablename('yzpx_sun_news')."{$where} ORDER BY id DESC LIMIT ".(($page-1) * $size).','.$size;
+$info = pdo_fetchall($sql);
+foreach ($info as $key =>$value){
+    $classify=pdo_get('yzpx_sun_newsclassify',array('id'=>$value['cid']));
+    $info[$key]['cname']=$classify['name'];
+    $info[$key]['createtime']=date('Y-m-d H:i:s',$value['createtime']);
+}
+//var_dump($info);exit;
+if($_GPC['op']=='delete'){
+    $res=pdo_delete('yzpx_sun_news',array('id'=>$_GPC['id']));
+    if($res){
+        message('删除成功',$this->createWebUrl('newslist',array()),'success');
+    }else{
+        message('删除失败','','error');
+    }
+}
+if($_GPC['op']=='deletearr'){
+    $res=pdo_delete('yzpx_sun_news',array('id'=>$_GPC['id']));
+    if($res){
+        message('删除成功',$this->createWebUrl('newslist',array()),'success');
+    }else{
+        message('删除失败','','error');
+    }
+
+}
+
+include $this->template('web/newslist');

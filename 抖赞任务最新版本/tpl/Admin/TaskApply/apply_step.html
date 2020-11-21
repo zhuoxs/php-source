@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>{~echo sp_cfg('website')}</title>
+    <bootstrapjs />
+
+    <bootstrapcss />
+
+    <style>
+        .status0{}
+        .status1{color: #39B9E4}
+        .status-1{color: red}
+    </style>
+</head>
+<body>
+<div class="bjy-admin-nav">
+    <i class="fa fa-home"></i> 首页
+    &gt;
+    后台管理
+    &gt;
+    申请列表
+</div>
+<!-- 导航栏结束 -->
+<ul id="myTab" class="nav nav-tabs">
+    <li class="active">
+        <a href="javascript:">车贷申请列表</a>
+    </li>
+</ul>
+
+<form class="form-search form-inline" method="get" action="" style="padding: 10px 0; ">
+    状态：
+    <div class="input-group">
+        <select name="status">
+            <option value="">所有状态</option>
+            <option value="0" <if condition="$get['status'] eq '0'"> selected</if> >未审核</option>
+            <option value="1" <if condition="$get['status'] eq '1'"> selected</if>>审核通过</option>
+            <option value="-1" <if condition="$get['status'] eq '-1'"> selected</if>>审核不通过</option>
+        </select>
+    </div>
+
+    时间段：
+    <div class="input-group">
+        <input type="text" name="start_date" value="{$get.start_date}" class="input-sm search-query date-picker" data-date-format="yyyy-mm-dd" placeholder="起始日期">
+        <input type="text" name="end_date" value="{$get.end_date}" class="input-sm search-query date-picker" data-date-format="yyyy-mm-dd" placeholder="截止日期">
+    </div>
+
+    <div class="input-group">
+        <button type="submit" class="btn btn-info btn-sm">
+            <span class="ace-icon fa fa-search icon-on-right bigger-110"></span>
+            搜索
+        </button>
+    </div>
+</form>
+
+<table class="table table-striped table-bordered table-hover table-condensed">
+    <tr>
+        <th width="60">编号</th>
+        <th>经纪人</th>
+        <th>经纪人电话</th>
+        <th>贷款产品</th>
+        <th>申请人姓名</th>
+        <th>申请人电话</th>
+        <th>意向车型</th>
+        <th>购车城市</th>
+        <th>购车时间</th>
+        <th>贷款期限</th>
+        <th>意向接电话</th>
+        <th>性别</th>
+        <th>职业</th>
+        <th>信用情况</th>
+        <th>申请金额</th>
+        <th>预审金额</th>
+        <th>实际放款</th>
+        <th>申请日期</th>
+        <th>更新日期</th>
+        <th>管理员备注</th>
+        <th>审核</th>
+        <th>操作</th>
+    </tr>
+    <foreach name="list" item="vo">
+        <tr>
+            <td>{$vo.id}</td>
+            <td>{$vo.m_nickname}</td>
+            <td>{$vo.m_phone}</td>
+            <td>{$vo.post_title}</td>
+            <td>{$vo.s2_username}</td>
+            <td>{$vo.s2_phone}</td>
+            <td>{$vo.s1_chexing}</td>
+            <td>{$vo.s1_city}</td>
+            <td>{$vo.s1_time}</td>
+            <td>{$vo.s1_dkqx}</td>
+            <td>{$vo.s2_call_time}</td>
+            <td>
+                <if condition="$vo['s2_sex'] eq 1">
+                    男
+                    <else/>
+                    女
+                </if>
+            </td>
+            <td>{$vo.s3_profession}</td>
+            <td>{$vo.s3_credit}</td>
+            <td>{$vo.price}</td>
+            <td>{$vo.yushen_price}</td>
+            <td><b style="color: red">{$vo.shiji_price}</b></td>
+            <td>{$vo.create_time|date="Y-m-d",###}</td>
+            <td>
+                <if condition="$vo['update_time'] gt 0">
+                    {$vo.update_time|date="Y-m-d",###}
+                </if>
+            </td>
+            <td>{$vo.admin_remark|nl2br}</td>
+            <td>
+                <if condition="$vo['status'] eq 0">
+                    <a href="{:U('apply_step_handle',array('id'=>$vo['id']))}" class="btn btn-default btn-xs">审核</a>
+                    <!--<a href="javascript:;" class="btn btn-default btn-xs" data-id="{$vo.id}" data-post_title="{$vo.post_title}" data-price="{$vo.price}" data-yushen_price="{$vo.yushen_price}" data-shiji_price="{$vo.shiji_price}" data-status="{$vo.status}" data-admin_remark="{$vo.admin_remark}" data-p1="{$vo.p1}" data-p2="{$vo.p2}" onclick="edit(this)">审核</a>-->
+                    <else/>
+                    <span class="status{$vo.status}">
+                    {$vo.status_text}
+                    </span>
+                </if>
+            </td>
+            <td>
+                <a href="{:U('apply_step_handle',array('id'=>$vo['id']))}" class="btn btn-default btn-xs">查看</a>
+            </td>
+        </tr>
+    </foreach>
+</table>
+{$Page}
+
+<!-- 修改菜单模态框开始 -->
+<div class="modal fade" id="apply-edit" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <input type="hidden" name="id" value="0">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                    &times;
+                </button>
+                <h4 class="modal-title" id="myModalLabel">
+                    审核申请
+                </h4>
+            </div>
+            <div class="modal-body">
+                <form id="bjy-form" class="form-inline" action="{:U('apply_step_handle')}" method="post">
+                    <input type="hidden" name="id">
+                    <table class="table table-striped table-bordered table-hover table-condensed">
+                        <tr>
+                            <th>贷款产品：</th>
+                            <td>
+                                <input class="form-control" type="text" name="post_title" readonly>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>申请金额：</th>
+                            <td>
+                                <input class="form-control" type="text" name="price" value="">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>预审金额：</th>
+                            <td>
+                                <input class="form-control" type="text" name="yushen_price" value="">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>实际放款：</th>
+                            <td>
+                                <input class="form-control" type="text" name="shiji_price" value="">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>审核状态：</th>
+                            <td>
+                                <select name="status" id="status" class="form-control">
+                                    <option value="0">未审核</option>
+                                    <option value="1">审核通过，已放款</option>
+                                    <option value="-1">审核不通过</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr class="yj" style="display: none">
+                            <th>他的上级佣金：</th>
+                            <td>
+                                <span id="yj_span1">
+                                    <input class="form-control" type="text" name="price_1" id="price_1" value="">
+                                </span>
+                            </td>
+                        </tr>
+                        <tr class="yj" style="display: none">
+                            <th>上级的上级佣金：</th>
+                            <td>
+                                <span id="yj_span2">
+                                    <input class="form-control" type="text" name="price_2" id="price_2" value="">
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>管理员备注：</th>
+                            <td>
+                                <textarea class="form-control" id="admin_remark" name="admin_remark"></textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <td>
+                                <input class="btn btn-success" type="submit" value="修改">
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 修改菜单模态框结束 -->
+
+
+</body>
+</html>
+
+<script>
+    function edit(obj){
+        var id=$(obj).attr('data-id');
+        var post_title=$(obj).attr('data-post_title');
+        var price=$(obj).attr('data-price');
+        var shiji_price=$(obj).attr('data-shiji_price');
+        var yushen_price=$(obj).attr('data-yushen_price');
+        var admin_remark=$(obj).attr('data-admin_remark');
+        var status=$(obj).attr('data-status');
+        var p1=parseInt($(obj).attr('data-p1'));
+        var p2=parseInt($(obj).attr('data-p2'));
+        $("input[name='id']").val(id);
+        $("input[name='post_title']").val(post_title);
+        $("input[name='price']").val(price);
+        $("input[name='shiji_price']").val(shiji_price);
+        $("input[name='yushen_price']").val(yushen_price);
+        $("#admin_remark").val(admin_remark);
+        $("#status").val(status);
+        if( p1 == 0 ) {
+            $('#yj_span1').html('无上级');
+        }
+        if( p2 == 0 ) {
+            $('#yj_span2').html('无上级');
+        }
+        if( status == 1 ) {
+            $('.yj').show();
+        } else {
+            $('.yj').hide();
+        }
+        $('#apply-edit').modal('show');
+    }
+
+    $('#status').change(function(){
+        var status = $(this).val();
+        if( status == 1 ) {
+            $('.yj').show();
+        } else {
+            $('.yj').hide();
+        }
+    })
+</script>

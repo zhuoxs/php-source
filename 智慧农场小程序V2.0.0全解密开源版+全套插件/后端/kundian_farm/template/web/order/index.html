@@ -1,0 +1,194 @@
+{template 'web/common/common'}
+{template 'web/order/navbar'}
+<style>
+    .cancel-order{
+        width: 100px;
+        height:30px;
+        background: gray;
+        color: white;
+        border-radius: 5px;
+        border: none;
+    }
+</style>
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/style.css" />
+<link rel="stylesheet" type="text/css" href="../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.css" />
+<div class="panel panel-success">
+    <div class="panel-heading">
+        <h3 class="panel-title">
+            订单管理
+        </h3>
+    </div>
+    <div class="panel-body">
+        <div class="ibox-content">
+            <form  class="form-horizontal" role="form" action="{url 'site/entry/order',array('m'=>'kundian_farm','version_id'=>$_GPC['version_id'])}" id="myform" method="post">
+                <div class="form-group">
+                    <label class="col-sm-1 control-label">订单编号</label>
+                    <div class="col-sm-3">
+                        <input type="text" class="form-control"  name="order_number" value="{$order_number}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-1 control-label">订单状态</label>
+                    <div class="col-sm-3">
+                        <select name="status" id="sel_status" class="form-control" >
+                            <option value="6" <?php if($status==6){echo 'selected';}?> >全部订单</option>
+                            <option value="7" <?php if($status==0){echo 'selected';}?> >待支付</option>
+                            <option value="1" <?php if($status==1){echo 'selected';}?> >待配送</option>
+                            <option value="2" <?php if($status==2){echo 'selected';}?> >待确认</option>
+                            <option value="3" <?php if($status==3){echo 'selected';}?> >已完成</option>
+                            <option value="5" <?php if($status==5){echo 'selected';}?> >已取消</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-1 control-label">下单时间</label>
+                    <div class="col-sm-8">
+                        {php echo tpl_form_field_daterange('time', $old_time, $time = false);}
+                        <p style="color: gray;">系统默认时间段为一个月</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-1 control-label"></label>
+                    <div class="col-sm-8">
+                        <input type="hidden" name="flag" value="">
+                        <input type="hidden" name="order_type" value="1">
+                        <button type="button" id="submitForm" class="btn btn-success " style="margin-right:5px;">查询</button>
+                        <a class="btn btn-primary" id="outOrder" href="#">批量导出</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+        </div>
+</div>
+<div class="panel panel-success">
+    <!--<div class="panel-heading">-->
+        <!--<h3 class="panel-title">-->
+            <!--订单管理-->
+        <!--</h3>-->
+    <!--</div>-->
+    <div class="panel-body">
+        <form action="" method="post" class="form-horizontal form">
+            <input type="hidden" name="token" value="{$_W['token']}">
+
+            <div class="table-responsive panel-body">
+                <table class="table-striped table-bordered table-hover dataTables-example table">
+                    <thead class="navbar-inner">
+                    <tr>
+                        <th>ID</th>
+                        <th>订单编号</th>
+                        <th>订单总价</th>
+                        <th>订单运费</th>
+                        <th>订单状态</th>
+                        <th>支付方式</th>
+                        <th>下单时间</th>
+                        <th>是否使用优惠券</th>
+                        <th>优惠金额</th>
+                        <th style="text-align:right;">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="level-list">
+                    {loop $list $index $item}
+                    <tr>
+                        <td><div class="type-parent">{$item['id']}</div></td>
+                        <td><div class="type-parent">{$item['order_number']}</div></td>
+                        <td><div class="type-parent">{$item['total_price']}</div></td>
+                        <td><div class="type-parent">{$item['send_price']}</div></td>
+                        <td><div class="type-parent">
+                            {if $item['status']==0}
+                            未支付
+                            {else if $item['status']==1}
+                            <span class="label label-success">待配送</span>
+                            {else if $item['status']==2}
+                            配送中
+                            {else if $item['status']==3}
+                            已完成
+                            {else if $item['status']==5}
+                            已取消
+                            {else if $item['status']==4}
+                            <a href="{url 'site/entry/refund',array('m'=>'kundian_farm','id'=>$item['id'],'version_id'=>$_GPC['version_id'])}"><button type="button" class="cancel-order">确认取消订单</button></a>
+                            {/if}
+                        </div></td>
+                        <td><div class="type-parent">{$item['pay_method']}</div></td>
+
+                        <td><div class="type-parent"><?php echo date('Y-m-d H:i:s',$item['create_time']);?></div></td>
+                        <td><div class="type-parent">
+                            {if $item['coupon_id']>0 }
+                            <span class="label label-info">是</span>
+                            {else}
+                            <span class="label label-default"> 否</span>
+                            {/if}
+                        </div></td>
+                        {if $item['coupon_id'] > 0 }
+                        <td><div class="type-parent">-{$item['coupon_price']}元</div></td>
+                        {else}
+                        <td><div class="type-parent">0</div></td>
+                        {/if}
+                        <td style="text-align:right;">
+                            <a href="{url 'site/entry/order',array('m'=>'kundian_farm','op'=>'shop_order_edit','id'=>$item['id'],'version_id'=>$_GPC['version_id'])}" class="btn btn-primary btn-xs edit"><i class="fa fa-edit"></i>订单详情</a>
+                            <a class="btn btn-danger btn-xs delete" data-id="{$item['id']}"><i class="fa fa-edit"></i>删除</a>
+                    </tr>
+                    {/loop}
+                    </tbody>
+                </table>
+                <span>订单总金额：</span><span style="color: red;font-size: 20px;">￥{$totalMoney}</span>
+                <div style="text-align: right;">
+                    {$pager}
+                </div>
+            </div>
+        </form>
+
+
+    </div>
+</div>
+<script>
+    require(["../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.js"],function(){
+        $(function(){
+            //删除
+            $(".delete").click(function(){
+                var that=$(this);
+                var id=$(this).attr('data-id');
+                swal({
+                    title: '确定删除吗?',
+                    text: "确定删除吗?",
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: '删除',
+                    cancelButtonText: '取消',
+                }).then(function(isConfirm) {
+                    if (isConfirm) {
+                        $.ajax({
+                            type:"post",
+                            url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'deleteOrder','version_id'=>$_GPC['version_id'])}",
+                            data:{order_id:id},
+                            dataType:'json',
+                            success:function(res){
+                                if(res.status==1){
+                                    swal('操作成功!', '操作成功!', 'success');
+                                    that.parent().parent().remove();
+                                }else if(res.status==3){
+                                    swal("提示",'该订单未完成','error');
+                                }else{
+                                    swal('操作失败!', '操作失败!', 'error');
+                                }
+                            }
+                        })
+                    }
+                })
+            });
+        })
+
+        $("#submitForm").click(function () {
+            $("input[name='flag']").val('');
+            $("#myform").submit();    //提交ID为myform的表单
+        })
+
+        $("#outOrder").click(function () {
+            $("input[name='flag']").val('true');
+            $("#myform").submit();    //提交ID为myform的表单
+        })
+    })
+</script>

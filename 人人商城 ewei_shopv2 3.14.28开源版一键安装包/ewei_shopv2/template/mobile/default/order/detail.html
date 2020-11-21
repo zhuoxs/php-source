@@ -1,0 +1,891 @@
+{template '_header'}
+
+{if !is_h5app()}
+<style>
+	.fui-header .title {
+		background: #fff;
+	}
+</style>
+{/if}
+
+<style>
+
+	.order_detail .fui-list-inner .title.has-address {
+		font-size: .7rem;
+		line-height: 1.2rem;
+		height: 1.2rem;
+		display: block;
+	}
+	.order_detail .fui-list-inner .text{
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		overflow: hidden;
+	}
+	.order_detail .fui-list:before{
+		border: 0;
+	}
+	.order_detail .fui-list_title{
+		position: relative;
+		display: flex;
+		align-items: center;
+		line-height: normal;
+	}
+	/*.order_detail .fui-list_title:before{*/
+	/*content: " ";*/
+	/*position: absolute;*/
+	/*left: 0.5rem;*/
+	/*right: 0.5rem;*/
+	/*bottom: 0;*/
+	/*height: 1px;*/
+	/*border-top: 1px solid #ebebeb;*/
+	/*color: #D9D9D9;*/
+	/*-webkit-transform-origin: 0 0;*/
+	/*-ms-transform-origin: 0 0;*/
+	/*transform-origin: 0 0;*/
+	/*-webkit-transform: scaleY(0.5);*/
+	/*-ms-transform: scaleY(0.5);*/
+	/*transform: scaleY(0.5);*/
+	/*}*/
+	.order_detail  .lineblock {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.order_detail  .lineblock:before {
+		content: "";
+		position: absolute;
+		left: .5rem;
+		top: 0;
+		right: .5rem;
+		height: 1px;
+		border-top: 1px solid #ebebeb;
+		-webkit-transform-origin: 0 100%;
+		-ms-transform-origin: 0 100%;
+		transform-origin: 0 100%;
+		-webkit-transform: scaleY(0.5);
+		-ms-transform: scaleY(0.5);
+		transform: scaleY(0.5);
+	}
+	.refuse_reason{
+		padding: 0.5rem;
+		background: #fdfce5;
+		/*background: #fff;*/
+		color: #999;
+		font-size: 0.7rem;
+		line-height: 1rem
+	}
+	.navbar.singrefund{
+		bottom: 0px;!important;
+	}
+</style>
+<link rel="stylesheet" type="text/css" href="../addons/ewei_shopv2/template/mobile/default/static/css/orderdetail.css?v=2.0.0">
+
+<div class="fui-page cav order_detail">
+
+	<div class="fui-header">
+		<!--判断进入订单详情 返回键隐藏，通过模板消息进入时隐藏-->
+		{if $isshow !=1}
+		<div class="fui-header-left">
+			<a class="back" id="btn-back"></a>
+		</div>
+		{/if}
+		<div class="title">
+			订单详情
+		</div>
+		<div class="fui-header-right"></div>
+	</div>
+	<div class="fui-content navbar {$seckill_color}{if $order['refundstate']==3}singrefund{/if}">
+
+		<!--状态-->
+		<div class="order_detail_header">
+			<div class="order_detail_ststus">
+				<div style="font-size: 0.85rem;">
+					{if empty($order['status'])}
+					{if $order['paytype']==3}
+					货到付款，等待发货
+					{else}
+					等待付款
+					{/if}
+					{elseif $order['status']==1}
+					{if $order['sendtype']>0}
+					部分商品已发货
+					{elseif $order['refundid'] ==0}
+					买家已付款
+					{/if}
+					{if !empty($order['ccard'])}
+					(充值中)
+					{/if}
+					{elseif $order['status']==2 && $order['refundid'] ==0}
+					卖家已发货
+					{elseif $order['status']==3}
+					交易完成
+					{if !empty($order['ccard'])}
+					(充值完成)
+					{/if}
+					{elseif $order['status']==-1}
+					交易关闭
+					{/if}
+
+					{if $order['refundstate'] > 0 && $order['refundstate']!=3}
+					({if $order['status'] ==1}申请退款{else}申请售后{/if}中)
+					{/if}
+
+					{if  $order['refundid'] !=0}
+					{if  $refund['status']==-1 }卖家拒绝{/if}{if $order['status'] ==1}退款{else}售后{/if}
+					{/if}
+				</div>
+				<div>订单金额：{if $order['ispackage']}(套餐总价){/if}
+					&yen; {$order['goodsprice']}</div>
+			</div>
+		</div>
+
+		{if  $order['refundid'] !=0}
+		<div class="refuse_reason">
+			{if strlen($refund['reply']) > 0 && $refund['status']==-1 }拒绝原因：{$refund['reply']}{/if}
+		</div>
+		{/if}
+
+
+
+		{if $order['canverify']&&$order['status']!=-1&&$order['status']!=0}
+		{if !empty($qrcodeimg)}
+		<div class="code_box" >
+			<div class="img_box order_detail_code">
+				<img  src="{$qrcodeimg}" alt="">
+			</div>
+			<div class="cav_code">{$verifycode}</div>
+		</div>
+		{/if}
+
+		{if !empty($store)}
+		<div class="fui-according-group">
+			<div class="fui-according expanded">
+				<div class="fui-according-header">
+					{if $order['dispatchtype']==1}
+					<span class="text">您须到下单时选择的自提点取货</span>
+					{else}
+					<span class="text">您须到下单时选择的门店使用</span>
+					{/if}
+				</div>
+				<div class="fui-according-content">
+					<div class="content-block">
+						<div class="fui-cell-group notop store-container">
+							<a href="{php echo mobileUrl('store/detail',array('id'=>$store['id']))}" class="fui-cell">
+								<div class="fui-cell-icon">
+									<i class="icon icon-locationfill"></i>
+								</div>
+								<div class="fui-cell-info">
+									{$store['storename']}
+								</div>
+								<div class="fui-cell-remark">
+									查看
+								</div>
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		{/if}
+		{/if}
+
+		{if !empty($carrier)}
+		<div class="fui-cell-group">
+			<div class="fui-cell">
+				<div class="fui-cell-info">
+					姓名：{$carrier['carrier_realname']}
+				</div>
+				<div class="fui-cell-remark noremark">
+				</div>
+			</div>
+			<div class="fui-cell">
+				<div class="fui-cell-info">
+					电话：{$carrier['carrier_mobile']}
+				</div>
+				<div class="fui-cell-remark noremark">
+				</div>
+			</div>
+		</div>
+		{/if}
+
+
+
+		{if !empty($address)}
+		<div class="fui-list-group noborder" style="display: block;">
+
+			{if !empty($order['isnewstore'])}
+			{if !empty($order['expresssn'])}
+			<div class="fui-list" style="background: #fff;">
+				<div class="fui-list-icon">
+					<i class="icon icon-deliver" style="color: #ff5555;"></i>
+				</div>
+				<div class="fui-list-inner" style="font-size: 0.7rem;height: auto;line-height: 1.5rem;">
+					<p style='color:#ff5555'>{$order['expresssn']}</p>
+				</div>
+				<div class="fui-list-angle"><span class="angle"></span></div>
+			</div>
+			{/if}
+			{else}
+			{if $order['status'] > 1 && $order['sendtype']==0  &&$order['city_express_state']==0}
+			<a class="fui-list" style="background: #fff;" href="{php echo mobileUrl('order/express',array('id'=>$order['id']))}">
+				<div class="fui-list-icon">
+					<i class="icon icon-deliver" style="color: #ff5555;"></i>
+				</div>
+				<div class="fui-list-inner" style="font-size: 0.7rem;height: auto;line-height: 1.2rem;">
+					{if empty($express)}
+					<p style='color:#ff5555'>快递公司:{$order['expresscom']}</p>
+					<p style='color:#999'>快递单号:{$order['expresssn']}</p>
+					{else}
+					<p style='color:#ff5555'>{$express['step']}</p>
+					<p style='color:#999'>{$express['time']}</p>
+					{/if}
+				</div>
+				<div class="fui-list-angle"><span class="angle"></span></div>
+			</a>
+			{/if}
+
+			{if $order['status'] > 0 && $order['sendtype']>0 && $order_goods  &&$order['city_express_state']==0}
+			{loop $order_goods $index $sg}
+			<a class="fui-list" style="background: #fff;" href="{php echo mobileUrl('order/express',array('id'=>$sg['orderid'],'sendtype'=>$sg['sendtype'],'bundle'=>chr($index+65)))}">
+				<div class="fui-list-icon">
+					<i class="icon icon-deliver" style="color: #ff5555;"></i>
+				</div>
+				<div class="fui-list-inner" style="font-size: 0.7rem;height: auto;line-height: 1.2rem;">
+					{if empty($express)}
+					<p style='color:#ff5555'>快递公司:{if $sg['expresscom']}{$sg['expresscom']}{else}其他快递{/if}</p>
+					<p style='color:#999'>快递单号:{$sg['expresssn']}</p>
+					{else}
+					<p style='color:#ff5555'>{$express['step']}</p>
+					<p style='color:#999'>{$express['time']}</p>
+					{/if}
+				</div>
+				<div class="fui-list-angle"><span class="angle"></span></div>
+			</a>
+			{/loop}
+			{/if}
+			{/if}
+			<div class="fui-list" style="background: #fff;    padding-top: .8rem;
+    padding-bottom: .83rem;">
+				<div class="fui-list-icon">
+					<i class="icon icon-dingwei"></i>
+				</div>
+				<div class="fui-list-inner" style="font-size: 0.7rem;height: auto;">
+					<div class="title has-address">{$address['realname']} {$address['mobile']}</div>
+					<!--<p>{$address['realname']} {$address['mobile']}</p>-->
+					<div class="text"><span class='address'>{$address['province']}{$address['city']}{$address['area']}{if !empty($new_area) && !empty($address_street)} {$address['street']}{/if} {$address['address']}</span></div>
+					<!--<p>{$address['province']}{$address['city']}{$address['area']}{if !empty($new_area) && !empty($address_street)} {$address['street']}{/if} {$address['address']}</p>-->
+				</div>
+			</div>
+		</div>
+		{/if}
+
+
+
+
+
+		<!--商品信息-->
+		<div class="fui-list-group">
+			{if empty($order['isnewstore'])}
+			<div class="fui-list_title"><i class="icon icon-dianpu1" style="margin-right: 0.25rem;"></i>{$shopname}</div>
+			{/if}
+
+			{php $i=0;}
+			{loop $goods $g}
+			<a class="fui-list" href="{if empty($order['isnewstore'])}{php echo mobileUrl('goods/detail',array('id'=>$g['goodsid']))}{else}{php echo mobileUrl('newstore/goods/detail',array('id'=>$g['goodsid'],'storeid'=>$order['storeid']))}{/if}">
+				<div class="fui-list-media">
+					<img src="{php echo tomedia($g['thumb'])}"/>
+				</div>
+				<div class="fui-list-inner">
+					<div class="title">{if $g['seckill_task']}<span class="fui-label fui-label-danger">{$g['seckill_task']['tag']}</span>{/if}{$g['title']}</div>
+					{if !empty($g['optionid'])}<div class="subtitle">{if !empty($sortStr)}{$sortStr}{else}{$g['optiontitle']}{/if}</div>{/if}
+
+					{if $g['status']==2}
+					<div class="subtitle">
+						<label class="fui-label fui-label-danger">赠品</label>
+					</div>
+					{/if}
+				</div>
+				<div class="fui-list-angle" style="margin-right: 0">
+					<div style="color: #000">￥{php echo number_format($g['price']/$g['total'],2)}</div>
+					<div class="num">x{$g['total']}</div>
+
+					{if ($order['canrefund'] || $canreturn) && $is_single_refund}
+						<div class="fui-cell-remark">
+							<div class="btn btn-sm btn-default-o" style="height: 22px;line-height: 20px;border-radius: 22px;font-size: 0.6rem;width: 2.7rem;padding: 0;text-align: center;" onclick="window.location.href='{php echo mobileUrl('order/single_refund', array('id'=>$g['id']))}'">
+								{if $g['single_refundstate']==8}
+									已拒绝
+								{elseif $g['single_refundstate']==9}
+									维权成功
+								{elseif $g['single_refundstate']==1}
+									退款中
+								{elseif $g['single_refundstate']==2}
+									退货中
+								{elseif $g['single_refundstate']==0}
+									{if $order['status']==1 && $g['sendtime']==0}退款{else}售后{/if}
+								{/if}
+							</div>
+						</div>
+					{/if}
+
+				</div>
+			</a>
+			{if !empty($g['fullbackgoods'])}
+			<div class="fui-cell-group" {if $g['fullbackgoods']['minallfullbackallprice']<=0 && $g['fullbackgoods']['minallfullbackallratio']<=0}display: none;{/if}>
+			<a href="{php echo mobileUrl('member/fullback',array('orderid'=>$order['id']))}"  class="fui-cell">
+				<div class="fui-cell-label">{php m('sale')->getFullBackText(true)}详情</div>
+				<div class="fui-cell-info">
+
+				</div>
+				<div class="fui-cell-remark">
+					<i class="icon icon-rechargefill" style="color: #ff6462;"></i>
+					{if $g['fullbackgoods']['type']>0}
+					{php m('sale')->getFullBackText(true)}  {php echo price_format($g['fullbackgoods']['minallfullbackallratio']*$g['total'],2)}%  ， {php echo price_format($g['fullbackgoods']['fullbackratio']*$g['total'],2)}% /天，共  {$g['fullbackgoods']['day']}  天
+					{else}
+					{php m('sale')->getFullBackText(true)} &yen;{php echo price_format($g['fullbackgoods']['minallfullbackallprice']*$g['total'],2)}，&yen;{php echo price_format($g['fullbackgoods']['fullbackprice']*$g['total'],2)}/天，共 {$g['fullbackgoods']['day']} 天
+					{/if}
+				</div>
+			</a>
+		</div>
+		{/if}
+
+		{if !empty($g['diyformdata']) && $g['diyformdata'] != 'false'}
+		<div class="fui-cell-group noborder">
+			{php $datas = $g['diyformdata']}
+			{loop $g['diyformfields'] $key $value}
+			<div class="fui-cell">
+				<div class="fui-cell-label">{php echo $value['tp_name']}</div>
+				<div class="fui-cell-info">
+
+				</div>
+				<div class="fui-cell-remark noremark">
+					{template 'diyform/mdiyform'}
+				</div>
+			</div>
+			{/loop}
+		</div>
+		{/if}
+		{php $i++;}
+		{/loop}
+	</div>
+	<!--门店-->
+	{if empty($order['isnewstore'])}
+	{if !empty($stores) && empty($store)}
+	<div class="fui-according-group">
+		<div class="fui-according expanded">
+			<div class="fui-according-header">
+				<span class="text">适用门店</span>
+				<span class="remark">
+								<span class="badge">{php echo count($stores)}</span>
+							</span>
+			</div>
+			<div class="fui-according-content">
+				<div class="content-block">
+					<div class="fui-cell-group notop store-container">
+						{loop $stores $item}
+						<a href="{if empty($item['merchid'])}{php echo mobileUrl('store/detail',array('id'=>$item['id']))}{else}{php echo mobileUrl('store/detail',array('id'=>$item['id'],'merchid'=>$item['merchid']))}{/if}" class="fui-cell">
+							<div class="fui-cell-icon">
+								<i class="icon icon-locationfill"></i>
+							</div>
+							<div class="fui-cell-info">
+								{$item['storename']}
+							</div>
+							<div class="fui-cell-remark">
+								查看
+							</div>
+						</a>
+						{/loop}
+						{if count($stores)>3}
+						<div class='show-allshop'><span class='show-allshop-btn'>加载更多门店</span></div>
+						{/if}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	{/if}
+	{/if}
+
+
+	{if !empty($order_fields) && !empty($order_data)}
+	<div class="fui-cell-group noborder">
+		{php $datas = $order_data}
+		{loop $order_fields $key $value}
+		<div class="fui-cell">
+			<div class="fui-cell-label">{php echo $value['tp_name']}</div>
+			<div class="fui-cell-info">
+
+			</div>
+			<div class="fui-cell-remark noremark">
+				{template 'diyform/mdiyform'}
+			</div>
+		</div>
+		{/loop}
+	</div>
+	{/if}
+
+
+
+
+	<!--消费码-->
+	{if $order['showverify']  && !$isonlyverifygoods}
+	<div class="fui-cell-group">
+		{if $order['status']>0 || $order['paytime'] > 0}
+		{loop $verifyinfo $v}
+		<div  class="fui-cell lineblock">
+			<div class="fui-cell-info">
+				{if $order['dispatchtype']==1}自提码{else}消费码{/if}: {$v['verifycode']}
+			</div>
+
+			<div class="fui-cell-remark noremark">
+				{if $v['verified']}
+				<div class='fui-label fui-label-danger' >已使用</div>
+				{else if $order['verifyendtime'] > 0 && $order['verifyendtime'] < time()}
+				<div class='fui-label fui-label-warning' >已过期</div>
+				{else}
+				{if $order['dispatchtype']}
+				<div class='fui-label fui-label-default' >未取货</div>
+				{else}
+				{if $order['verifytype']==1}
+				<div class='fui-label fui-label-default' >剩余{php echo $goods[0]['total']-count($vs)} 次</div>
+				{else}
+				<div class='fui-label fui-label-default' >未使用</div>
+				{/if}
+				{/if}
+				{/if}
+			</div>
+		</div>
+		{/loop}
+		{else}
+		<div   class="fui-cell lineblock">
+			<div class="fui-cell-info">
+				付款后可见!
+			</div>
+		</div>
+		{/if}
+	</div>
+	{/if}
+	{if $order['status'] > 0}
+	{if !empty($order['virtual']) && !empty($order['virtual_str'])}
+	<!--发货信息-->
+	{if is_array($ordervirtual) && !empty($ordervirtual)}
+	{loop $ordervirtual $ordervirtualindex $ordervirtualitem}
+	<div class="fui-cell-group">
+		<div class="fui-cell-title">发货信息 {php echo count($ordervirtual)>1? $ordervirtualindex+1: ''}</div>
+		{loop $ordervirtualitem $ordervirtualrow}
+		<div class="fui-cell">
+			<div class="fui-cell-label">{$ordervirtualrow['key']}</div>
+			<div class="fui-cell-info" style="white-space: normal;word-wrap: break-word">{$ordervirtualrow['value']}</div>
+		</div>
+		{/loop}
+		{if !empty($virtualtemp) && !empty($virtualtemp['linkurl'])}
+		<a class="btn btn-default block" href="{$virtualtemp['linkurl']}">{php echo !empty($virtualtemp['linktext'])? $virtualtemp['linktext']: '使用地址'}</a>
+		{/if}
+	</div>
+	{/loop}
+	{else}
+	<div class="fui-cell-group">
+		<div class="fui-cell-title">发货信息</div>
+		<div class="fui-cell">
+			<div class="fui-cell-info" style="white-space: normal;word-wrap: break-word">{$order['virtual_str']}</div>
+		</div>
+		{if !empty($virtualtemp) && !empty($virtualtemp['linkurl'])}
+		<a class="btn btn-default block" href="{$virtualtemp['linkurl']}">{php echo !empty($virtualtemp['linktext'])? $virtualtemp['linktext']: '使用地址'}</a>
+		{/if}
+	</div>
+	{/if}
+
+	{/if}
+
+	{if !empty($order['isvirtualsend']) && !empty($order['virtualsend_info'])}
+	<!--发货信息-->
+	<div class="fui-according-group">
+		<div class="fui-according expanded">
+			<div class="fui-according-header">
+				<span class="text">发货信息</span>
+				<span class="remark"></span>
+			</div>
+			<div class="fui-according-content"  style="display: block;">
+				<div class="content-block">
+					<div class="fui-cell-group notop">
+						<div   class="fui-cell">
+							<div class="fui-cell-info" style="white-space: normal;word-wrap: break-word">
+								{$order['virtualsend_info']}
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	{/if}
+	{/if}
+	<!--商品小计-->
+	<div class="fui-cell-group noborder">
+		<div class="fui-cell">
+			<div class="fui-cell-label">商品小计</div>
+			<div class="fui-cell-info">
+				{if $order['ispackage']}(套餐总价){/if}
+			</div>
+			<div class="fui-cell-remark noremark">
+				&yen; {$order['goodsprice']}
+			</div>
+		</div>
+		{if empty($order['isnewstore']) && empty($order['city_express_state'])}
+		<div class="fui-cell">
+			<div class="fui-cell-label">运费</div>
+			<div class="fui-cell-info">
+
+			</div>
+			<div class="fui-cell-remark noremark">
+				&yen; {$order['dispatchprice']}
+			</div>
+		</div>
+		{else}
+		<div class="fui-cell">
+			<div class="fui-cell-label">同城运费</div>
+			<div class="fui-cell-info">
+
+			</div>
+			<div class="fui-cell-remark noremark">
+				&yen; {$order['dispatchprice']}
+			</div>
+		</div>
+		{/if}
+
+		{if !empty($order['lotterydiscountprice']) && $order['lotterydiscountprice']>0}
+		<div class="fui-cell">
+			<div class="fui-cell-label">抽奖优惠</div>
+			<div class="fui-cell-info">
+
+			</div>
+			<div class="fui-cell-remark noremark">
+				- &yen; {$order['lotterydiscountprice']}
+			</div>
+		</div>
+		{/if}
+
+		{if !$order['ispackage']}
+		{if $order['deductenough']>0}
+		<div class="fui-cell">
+			<div class="fui-cell-label">满额立减</div>
+			<div class="fui-cell-info">
+
+			</div>
+			<div class="fui-cell-remark noremark">
+				-&yen; {$order['deductenough']}
+			</div>
+		</div>
+		{/if}
+
+		{if $order['couponprice']>0}
+		<div class="fui-cell">
+			<div class="fui-cell-label">优惠券优惠</div>
+			<div class="fui-cell-info">
+
+			</div>
+			<div class="fui-cell-remark noremark">
+				-&yen; {$order['couponprice']}
+			</div>
+		</div>
+		{/if}
+		{if $use_membercard}
+		<div class="fui-cell">
+			<div class="fui-cell-label">会员卡优惠</div>
+			<div class="fui-cell-info">
+
+			</div>
+			<div class="fui-cell-remark noremark">
+				-&yen; {$card_dec_price}
+			</div>
+		</div>
+		{/if}
+
+		{if $order['buyagainprice']>0}
+		<div class="fui-cell">
+			<div class="fui-cell-label">重复购买优惠</div>
+			<div class="fui-cell-info">
+
+			</div>
+			<div class="fui-cell-remark noremark">
+				-&yen; {$order['buyagainprice']}
+			</div>
+		</div>
+		{/if}
+
+		{if $order['discountprice']>0}
+		<div class="fui-cell">
+			<div class="fui-cell-label">会员优惠</div>
+			<div class="fui-cell-info">
+
+			</div>
+			<div class="fui-cell-remark noremark">
+				-&yen; {$order['discountprice']}
+			</div>
+		</div>
+		{/if}
+
+		{if $order['isdiscountprice']>0}
+		<div class="fui-cell">
+			<div class="fui-cell-label">促销优惠</div>
+			<div class="fui-cell-info">
+
+			</div>
+			<div class="fui-cell-remark noremark">
+				-&yen; {$order['isdiscountprice']}
+			</div>
+		</div>
+		{/if}
+		{if $order['deductprice']>0}
+		<div class="fui-cell">
+			<div class="fui-cell-label">{$_W['shopset']['trade']['credittext']}抵扣</div>
+			<div class="fui-cell-info">
+
+			</div>
+			<div class="fui-cell-remark noremark">
+				-&yen; {$order['deductprice']}
+			</div>
+		</div>
+		{/if}
+
+		{if $order['deductcredit2']>0}
+		<div class="fui-cell">
+			<div class="fui-cell-label">{$_W['shopset']['trade']['moneytext']}抵扣</div>
+			<div class="fui-cell-info">
+
+			</div>
+			<div class="fui-cell-remark noremark">
+				-&yen; {$order['deductcredit2']}
+			</div>
+		</div>
+		{/if}
+
+		{if $order['seckilldiscountprice']>0}
+		<div class="fui-cell">
+			<div class="fui-cell-label">秒杀优惠</div>
+			<div class="fui-cell-info">
+
+			</div>
+			<div class="fui-cell-remark noremark">
+				-&yen; {$order['seckilldiscountprice']}
+			</div>
+		</div>
+		{/if}
+		{/if}
+
+		<div class="fui-cell">
+			<div class="fui-cell-label" style="width: 6rem;">实付费{if empty($order['isnewstore'])}(含运费){/if}</div>
+			<div class="fui-cell-info">
+
+			</div>
+			<div class="fui-cell-remark noremark text-danger">
+						 <span style='font-size:.75rem'>&yen;{$order['price']}
+			</div>
+		</div>
+	</div>
+	{if $order['remark']}
+	<div class="fui-cell-group noborder order-info">
+		<div class="fui-cell">
+			<div class="fui-cell-info">
+				<span style="margin-right: 0.7rem;">买家备注</span>{$order['remark']}
+			</div>
+			<div class="fui-cell-remark noremark">
+			</div>
+		</div>
+	</div>
+	{/if}
+	<div class="fui-cell-group noborder order-info">
+		<div class="fui-cell">
+			<div class="fui-cell-info">
+				<span style="margin-right: 0.7rem;">订单编号</span>{$order['ordersn']}
+			</div>
+			<div class="fui-cell-remark noremark">
+
+			</div>
+		</div>
+		<div class="fui-cell">
+			<div class="fui-cell-info">
+				<span style="margin-right:0.7rem;">创建时间</span>{php echo date('Y-m-d H:i:s', $order['createtime'])}
+			</div>
+			<div class="fui-cell-remark noremark">
+
+			</div>
+		</div>
+		{if $order['status']>=1 && $order['paytime'] > 0}
+		<div class="fui-cell">
+			<div class="fui-cell-info">
+				<span style="margin-right: 0.7rem;">支付时间</span>{php echo date('Y-m-d H:i:s', $order['paytime'])}
+			</div>
+			<div class="fui-cell-remark noremark">
+
+			</div>
+		</div>
+		{/if}
+		{if !$isonlyverifygoods}
+		{if $order['status']>=2 || ($order['status']>=1 && $order['sendtype']>0)}
+		<div class="fui-cell">
+			<div class="fui-cell-info">
+				<span style="margin-right: 0.7rem;">发货时间</span>{php echo date('Y-m-d H:i:s', $order['sendtime'])}
+			</div>
+			<div class="fui-cell-remark noremark">
+
+			</div>
+		</div>
+		{/if}
+		{/if}
+
+		{if $order['status']==3}
+		<div class="fui-cell">
+			<div class="fui-cell-info">
+				<span style="margin-right: 0.7rem;">完成时间</span>{php echo date('Y-m-d H:i:s', $order['finishtime'])}
+			</div>
+			<div class="fui-cell-remark noremark">
+
+			</div>
+		</div>
+		{/if}
+	</div>
+
+	{if !empty($order['virtual']) && !empty($virtualtemp['description'])}
+	<div class='fui-cell-group' style="font-size: 0.7rem">
+		<div class='explain-title'>使用说明</div>
+		<div class='explain-content' style="white-space: pre-wrap;">{$virtualtemp['description']}</div>
+	</div>
+	{/if}
+
+	{if $order['invoicename']}
+	{php $invoice_info = m('sale')->parseInvoiceInfo($order['invoicename'])}
+	<div class="fui-cell-group noborder order-info">
+		{if $invoice_info['title']}
+		<div class="fui-cell">
+			<div class="fui-cell-info">
+				<span style="margin-right: 0.7rem;">发票类型</span>{php echo $invoice_info['entity']?'纸质发票':'电子发票'}
+			</div>
+			<div class="fui-cell-remark noremark">
+			</div>
+		</div>
+		{/if}
+		{if $invoice_info['title']}
+		<div class="fui-cell">
+			<div class="fui-cell-info">
+				<span style="margin-right: 0.7rem;">抬头类型</span>{php echo $invoice_info['company']?'单位':'企业'}
+			</div>
+			<div class="fui-cell-remark noremark">
+			</div>
+		</div>
+		{/if}
+		<div class="fui-cell">
+			<div class="fui-cell-info">
+				<span style="margin-right: 0.7rem;">发票抬头</span>
+				{if $invoice_info['title']}{$invoice_info['title']}{else}{$order['invoicename']}{/if}
+			</div>
+			<div class="fui-cell-remark noremark">
+			</div>
+		</div>
+		{if $invoice_info['number']}
+		<div class="fui-cell">
+			<div class="fui-cell-info">
+				<span style="margin-right: 0.7rem;">纳税人识别号</span>{$invoice_info['number']}
+			</div>
+			<div class="fui-cell-remark noremark">
+			</div>
+		</div>
+		{/if}
+	</div>
+	{/if}
+</div>
+
+	<div class="fui-footer" style="text-align: right;">
+		{if $order['invoice_img']}
+		<a class="btn btn-sm btn-default-o" href="{php echo tomedia($order['invoice_img'])}">查看发票</a>
+		{/if}
+		{if $order['userdeleted']==0}
+		{if $order['status']==0}
+		<div class="btn btn-sm btn-default-o order-cancel">取消订单
+			<select data-orderid="{$order['id']}">
+
+				<option value="">不取消了</option>
+				<option value="我不想买了">我不想买了</option>
+				<option value="信息填写错误，重新拍">信息填写错误，重新拍</option>
+				<option value="同城见面交易">同城见面交易</option>
+				<option value="其他原因">其他原因</option>
+			</select>
+		</div>
+
+		{if $order['paytype']!=3}
+			{if $order['paytype']!=3 && empty($ispeerpay)}
+			<a class="btn btn-sm btn-default-o"  href="{php echo mobileUrl('order/pay',array('id'=>$order['id']))}">支付订单</a>
+			{else}
+			<a class="btn btn-sm btn-default-o"  href="{php echo mobileUrl('order/pay/peerpayshare',array('id'=>$order['id']))}">代付订单</a>
+			{/if}
+		{/if}
+
+		{/if}
+
+		{if $order['status']==3 || $order['status']==-1}
+		<div class="btn btn-sm btn-default-o order-delete" data-orderid="{$order['id']}">删除订单</div>
+		{/if}
+
+
+		{if $order['status']==3 && $order['iscomment']==1}
+		<a class="btn btn-sm btn-default-o" href="{php echo mobileUrl('order/comment',array('id'=>$order['id']))}">追加评价</a>
+		{/if}
+		{if $order['status']==3 && $order['iscomment']==0 && empty($_W['shopset']['trade']['closecomment'])}
+		<a class="btn btn-sm btn-default-o" href="{php echo mobileUrl('order/comment',array('id'=>$order['id']))}">评价</a>
+		{/if}
+
+		{if !empty($activity)&& empty($order['refundstate']) &&$order['status']>0}
+		{if $order['isshare'] == 0}
+		<a data-nocache="true" class="btn btn-sm btn-default-o" href="{php echo mobileUrl('sale/sendticket/share/unclaimed',array('orderid'=>$order['id'],'money'=>$order['price']))}">领取优惠券</a>
+		{/if}
+		{/if}
+
+		{if $order['status']==2}
+		<div class="btn btn-sm btn-default-o order-finish" data-orderid="{$order['id']}">确认收货</div>
+		{/if}
+
+		{if ($order['canrefund'] || $canreturn) && $order['refundstate']!=3}
+		<a data-nocache="true" class="btn btn-sm btn-default-o" href="{php echo mobileUrl('order/refund',array('id'=>$order['id']))}">{if !empty($order['refundstate'])}查看{else}申请退款{/if}{if !empty($order['refundstate'])}进度{/if}</a>
+		{/if}
+
+		{if $order['refundstate'] > 0 && $refund['status']!=5 && $order['refundstate']!=3}
+		<a class='btn btn-sm btn-default-o btn-cancel'>取消申请</a>
+		{/if}
+		{else if $order['userdeleted']==1}
+		<div class="btn btn-sm btn-default-o order-deleted" data-orderid="{$order['id']}">彻底删除订单</div>
+
+		<div class="btn btn-sm btn-default-o order-recover" data-orderid="{$order['id']}">恢复订单</div>
+		{/if}
+	</div>
+
+
+
+{if $order['canverify']}
+<div class="mask">
+	<div class="code_box">
+		<p>请将二维码出示给核销员</p>
+		<div class="img_box">
+			<img class="qrimg" src="{$qrcodeimg}"/>
+		</div>
+		<div class="cav_code">{$verifycode}</div>
+		<div class="error">
+			<p style="padding: 0 1.3rem">温馨提示：为了更好的保护您利益,请不要轻易将您的核销二维码泄露给他人</p>
+		</div>
+	</div>
+</div>
+{/if}
+
+</div>
+
+<script type="text/javascript">
+    $('.order_detail_code').click(function(){
+        $('.mask').css({display:'block'})
+    })
+    $('.mask').click(function(){
+        $(this).css({display:'none'})
+    })
+    require(['biz/order/detail'], function (modal) {
+        FoxUI.according.init();
+        modal.init({orderid: "{$orderid}",fromDetail:true});
+    });
+</script>
+{template '_footer'}

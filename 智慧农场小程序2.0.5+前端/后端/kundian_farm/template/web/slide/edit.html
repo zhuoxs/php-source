@@ -1,0 +1,152 @@
+{template 'web/common/common'}
+{template 'web/system/navbar'}
+<style type="text/css">
+    .layui-form-select{display: none;}
+</style>
+<blockquote class="layui-elem-quote layui-text">
+    轮播图新增/编辑
+</blockquote>
+<div class="layui-card">
+    <form class="layui-form" action="" method="post">
+        <div class="layui-form-item">
+            <label class="layui-form-label">轮播图类型</label>
+            <div class="layui-input-block">
+                <select name="slide_type" class="form-control" style="display: block;width: 70%;">
+                    <option value="1" <?php if($data['list']['slide_type']==1){echo 'selected';}?> >首页轮播图</option>
+                    <option value="2" <?php if($data['list']['slide_type']==2){echo 'selected';}?>>普通商城轮播图</option>
+                    <option value="3" <?php if($data['list']['slide_type']==3){echo 'selected';}?>>积分商城轮播图</option>
+                    {if $data['plugin_pt']}
+                    <option value="4" <?php if($data['list']['slide_type']==4){echo 'selected';}?>>拼团商城轮播图</option>
+                    {/if}
+                    {if $data['plugin_store']}
+                    <option value="5" <?php if($data['list']['slide_type']==5){echo 'selected';}?>>多商户轮播图</option>
+                    {/if}
+                </select>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label" >图片(375*225)</label>
+            <div class="layui-input-block upload-img" style="width: 64%;">
+              {php echo tpl_form_field_image('slide_src',$data['list']['slide_src']);}
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" >是否显示</label>
+           <div class="layui-input-block">
+                {if $data['list']['status']==1}
+                <input type="checkbox" name="status" value="1" lay-skin="switch" lay-text="ON|OFF" checked="">
+                {else}
+                <input type="checkbox" name="status" value="1" lay-skin="switch" lay-text="ON|OFF">
+                {/if}
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label" >链接板块</label>
+            <div class="layui-input-block">
+                <select name="link_type" id="selectLink" class="form-control" style="display: block;width: 70%">
+                    <option value="0">请选择</option>
+                    {loop $data['link']  $key $val}
+                        <option value="{$val['path']}"  <?php if($data['list']['link_type']==$val['path']){echo 'selected';}?> >{$val['name']}</option>
+                    {/loop}
+                </select>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label" >链接参数</label>
+            <div class="layui-input-block">
+                <select name="link_param" id="selectParam" class="form-control" style="display: block;width: 70%">
+                    <option value="0">请选择</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" >排序</label>
+            <div class="layui-input-block">
+              <input type="number" name="rank" value="{$data['list']['rank']}" placeholder="排序" class="layui-input">
+            </div>
+        </div>
+       <div class="layui-form-item">
+            <div class="layui-input-block">
+                <input type="hidden" name="id" value="{$data['list']['id']}">
+                <button class="layui-btn layui-btn-sm" type="button" lay-submit lay-filter="formDemo">保存</button>
+                <a href="#">
+                    <button class="layui-btn layui-btn-sm goBack" type="button">返回</button>
+                </a>
+            </div>
+        </div>
+
+    </form>
+</div>
+<script src="../addons/kundian_farm/resource/layui.js" charset="utf-8"></script>
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+layui.use(['form', 'layedit', 'laydate'], function(){
+      var form = layui.form,layer = layui.layer;
+      //返回
+      $('.goBack').click(function () {
+          window.history.go(-1);
+      })
+
+    //提交数据
+    form.on('submit(formDemo)', function(data) {
+        var formData = data.field;
+        var url = "{url 'site/entry/admin',array('m'=>$_GPC['m'],'op'=>'edit','action'=>'slide')}";
+        var data = {
+            formData: formData
+        };
+        postData(url, data);
+        return false;
+    });
+
+    var now_select_id=$("#selectLink").val();
+    var id=$("input[name='id']").val();
+    console.log(now_select_id);
+    console.log(id);
+    $.ajax({
+        type:"post",
+        url:"{url 'site/entry/admin',['m'=>$_GPC['m'],'op'=>'selectLink','action'=>'slide']}",
+        data:{select_id:now_select_id,id:id},
+        dataType:'json',
+        success:function(res){
+            if(res.selectData){
+                var selectData=res.selectData;
+                var str='<option value="0">请选择</option>';
+                for(var i=0;i<selectData.length;i++){
+                    if(selectData[i]['is_select']==1){
+                        str+='<option value="'+selectData[i]['child_path']+'" selected>'+selectData[i]['title']+'</option>';
+                    }else{
+                        str+='<option value="'+selectData[i]['child_path']+'">'+selectData[i]['title']+'</option>';
+                    }
+                }
+                $('#selectParam').html(str);
+            }
+        }
+    })
+
+
+    $("#selectLink").change(function () {
+        var select_id=$(this).val();
+        console.log(select_id);
+        $.ajax({
+            type:"post",
+            url:"{url 'site/entry/admin',['m'=>$_GPC['m'],'op'=>'selectLink','action'=>'slide']}",
+            data:{select_id:select_id},
+            dataType:'json',
+            success:function(res){
+                if(res.selectData){
+                    var selectData=res.selectData;
+                    var str='<option value="0">请选择</option>';
+                    for(var i=0;i<selectData.length;i++){
+                        str+='<option value="'+selectData[i]['child_path']+'"  >'+selectData[i]['title']+'</option>';
+                    }
+                    $('#selectParam').html(str);
+                }
+            }
+        })
+    })
+});
+</script>
+

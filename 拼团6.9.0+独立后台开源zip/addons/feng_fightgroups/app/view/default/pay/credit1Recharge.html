@@ -1,0 +1,168 @@
+{php include wl_template('common/header');}
+<style>
+.message-container{width: 100%;position: relative;height: 154px;background-size: cover;background-position: center top;}
+.avatar{display:inline-block;width:70px;height:70px;margin:0 auto;position:relative}
+.avatar img{display:block;width:70px;height:70px;margin:0 auto;margin-top: 20px;}
+.avatar p{font-size:12px;margin-top:0;margin-bottom:-1px;margin-top: 20px;}
+.avatar p>span{padding:5px 15px;background-color:#809843;border-radius:13px;color:#fff;display: table;margin: 0 auto;}
+.avatar.avatar-peerpay{width:100%;height:120px}
+.bottom-arrow{position: absolute;bottom: 0;left: 0;z-index: 10;width: 100%;height: 7px;background: url("{TG_URL_ARES}images/block_gray.png") no-repeat center center;background-size: auto 7px;}
+.circular{border-radius: 50px;}
+.weui_extra_area {font-size: 14px;color: #888;}
+.weui_extra_area a {color: #61749B;}
+.cjticon{height: 20px;width: 20px;line-height: 20px;font-size: 12px;background-color: #FF4C4C;color: white;text-align: center;display: inline-block;border-radius: 5px;position: absolute;top: 4px;left: 0;}
+</style>
+<div class="page-group">
+    <div class="page page-current" id="page-pay">
+    	<!--<header class="bar bar-nav">
+		    <h1 class="title">支付订单</h1>
+		</header>-->
+		<div class="content" style="background-color: #F9F9F9;">
+			<div class="list-block media-list" style="margin: 0;">
+		      <ul>
+		        <li class="item-content">
+		            <div class="item-inner">
+		              	<div class="item-subtitle">￥  0.01</div>
+		              	<div class="item-title-row" style="position: relative;">
+		                	<div class="item-after"><a href="{$goods['a']}" class="weui_btn weui_btn_mini weui_btn_default">余额充值</a></div>
+		              	</div>
+		            </div>
+		        </li>
+		      </ul>
+		    </div>
+		   	{if $config['paytype']['wechatstatus']!=1}
+		    <div class="weui_btn_area">
+	        	<div class="weui_btn weui_btn_primary" href="javascript:" id="wechatpay">微信支付</div>
+	    	</div>
+	    	{/if}
+	    	<div class="weui_extra_area" style="{if $helppay}position: relative;{/if}">
+		        <a href="{php echo app_url('goods/list')}">返回首页</a>
+		        <a href="javascript:">&nbsp;&nbsp; ▏ </a>
+		        <a href="{php echo app_url('order/order')}">订单列表</a>
+		    </div>
+		</div>
+	</div>
+</div>
+<div id="cover"></div>
+		<div id="guide"><img src="{TG_URL_ARES}images/guide1.png"></div>
+<script type="text/javascript">
+    $(function() {
+		'use strict';
+		$(document).on("pageInit", "#page-pay", function(e, id, page) {
+			{if $activity_used}
+			$.confirm('该订单优惠券已无法使用,已为您恢复原价.',function(){},function(){});
+		    {/if}
+		    var type = "{$type}"; //存在即为余额充值
+			var orderid = "{$orderid}";
+			var goodstype = "{$_GPC['goodstype']}";
+			
+			$('.item-content').click(function(){
+				var paytype = $(this).attr('id'); // 支付方式
+				alert(paytype);
+				var remark = $('#remark').val()?$('#remark').val():''; //代付留言
+				var othername = $('#othername').val()?$('#othername').val():''; //代付名
+				$.post("{php echo app_url('pay/paytype')}",{type:type,orderid:orderid,remark:remark,othername:othername,op:"ajax",checkpay:"9"},function(m){
+				 	if(m.errno>0){
+				 		$.confirm(m.message,function () { //确定后操作
+					        	if(m.url)location.href = m.url;
+					      },function () { //取消后操作
+					        	location.href = "{php echo app_url('goods/list')}";
+					        }
+				    	);
+				 	}else{
+						if(paytype =='wechat'){
+							$.showIndicator();
+							 $.post("{php echo app_url('pay/cash')}",{type:type,orderid:orderid,paytype:paytype},function(m){
+							 	var wlUserAgent = "{$wlUserAgent}";
+							 	if(wlUserAgent == 'yunapp'){
+								 	var YDB = new YDBOBJ();
+	        						YDB.SetWxpayInfo("{$goods['gname']}", "{$goods['gname']}", "{$order['pay_price']}", "{$order['orderno']}", "{$attach}");
+								}else{
+								 	if(!m.errno){
+				             			m.data.timeStamp = String(m.data.timeStamp);
+										WeixinJSBridge.invoke('getBrandWCPayRequest', {
+											'appId': m.data.appid ? m.data.appid : m.data.appId,
+			                                'timeStamp': m.data.timeStamp,
+			                                'nonceStr': m.data.nonceStr,
+			                                'package': m.data.package,
+			                                'signType': m.data.signType,
+			                                'paySign': m.data.paySign,
+										}, function(res) {
+											$.hideIndicator();
+											if(res.err_msg == 'get_brand_wcpay_request:ok') {
+												location.href = "{php echo app_url('pay/cash')}&orderid="+orderid+"&paytype="+paytype+"&done=1"+"&type="+type;
+											} else {
+												$.post("{php echo app_url('pay/paytype')}",{type:type,orderid:orderid,remark:remark,othername:othername,op:"ajax",checkpay:"8"},function(m){
+												 	$.toast("已取消支付");
+												},"json");
+											}
+										});
+					             	}else{
+					             		$.confirm(m.message, function () {history.go(-1);});
+					             	}
+								}
+				             	
+				            },"json");
+						}
+						if(paytype =='credit'){
+							$.confirm("确认余额支付？",function () { //确定后操作
+					        	location.href = "{php echo app_url('pay/balance',array('orderid' => $orderid,'paytype' => 'credit'))}";
+					      },function () {});
+							
+						}
+						if(paytype =='delivery'){
+							$.confirm("确认货到付款？",function () { //确定后操作
+					        	location.href = "{php echo app_url('pay/pay',array('orderid' => $orderid,'paytype' => 'delivery'))}";
+					      },function () {});
+							
+						}
+						if(paytype =='other'){
+							var wlUserAgent = "{$wlUserAgent}";
+							if(wlUserAgent == 'yunapp')_system._appShare(true)
+							else _system._guide(true)
+						}
+				 	}
+	            },"json");
+			
+			});
+			
+		});
+		var xx = $('.wid').width()+10;
+	//	alert(xx);
+		$('.cjticon').css('left',xx);
+		$.init();
+	});
+</script>
+<script type="text/javascript">
+    var _system={
+    $:function(id){return document.getElementById(id);},
+   _client:function(){
+      return {w:document.documentElement.scrollWidth,h:document.documentElement.scrollHeight,bw:document.documentElement.clientWidth,bh:document.documentElement.clientHeight};
+   },
+   _scroll:function(){
+      return {x:document.documentElement.scrollLeft?document.documentElement.scrollLeft:document.body.scrollLeft,y:document.documentElement.scrollTop?document.documentElement.scrollTop:document.body.scrollTop};
+   },
+   _cover:function(show){
+      if(show){
+	     this.$("cover").style.display="block";
+	     this.$("cover").style.width=(this._client().bw>this._client().w?this._client().bw:this._client().w)+"px";
+	     this.$("cover").style.height=(this._client().bh>this._client().h?this._client().bh:this._client().h)+"px";
+	  }else{
+	     this.$("cover").style.display="none";
+	  }
+   },
+   _guide:function(click){
+      this._cover(true);
+      this.$("guide").style.display="block";
+      this.$("guide").style.top=(_system._scroll().y+5)+"px";
+      window.onresize=function(){_system._cover(true);_system.$("guide").style.top=(_system._scroll().y+5)+"px";};
+	  if(click){_system.$("cover").onclick=function(){
+	         _system._cover();
+	         _system.$("guide").style.display="none";
+	 _system.$("cover").onclick=null;
+	 window.onresize=null;
+	  };}
+   }
+}
+</script>
+{php include wl_template('common/footer');}

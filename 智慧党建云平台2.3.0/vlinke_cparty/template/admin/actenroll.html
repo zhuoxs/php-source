@@ -1,0 +1,121 @@
+{template 'admin/common/header'}
+<ul class="we7-page-tab">
+<li class="active"><a href="{php echo $this->createWebUrl('admin',array('r'=>'actenroll'));}">活动报名记录 </a></li>
+
+<li class="pull-right"><a href="{php echo $this->createWebUrl('admin',array('r'=>'actmessage'));}">活动留言记录 </a></li>
+<li class="pull-right"><a href="{php echo $this->createWebUrl('admin',array('r'=>'actenroll'));}">活动报名记录 </a></li>
+<li class="pull-right"><a href="{php echo $this->createWebUrl('admin',array('r'=>'activity'));}">活动管理</a></li>
+</ul>
+{if $op=='display'}
+
+<div class="panel panel-default">
+<div class="panel-heading">筛选</div>
+<div class="panel-body">
+<form action="" method="get" class="form-horizontal form" role="form">
+<input type="hidden" name="c" value="site" />
+<input type="hidden" name="a" value="entry" />
+<input type="hidden" name="m" value="vlinke_cparty" />
+<input type="hidden" name="do" value="admin" />
+<input type="hidden" name="r" value="actenroll" />
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label"> 所属组织</label>
+        <div class="col-sm-10">
+            <div class="input-group">
+                <input type="text" class="form-control" name="branchname" id="branchname" value="{$branch['name']}" placeholder="请输入组织名称点击查询并选择...">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" onclick="javascript:checkBranch();">点击查询</button>
+                </span>
+            </div>
+            <div class="help-block" id="branchbox"></div>
+        </div>
+    </div>
+    <input type="hidden" name="branchid" id="branchid" value="{$branch['id']}" />
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label">关键字</label>
+        <div class="col-sm-3">
+            <input class="form-control" name="keywords" type="text" placeholder="输入姓名或活动标题关键字..." value="{$keywords}">
+        </div>
+        <div class="col-sm-3">
+            <select class="form-control" name="utype">
+                <option value="0" {if $utype==0}selected{/if}>全部报名类型</option>
+                <option value="1" {if $utype==1}selected{/if}>自由报名</option>
+                <option value="2" {if $utype==2}selected{/if}>指定党员</option>
+            </select>
+        </div>
+        <div class="col-sm-4">
+            <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+            <button class="btn btn-default" name="output" value="1"><i class="fa fa-file"></i> 导出</button>
+            <button type="button" class="btn btn-default">总记录数：{$total['tol']}</button>
+        </div>
+    </div>
+</form>
+</div>
+</div>
+
+<table class="table we7-table table-hover vertical-middle">
+<thead class="navbar-inner">
+    <tr>
+        <th style="width:10%;">ID</th>
+        <th style="width:45%;">信息/活动项目</th>
+        <th style="width:15%;">报名(点击修改)</th>
+        <th style="width:20%;">签到/创建时间</th>
+        <th style="width:10%; text-align:right;">操作</th>
+    </tr>
+</thead>
+<tbody>
+    {loop $list $row}
+    <tr> 
+        <td>
+            {$row['id']}
+        </td>
+        <td>
+            <p><strong>{$row['realname']}-{$row['mobile']}</strong></p>
+            【{$utypearr[$row['autype']]}】
+            <a href="{php echo $this->createWebUrl('admin',array('r'=>'actenroll','activityid'=>$row['activityid']))}">{$row['title']}</a>
+        </td>
+        <td>
+            {if $row['utype']==1}
+            <a class="label label-info" id="row{$row['id']}" href="javascript:setUtype({$row['id']});">自由报名</a>
+            {elseif $row['utype']==2}
+            <a class="label label-primary" id="row{$row['id']}" href="javascript:setUtype({$row['id']});">指定党员</a>
+            {/if}
+        </td>
+        <td>
+            <p>{php echo $row['signintime']==0?"未签到":date('Y-m-d H:i',$row['signintime']);}</p>
+            {php echo date('Y-m-d H:i',$row['createtime'])}
+        </td>
+        <td class="text-right">
+            <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('admin',array('r'=>'actenroll','op'=>'delete','id'=>$row['id']))}" onclick="return confirm('删除后不可恢复,确定要删除吗?')"><i class="fa fa-times"></i> 删除</a>
+        </td>
+    </tr>
+    {/loop}
+</tbody>
+</table>
+<div class="pull-right">{$pager}</div>
+
+<script>
+function setUtype(id) {
+    $.ajax({
+        type: 'POST',
+        url: "{php echo $this->createWebUrl('admin',array('r'=>'actenroll','op'=>'setutype'));}",
+        data: {id:id},
+        dataType: 'JSON',
+        success: function(ret){
+            console.log(ret);
+            if(ret['status'] == 'error'){
+               alert(ret['msg']);
+            }else if(ret['msg'] == '1'){
+                $("#row"+id).html("自由报名");
+                $("#row"+id).removeClass("label-primary").addClass("label-info");
+            }else if(ret['msg'] == '2'){
+                $("#row"+id).html("指定党员");
+                $("#row"+id).removeClass("label-info").addClass("label-primary");
+            }
+        }
+    });
+}
+</script>
+{/if}
+{template 'admin/common/footer'}

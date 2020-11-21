@@ -1,0 +1,167 @@
+<div class="xiaof-footer">
+	<div class="weui-footer">
+		{if !empty($setting['copyright'])}
+		<p class="weui-footer__text">Copyright © {$setting['copyright']}</p>
+		{/if}
+	</div>
+	<?php $menuvalue = $menus = $this->appMenu();?>
+	<div class="weui-grids xiaof-menu">
+		<div class="xiaof-menu-overlay"></div>
+		{if empty($setting['enablehistory'])}{php $menus = array_slice($menuvalue, 4);}{/if}
+		{loop $menus $menuitem}
+		{if isset($menuitem['istabbar'])}{php continue;}{/if}
+		<a href="{$menuitem['url']}" class="weui-grid js_grid">
+			<div class="weui-grid__icon">
+				<i class="{$menuitem['icon']}"></i>
+			</div>
+			<p class="weui-grid__label">
+				{$menuitem['name']}
+			</p>
+		</a>
+		{/loop}
+	</div>
+
+	<ul class="xiaof-box xiaof-tabbar">
+		{if !empty($setting['enablehistory'])}
+        <li class="xiaof-box-item xiaof-tabbar-list">
+            <a href="{php echo self::appUrl('show', 'xiaof_toupiao', '&id=' . $_GPC['pid'])}">
+                <span class="history-icon history-back"><i class="fa fa-angle-left"></i></span>
+            </a>
+        </li>
+		<li class="xiaof-box-item xiaof-tabbar-list"><span class="history-icon history-forward"><i class="fa fa-angle-right"></i></span></li>
+		<li class="xiaof-box-item xiaof-tabbar-list">
+				<a href="{php echo self::appUrl('index');}" class="clearfix">
+					<span class="icon">
+						<i class="fa fa-home"></i>
+					</span>
+					<span class="name">
+						首页
+					</span>
+				</a>
+		</li>
+		{else}
+		{php $leftmenu = array_slice($menuvalue, 0, 4);}
+		{loop $leftmenu $leftmenuvalue}
+		<li class="xiaof-box-item xiaof-tabbar-list">
+				<a href="{$leftmenuvalue['url']}" class="clearfix">
+					<span class="icon">
+						<i class="{$leftmenuvalue['icon']}"></i>
+					</span>
+					<span class="name">
+						{$leftmenuvalue['name']}
+					</span>
+				</a>
+		</li>
+		{/loop}
+		{/if}
+		<!--<li class="xiaof-box-item xiaof-tabbar-list xiaof-tabbar-menu">
+			<div class="clearfix tabbar-item-navicon">
+				<span class="icon">
+					<i class="fa fa-navicon"></i>
+				</span>
+				<span class="name">
+					导航
+				</span>
+			</div>
+		</li>-->
+	</ul>
+</div>
+</body>
+<script type="text/javascript">
+    var tips = '{php echo $setting["tipstitle"]}';
+    var joinurl = window.sysinfo.siteroot + "app/index.php?c=entry&do=index&m=xiaof_toupiao&i=" + window.sysinfo.uniacid+'&sid='+'{php echo $setting['id']}'+'&wxref=mp.weixin.qq.com';
+	function opengroup(element){
+        var groupelement = $(element);
+        var dialog = groupelement.children(".menu-group-container");
+	    if(dialog.length >= 1){
+            dialog.toggle();
+	    }else{
+	        var style;
+			var width = groupelement.parent().width();
+			var offsetw = width - 120;
+            var offsetl = groupelement.parent().offset().left;
+			var leftpx = parseInt(offsetw/2);
+			if(Math.abs(leftpx) >= offsetl){
+                style = 'left:0px';
+            }else if(Math.abs(leftpx) >= $(window).width() - offsetl - width){
+                style = 'right:0px';
+			}else{
+                style = 'left:'+leftpx + 'px';
+            }
+			var grouphtml = '';
+			{if $setting['opengroups'] >= 1}
+			grouphtml = '<div class="menu-group-container"><div class="menu-group" style="' + style + '">' +
+			{loop $setting['groups'] $groupid $groupitem}
+			'<p><a class="menu-group-item " href="{php echo self::appUrl('index','xiaof_toupiao','&groups='.$groupid);}">{$groupitem['name']}</a></p>' +
+		    {/loop}
+			'</div><div class="group-out"></div><div class="group-in"></div></div>';
+            {/if}
+             groupelement.append(grouphtml);
+        }
+    }
+
+	$(function(){
+		$.xiaof.registerMenu({if empty($setting['enablehistory'])}false{else}true{/if});
+	});
+    wx.ready(function () {
+        document.addEventListener('WeixinJSBridgeReady', function onBridgeReady() {
+            WeixinJSBridge.call('hideToolbar');
+        });
+    });
+    wx.ready(function () {
+        {if is_array($xiaofshare)}
+        wx.onMenuShareAppMessage({
+            title: '{$xiaofshare['sharetitle']}',
+            desc: '{php echo trim($xiaofshare['sharecontent']);}',
+            link: '{php echo $this->shareUrl('show','xiaof_toupiao','&id='.$contestantitem['id'])}',
+            imgUrl: '{php echo tomedia($xiaofshare['sharethumb'])}',
+            success: function(){
+                $.get("{php echo self::appUrl('statistics','xiaof_toupiao','&id='.$contestantitem[id].'&type=share')}");
+            },
+            cancel: function(){}
+        });
+        wx.onMenuShareTimeline({
+            title: '{$xiaofshare['sharetitle']}',
+            link: '{php echo $this->shareUrl('show','xiaof_toupiao','&id='.$contestantitem['id'])}',
+            imgUrl: '{php echo tomedia($xiaofshare['sharethumb']);}',
+            success: function () {
+                $.get("{php echo self::appUrl('statistics','xiaof_toupiao','&id='.$contestantitem[id].'&type=share')}");
+            },
+            cancel: function () {}
+        });
+		{else}
+        wx.onMenuShareAppMessage({
+            title: '{$setting['sharetitle']}',
+            desc: '{php echo trim($setting['sharecontent']);}',
+            link: '{php echo $this->shareUrl($_GPC["do"])}',
+            imgUrl: '{php echo tomedia($setting['sharethumb'])}',
+            success: function(){},
+            cancel: function(){}
+        });
+        wx.onMenuShareTimeline({
+            title: '{$setting['sharetitle']}',
+            link: '{php echo $this->shareUrl($_GPC["do"])}',
+            imgUrl: '{php echo tomedia($setting['sharethumb']);}',
+            success: function () {},
+            cancel: function () {}
+        });
+		{/if}
+        {if $setting['showtimeline'] == 1}
+        wx.hideMenuItems({
+            menuList: ["menuItem:copyUrl",
+                "menuItem:share:appMessage",
+                "menuItem:share:qq",
+                "menuItem:favorite",
+                "menuItem:share:facebook",
+                "menuItem:favorite",
+                "menuItem:share:QZone",
+                "menuItem:share:timeline",
+                "menuItem:openWithQQBrowser",
+                "menuItem:readMode",
+                "menuItem:share:email"
+            ]
+        });
+        {/if}
+    });
+</script>
+</html>

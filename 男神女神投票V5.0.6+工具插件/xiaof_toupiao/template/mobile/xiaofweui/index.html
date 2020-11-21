@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{$setting['title']}</title>
+    <meta name="format-detection" content="telephone=no, address=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-touch-fullscreen" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link href="{MODULE_URL}template/mobile/xiaofweui/css/xiaofmoblieui.css" rel="stylesheet">
+    <link href="{MODULE_URL}resources/css/font-awesome.min.css" rel="stylesheet">
+    <link href="{MODULE_URL}template/mobile/xiaofweui/css/xiaoftoupiao.css" rel="stylesheet">
+    {php echo register_jssdk(false);}
+    <script src="{$_W['siteroot']}app/resource/js/require.js"></script>
+    {if !empty($setting['verifycode'])}
+    <script src="{MODULE_URL}template/mobile/js/gt.js"></script>
+    <script type="text/javascript">
+        var verifycode = true;
+    </script>
+    {else}
+    <script type="text/javascript">
+        var verifycode = false;
+    </script>
+    {/if}
+    <style>
+        .order .cur,.group .cur,.bottom-tabbar .cur span,.grid-item .pic-box .vote{ color:{$setting['buttoncolor']};}
+        .grid-item .pic-box .vote{ border: 1px solid {$setting['buttoncolor']};}
+        .xiaof-button,.xiaof-button-small{ background:{$setting['buttoncolor']};}
+        {if !empty($setting['indexlisttype'])}.grid .grid-item{width: 100%;}{/if}
+        {if empty($setting['picdescribe'])}.pic-describe{display: none;}{/if}
+
+    </style>
+    <script type="text/javascript">
+        window.sysinfo.sid = "{$_GPC['sid']}";
+        window.sysinfo.gifename = "{$setting['giftname']}";
+        require.config({
+            baseUrl: '{MODULE_URL}template/mobile/xiaofweui/js',
+            //urlArgs: "v={php echo time();}",
+            paths: {
+                'css': '{$_W['siteroot']}web/resource/js/lib/css.min',
+                'jquery': 'jquery-2.2.3.min',
+                'swiper': 'swiper.jquery.min',
+                'imagesloaded': 'imagesloaded.min',
+                'masonry': 'masonry.pkgd.min',
+                'xiaof': 'xiaofmoblieui',
+                'main': 'main'
+            },
+            shim:{
+                'swiper': {
+                    exports: 'swiper',
+                    deps: ['jquery', 'css!{MODULE_URL}template/mobile/xiaofweui/css/swiper.min.css']
+                },
+                'imagesloaded': {
+                    exports: 'imagesloaded',
+                    deps: ['jquery']
+                },
+                'xiaof': {
+                    exports: 'xiaof',
+                    deps: ['jquery']
+                }
+            },
+            waitSeconds: 20
+        });
+    </script>
+</head>
+<body>
+{template 'ad'}
+{if !empty($setting['noticetitle'])}
+<a href="{php echo self::appUrl('detail');}">
+    <div class="xiaof-box xiaof-notice">
+        公告<i class="fa fa-volume-up"></i>：<span class="xiaof-box-item"><marquee direction=left>{$setting['noticetitle']}</marquee></span>
+    </div>
+</a>
+{/if}
+<div class="head">
+    <div class="head-banner">
+        {if is_array($setting['thumb'])}
+        {if count($setting['thumb']) <=1}
+        <a href="{php echo trim($setting['thumblinkarr'][0]);}"><img src="{php echo tomedia(reset($setting['thumb']))}"></a>
+        {else}
+        <div class="swiper-container">
+            <div class="swiper-wrapper">
+                {php $ti = 0;}
+                {loop $setting['thumb'] $k $thumbitem}
+                <div class="swiper-slide">
+                    {if !empty($setting['todaystar'])}
+                    {if $k+1 == count($setting['thumb'])}
+                    <div class="starsigndiv">
+                        <div class="starsign">今日之星</div>
+                    </div>
+                    {/if}
+                    {/if}
+                    <a href="{php echo trim($setting['thumblinkarr'][$ti]);}"><img src="{php echo tomedia($thumbitem);}"></a></div>
+                {php $ti++;}
+                {/loop}
+            </div>
+        </div>
+        <script>
+            require(['swiper'], function(Swiper){
+                new Swiper('.swiper-container', {
+                    autoplay: {if $setting['thumbsecond']}{$setting['thumbsecond']}*1000{else}3000{/if}
+                })
+            });
+        </script>
+        {/if}
+        {else}
+        <img src="{php echo tomedia($setting['thumb'])}">
+        {/if}
+    </div>
+    {if empty($setting['openacvititydata'])}
+    <div class="head-count xiaof-box">
+		<span class="xiaof-box-item">
+			参与选手<br>
+			{$good}
+		</span>
+        <span class="xiaof-box-item">
+			累计{$setting['xiaofvotekeys']}<br/>
+			{$shares}
+		</span>
+        <span class="xiaof-box-item">
+			访问量<br/>
+			{$click}
+		</span>
+    </div>
+    {/if}
+
+    {if empty($setting['openwapjoin'])}
+    <div class="wrapper">
+        {if self::checkjoin()}
+        <a class="xiaof-button" href="{php echo self::appUrl('show');}">我的报名</a>
+        {else}
+        <a class="xiaof-button" href="{php echo self::appUrl('join');}">我要报名</a>
+        {/if}
+    </div>
+    {/if}
+
+
+    <div class="head-info">
+        <div class="head-box" >
+            <div class="wrapper clearfix">
+                <div class="fn-left">
+                    <i class="fa fa-bell-o head-box-end"></i>
+                </div>
+                <div class="fn-left">
+                    <p>距活动结束还有：</p>
+                    <p><span id="shower"></span></p>
+                    <script type="text/javascript">
+                        {if strtotime($setting['end'])-time()>=1 || $setting['overtime'] > 0}
+                        {if strtotime($setting['end'])-time()>=1}
+                        var ti = {php echo strtotime($setting['end'])-time();};
+                        {else if strtotime($setting['end'])-time()<=1 && $setting['overtime'] > 0}
+                        var ti = {php echo strtotime($setting['end'])+$setting['overtime']-time()};
+                        {/if}
+                            function showtime(){
+                                var d = parseInt(ti/3600/24);
+                                var h = parseInt((ti%(3600*24))/3600);
+                                var m = parseInt((ti%(3600*24))%3600/60);
+                                var s = parseInt((ti%(3600*24))%60);
+                                if(ti == 0){
+                                    window.clearInterval(timeset);
+                                    window.location.reload();
+                                }
+                                document.getElementById('shower').innerHTML = '<span class="times">'+d+' 天</span><span class="times">'+ h+' 时</span><span class="times">'+m+' 分</span><span class="times">'+s+' 秒</span>';
+                                ti = ti -1;
+                            }
+                            if(ti > 0){
+                                showtime();
+                                var timeset = setInterval("showtime()",1000);
+                            }
+                            {else}
+                            document.getElementById('shower').innerHTML = '已结束';
+                            {/if}
+                    </script>
+                </div>
+            </div>
+        </div>
+        <div class="head-box-hr"></div>
+        <div class="head-box">
+            <div class="wrapper">
+                <a href="{php echo self::appUrl('detail');}"><i class="fa fa-bullhorn i-m8"></i>{if empty($setting['noticetitle'])}{$setting['title']}{else}{$setting['noticetitle']}{/if}<span class="fn-right">&gt;</span></a>
+            </div>
+        </div>
+        <div class="head-box-hr"></div>
+        <div class="head-box">
+            <div class="wrapper">
+                <i class="fa fa-clock-o i-m8"></i>开始时间：{$setting['start']}
+            </div>
+            <div class="wrapper">
+                <i class="fa fa-clock-o i-m8"></i>结束时间：{$setting['end']}
+            </div>
+        </div>
+        <div class="head-box-hr"></div>
+        {if intval($setting['double']) >= 2}
+        <div class="head-box">
+            <div class="wrapper">
+                <i class="fa fa-clock-o i-m8"></i>{php echo $this->n2c($setting['double']);}倍时间：{php echo date("m-d H:i",strtotime($setting['doublestart']));}  至  {php echo date("m-d H:i",strtotime($setting['doubleend']));}
+            </div>
+        </div>
+        <div class="head-box-hr"></div>
+        {/if}
+    </div>
+</div>
+
+
+<div class="wrapper">
+    <div id="dataload" class="order xiaof-box">
+        {loop $setting['ordertype'] $ordertypekey $ordertypevalue}
+        <span class="xiaof-box-item nav {if $_GPC['type'] == $ordertypekey }cur{/if}" data-type="{$ordertypekey}">{if $ordertypekey == 'hot'}最热{elseif $ordertypekey == 'top'}排行{elseif $ordertypekey == 'new'}最新{/if}</span>
+        {/loop}
+    </div>
+</div>
+
+<div class="head-box-hr"></div>
+
+{if $setting['opengroups'] >= 1}
+{if empty($setting['groupnum'])}
+{php $setting['groupnum']=5}
+{/if}
+<div id="groupload" class="wrapper">
+    {if $setting['opengroups'] >= 1}
+    {php $g = 0;}
+    {loop $setting['groups'] $groupid $groupitem}
+    {if $g % $setting['groupnum'] == 0}
+    <div class="group xiaof-box">
+        {/if}
+        <span class="xiaof-box-item nav {if $_GPC['groups'] == $groupid}cur{/if}" data-type="{$groupid}">{$groupitem['name']}</span>
+        {if ($g+1) % $setting['groupnum'] == 0}
+    </div>
+    {/if}
+    {php $g++;}
+    {/loop}
+</div>
+{/if}
+</div>
+{/if}
+
+<div id="container" class="clearfix">
+    <div class="grid clearfix">
+        {loop $lists $item}
+        <div class="grid-item">
+            <div class="pic-box">
+                <span class="uid">{$item['uid']}号</span>
+                <a class="pic-a" href="{php echo self::appUrl('show','xiaof_toupiao','&id='.$item['id'].'');}">
+
+                    <div class="multimedia">
+                        {if !empty($setting['opengiving']) && in_array('indexuser', $setting['givingshow'])}
+                        <i class="fa fa-gift"></i>{php echo $this->getGivingvalue($item['id']);}
+                        {/if}
+                        {if $setting['openvideo'] >= 1 && !empty($item['video'])}
+                        <i class="fa fa-video-camera"></i>
+                        {/if}
+                        {if $setting['opensound'] >= 1 && !empty($item['sound'])}
+                        <i class="fa fa-volume-up"></i>
+                        {/if}
+                    </div>
+
+                    <img class="item-thumb" src="{php echo tomedia($item['pic']);}" alt=""/>
+                    {if !empty($item['describe'])}
+                    <div class="pic-describe">
+                        {$item['describe']}
+                    </div>
+                    {/if}
+                </a>
+                <div class="pic-info">
+                    <span class="ballot">{php echo cutstr($item["name"], 7)}&nbsp;<span class="goods">{$item['good']}</span>{$setting['xiaofvotekey']}</span>
+                    {if empty($setting['jumpplayer'])}
+                    <div class="vote" data-id="{$item['id']}">{$setting['xiaofvotekeys']}</div>
+                    {else}
+                    <a class="vote" data-id="{$item['id']}" href="{php echo self::appUrl('show','xiaof_toupiao','&id='.$item['id'].'');}">{$setting['xiaofvotekeys']}</a>
+                    {/if}
+                </div>
+            </div>
+        </div>
+        {/loop}
+    </div>
+
+</div>
+<div class="wrapper">
+    <div class="xiaof-button" id="pagination">
+        点击加载更多...
+    </div>
+</div>
+
+<!--展示活动介绍-->
+{if !empty($setting['indexshowdetail'])}
+{if !empty($detailitem['detail'])}
+<div class="article-group wrapper">
+    <div class="article-title" >
+        <h3>
+            活动介绍
+        </h3>
+    </div>
+    <div class="article-content" style="padding-bottom: 20px;">
+        {php echo htmlspecialchars_decode($detailitem['detail']);}
+    </div>
+</div>
+{/if}
+{/if}
+
+{template $setting['template'].'footer'}
+
+</body>
+<script type="text/javascript">
+    var soundStatus = 0;
+    require(['masonry', 'imagesloaded', 'main', 'swiper'], function(Masonry, imagesLoaded, xiaoftoupiao, Swiper){
+        {if empty($setting['jumpplayer'])}
+        xiaoftoupiao.registerVote(false, Swiper);
+        {/if}
+            xiaoftoupiao.indexLoad("{php echo self::appUrl('index');}", "{$_GPC['type']}", Masonry, "{$_GPC['groups']}");
+            xiaoftoupiao.indexSound();
+            {if $setting['audio'] != ""}
+            xiaoftoupiao.indexBgsound("{php echo tomedia($setting['audio'])}");
+            {/if}
+            });
+    wx.ready(function () {
+        {if $setting['audio'] != ""}document.getElementById('media').play();{/if}
+            wx.onMenuShareAppMessage({
+                title: '{$setting['sharetitle']}',
+                desc: '{php echo trim($setting['sharecontent']);}',
+                link: '{php echo $this->shareUrl('index')}',
+                imgUrl: '{php echo tomedia($setting['sharethumb'])}',
+                success: function(){},
+                cancel: function(){}
+            });
+            wx.onMenuShareTimeline({
+                title: '{$setting['sharetitle']}',
+                link: '{php echo $this->shareUrl('index')}',
+                imgUrl: '{php echo tomedia($setting['sharethumb']);}',
+                success: function () {},
+                cancel: function () {}
+            });
+        });
+
+</script>
+</html>

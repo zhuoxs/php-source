@@ -1,0 +1,254 @@
+{template '_header'}
+<style>
+    .popover{
+        width:170px;
+        font-size:12px;
+        line-height: 21px;
+        color: #0d0706;
+    }
+    .popover span{
+        color: #b9b9b9;
+    }
+    .nickname{
+        display: inline-block;
+        max-width:200px;
+        overflow: hidden;
+        text-overflow:ellipsis;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    .tooltip-inner{
+        border:none;
+    }
+</style>
+<div class="page-header">
+    当前位置：<span class="text-primary">会员管理</span>
+</div>
+
+<div class="page-content">
+<form action="./index.php" method="get" class="form-horizontal form-search" role="form">
+    <input type="hidden" name="c" value="site" />
+    <input type="hidden" name="a" value="entry" />
+    <input type="hidden" name="m" value="ewei_shopv2" />
+    <input type="hidden" name="do" value="web" />
+    <input type="hidden" name="r" value="sns.member" />
+    <div class="page-toolbar row m-b-sm m-t-sm">
+        <div class="col-sm-4">
+
+        </div>
+        <div class="col-sm-6 pull-right">
+            <div class="input-group">
+                <div class="input-group-select">
+                    <select name="level" class='form-control '>
+                        <option value="" {if $_GPC['level'] == ''} selected{/if}>等级</option>
+                        <option value="" {if $_GPC['level'] == '0'} selected{/if}>{php echo empty($this->set['levelname'])?'社区粉丝':$this->set['levelname']}</option>
+                        {loop $levels $level}
+                        <option value="{$level['id']}" {if $_GPC['level']== $level['id']} selected{/if}>{$level['levelname']}</option>
+                        {/loop}
+                    </select>
+                </div>
+                <div class="input-group-select">
+                    <select name="isblack" class='form-control '>
+                        <option value="" {if $_GPC['isblack'] == ''} selected{/if}>状态</option>
+                        <option value="1" {if $_GPC['isblack']== '1'} selected{/if}>黑名单</option>
+                        <option value="0" {if $_GPC['isblack'] == '0'} selected{/if}>正常</option>
+                    </select>
+                </div>
+                <input type="text" class="input-sm form-control" name='keyword' value="{$_GPC['keyword']}" placeholder="请输入关键词"> <span class="input-group-btn">
+                    		
+                    <button class="btn btn-primary" type="submit"> 搜索</button> </span>
+            </div>
+
+        </div>
+    </div>
+</form>
+
+<form action="" method="post">
+    {if count($list)>0}
+    <div class="page-table-header">
+        <input type="checkbox">
+        <div class="btn-group">
+            {ifp 'sns.member.edit'}
+            <button class="btn btn-default btn-sm" type="button" data-toggle='batch' data-href="{php echo webUrl('sns/member/setblack',array('isblack'=>0))}">
+                <i class='fa fa-circle'></i> 取消黑名单
+            </button>
+            <button class="btn btn-default btn-sm" type="button" data-toggle='batch'  data-href="{php echo webUrl('sns/member/setblack',array('isblack'=>1))}">
+                <i class='fa fa-circle-o'></i> 设置黑名单
+            </button>
+            {/if}
+
+            {ifp 'sns.member.delete'}
+            <button class="btn btn-default btn-sm" type="button" data-toggle='batch' data-href="{php echo webUrl('sns/member/delete')}">
+                <i class='fa fa-remove'></i> 删除
+            </button>
+            {/if}
+        </div>
+    </div>
+    <table class="table table-responsive table-hover" >
+        <thead class="navbar-inner">
+            <tr>
+                <th style="width:25px;"></th>
+                <th>粉丝</th>
+                <th >会员信息</th>
+                <th>等级</th>
+                <th >注册时间</th>
+                <th>社区信息</th>
+                <th style="width:95px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+
+        {loop $list $row}
+
+        <tr>
+            <td style="position: relative; ">
+                <input type='checkbox'   value="{$row['sns_id']}"/></td>
+            <td style="overflow: visible">
+                <div  rel="pop"  style="display: flex" data-content="
+                <span>ID: </span>{$row['id']}<br/>
+                <span>推荐人：</span>
+                    {if empty($row['agentid'])}
+                           {if $row['isagent']==1}
+                            总店
+                          {else}
+                           暂无
+                          {/if}
+                    {else}
+                        {if !empty($row['agentavatar'])}
+                             <img src='{$row['agentavatar']}' style='width:20px;height:20px;padding1px;border:1px solid #ccc' />
+                          {/if}
+                         [{$row['agentid']}]{if empty($row['agentnickname'])}未更新{else}{$row['agentnickname']}{/if}
+					  {/if}<br/>
+                     <span>是否关注：</span>
+                        {if empty($row['followed'])}
+                        {if empty($row['uid'])}
+                        未关注
+                        {else}
+                        取消关注{$row['fanid']}
+                        {/if}
+                        {else}
+                        已关注
+                        {/if}<br/>
+                         <span>状态：</span>{if $row['isblack']==1}黑名单{else}正常{/if}
+					   ">
+                    {if !empty($row['avatar'])}
+                    <img class="radius50" src='{$row['avatar']}' style='width:30px;height:30px;padding1px;border:1px solid #ccc' onerror="this.src='../addons/ewei_shopv2/static/images/noface.png'" />
+                    {/if}
+                   <span  style="display: flex;flex-direction: column;justify-content: center;align-items: flex-start;padding-left: 5px">
+                       <span class="nickname">
+                    {if empty($row['nickname'])}未更新{else}{$row['nickname']}{/if}
+                   </span>
+                    {if $row['isblack']==1}
+                    <span class="text-danger">黑名单<i class="icow icow-heimingdan1" style="color: #db2228;margin-left: 2px;font-size: 13px;"></i></span>
+                    {/if}
+                   </span>
+                </div>
+            </td>
+            <td>{$row['realname']}<br/>{$row['mobile']}</td>
+
+            <td><span class="">{$row['level']['levelname']}</span></td>
+            <td>{php echo date("Y-m-d",$row['createtime'])}<br/>{php echo date("H:i:s",$row['createtime'])}</td>
+            <td>
+            <span class="text-warning">积分: {php echo intval($row['sns_credit'])}</span><br/>
+                <span class="text-success">话题: {php echo intval($row['sns_postcount'])}</span><br/>
+                <span class="text-primary">评论: {php echo intval($row['sns_replycount'])}</span>
+            </td>
+            <td  style="overflow:visible;">
+                        {ifp 'member.list.detail'}
+                      <a class="btn btn-default btn-op btn-operation" href="{php echo webUrl('member/list/detail',array('id' => $row['id']));}" title="" target="_blank">
+                           <span data-toggle="tooltip" data-placement="top" title="" data-original-title="会员详情">
+                            <i class="icow icow-chakan-copy"></i>
+                         </span>
+                      </a>
+                        {/if}
+
+                        {ifp 'sns.posts'}
+                        <a  class="btn btn-default btn-op btn-operation" href="{php echo webUrl('sns/posts',array('uid' => $row['id']));}" title="查看话题">
+                            <span data-toggle="tooltip" data-placement="top" title="" data-original-title="查看话题">
+                                <i class="icow icow-info"></i>
+                             </span>
+                        </a>
+                        {/if}
+                        {ifp 'sns.member.delete'}
+                    <a  class="btn btn-default btn-op btn-operation" data-toggle='ajaxRemove'  href="{php echo webUrl('sns/member/delete',array('id' => $row['sns_id']));}" title='删除会员' data-confirm="此会员话题及评论会全部删除，确定要删除该会员吗？">
+                        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="删除">
+                            <i class="icow icow-shanchu1"></i>
+                         </span>
+                    </a>
+                    {/if}
+            </td>
+        </tr>
+        {/loop}
+            </tbody>
+        <tfoot>
+            <tr>
+                <td><input type="checkbox"></td>
+                <td colspan="3">
+                    <div class="btn-group">
+                        {ifp 'sns.member.edit'}
+                        <button class="btn btn-default btn-sm" type="button" data-toggle='batch' data-href="{php echo webUrl('sns/member/setblack',array('isblack'=>0))}">
+                            <i class='fa fa-circle'></i> 取消黑名单
+                        </button>
+                        <button class="btn btn-default btn-sm" type="button" data-toggle='batch'  data-href="{php echo webUrl('sns/member/setblack',array('isblack'=>1))}">
+                            <i class='fa fa-circle-o'></i> 设置黑名单
+                        </button>
+                        {/if}
+
+                        {ifp 'sns.member.delete'}
+                        <button class="btn btn-default btn-sm" type="button" data-toggle='batch' data-href="{php echo webUrl('sns/member/delete')}">
+                            <i class='fa fa-remove'></i> 删除
+                        </button>
+                        {/if}
+                    </div>
+                </td>
+                <td colspan="3" class="text-right">  {$pager}</td>
+            </tr>
+        </tfoot>
+        </table>
+
+
+
+    <script language="javascript">
+        {if $opencommission}
+        require(['bootstrap'],function(){
+            $("[rel=pop]").popover({
+                trigger:'manual',
+                placement : 'right',
+                title : $(this).data('title'),
+                html: 'true',
+                content : $(this).data('content'),
+                animation: false
+            }).on("mouseenter", function () {
+                var _this = this;
+                $(this).popover("show");
+                $(this).siblings(".popover").on("mouseleave", function () {
+                    $(_this).popover('hide');
+                });
+            }).on("mouseleave", function () {
+                var _this = this;
+                setTimeout(function () {
+                    if (!$(".popover:hover").length) {
+                        $(_this).popover("hide")
+                    }
+                }, 100);
+            });
+
+
+        });
+        {/if}
+
+    </script>
+
+        {else}
+        <div class='panel panel-default'>
+            <div class='panel-body' style='text-align: center;padding:30px;'>
+                暂时没有任何会员!
+            </div>
+        </div>
+        {/if}
+
+    </form>
+
+</div>
+    {template '_footer'}

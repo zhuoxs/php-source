@@ -1,0 +1,132 @@
+{{include file='common/head.html'}}
+<body bgcolor='#ffffff' text='#000000' leftmargin='0' topmargin='0'>
+<!-- ajax 查询节点状态 -->
+<script language='javascript' src='{{$PSTATIC}}/style/common.js'></script>
+<script language='javascript' src='{{$STATIC}}/scripts/node.js'></script>
+<script language='javascript'>
+var xmlhttp2=new Array();
+function checkNodeResult(node)
+{
+	if (xmlhttp2[node].readyState==4) {
+		var whm = 0;
+		var db = 0;
+		try{
+		if(xmlhttp2[node].status == 200){		
+			var dataArray = xmlhttp2[node].responseXML.getElementsByTagName('result');
+			//var node = dataArray[0].getAttribute('node');
+			whm = dataArray[0].getAttribute('whm');		
+			db = dataArray[0].getAttribute('db');	
+		}
+		var msg = "web:<img src='{{$PSTATIC}}/style/";
+		if(whm==1){
+			msg += "check_right.gif";
+		}else{
+			msg += "check_error.gif";
+		}
+		msg+="'/>";
+		if(db!=2){
+			msg += "db:<img src='{{$PSTATIC}}/style/";
+			if(db==1){
+				msg += "check_right.gif";
+			}else{
+				msg += "check_error.gif";
+			}
+			msg+="'/>";
+		}
+		}catch(e){
+			msg = "查询出错";
+		}
+		xxkf_obj(node).innerHTML = msg;
+	}
+}
+function checkNode(node)
+{
+	var url = '?c=nodes&a=ajaxCheckNode&node=' + node;
+	xxkf_obj(node).innerHTML="<img src='{{$PSTATIC}}/style/busy.gif'/>";
+	//ajax_open_url2(,checkNodeResult);
+	xmlhttp2[node] = create_xmlhttp();	
+	xmlhttp2[node].open("GET",url,true);
+	xmlhttp2[node].onreadystatechange=function (){
+		checkNodeResult(node);
+	};
+	xmlhttp2[node].send(null);
+}
+function checkAllNode()
+{
+	  {{foreach from=$list item=row}}
+	  checkNode('{{$row.name}}');
+	  {{/foreach}}
+}
+function module_admin_login(name)
+{
+	var url = '?c=nodes&a=module_login&name=' + name;
+	//window.location = url;
+	window.open(url);
+	
+}
+</script>
+<style type='text/css'>
+.button_right {
+	margin-right:0px;
+
+}
+
+</style>
+<div align="center">
+	<div class="wid_main mar_main" align="left">
+		<div class="block_top" align="left">当前位置：主机管理 --> 主机列表</div>
+		{{if $msg}}
+			<div id="xsnazzy">
+				<b class="xtop"><b class="xb1"></b><b class="xb2"></b><b class="xb3"></b><b class="xb4"></b></b>
+					<div class="xboxcontent" align="center">
+						<font color='red'>{{$msg}}</font>
+					</div>
+				<b class="xbottom"><b class="xb4"></b><b class="xb3"></b><b class="xb2"></b><b class="xb1"></b></b>
+			</div>
+		{{/if}}
+		<table class="table_main2" cellpadding="0" cellspacing="1">
+		  <tr>
+			<td colspan="10" class="bg_main">
+				[<a href='?c=nodes&a=flush'><b>更新配置文件</b></a>]
+				[<a href='javascript:checkAllNode()'><b>查询所有主机状态</b></a>]
+				[<a href="?c=nodes&a=addNode" target='main'><b>增加主机</b></a>]
+			</td>
+		  </tr>
+		  <tr id="bg_yellow">
+			<td>操作</td>
+			<td>所属模块</td>
+			<td>名称</td>
+			<td>模块管理</td>
+			<td>备注</td>
+			<td>主机域名</td>
+			<td>主机IP</td>
+			<td>管理端口</td>
+			<td>主机状态</td>
+			<td>最多产品数</td>
+		  </tr>
+		  {{foreach from=$list item=row}}
+		  <tr>
+		  
+			<td>
+			  [<a href="javascript:del_node('{{$row.name}}')" title="删除主机">删除</a>]        
+			  [<a href="?c=nodes&a=editForm&name={{$row.name}}" title="更改信息">修改</a>]
+			 </td>
+			 <td>{{$row.module}}</td>
+			 <td>{{$row.name}}</td>
+			 <td>{{$row.adminlink}}</td>
+			<td>{{$row.nickname}}</td>
+			<td>{{$row.host}}</td>
+			<td>{{$row.intranet_host}}</td>
+			<td>{{$row.port}}</td>
+			<td> <div id='{{$row.name}}'><a href="javascript:checkNode('{{$row.name}}')">查询</a></div></td>
+			<td>{{$row.max_count}}</td>
+		  </tr>
+		  {{/foreach}}
+		  <tr>
+			<td colspan="10" id="bg_yellow" align="right">共计 {{$sum}} 条记录&nbsp;</td>
+		  </tr>
+		</table>
+	</div>
+</div>
+</body>
+{{include file='common/foot.html'}}

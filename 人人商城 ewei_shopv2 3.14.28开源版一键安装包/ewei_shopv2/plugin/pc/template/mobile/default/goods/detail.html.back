@@ -1,0 +1,694 @@
+{template '_header'}
+<div class='fui-page fui-page-current  page-goods-detail' id='page-goods-detail-index'>
+{php $this->followBar()}
+
+    {if empty($err)}
+    <div class="fui-header">
+        <div class="fui-header-left">
+            <a class="back" id="btn-back"></a>
+        </div>
+        <div class="title">
+            <div id="tab" class="fui-tab fui-tab-danger">
+                <a data-tab="tab1" class="tab active">商品</a>
+                <a data-tab="tab2" class="tab">详情</a>
+
+                {if count($params)>0}
+                <a data-tab="tab3" class="tab">参数</a>
+                {/if}
+
+                {if empty($_W['shopset']['trade']['closecomment'])}
+                <a  data-tab="tab4" class="tab" style="display:none" id="tabcomment">评价</a>
+                {/if}
+            </div>
+        </div>
+        <div class="fui-header-right"></div>
+    </div>
+    {else}
+    <div class="fui-header ">
+        <div class="fui-header-left">
+            <a class="back" id="btn-back"></a>
+        </div>
+        <div class="title">
+            找不到宝贝
+        </div>
+    </div>
+    {/if}
+
+    {if empty($err)}
+
+
+    {if count($params)>0}
+    <div class="fui-content param-block  {if !$goods['canbuy']}notbuy{/if}">
+        <div class="fui-cell-group">
+            {if !empty($params)}
+            {loop $params $p}
+            <div class="fui-cell">
+                <div class="fui-cell-label" >{$p['title']}</div>
+                <div class="fui-cell-info overflow">{$p['value']}</div>
+            </div>
+            {/loop}
+
+            {else}
+            <div class="fui-cell">
+                <div class="fui-cell-info text-align">商品没有参数</div>
+            </div>
+            {/if}
+        </div>
+    </div>
+    {/if}
+
+    <div class='fui-content comment-block  {if !$goods['canbuy']}notbuy{/if}' data-getcount='1' id='comments-list-container'>
+    <div class='fui-icon-group col-5 '>
+        <div class='fui-icon-col' data-level='all'><span class='text-danger'>全部<br/><span class="count"></span></span></div>
+        <div class='fui-icon-col' data-level='good'><span>好评<br/><span class="count"></span></span></div>
+        <div class='fui-icon-col' data-level='normal'><span>中评<br/><span class="count"></span></span></div>
+        <div class='fui-icon-col' data-level='bad'><span>差评<br/><span class="count"></span></span></div>
+        <div class='fui-icon-col' data-level='pic'><span>晒图<br/><span class="count"></span></span></div>
+    </div>
+    <div class='content-empty' style='display:none;'>
+        <i class='icon icon-community'></i><br/>暂时没有任何评价
+    </div>
+    <div class='container' id="comments-all"></div>
+    <div class='infinite-loading'><span class='fui-preloader'></span><span class='text'> 正在加载...</span></div>
+</div>
+
+<div class="fui-content detail-block  {if !$goods['canbuy']}notbuy{/if}">
+    <div class="text-danger look-basic"><i class='icon icon-unfold'></i> <span>上拉返回商品详情</span></div>
+    <div class='content-block content-images'></div>
+</div>
+
+
+<div class='fui-content basic-block pulldown {if !$goods['canbuy']}notbuy{/if}'>
+
+
+{if !empty($err)}
+<div class='content-empty'>
+    <i class='icon icon-search'></i><br/> 宝贝找不到了~ 您看看别的吧 ~<br/><a href="{php echo mobileUrl('pc')}" class='btn btn-default-o external'>到处逛逛</a>
+</div>
+{else}
+{if $commission_data['qrcodeshare'] > 0}
+<i class="icon icon-qrcode" id="alert-click"></i>
+{/if}
+<div class='fui-swipe'>
+    <div class='fui-swipe-wrapper'>
+        {loop $thumbs $thumb}
+        <div class='fui-swipe-item'><img src="{ICE_SHOP_PLACEHOLDER}"  data-lazy="{php echo tomedia($thumb)}" /></div>
+        {/loop}
+    </div>
+    <div class='fui-swipe-page'></div>
+    {if $goods['total']<=0 && !empty($_W['shopset']['shop']['saleout'])}
+    <div class="salez">
+        <img src="{php echo tomedia($_W['shopset']['shop']['saleout'])}">
+    </div>
+    {/if}
+</div>
+
+<div class="fui-cell-group fui-detail-group" >
+    <div class="fui-cell">
+        <div class="fui-cell-text name">{$goods['title']}</div>
+        <a class="fui-cell-remark share"  {if !empty($goods['sharebtn']) && $member['isagent']==1 && $member['status']==1} href="{php echo mobileUrl('commission/qrcode', array('goodsid'=>$goods['id']))}" {else} id='btn-share' {/if}>
+            <i class="icon icon-share"></i>
+            <p>分享</p>
+        </a>
+    </div>
+    {if !empty($goods['subtitle'])}
+    <div class="fui-cell goods-subtitle">
+        <span class='text-danger'>{$goods['subtitle']}</span>
+    </div>
+    {/if}
+    <div class="fui-cell">
+        <div class="fui-cell-text price">
+			<span class="text-danger">
+			￥{if $goods['minprice']==$goods['maxprice']}{$goods['minprice']}{else}{$goods['minprice']}~{$goods['maxprice']}{/if}
+			{if $goods['isdiscount'] && $goods['isdiscount_time']>=time()}
+			     <span class="original">￥{$goods['productprice']}</span>
+			{/if}
+			</span>
+        </div>
+    </div>
+
+    {if $goods['isdiscount'] && $goods['isdiscount_time']>=time()}
+    <div class="row row-time">
+        <div id='discount-container' class='fui-labeltext fui-labeltext-danger'
+             data-now="{php echo date('Y-m-d H:i:s')}"
+             data-end="{php echo date('Y-m-d H:i:s', $goods['isdiscount_time'])}"
+             data-end-label='{php echo empty($goods['isdiscount_title'])?'促销':$goods['isdiscount_title']}' >
+        <div class='label'>{php echo empty($goods['isdiscount_title'])?'促销':$goods['isdiscount_title']}</div>
+        <div class='text'>
+            <span class="day number text-danger" >-</span><span class="time">天</span>
+            <span class="hour number text-danger">-</span><span class="time">小时</span>
+            <span class="minute number text-danger">-</span><span class="time">分</span>
+            <span class="second number text-danger">-</span><span class="time">秒</span>
+        </div>
+    </div>
+
+</div>
+{/if}
+
+{if $goods['istime']}
+
+<div id='time-container' class='fui-labeltext fui-labeltext-danger'
+     data-now="{php echo date('Y-m-d H:i:s')}"
+     data-start-label='距离限时购开始'
+     data-end-label='距离限时购结束'
+     data-end-text='活动已经结束，下次早点来~'
+     data-start="{php echo date('Y-m-d H:i:s', $goods['timestart'])}"
+     data-end="{php echo date('Y-m-d H:i:s', $goods['timeend'])}"
+        >
+    <div class='label'>限时购</div>
+    <div class='text'>
+        <span class="day number"></span><span class="time">天</span><span class="hour number"></span><span class="time">小时</span><span class="minute number"></span><span class="time">分</span><span class="second number"></span><span class="time">秒</span>
+    </div>
+</div>
+
+
+{/if}
+
+
+<div class="fui-cell">
+    <div class="fui-cell-text flex">
+        {if is_array($goods['dispatchprice'])}
+            {if $goods['type']==1}
+                <span>快递:  {php echo number_format($goods['dispatchprice']['min'],2)} ~ {php echo number_format($goods['dispatchprice']['max'],2)}</span>
+            {/if}
+        {else}
+            {if $goods['type']==1}
+                <span>快递:  {php echo $goods['dispatchprice'] == 0 ? '包邮' : number_format($goods['dispatchprice'],2)}</span>
+            {/if}
+        {/if}
+		 <span>单位：{$goods['unit']}</span>
+        {if $goods['showtotal'] == 1}
+        <span>库存:  {$goods['total']}</span>
+        {/if}
+        <span>销量:  {php echo number_format($goods['sales'],0)} {$goods['unit']}</span>
+	
+        {if $goods['province'] != '请选择省份' && $goods['city'] != '请选择城市'}
+        <span>{$goods['province']} {$goods['city']}</span>
+        {/if}
+    </div>
+</div>
+</div>
+
+{if empty($goods['isdiscount']) || (!empty($goods['isdiscount']) &&$goods['isdiscount_time']<time())}
+    {if !empty($memberprice) && $memberprice!=$goods['minprice'] && !empty($level)}
+        <div class="fui-cell-group  fui-sale-group" style="margin-top:0">
+            <div class="fui-cell">
+                <div class="fui-cell-text" style="white-space: normal;">您的会员等级是 <span class="text-danger">{$level['levelname']}</span> 可享受 <span class="text-danger">￥{$memberprice}</span> 的价格</div>
+            </div>
+        </div>
+    {/if}
+{/if}
+
+{if (!empty($goods['deduct']) && $goods['deduct'] != '0.00')  || !empty($goods['credit'])}
+<div class='fui-cell-group  fui-sale-group' style='margin-top:0'>
+    <div class='fui-cell'>
+        <div class='fui-cell-text'>{$_W['shopset']['trade']['credittext']} {if !empty($goods['deduct']) && $goods['deduct'] != '0.00'}最高抵扣 <span class="text-danger">{$goods['deduct']}</span> 元{/if} {if !empty($goods['credit'])}购买赠送 <span class="text-danger">{$goods['credit']}</span> {$_W['shopset']['trade']['credittext']}{/if}</div>
+    </div>
+</div>
+{/if}
+
+{if $has_city}
+<div class='fui-cell-group fui-cell-click  fui-sale-group' style='margin-top:0' id="city-picker">
+    <div class='fui-cell'>
+        <div class='fui-cell-text'>不配送区域:
+            {loop $citys $item}
+                {$item}
+            {/loop}
+        </div>
+
+        <div class='fui-cell-remark'></div>
+    </div>
+</div>
+{/if}
+
+{if $hasSales}
+
+<div class='fui-cell-group fui-cell-click  fui-sale-group' style='margin-top:0' id="sale-picker">
+    <div class='fui-cell'>
+        <div class='fui-cell-text'>优惠
+            {if $enoughfree && $enoughfree==-1}
+            全场包邮
+            {else}
+            {if $goods['ednum']>0}单品满 <span class="text-danger">{$goods['ednum']}</span> {php echo empty($goods['unit'])?'件':$goods['unit']}包邮{/if}
+            {if $goods['edmoney']>0}单品满 <span class="text-danger">￥{$goods['edmoney']}</span> 包邮{/if}
+            {if $enoughfree}全场满 <span class="text-danger">￥{$enoughfree}</span> 包邮{/if}
+            {/if}
+            {if $enoughs && count($enoughs)>0}
+            全场满 <span class="text-danger">￥{$enoughs[0]['enough']}</span> 立减 <span class="text-danger">￥{$enoughs[0]['money']}</span>
+            {/if}
+        </div>
+
+        <div class='fui-cell-remark'></div>
+    </div>
+</div>
+ 
+{/if}
+
+{if $hasServices}
+<div class="fui-cell-group fui-option-group" style='margin-top:0'>
+    <div class='fui-cell'>
+        <div class='fui-cell-text'>
+
+            {if $goods['cash']==2}<i class='icon icon-roundcheck text-danger '></i> 货到付款{/if}
+            {if $goods['quality']}<i class='icon icon-roundcheck text-danger '></i> 正品保证{/if}
+            {if $goods['repair']}<i class='icon icon-roundcheck text-danger'></i> 保修{/if}
+            {if $goods['invoice']}<i class='icon icon-roundcheck text-danger'></i> 发票{/if}
+            {if $goods['seven']}<i class='icon icon-roundcheck text-danger'></i> 7天退换{/if}
+        </div>
+    </div>
+</div>
+{/if}
+
+
+{if !empty($stores)}
+<script language='javascript' src='http://api.map.baidu.com/api?v=2.0&ak=ZQiFErjQB7inrGpx27M1GR5w3TxZ64k7'></script>
+<div class='fui-according-group'>
+    <div class='fui-according'>
+        <div class='fui-according-header'>
+            <i class='icon icon-shop'></i>
+            <span class="text">适用门店</span>
+            <span class="remark"><div class="badge">{php echo count($stores)}</div></span>
+        </div>
+        <div class="fui-according-content store-container">
+            {loop $stores $item}
+            <div  class="fui-list store-item"
+
+                  data-lng="{php echo floatval($item['lng'])}"
+                  data-lat="{php echo floatval($item['lat'])}">
+                <div class="fui-list-media">
+                    <i class='icon icon-shop'></i>
+                </div>
+                <div class="fui-list-inner store-inner">
+                    <div class="title"><span class='storename'>{$item['storename']}</span></div>
+                    <div class="text">
+                        地址: <span class='realname'>{$item['address']}</span>
+                    </div>
+                    <div class="text">
+                        电话: <span class='address'>{$item['tel']}</span>
+                    </div>
+                </div>
+                <div class="fui-list-angle ">
+                    {if !empty($item['tel'])}<a href="tel:{$item['tel']}" class='external '><i class=' icon icon-phone' style='color:green'></i></a>{/if}
+                    <a href="{php echo mobileUrl('store/map',array('id'=>$item['id'],'merchid'=>$item['merchid']))}" class='external' ><i class='icon icon-location' style='color:#f90'></i></a>
+                </div>
+            </div>
+            {/loop}
+        </div>
+
+        <div id="nearStore" style="display:none">
+
+            <div class='fui-list store-item'  id='nearStoreHtml'></div>
+        </div>
+    </div></div>
+{/if}
+
+
+{if $goods['canbuy']}
+<div class="fui-cell-group fui-cell-click">
+    <div class="fui-cell">
+        <div class="fui-cell-text option-selector">请选择{if empty($spec_titles)}数量{else}{$spec_titles}等{/if}</div>
+        <div class="fui-cell-remark"></div>
+    </div>
+</div>
+{else}
+<div class="fui-cell-group fui-cell-click">
+    <div class="fui-cell">
+        <div class="fui-cell-text">
+            {if $goods['userbuy']==0}
+            您已经超出最大{$goods['usermaxbuy']}件购买量
+            {else if $goods['levelbuy']==0}
+            您当前会员等级没有购买权限
+            {else if $goods['groupbuy']==0}
+            您所在的用户组没有购买权限
+            {else if $goods['timebuy'] ==-1}
+            未到开始抢购时间!
+            {else if $goods['timebuy'] ==1}
+            抢购时间已经结束!
+            {else if $goods['total'] <=0}
+            商品已经售罄!
+            {/if}</div>
+    </div>
+</div>
+
+{/if}
+
+
+
+<div id='comments-container'></div>
+
+<div class="fui-cell-group fui-shop-group">
+    <div class='fui-list'>
+        <div class='fui-list-media'>
+            <img data-lazy="{php echo tomedia($shopdetail['logo'])}" />
+        </div>
+        <div class='fui-list-inner'>
+            <div class='title'>{$shopdetail['shopname']}</div>
+            <div class='subtitle'>{$shopdetail['description']}</div>
+        </div>
+    </div>
+
+    <div class="fui-cell">
+        <div class="fui-cell-text center">{$statics['all']}<p>全部</p></div>
+        <div class="fui-cell-text center">{$statics['new']}<p>新品</p></div>
+        <div class="fui-cell-text center">{$statics['discount']}<p>促销</p></div>
+    </div>
+    <div class="fui-cell btns">
+        <div class="fui-cell-text center">
+            <a class="btn btn-default-o external" href="{$shopdetail['btnurl1']}">{if !empty($shopdetail['btntext1'])}{$shopdetail['btntext1']}{else}全部商品{/if}</a>
+            <a class="btn btn-default-o external" href="{$shopdetail['btnurl2']}">{if !empty($shopdetail['btntext2'])}{$shopdetail['btntext2']}{else}进店逛逛{/if}</a>
+        </div>
+    </div>
+</div>
+
+{if $buyshow==1 && !empty($goods['buycontent'])}
+<div class="fui-cell-group">
+    <div class="fui-cell">
+        <div class="content-block">{$goods['buycontent']}</div>
+    </div>
+</div>
+{/if}
+
+<div class="fui-cell-group">
+    <div class="fui-cell">
+        <div class="fui-cell-text text-center look-detail"><i class='icon icon-fold'></i> <span>上拉查看图文详情</span></div>
+    </div>
+</div>
+{/if}
+</div>
+{if $goods['canbuy']}
+<div class="fui-navbar bottom-buttons">
+
+    <a  class="nav-item favorite-item {if $isFavorite}active{/if}" data-isfavorite="{php echo intval($isFavorite)}">
+        <span class="icon {if $isFavorite}icon-likefill{else}icon-like{/if}"></span>
+        <span class="label" >关注</span>
+    </a>
+    <a  class="nav-item external" href="{php echo !empty($goods['merchid']) ? mobileUrl('merch',array('merchid'=>$goods['merchid'])) : mobileUrl('');}">
+        <span class="icon icon-shop"></span>
+        <span class="label" >店铺</span>
+    </a>
+    <a class="nav-item cart-item" href="{php echo mobileUrl('member/cart')}" id="menucart">
+        <span class='badge {if $cartCount<=0}out{else}in{/if}'>{$cartCount}</span>
+        <span class="icon icon-cart"></span>
+        <span class="label">购物车</span>
+    </a>
+    {if $canAddCart}
+    <a  class="nav-item btn cartbtn">加入购物车</a>
+    {/if}
+    <a  class="nav-item btn buybtn">立刻购买</a>
+</div>
+{/if}
+
+{if $has_city}
+<div id='city-picker-modal' style="margin: -100%;">
+    <div class='city-picker'>
+        <div class='fui-cell-title'>促销活动</div>
+
+        <div class="fui-cell-group fui-sale-group" style='margin-top:0;'>
+
+            <div class="fui-cell">
+                <div class="fui-cell-text dispatching">
+                    不配送区域:
+                    <div class="dispatching-info">
+                        {loop $citys $item}
+                        <i>{$item}</i>
+                        {/loop}
+                    </div>
+                </div>
+            </div>
+
+
+            <div class='btn btn-danger block'>确定</div>
+        </div>
+    </div>
+</div>
+{/if}
+
+<div id='sale-picker-modal' style="margin: -100%;">
+<div class='sale-picker'>
+    <div class='fui-cell-title'>促销活动</div>
+
+    <div class="fui-cell-group fui-sale-group" style='margin-top:0'>
+        {if $enoughfree && $enoughfree==-1}
+        <div class="fui-cell"><div class="fui-cell-text">全场包邮</div></div>
+        {else}
+
+        {if $enoughfree>0}
+        <div class="fui-cell">
+            <div class="fui-cell-text">全场满 <span class="text-danger">￥{$enoughfree}</span> 包邮</div>
+        </div>
+        {/if}
+
+        {if $goods['ednum']>0}
+        <div class="fui-cell">
+            <div class="fui-cell-text">单品满 <span class="text-danger">{$goods['ednum']}</span> {php echo empty($goods['unit'])?'件':$goods['unit']}包邮
+            </div>
+        </div>
+        {/if}
+        {if  $goods['edmoney']>0}
+
+        <div class="fui-cell">
+            <div class="fui-cell-text">单品满 <span class="text-danger">￥{$goods['edmoney']}</span> 包邮
+            </div>
+        </div>
+
+        {/if}
+        {/if}
+
+
+
+        {if $enoughfree || ($enoughs && count($enoughs)>0)}
+
+        {if $enoughs && count($enoughs)>0}
+        <div class='fui-according'>
+            <div class='fui-according-header'>
+                <div class="text">
+                    <div class="fui-cell-text">全场满 <span class="text-danger">￥{$enoughs[0]['enough']}</span> 立减 <span class="text-danger">￥{$enoughs[0]['money']}</span></div>
+                </div>
+                {if count($enoughs)>1}<span class="remark">更多</span>{/if}
+            </div>
+            {if count($enoughs)>1}
+            <div class='fui-according-content'>
+                {loop $enoughs $key $enough}
+                {if $key>0}
+                <div class="fui-cell">
+                    <div class="fui-cell-text">满 <span class="text-danger">￥{$enough['enough']}</span> 立减 <span class="text-danger">￥{$enough['money']}</span></div>
+                </div>
+                {/if}
+                {/loop}
+            </div>
+            {/if}
+        </div>
+        {/if}
+
+
+
+        {/if}
+        <div class='btn btn-danger block'>确定</div>
+    </div>
+</div>
+    </div>
+{template 'goods/picker'}
+
+{if $getComments}
+<script type='text/html' id='tpl_goods_detail_comments_list'>
+    <div class="fui-cell-group fui-comment-group">
+        <%each list as comment%>
+        <div class="fui-cell">
+            <div class="fui-cell-text comment ">
+                <div class="info head">
+                    <div class='img'><img src='<%comment.headimgurl%>'/></div>
+                    <div class='nickname'><%comment.nickname%></div>
+
+                    <div class="date"><%comment.createtime%></div>
+                    <div class="star star1">
+                        <span <%if comment.level>=1%>class="shine"<%/if%>>★</span>
+                        <span <%if comment.level>=2%>class="shine"<%/if%>>★</span>
+                        <span <%if comment.level>=3%>class="shine"<%/if%>>★</span>
+                        <span <%if comment.level>=4%>class="shine"<%/if%>>★</span>
+                        <span <%if comment.level>=5%>class="shine"<%/if%>>★</span>
+                    </div>
+                </div>
+                <div class="remark"><%comment.content%></div>
+                <%if comment.images.length>0%>
+                <div class="remark img">
+                    <%each comment.images as img%>
+                    <div class="img"><img data-lazy="<%img%>" /></div>
+                    <%/each%>
+                </div>
+                <%/if%>
+
+                <%if comment.reply_content%>
+                    <div class="reply-content" style="background:#EDEDED;">
+                        掌柜回复：<%comment.reply_content%>
+                        <%if comment.reply_images.length>0%>
+                        <div class="remark img">
+                            <%each comment.reply_images as img%>
+                            <div class="img"><img data-lazy="<%img%>" /></div>
+                            <%/each%>
+                        </div>
+                        <%/if%>
+                    </div>
+                <%/if%>
+                <%if comment.append_content && comment.replychecked==0%>
+                    <div class="remark reply-title">用户追加评价</div>
+                    <div class="remark"><%comment.append_content%></div>
+                    <%if comment.append_images.length>0%>
+                    <div class="remark img">
+                        <%each comment.append_images as img%>
+                        <div class="img"><img data-lazy="<%img%>" /></div>
+                        <%/each%>
+                    </div>
+                    <%/if%>
+                    <%if comment.append_reply_content%>
+                        <div class="reply-content" style="background:#EDEDED;">
+                            掌柜回复：<%comment.append_reply_content%>
+                            <%if comment.append_reply_images.length>0%>
+                            <div class="remark img">
+                                <%each comment.append_reply_images as img%>
+                                <div class="img"><img data-lazy="<%img%>" /></div>
+                                <%/each%>
+                            </div>
+                            <%/if%>
+                        </div>
+                    <%/if%>
+                <%/if%>
+            </div>
+        </div>
+        <%/each%>
+    </div>
+</script>
+
+<script type='text/html' id='tpl_goods_detail_comments'>
+    <div class="fui-cell-group fui-comment-group">
+
+        <div class="fui-cell fui-cell-click">
+            <div class="fui-cell-text desc">评价(<%count.all%>)</div>
+            <div class="fui-cell-text desc label"><span><%percent%>%</span> 好评</div>
+            <div class="fui-cell-remark"></div>
+
+        </div>
+        <%each list as comment%>
+        <div class="fui-cell">
+
+            <div class="fui-cell-text comment ">
+                <div class="info">
+                    <div class="star">
+                        <span <%if comment.level>=1%>class="shine"<%/if%>>★</span>
+                        <span <%if comment.level>=2%>class="shine"<%/if%>>★</span>
+                        <span <%if comment.level>=3%>class="shine"<%/if%>>★</span>
+                        <span <%if comment.level>=4%>class="shine"<%/if%>>★</span>
+                        <span <%if comment.level>=5%>class="shine"<%/if%>>★</span>
+                    </div>
+                    <div class="date"><%comment.nickname%> <%comment.createtime%></div>
+                </div>
+                <div class="remark"><%comment.content%></div>
+                <%if comment.images.length>0%>
+                <div class="remark img">
+                    <%each comment.images as img%>
+                    <div class="img"><img data-lazy="<%img%>" height="50" /></div>
+                    <%/each%>
+                </div>
+                <%/if%>
+            </div>
+        </div>
+        <%/each%>
+    </div>
+</script>
+{/if}
+
+{else}
+
+<div class='fui-content'>
+    <div class='content-empty'>
+        <i class='icon icon-searchlist'></i><br/> 商品已经下架，或者已经删除!<br/><a href="{php echo mobileUrl('pc')}" class='btn btn-default-o external'>到处逛逛</a>
+    </div>
+</div>
+{/if}
+
+
+<div id='cover'>
+    <div class='fui-mask-m visible'></div>
+    <div class='arrow'></div>
+    <div class='content'>请点击右上角<br/>通过【发送给朋友】<br/>邀请好友购买</div>
+</div>
+
+<script language="javascript">
+
+    require(['biz/goods/detail'], function (modal) {
+        modal.init({
+            goodsid:"{$goods['id']}",
+            getComments : "{$getComments}"
+        });
+    });</script>
+</div>
+
+<div id="alert-picker">
+    <script type="text/javascript" src="../addons/ice_shop/static/js/dist/jquery/jquery.qrcode.min.js"></script>
+    <script type="text/javascript">
+        $(function(){
+            $(".alert-qrcode-i").html('')
+            $(".alert-qrcode-i").qrcode({
+                typeNumber: 0,      //计算模式
+                correctLevel: 0,//纠错等级
+                text:"{php echo $_W['siteroot'].'app/'.mobileUrl('goods/detail', array('id'=>$goods['id']))}"/*{php echo $_W['siteroot'].'app/'.mobileUrl('goods/detail', array('id'=>$goods['id']))}*/
+            });
+        });
+    </script>
+    <div id="alert-mask"></div>
+    {if $commission_data['codeShare'] == 1}
+    <div class="alert-content">
+        <div class="alert">
+            <i class="alert-close alert-close1 icon icon-close"></i>
+            <div class="fui-list alert-header">
+                <div class="fui-list-media">
+                    <img class="round" src="{php echo tomedia($_W['shopset']['shop']['logo'])}">
+                </div>
+                <div class="fui-list-inner">
+                    {$_W['shopset']['shop']['name']}
+                </div>
+            </div>
+            <img src="{php echo tomedia($goods['thumb'])}" class="alert-goods-img" alt="">
+            <div class="fui-list alert-qrcode">
+                <div class="fui-list-media">
+                    <i class="alert-qrcode-i"></i>
+                </div>
+                <div class="fui-list-inner alert-content">
+                    <h2 class="alert-title">{$goods['title']}</h2>
+                    <span>&yen;{if $goods['minprice']==$goods['maxprice']}{$goods['minprice']}{else}{$goods['minprice']}~{$goods['maxprice']}{/if}</span>
+                    {if $goods['isdiscount'] && $goods['isdiscount_time']>=time()}
+                    <del>&yen;{$goods['productprice']}</del>
+                    {else}
+                    {if $goods['productprice']>0}<del>&yen;{$goods['productprice']}</del>{/if}
+                    {/if}
+                </div>
+            </div>
+        </div>
+    </div>
+    {else}
+        <div class="alert-content">
+        <div class="alert2">
+            <div class="fui-list alert2-goods">
+                <div class="fui-list-media">
+                    <img src="{php echo tomedia($goods['thumb'])}" class="alert2-goods-img" alt="">
+                </div>
+                <div class="fui-list-inner">
+                    <h2 class="alert2-title">{$goods['title']}</h2>
+                    <span>&yen;{if $goods['minprice']==$goods['maxprice']}{$goods['minprice']}{else}{$goods['minprice']}~{$goods['maxprice']}{/if}</span>
+                    {if $goods['isdiscount'] && $goods['isdiscount_time']>=time()}
+                    <del>&yen;{$goods['productprice']}</del>
+                    {else}
+                    {if $goods['productprice']>0}<del>&yen;{$goods['productprice']}</del>{/if}
+                    {/if}
+                </div>
+            </div>
+            <div class="alert2-qrcode">
+                <i class="alert-qrcode-i"></i>
+            </div>
+            <a href="javascript:void(0);" class="alert-close2">{$_W['shopset']['shop']['name']}</a>
+        </div>
+        </div>
+    {/if}
+</div>
+
+
+{template '_footer'}

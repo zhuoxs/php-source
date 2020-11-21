@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([["IB54"],{IB54:function(n,o,e){"use strict";e.r(o);var i=e("KHd+"),u=Object(i.a)({},void 0,void 0,!1,null,null,null);u.options.__file="couponClientFissure.vue",o.default=u.exports}}]);

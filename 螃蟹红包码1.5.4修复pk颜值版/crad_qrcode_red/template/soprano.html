@@ -1,0 +1,619 @@
+{template 'common/header'}
+<div class='container' style='padding: 0 5px 10px; margin: 0; width: 100%'>
+
+    <ul class="nav nav-tabs">
+        <li {if $op== 'config'}class="active"{/if}><a href="{php echo $this->createWebUrl('soprano',array('op'=>'config'))}">语音配置</a></li>
+        <li {if $op== 'display'}class="active"{/if}><a href="{php echo $this->createWebUrl('soprano')}">高音喇叭</a></li>
+        <li {if $op== 'post'}class="active"{/if}>
+            {if empty($id)}
+            <a href="{php echo $this->createWebUrl('soprano',array('op'=>'post'))}">添加高音喇叭</a>
+            {else}
+            <a href="{php echo $this->createWebUrl('soprano',array('op'=>'post','id'=>$id))}">编辑高音喇叭</a>
+            {/if}
+        </li> 
+    </ul>
+    {if $op=='display'}
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="crad_qrcode_red" />
+                <input type="hidden" name="do" value="soprano" />
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">关键字</label>
+                    <div class="col-sm-8 col-lg-3">
+                        <input class="form-control" name="keyword" id="" placeholder="输入高音喇叭名称" type="text" value="{$_GPC['keyword']}">
+                    </div>
+                    <div class=" col-xs-12 col-sm-2 col-lg-2">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">高音喇叭列表  总数：{$total}</div>
+
+        <div class="panel-body table-responsive">
+            <form action="" id="form1" method="post" class="form-horizontal form" enctype="multipart/form-data">
+                <table class="table table-hover">
+                    <thead class="navbar-inner">
+                        <tr>
+                            <th style="width: 5%;" class="row-first">选择</th>
+                            <th style="width: 6%;">ID</th>
+                            <th style="width: 15%;">名称</th>
+                            <th style="width: 20%;">活动ID</th>
+                            <th style="width: 20%;">时间</th>                   
+                            <th style="width: 8%;">状态</th>
+                            <th style="width: 20%;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="main">
+                        {loop $list $row}
+                        <tr>
+                            <td><input type="checkbox" name="ids[]" value="{$row['id']}" /></td>
+                            <td style="white-space: normal; word-break: break-all">{$row['id']}</td>
+                            <td style="white-space: normal; word-break: break-all">{$row['name']}</td>
+                            <td style="white-space: normal; word-break: break-all">{$row['aids']}</td>
+                            <td style="white-space: normal; word-break: break-all">{php echo date('Y-m-d H:i:s', $row['createtime']); }</td>
+                            <td style="white-space: normal; word-break: break-all">{if $row['status']==1}关闭{else}正常{/if}</td>
+                            <td style="white-space: normal; word-break: break-all">
+                                     <div class="btn-group btn-group-sm">
+                                    <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false" href="javascript:;">入口 <span class="caret"></span></a>
+                                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                        <li>
+                                            <a href="{$row['a_url']}" target="_blank"><i class="fa fa-external-link fa-fw"></i> 直接访问</a>
+                                        </li>
+                                        <li role="presentation">
+                                            <a href="javascript:;" onclick="displayUrl('{$row['a_url']}');"><i class="fa fa-link fa-fw"></i> 查看链接</a>
+                                        </li>
+                                        <li role="presentation">
+                                            <a href="javascript:;" onclick="displayQr('{php echo $this->createWebUrl('qr', array('raw' => base64_encode($row['a_url'])))}');"><i class="fa fa-qrcode fa-fw"></i> 查看二维码</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <a class="btn  btn-default" title="编辑" href="{php echo $this->createWebUrl('soprano',array('op'=>'post','id'=>$row['id']))}" ><i class="fa fa-edit"></i></a>
+                                <a class="btn  btn-danger" href="{php echo $this->createWebUrl('soprano', array('op' => 'del','id' => $row['id']))}" onclick="return confirm('该操作将会删除本条数据，是否确认操作？');return false;" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="删除"><i class="fa fa-times"></i></a>
+                            </td>
+                        </tr>
+                        {/loop}
+
+                        <tr>
+                            <td colspan="10">
+                                <input name="op" id="op" type="hidden" value="" />
+                                <input name="token" type="hidden" value="{$_W['token']}" />
+                                <button type="button" class="btn btn-primary" name="btndeleteall" id="btndeleteall" value=""/>批量删除</button> 
+                                <button  type="button" class="btn btn-danger" onclick="delete_all()">清空（删除所有记录）</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </form>
+        </div>
+        {$pager}
+    </div>
+    <script type="text/javascript">
+        function delete_all() {
+            if (confirm('确认删除 所有信息吗,删除完不可恢复?')) {
+                var shopid = $("#shopid").val();
+                var keyword = $("#keyword").val();
+                window.location.href = "{php echo $this->createWebUrl('soprano',array('op'=>'deleteall'))}" + "&keyword=" + keyword;
+            }
+        }
+        $(function () {
+            $(".check_all").click(function () {
+                var checked = $(this).get(0).checked;
+                $("input[type=checkbox]").attr("checked", checked);
+            });
+            $("#btndeleteall").click(function () {
+                var check = $("input[type=checkbox][class!=check_all]:checked");
+                if (check.length < 1) {
+                    alert('请选择要删除的数据!');
+                    return false;
+                }
+                if (confirm("确认要删除选择的数据?删除后不可恢复")) {
+                    $('#op').val('deleteids');
+                    $('#form1').submit();
+                }
+            });
+        });
+
+         function displayUrl(lurl) {
+        require(['jquery', 'util'], function($, u) {
+        var content = '<p class="form-control-static" style="word-break:break-all">商家后台链接: <br>' + lurl + '</p>';
+        var footer ='';
+        var diaobj = u.dialog('查看URL', content, footer);
+        diaobj.find('.btn-default').click(function() {
+        diaobj.modal('hide');
+        });
+        diaobj.on('shown.bs.modal', function(){
+        u.clip(diaobj.find('.btn-primary')[0], lurl);
+        });
+        diaobj.modal('show');
+        });
+        }
+        function displayQr(url) {
+        require(['jquery', 'util'], function($, u) {
+        var content = '<div class="panel panel-default text-center"><img src="' + url + '" alt="商家后台地址二维码" class="img-rounded"></div>';
+        var footer =
+                '<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>';
+        var diaobj = u.dialog('查看URL二维码', content, footer);
+        diaobj.find('.btn-default').click(function() {
+        diaobj.modal('hide');
+        });
+        diaobj.modal('show');
+        });
+        }
+
+    </script>
+
+    {/if} 
+    {if $op=='config'}
+    <div class="main">
+        <form action="" method="post" class="form-horizontal form">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    语音参数设置
+                </div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">百度AppID</label>
+                        <div class="col-sm-9 col-xs-12">
+                            <input type="text" name="baidu_appid" class="form-control" value="{$config['baidu_appid']}" placeholder="" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">百度API Key</label>
+                        <div class="col-sm-9 col-xs-12">
+                            <input type="text" name="baidu_api_key" class="form-control" value="{$config['baidu_api_key']}" placeholder="" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">百度Secret Key</label>
+                        <div class="col-sm-9 col-xs-12">
+                            <input type="text" name="baidu_api_secret" class="form-control" value="{$config['baidu_api_secret']}" placeholder="" />
+                            <span class="help-block">以上三项可以不填 如果自定义，请到 <a href="https://cloud.baidu.com/" target="_blank">百度云应用申请接入语音合成</a></span>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group col-sm-12">
+                <input name="submit" type="submit" value="提交" class="btn btn-primary span3" style="height:30px">
+                <input type="hidden" name="token" value="{$_W['token']}" />
+            </div>
+        </form>
+    </div>
+    {/if} 
+    {if $op=='post'}
+    <div class="main">
+        <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+            <div class="panel panel-default">
+                <div class="panel-heading">{if empty($id)}添加{else}编辑{/if}高音喇叭</div>
+                <div class="panel-body">
+
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label"><span class="text-danger">*</span> 高音喇叭名称</label>
+                        <div class="col-sm-6 col-xs-12">
+                            <input type="text" name="name" class="form-control" value="{$set['name']}" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 col-md-2 control-label">活动</label>
+                        <div class="col-sm-4 col-md-5">
+                            <div class="input-group">
+                                <div class="input-group-btn">
+                                    <button class="btn btn-default" type="button" data-toggle="modal" data-target="#J_fansModal">点击搜索选择加入的活动</button>
+                                </div>
+                            </div>
+                            <div id="J_openid_box">
+                                <p></p>
+                                {loop $set["aids"] $key $value}
+                                <div class="J_input-group input-group" style="margin-top:6px;">
+                                    <span class="input-group-addon">{$value}</span>
+                                    <input type="hidden" name="aids[]" value="{$value}" />
+                                    <input type="text" name="activitynames[]" value="{$set['activitynames'][$key]}" class="form-control" readonly>
+                                    <div class="input-group-btn">
+                                        <button class="btn btn-default" type="button" onclick="remove_fans(this);">删除</button>
+                                    </div>
+                                </div>
+                                {/loop}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">状态</label>
+                        <div class="col-sm-5">
+                            <label class='radio-inline'>
+                                <input type="radio" name="status" value="0" {if empty($set['status'])} checked {/if}>开启
+                            </label>
+                            <label class='radio-inline'>
+                                <input type="radio" name="status" value="1" {if $set['status']==1}checked {/if}>关闭
+                            </label>
+                            <div class="help-block"></div>
+                        </div>
+                    </div>
+                     <div class="form-group">
+
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">语音播放时间段</label>
+
+                   <div class="col-sm-9 col-xs-12">
+                        <div class="input-group">
+                            <div class="input-group-addon">开始时间段</div>
+                            <input type="text" class="form-control" name="starttime" value="{$set['starttime']}">
+                            <div class="input-group-addon"></div>
+
+                            <div class="input-group-addon">结束时间段</div>
+
+                            <input type="text" class="form-control"  name="endtime" value="{$set['endtime']}">
+
+                            <div class="input-group-addon"></div>
+
+                        </div>
+                        
+                       <div class="help-block">设置每天的什么时间段播放语音，如填8~18即每天8:00:00到18:59:59，若不填不受时间限制</div>
+
+                    </div>
+
+                </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">背景音乐</label>
+                        <div class="col-sm-5">
+                            <label class='radio-inline'>
+                                <input type="radio" name="music_open" value="0" {if empty($set['music_open'])} checked {/if}>开启
+                            </label>
+                            <label class='radio-inline'>
+                                <input type="radio" name="music_open" value="1" {if $set['music_open']==1}checked {/if}>关闭
+                            </label>
+                            <div class="help-block">背景音乐开启后会一直循环播放</div>
+                        </div>
+                    </div>
+                    <div class="form-group music-params" {if $set['music_open']==1}style="display:none"{/if}>
+                         <label class="col-xs-12 col-sm-3 col-md-2 control-label">背景音乐语音文件</label>
+                        <div class="col-sm-9 col-xs-12">
+                            {php echo tpl_form_field_audio('music', $set['music']);}
+                            <div class="help-block"></div>
+                        </div>
+                    </div>
+                     <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">背景音乐音量</label>
+                    <div class="col-sm-9">
+                        <input name="bg_volume" class="form-control" type="text" value="{$set['bg_volume']}">
+                        <span class="help-block">[0,1] 0为静音,1为最大声</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">合成语音音量</label>
+                    <div class="col-sm-9">
+                        <input name="audio_volume" class="form-control" type="text" value="{$set['audio_volume']}">
+                       <span class="help-block">[0,1] 0为静音,1为最大声</span>
+                    </div>
+                </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">进场语音</div>
+                        <div class="panel-body">
+                            <div class="form-group">
+                                <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">进场语音</label>
+                                <div class="col-sm-5">
+                                    <label class="radio-inline">
+                                        <input type="radio" name="entry_audio_open" value="0" {if empty($set['entry_audio_open'])} checked="checked"{/if} />关闭
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" name="entry_audio_open" value="1" {if $set['entry_audio_open']==1} checked="checked"{/if} />上传音频文件
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" name="entry_audio_open" value="2" {if $set['entry_audio_open']==2} checked="checked"{/if} />语音文字合成
+                                    </label>
+                                    <span class="help-block">用于网页打开时的语音播放，只播放一次</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group entry-audio-text-params" {if $set['entry_audio_open']!=2}style="display:none"{/if}>
+                                 <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">声音类型</label>
+                                <div class="col-sm-7">
+                                    <select  name="entry_audio_per" id="entry_audio_per">
+                                        <option value="0" {if !$entry_audio['per']}selected{/if}>普通女声</option>
+                                        <option value="1" {if $entry_audio['per']==1}selected{/if}>普通男生</option>
+                                        <option value="3" {if $entry_audio['per']==3}selected{/if}>情感合成-度逍遥</option>
+                                        <option value="4" {if $entry_audio['per']==4}selected{/if}>情感合成-度丫丫</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group entry-audio-text-params" {if $set['entry_audio_open']!=2}style="display:none"{/if}>
+                                 <label class="col-xs-12 col-sm-3 col-md-2 control-label">进场语音文字</label>
+                                <div class="col-sm-7">
+                                    <textarea id="audio_text" name="entry_audio_text"  class="form-control richtext" cols="5" rows="5">{$entry_audio['text']}</textarea>	
+                                    <span class="help-block">该文字用于生成音频播放,小于512个中文字或者英文数字。</br>多音字写法：重(chong2)报集团 2表示拼音音调 </span></div>
+
+                            </div>
+                            <div class="form-group entry-audio-file-params" {if $set['entry_audio_open']!=1}style="display:none"{/if}>
+                                 <label class="col-xs-12 col-sm-3 col-md-2 control-label">语音文件</label>
+
+                                <div class="col-sm-9 col-xs-12">
+                                    {php echo tpl_form_field_audio('entry_audio_music', $entry_audio['music']);}
+                                    <div class="help-block">不填写会是默认音乐，仅在用户领取红包时播放</div>
+                                </div>
+                            </div>
+
+
+                        </div>
+                    </div>
+
+
+                    <div class="panel panel-default">
+                        <div class="panel-heading">空闲语音</div>
+                        <div class="panel-body">
+                            <div class="form-group">
+                                <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">空闲语音</label>
+                                <div class="col-sm-5">
+                                    <label class="radio-inline">
+                                        <input type="radio" name="free_audio_open" value="0" {if empty($set['free_audio_open'])} checked="checked"{/if} />关闭
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" name="free_audio_open" value="1" {if $set['free_audio_open']==1} checked="checked"{/if} />上传音频文件
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" name="free_audio_open" value="2" {if $set['free_audio_open']==2} checked="checked"{/if} />语音文字合成
+                                    </label>
+                                    <span class="help-block">用于没有红包数据时的语音播放</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group free-audio-text-params" {if $set['free_audio_open']!=2}style="display:none"{/if}>
+                                 <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">声音类型</label>
+                                <div class="col-sm-7">
+                                    <select  name="free_audio_per" id="free_audio_per">
+                                        <option value="0" {if !$free_audio['per']}selected{/if}>普通女声</option>
+                                        <option value="1" {if $free_audio['per']==1}selected{/if}>普通男生</option>
+                                        <option value="3" {if $free_audio['per']==3}selected{/if}>情感合成-度逍遥</option>
+                                        <option value="4" {if $free_audio['per']==4}selected{/if}>情感合成-度丫丫</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group free-audio-text-params" {if $set['free_audio_open']!=2}style="display:none"{/if}>
+                                 <label class="col-xs-12 col-sm-3 col-md-2 control-label">空闲语音文字</label>
+                                <div class="col-sm-7">
+                                    <textarea id="audio_text" name="free_audio_text"  class="form-control richtext" cols="5" rows="5">{$free_audio['text']}</textarea>	
+                                    <span class="help-block">该文字用于生成音频播放,小于512个中文字或者英文数字。</br>多音字写法：重(chong2)报集团 2表示拼音音调 </span>
+                                </div>
+                            </div>
+                            <div class="form-group free-audio-file-params" {if $set['free_audio_open']!=1}style="display:none"{/if}>
+                                 <label class="col-xs-12 col-sm-3 col-md-2 control-label">语音文件</label>
+
+                                <div class="col-sm-9 col-xs-12">
+                                    {php echo tpl_form_field_audio('free_audio_music', $free_audio['music']);}
+                                    <div class="help-block">不填写会是默认音乐，仅在用户领取红包时播放</div>
+                                </div>
+                            </div>
+
+
+                        </div>
+                    </div>
+
+
+
+                    <div class="panel panel-default">
+                        <div class="panel-heading">红包语音</div>
+                        <div class="panel-body">
+                            <div class="form-group">
+                                <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">红包语音</label>
+                                <div class="col-sm-5">
+                                    <label class="radio-inline">
+                                        <input type="radio" name="audio_open" value="0" {if empty($set['audio_open'])} checked="checked"{/if} />关闭
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" name="audio_open" value="1" {if $set['audio_open']==1} checked="checked"{/if} />开启
+                                    </label>
+                                    <span class="help-block">开启后读取红包领取记录</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group audio-params" {if empty($set['audio_open'])}style="display:none"{/if}>
+                                 <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">声音类型</label>
+                                <div class="col-sm-7">
+                                    <select  name="per" id="per">
+                                        <option value="0" {if empty($set['per'])}selected{/if}>普通女声</option>
+                                        <option value="1" {if $set['per']==1}selected{/if}>普通男生</option>
+                                        <option value="3" {if $set['per']==3}selected{/if}>情感合成-度逍遥</option>
+                                        <option value="4" {if $set['per']==4}selected{/if}>情感合成-度丫丫</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group audio-params" {if empty($set['audio_open'])}style="display:none"{/if}>
+                                 <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">播放非今日红包数据</label>
+                                <div class="col-sm-7">
+                                    <select name="audio_before" id="audio_before">
+                                        <option value="0" {if empty($set['audio_before'])}selected{/if}>关闭</option>
+                                        <option value="1" {if $set['audio_before']==1}selected{/if}>昨天</option>
+                                        <option value="2" {if $set['audio_before']==2}selected{/if}>前天</option>
+                                        <option value="7" {if $set['audio_before']==7}selected{/if}>前一周</option>
+                                        <option value="30" {if $set['audio_before']==30}selected{/if}>前一月</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group audio-params" {if empty($set['audio_open'])}style="display:none"{/if}>
+                                 <label class="col-xs-1 col-sm-1 col-md-2 control-label">红包语音文字规则</label>
+                                <div class="col-sm-9 col-xs-12">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>红包金额大于</th>
+                                                <th style="width:70%">语音文字</th>
+                                                <th class="text-right">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="J_countdown_rule">
+                                            {loop $set["rules"] $rule}
+                                            <tr>
+                                                <td>
+                                                    <input name="money[]" type="text" class="form-control" value="{$rule['money']}"></td>
+                                                <td>
+                                                    <input name="text[]" type="text" class="form-control" value="{$rule['text']}"></td>
+                                                <td class="text-right">
+                                                    <a class="btn btn-danger btn-sm" href="javascript:;" onclick="remove_countdown_rule(this);">
+                                                        删除
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {/loop}
+                                        </tbody>
+                                    </table>
+                                    <div class="help-block"><a href="javascript:void(0);" onclick="add_countdown_rule();" class="btn btn-warning">
+                                            <span class="glyphicon glyphicon-plus"></span>添加规则</a></div>
+                                    <div class="help-block">设置用户领取不用金额的红包播报不同类型的语音</br>变量 用户昵称：#昵称# 红包金额：#金额#</br>例如：恭喜，#昵称#刚刚领取了#金额#元红包</br>语音文字用于生成音频播放,小于512个中文字或者英文数字。</br>多音字写法：重(chong2)报集团 2表示拼音音调
+                                    </div>
+
+                                </div>
+                                <script type="text/javascript">
+                                    require(["jquery"], function ($) {
+                                    });
+                                    function add_countdown_rule() {
+                                        var html = '';
+                                        html += '<tr>';
+                                        html += '<td><input name="money[]" type="text" class="form-control" value=""></td>';
+                                        html += '<td><input name="text[]" type="text" class="form-control" value=""></td>';
+                                        html += '<td class="text-right"><a class="btn btn-danger btn-sm" href="javascript:;" onclick="remove_countdown_rule(this)">删除</a></td>';
+                                        html += '</tr>';
+                                        $("#J_countdown_rule").append(html);
+                                    }
+                                    function remove_countdown_rule(ele) {
+                                        if (!confirm('删除后将不可恢复,确定删除吗?'))
+                                            return false;
+                                        $(ele).parents("tr").remove();
+                                    }
+                                </script>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="form-group col-sm-12">
+                        <input type="hidden" name="token" value="{$_W['token']}" /> 
+                        <input type="hidden" name="id" value="{$id}" /> 
+                        <input type="submit" name="submit" value="提交" class="btn btn-primary col-lg-1" />
+                    </div>
+
+                </div>
+        </form>
+    </div>
+</div>
+
+<!--活动-->
+<div id="J_fansModal" class="modal fade">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">选择活动</h4>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <input id="search_keyword" type="text" class="form-control" value="" placeholder="请输入活动名称">
+                    <span class="input-group-btn">
+                        <button id="search_shops" type="button" class="btn btn-default">搜索</button>
+                    </span> </div>
+                <div class="table-responsive">
+                    <table class="table table-hover" style="table-layout: fixed;">
+                        <thead>
+                        <th class="text-left">ID</th>
+                        <th class="text-center">活动名称</th>
+                        <th class="text-right">操作</th>
+                        </thead>
+                        <tbody id="J_search_result">
+                            <tr>
+                                <td colspan="3" align="center">请输入条件搜索想要参与高音喇叭的活动</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+
+    $(':radio[name="entry_audio_open"]').click(function () {
+        if (this.checked) {
+            $('.entry-audio-text-params').hide();
+            $('.entry-audio-file-params').hide();
+            if ($(this).val() == '2') {
+                $('.entry-audio-text-params').show();
+            } else if ($(this).val() == '1') {
+                $('.entry-audio-file-params').show();
+            }
+        }
+    });
+
+    $(':radio[name="audio_open"]').click(function () {
+        if (this.checked) {
+            if ($(this).val() == '1') {
+                $('.audio-params').show();
+            } else {
+                $('.audio-params').hide();
+            }
+        }
+    });
+
+    $(':radio[name="free_audio_open"]').click(function () {
+        if (this.checked) {
+            $('.free-audio-text-params').hide();
+            $('.free-audio-file-params').hide();
+            if ($(this).val() == '2') {
+                $('.free-audio-text-params').show();
+            } else if ($(this).val() == '1') {
+                $('.free-audio-file-params').show();
+            }
+        }
+    });
+    var URL = "{php echo $this->createWebUrl('soprano', array('op'=>'get_activitys'));}";
+    function remove_fans(ele) {
+        $(ele).parents(".J_input-group").remove();
+    }
+
+    require(['jquery', 'util'], function ($, util) {
+        $(function () {
+            $("#J_Add").on("click", function () {
+                $('#J_AdvBox').append($('#J_AdvBox').children().eq(0).clone(true));
+            });
+            $(".J_Close").on("click", function () {
+                $(this).parents(".J_Adv").remove();
+            });
+            //搜索活动
+            $("#search_shops").on("click", function () {
+     
+                    $.post(URL, {"keyword": $("#search_keyword").val()}, function (json) {
+                        //循环
+                        var html = '';
+                        $.each(json, function (index, value) {
+                            html += '<tr><td class=" text-left">' + value.id + '</td>';
+                            html += '<td class="text-center" >' + value.name + '</td>';
+                            html += '<td class="text-right"><a class="J_Choose_Fans" data-id="' + value.id + '" data-name ="' + value.name + '" href="javascript:;">选择该活动</a></td></tr>';
+                        });
+                        $("#J_search_result").html(html);
+                    }, "json");
+         
+            });
+            $(document).on("click", ".J_Choose_Fans", function () {
+                var html = '<div class="J_input-group input-group" style="margin-top:6px;">';
+                html += '<span class="input-group-addon">' + $(this).data("id") + '</span>';
+                html += '<input type="hidden" name="aids[]" value="' + $(this).data("id") + '"/>';
+                html += '<input type="text" name="activitynames[]" value="' + $(this).data("name") + '" class="form-control" readonly>';
+                html += '<div class="input-group-btn">';
+                html += '<button class="btn btn-default" type="button" onclick="remove_fans(this);">删除</button>';
+                html += '</div>';
+                html += '</div>';
+                $('#J_openid_box').append(html);
+                $('#J_fansModal').modal('hide');
+            });
+        });
+    });
+</script>
+{/if} 
+{template 'common/footer'}

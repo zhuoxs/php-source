@@ -1,0 +1,131 @@
+{template 'common/header'}
+<ul class="nav nav-tabs">
+	<li {if $type == 1} class="active" {/if}><a href="{php echo $this->createWebUrl('buying')}">抢购</a></li>
+	<li {if $type == 2} class="active" {/if}><a href="{php echo $this->createWebUrl('buying',array('type' =>2))}">首页推荐列表</a></li>
+</ul>
+{if $operation == 'display'}
+<div class="main panel panel-default">
+	<div class="panel-body table-responsive">
+		<table class="table table-hover">
+			<thead class="navbar-inner">
+				<tr>
+					<th style="width:30px;">商品ID</th>
+					<th>权重</th>
+					<th>商品名</th>
+					<th>价格</th>
+					<th>时间</th>
+					<th>库存</th>
+					<th>图片</th>
+					<th >操作</th>
+				</tr>
+			</thead>
+			<tbody>
+				{loop $list $value}
+				<tr>
+					<td>{$value['id']}</td>
+					<td>{$value['weight']}</td>
+					<td style="width: 300px;"><a href="{$value['url']}">{$value['goodsname']}</a></td>
+					<td>{$value['marketprice']}
+					<?php if($value['type'] == 1) {
+					echo '|'.$value['zhekou'].'折';
+					}?>
+					</td>
+					<td><?php echo date('Y-m-d H:i:s',$value['start']);?>~<br>
+						<?php echo date('Y-m-d H:i:s',$value['end']);?>
+					</td>
+					<td>{$value['remain']}</td>
+					<td><img style="height: 100px;width:100px;" src="<?php echo formatArrImage($value['thumb']);?>"/></td>
+					<td style="text-align:left;">
+						<a href="{php echo $this->createWebUrl('buying', array('op' => 'post', 'type' => $value['type'],'goods_id' => $value['id']))}" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="top" title="修改"><i class="fa fa-edit"></i></a>
+						<a href="javascript:void(0);" data-id="{$value['goods_id']}"  data-type="{$value['type']}" class="buying-del btn btn-danger btn-sm" data-toggle="tooltip" data-placement="top" title="删除"><i class="fa fa-times"></i></a>
+					</td>
+				</tr>
+				{/loop}
+			</tbody>
+		</table>
+		{$pager}
+	</div>
+</div>
+<script>
+	require(['bootstrap','datetimepicker'],function($){
+	    var del_url = "{php echo $this->createWebUrl('buying', array('op' => 'delete'))}";
+		$('.btn').hover(function(){
+			$(this).tooltip('show');
+		},function(){
+			$(this).tooltip('hide');
+		});
+		$('.buying-del').click(function () {
+		    if(!confirm('确定删除此条记录')) {
+		        return false;
+			}
+			var id = $(this).attr('data-id');
+			$.get(del_url,{
+			    goods_id:id,
+				type:$(this).attr('data-type')
+			},function (data) {
+				if(data.code!= 0){
+                    alert('删除失败');
+				}
+                location.reload();
+            },'JSON');
+        });
+	});
+</script>
+{elseif $operation == 'post'}
+<div class="main">
+	<form action="" method="post" class="form-horizontal form" enctype="multipart/form-data" >
+		<input type="hidden" name="id" value="{$gou['goods_id']}" />
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				编辑抢购
+			</div>
+			<div class="panel-body">
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 control-label"><span style='color:red'>*</span>商品ID</label>
+					<div class="col-sm-7 col-xs-7">
+						<input type="hidden" name="id" value="{$gou['id']}">
+						<input type="hidden" name="type" value="{$gou['type']}">
+						<input type="text" disabled value="{$gou['goods_id']}">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 control-label">权重</label>
+					<div class="col-sm-9 col-xs-12">
+						<input type="text" name="weight" class="form-control" value="{$gou['weight']}" />
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 control-label">
+						<?php if($gou['type'] == 1){
+						echo '抢购开始~结束时间';}else{
+						echo '首页显示时间';}?>
+						</label>
+					<div class="col-sm-9 col-xs-12 col-lg-4">
+						<input placeholder="整数" type="text" id="start" class="form-control span7 time_pick" name="start" value="{php echo date('Y-m-d H:i:s',$gou['start']);}">
+						<input placeholder="整数" type="text" id="end" class="form-control span7 time_pick" name="end" value="{php echo date('Y-m-d H:i:s',$gou['end']);}">
+
+						<input <?php if($gou['type'] != 1){?> style="display: none" <?php }?> type="text" placeholder="抢购折扣（1-10之间）" name="zhekou" class="form-control span7" value="{$gou['zhekou']}" />
+					</div>
+				</div>
+			</div>
+		</div>
+<div class="form-group col-sm-12">
+	<input type="submit" name="submit" value="提交" class="btn btn-primary col-lg-1" />
+	<input type="hidden" name="token" value="{$_W['token']}" />
+	</div>
+	</form>
+</div>
+<script>
+    require(['jquery','datetimepicker'],function($){
+        $('.time_pick').datetimepicker({
+            format: 'Y-m-d H:i:s',
+            language: 'zh-CN',
+            step:10,
+            startDate:new Date()
+
+        });
+    });
+</script>
+
+{/if}
+{template 'common/footer'}

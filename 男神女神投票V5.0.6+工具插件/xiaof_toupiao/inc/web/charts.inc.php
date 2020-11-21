@@ -1,0 +1,2 @@
+<?php
+ goto Ax1vS; QALkw: if (!empty($_GPC["\x73\x69\144"])) { goto Ro08q; } goto IUHmJ; Ax1vS: defined("\x49\116\x5f\111\x41") or exit("\101\x63\x63\x65\163\163\x20\x44\x65\x6e\x69\x65\x64"); goto EtwqT; RRFfW: $settinglists = $this->getAllsetting(); goto QALkw; btpFd: $_GPC["\163\x69\x64"] = isset($settings["\x69\x64"]) ? $settings["\x69\144"] : 0; goto QG3lk; IUHmJ: $settings = end($settinglists); goto btpFd; QG3lk: Ro08q: goto p_EuZ; EtwqT: global $_W, $_GPC; goto RRFfW; p_EuZ: include $this->template("\x63\150\141\x72\164\163");

@@ -1,0 +1,122 @@
+{{include file='common/head.html'}}
+<style type='text/css'>
+</style>
+<script type='text/javascript'>
+	var action = '{{$action}}';
+</script>
+<script type='text/javascript'>
+var ddlog = null;
+function del_articletype(name)
+{
+	if (!confirm("如果删除该分类,属于该分类的文章都会被删除，确认是否继续?")) {
+		return ;
+	}	
+	verificationAjax('?c=articletype&a=del','name='+name);
+}
+function piao_articletype_add(name,value)
+{
+	ddlog = null;
+	var html = '<form name="form2" action="javascript:articletype_add()" method="post">';
+	if (typeof name == undefined || name==null) {
+		html += '<p id="namep">分类字段:<input name="name" id="articletypename" >*必填,英文字母(如help)</p>';
+	}
+	html += '<p>分类名称:<input name="value" id="articletypevalue">*必填,中文</p>';
+	if (typeof name == undefined || name == null) {
+		html += '<p>分类级别:<select name="level" id="articletypelevel"><option value=1>一级分类</option></select></p>';
+	}
+	html += '<p><input type="button" onclick=articletype_add("'+name+'") value="提交"></p>';
+	html += '</form>';
+	var dlog = art.dialog({id:'id22',content:'',icon: '',top:'30%'});
+	dlog.content(html);
+	dlog.title("添加文章分类");
+	ddlog = dlog;
+	if (name) {
+		$("#articletypename").val(name);
+		$('#namep').hide();
+		$("#articletypevalue").val(value);
+	}
+}
+function articletype_add(name)
+{
+	
+	var url = '?c=articletype&a=add';
+	if (name && name.toString()!= 'undefined') {
+		url = '?c=articletype&a=set';
+	}else {
+		var name =  $("#articletypename").val();
+		var level = $("#articletypelevel").val();
+	}
+	var value = $("#articletypevalue").val();
+	$.ajax({url:url,data:{name:name,value:value,level:level},dataType:'json',success:function(ret){
+		ddlog.close();
+		if (ret['code'] != 200) {
+			art.dialog({id:'id223',time:2,content:ret['msg'] ? ret['msg'] : '添加失败',icon: 'error',top:'30%'});
+		}else {
+			art.dialog({id:'id223',time:2,content:"添加成功",icon: 'succeed',top:'30%'});
+		}
+		setTimeout(function(){
+			window.location = window.location;
+		},2000);
+	}});
+}
+
+</script>
+<body bgcolor='#ffffff' text='#000000' leftmargin='0' topmargin='0'	>
+	<div align="center">
+		<div class="wid_main mar_main" align="left">
+			<div class="block_top" align="left">当前位置：文章管理 -->列表</div>
+			<table class="table_main2" cellpadding="0" cellspacing="1">
+				<tr>
+					<td>
+					
+						<form action='{{$action}}' method='post'>
+							直达:<input name='page' size='5'>
+							&nbsp;页<input	type='submit' value='GO'>
+							&nbsp;&nbsp;<input type='button' value='添加分类' onclick='piao_articletype_add()'>
+							&nbsp;&nbsp;<input type='button' onclick='create_cache("?c=articletype&a=createCache")' value='更新缓存' title='将数据生成缓存文件，用于前台调用，减少数据库查询'>
+						</form>
+						
+					</td>
+				</tr>
+			</table>
+			<table class="table_main2" cellpadding=0 cellspacing=1>
+				<tr bgcolor=ebf0fa>
+					<td class="td_bgc right_2">操作</td>
+					<td class="td_bgc right_2">分类字段</td>
+					<td class="td_bgc right_2">分类名称</td>
+					<td class="td_bgc right_2">分别级别</td>
+				</tr>
+				{{foreach from=$list item=row}}
+				<tr>
+					<td class="td_bgc right_2">
+						[<a	href='javascript:del_articletype("{{$row.name}}")'>删除</a>]
+						[<a	href='javascript:piao_articletype_add("{{$row.name}}","{{$row.value}}")'>修改</a>]
+					</td>
+					<td class="td_bgc right_2">{{$row.name}}</td>
+					<td class="td_bgc right_2">{{$row.value}}</td>
+					<td class="td_bgc right_2">{{$row.level}}</td>
+				</tr>
+				{{/foreach}}
+				<tr>
+					<td colspan="8" align="right">
+					{{if $page>1}}
+					 <a	href='{{$action}}&page=0&search={{$search}}'>首页</a> 
+					 <a	href='{{$action}}&page={{$page-1}}&search={{$search}}'>上一页</a>
+					{{else}}
+					首页 上一页
+					{{/if}}
+					{{if $page!=$total_page}}
+					 <a	href='{{$action}}&page={{$page+1}}&search={{$search}}'>下一页</a> 
+					 <a	href='{{$action}}&page={{$total_page}}&search={{$search}}'>尾页</a>
+					{{else}}
+					下一页 尾页 
+					{{/if}}
+					{{$page}}/{{$total_page}}&nbsp;
+						共计{{$count}}记录&nbsp;
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</body>
+</html>

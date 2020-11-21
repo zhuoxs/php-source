@@ -1,0 +1,2 @@
+<?php
+ require_once __DIR__ . "\x2f\x2e\56\x2f\x61\165\164\157\154\157\x61\144\56\160\x68\160"; use Qiniu\Processing\PersistentFop; goto cUrpR; rKSAR: $status = PersistentFop::status($persistentId); goto GvXeE; cUrpR: $persistentId = "\172\60\x2e\65\66\64\144\x35\146\x39\x37\67\x38\x32\x33\x64\145\64\70\x61\x38\x35\145\x63\x65\65\x39"; goto rKSAR; GvXeE: var_dump($status);

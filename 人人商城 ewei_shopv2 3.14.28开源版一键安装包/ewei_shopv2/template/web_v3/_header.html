@@ -1,0 +1,388 @@
+{template '_header_base'}
+
+{php $system=m('system')->init()}
+{php $sysmenus = m('system')->getMenu(true)}
+{php $notice_redis_click = m('common')->getSysset('notice_redis')}
+{php $wxpaycert_view_click = m('common')->getSysset('wxpaycert_view')}
+<!--多商户图片选择器删除图片没有方法解决  只能在此隐藏-->
+{if strpos( $_W['script_name'] , 'merchant' ) != false}
+<style>
+    .del{
+        opacity:0;
+    }
+</style>
+{/if}
+<div class="wb-header" style="position: fixed;">
+    <div class="logo {if !empty($system['foldnav'])}small{/if}">
+        {if !empty($copyright) && !empty($copyright['logo'])}
+            <img class='logo-img' src="{php echo tomedia($copyright['logo'])}" onerror="this.src='../addons/ewei_shopv2/static/images/nologo.png'"/>
+        {/if}
+    </div>
+    <ul>
+        <li>
+            <a href="{php echo webUrl()}" data-toggle="tooltip" data-placement="bottom" title="管理首页"><i class="icow icow-homeL"></i></a>
+        </li>
+        <li class="wb-shortcut"><a id="showmenu"><i class="icow icow-list"></i></a></li>
+    </ul>
+    <div class="wb-topbar-search expand-search" id="navwidth">
+        <form action="" id="topbar-search">
+            <input type="hidden" name="c" value="site" />
+            <input type="hidden" name="a" value="entry" />
+            <input type="hidden" name="m" value="ewei_shopv2" />
+            <input type="hidden" name="do" value="web" />
+            <input type="hidden" name="r" value="search" />
+            <div class="input-group">
+                <input type="text" placeholder="请输入关键词进行功能搜索..." class="form-control wb-search-box" maxlength="15" name="keyword" {if $system['merch']} data-merch="1"{/if} />
+                <span class="input-group-btn">
+                    <a class="btn wb-header-btn"><i class="icow icow-sousuo-sousuo"></i></a>
+                </span>
+            </div>
+        </form>
+        <div class="wb-search-result">
+            <ul></ul>
+        </div>
+    </div>
+    <div class="wb-header-flex"></div>
+
+    <ul>
+        <!--{if $system['right_menu']['system']}-->
+            <!--<li data-toggle="tooltip" data-placement="bottom" title="">-->
+                <!--<a href="{php echo webUrl('system')}">-->
+                    <!--系统管理-->
+                <!--</a>-->
+            <!--</li>-->
+        <!--{/if}-->
+        {if p('app')}
+            {php  $appsets = p('app')->getGlobal()}
+            {if !empty($appsets['mmanage']['qrcode'])}
+                {php  $appqrcode = tomedia($appsets['mmanage']['qrcode'])}
+            {/if}
+        {/if}
+
+		{if !empty($appqrcode)}
+	        <li   class="wxcode_box">
+	            <i class="icow icow-erweima2" style="margin-right: 10px"></i>手机管理后台
+	            <img src="../addons/ewei_shopv2/static/images/new.gif" alt=""  style="margin-top: -10px ">
+	            <div class="wx_code">
+	                <img src="{$appqrcode}" alt="">
+	                <div class="text">扫码登录小程序管理后台</div>
+	            </div>
+	        </li>
+
+        {/if}
+        {if $_W['role'] == 'founder'}
+        <li>
+            <a href="{php echo webUrl('system')}" >
+                <i class="icow icow-qiehuan" style="margin-right: 10px;color: #f34347"></i>系统管理
+            </a>
+        </li>
+        {/if}
+        <li class="dropdown {if $system['merch']}auto{/if} ellipsis">
+            <a class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                {if strlen($system['right_menu']['menu_title'])>60}
+                {php echo substr($system['right_menu']['menu_title'],0,60).'...'}
+                {else}
+                {$system['right_menu']['menu_title']}
+                {/if}
+                <span></span>
+            </a>
+
+            <ul class="dropdown-menu" {if $system['routes'][0]=='system'}style="width:100%;left:0"{/if}>
+                {if $system['routes'][0]!='system'}
+                {loop $system['right_menu']['menu_items'] $right_menu_item}
+                    {if !is_array($right_menu_item)}
+                    {else}
+                        <li>
+                            <a href="{$right_menu_item['href']}" {if $right_menu_item['blank']}target="_blank"{/if}>
+                                <i class="icow {$right_menu_item['icow']} " style="font-size: 30px;"></i>
+                                <span style="display: block">{$right_menu_item['text']}</span>
+                            </a>
+                        </li>
+                    {/if}
+                {/loop}
+                <li {if $system['merch']} style="display: none" {/if}><a href="./index.php?c=account&a=display&">返回系统</a></li>
+                {else}
+                <li style="margin-top: 0;height: 50px;line-height: 50px;{if $system['merch']}display: none{/if}"><a href="./index.php?c=account&a=display&">返回系统</a></li>
+                {/if}
+            </ul>
+        </li>
+        <li data-toggle="tooltip" data-placement="bottom" title="退出登录" data-href="{$system['right_menu']['logout']}">
+            <a class="wb-header-logout"><i class="icow icow-exit"></i></a>
+        </li>
+    </ul>
+
+    <div class="fast-nav {if !empty($system['foldnav'])}indent{/if}">
+        {if !empty($system['history'])}
+            <div class="fast-list history">
+                <span class="title">最近访问</span>
+                {loop $system['history'] $history_item}
+                    <a href="{$history_item['url']}">{$history_item['title']}</a>
+                {/loop}
+                <a href="javascript:;" id="btn-clear-history" {if $system['merch']} data-merch="1"{/if}>清除最近访问</a>
+            </div>
+        {/if}
+        <div class="fast-list menu">
+            <span class="title">全部导航</span>
+            {loop $sysmenus['shopmenu'] $index $shopmenu}
+                <a href="javascript:;" {if $index==0}class="active"{/if} data-tab="tab-{$index}">{$shopmenu['title']}</a>
+            {/loop}
+            {if !empty($system['funbar']['open']) && empty($system['merch'])}
+                <a href="javascript:;" class="bold" data-tab="funbar">自定义快捷导航</a>
+            {/if}
+        </div>
+        <div class="fast-list list">
+            {loop $sysmenus['shopmenu'] $index $shopmenu}
+                <div class="list-inner {if $index==0}in{/if}" data-tab="tab-{$index}">
+                    {loop $shopmenu['items'] $shopmenu_item}
+                        <a href="{$shopmenu_item['url']}">{$shopmenu_item['title']}</a>
+                    {/loop}
+                </div>
+            {/loop}
+            {if !empty($system['funbar']['open']) && empty($system['merch'])}
+                <div class="list-inner" data-tab="funbar" id="funbar-list">
+                    {loop $system['funbar']['data'] $funbar_item}
+                        <a href="{$funbar_item['href']}" style="{if $funbar_item['bold']}font-weight: bold;{/if} color: {$funbar_item['color']};">{$funbar_item['text']}</a>
+                    {/loop}
+                    <a href="javascript:;" class="text-center funbar-add-btn"><i class="fa fa-plus"></i> 添加快捷导航</a>
+                    {if !empty($system['funbar']['data'])}
+                        <a href="{php echo webUrl('sysset/funbar')}" class="text-center funbar-add-btn"><i class="fa fa-edit"></i> 编辑快捷导航</a>
+                    {/if}
+                    {template 'funbar'}
+                </div>
+            {/if}
+        </div>
+    </div>
+</div>
+
+
+    <!-- 一级导航 -->
+    <div class="wb-nav {if !empty($system['foldnav'])}fold{/if}">
+        <p class="wb-nav-fold"><i class="icow icow-zhedie"></i></p>
+        <ul id="navheight">
+            {loop $sysmenus['menu'] $sysmenu}
+                <li {if $sysmenu['active']}class="active"{/if}>
+                    <a href="{php echo empty($sysmenu['index'])? webUrl($sysmenu['route']): webUrl($sysmenu['route']. '.'. $sysmenu['index'])}">
+                        {if $sysmenu['route']=='plugins'}
+                        <svg class="iconplug" aria-hidden="true">
+                            <use xlink:href="#icow-yingyong3"></use>
+                        </svg>
+                        {else}
+                            {if !empty($sysmenu['icon'])}
+                                <i class="icow icow-{$sysmenu['icon']}" {if !empty($sysmenu['iconcolor'])} style="color: {$sysmenu['iconcolor']}"{/if}></i>
+                            {/if}
+                        {/if}
+                        {if $sysmenu['route'] == 'sysset'}
+                            <span class="wb-nav-title {if empty($notice_redis_click['notice_redis_click']) || !isset($notice_redis_click['notice_redis_click'])}point{/if}">{$sysmenu['text']}</span>
+                        {else}
+                            <span class="wb-nav-title">{$sysmenu['text']}</span>
+                        {/if}
+                    </a>
+                    <span class="wb-nav-tip">{$sysmenu['text']}</span>
+                </li>
+            {/loop}
+            {if $_W['role'] == 'founder'}
+            {if $system['routes'][0]=='system'}
+            <li class="sysset">
+                {loop $system['right_menu']['menu_items'] $right_menu_item}
+                    {if !is_array($right_menu_item)}
+                    {else}
+
+                        <a href="{$right_menu_item['href']}" {if $right_menu_item['blank']}target="_blank"{/if}>
+                            <i class="icow {$right_menu_item['icow']}"></i>
+                            <span class="wb-nav-title">{$right_menu_item['text']}</span>
+                        </a>
+
+                    {/if}
+                {/loop}
+            </li>
+            {else}
+            <li class="sysset">
+                <i class="icow icow-qiehuan"></i>
+
+                <span class="wb-nav-title" data-href="">系统管理</span>
+                <div class="syssetsub">
+                    <div class="syssettitle">系统管理</div>
+                    <a href="{php echo webUrl('system/plugin')}"><i class="icow icow-plugins "></i>应用</a>
+                    <a href="{php echo webUrl('system/copyright')}"><i class="icow icow-banquan"></i>版权</a>
+                    <a href="{php echo webUrl('system/data')}"><i class="icow icow-statistics"></i>数据</a>
+                    <a href="{php echo webUrl('system/site')}"><i class="icow icow-wangzhan"></i>网站</a>
+                    <a href="{php echo webUrl('system/auth')}"><i class="icow icow-iconfont-shouquan"></i>授权</a>
+                    <a href="{php echo webUrl('system/auth/upgrade')}"><i class="icow icow-gengxin"></i>更新</a>
+                    <span class="syssettips"></span>
+                </div>
+            </li>
+            {/if}
+            {/if}
+        </ul>
+
+
+    </div>
+    <!--低分辨率一级导航显示不全问题 start-->
+    <script>
+        var navheight = document.getElementById('navheight');
+        var navwidth = document.getElementById('navwidth')
+        var vh = document.body.clientHeight;
+        var vw = screen.width;
+        if(vh < 800){
+            navheight.classList.add("wb-navheight");
+        } else {
+            navheight.classList.remove("wb-navheight");
+        }
+        if(vw < 1300 ){
+            navwidth.classList.add("wb-navwidth");
+        }
+    </script>
+    <!--低分辨率一级导航显示不全问题 end-->
+
+
+    <!-- 二级导航 -->
+    {if !$no_left && !empty($sysmenus['submenu']['items'])}
+        <div class="wb-subnav">
+          <div style="width: 100%;height: 100%;overflow-y: auto">
+              {template '_tabs'}
+              <div class="wb-subnav-fold icow"></div>
+          </div>
+        </div>
+    {/if}
+ 
+    {if !$no_right}
+        <div class="wb-panel {if empty($system['foldpanel'])}in{/if}">
+            <div class="panel-group" id="panel-accordion">
+                {ifp 'order.list.status1|order.list.status4'}
+                <div class="panel panel-default">
+                    <div class="panel-heading" data-toggle="collapse" data-parent="#panel-accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                        <h4 class="panel-title">
+                            <i class="icow icow-dingdan"></i> <a class="news">订单消息</a> <span></span>
+                        </h4>
+                    </div>
+                    <div id="collapseOne" class="panel-collapse collapse {if $_W['action']!='shop.comment' && $_W['routes']!='shop.index.notice' && ($_W['action']!='apply' && $_W['plugin']!='commission')}in{/if}" aria-labelledby="headingOne">
+                        <ul class="panel-body">
+                            {if !empty($system['order1'])}
+                            <li class="panel-list">
+                                <a class="panel-list-text" href="{php echo webUrl('order/list/status1')}">待发货订单 <span class="pull-right text-warning">({$system['order1']})</span> </a>
+                            </li>
+                            {/if}
+                            {if !empty($system['order4'])}
+                            <li class="panel-list">
+                                <a class="panel-list-text" href="{php echo webUrl('order/list/status4')}">维权订单<span class="pull-right text-danger">({$system['order4']})</span></a>
+                            </li>
+                            {/if}
+                            {if empty($system['order1'])&&empty($system['order4'])}
+                            <li class="panel-list">
+                                <div class="panel-list-text text-center">暂无消息提醒</div>
+                            </li>
+                            {/if}
+                        </ul>
+                    </div>
+                </div>
+                {/if}
+                {if $system['notice']!='none' && !$system['merch']}
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="headingTwo" data-toggle="collapse" data-parent="#panel-accordion" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                            <h4 class="panel-title">
+                                <i class="icow icow-gonggao"></i> <a>内部公告</a> <span></span>
+                            </h4>
+                        </div>
+                        <div id="collapseTwo" class="panel-collapse collapse {if $_W['routes']=='shop.index.notice'}in{/if}" role="tabpanel" aria-labelledby="headingTwo">
+                            <ul class="panel-body">
+                                {if empty($system['notice'])}
+                                <li class="panel-list small">
+                                    <div class="panel-list-text text-center">暂无消息提醒</div>
+                                </li>
+                                {else}
+                                {loop $system['notice'] $notice_item}
+                                <li class="panel-list small">
+                                    <a class="panel-list-text" href="javascript:;" data-toggle="ajaxModal" data-href="{php echo webUrl('shop/index/view', array('id'=>$notice_item['id']))}" title="{$notice_item['title']}">{$notice_item['title']}</a>
+                                </li>
+                                {/loop}
+                                <li class="panel-list small" style="padding: 10px;">
+                                    <a class="panel-list-text text-center" href="{php echo webUrl('shop/index/notice')}"><span class="text-primary">查看更多</span></a>
+                                </li>
+                                {/if}
+                            </ul>
+                        </div>
+                    </div>
+                {/if}
+                {if !$system['merch']}
+                    {ifp 'commission.apply.view1|commission.apply.view2'}
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="headingThree" data-toggle="collapse" data-parent="#panel-accordion" href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                            <h4 class="panel-title">
+                                <i class="icow icow-yongjinmingxi"></i> <a>佣金提现</a> <span></span>
+                            </h4>
+                        </div>
+                        <div id="collapseThree" class="panel-collapse collapse {if $_W['action']=='apply' && $_W['plugin']=='commission'}in{/if}" role="tabpanel" aria-labelledby="headingFour">
+                            <ul class="panel-body">
+                                {if !empty($system['commission1'])}
+                                <li class="panel-list">
+                                    <a class="panel-list-text" href="{php echo webUrl('commission/apply', array('status'=>1))}">待审核申请<span class="pull-right text-warning">({$system['commission1']})</span></a>
+                                </li>
+                                {/if}
+                                {if !empty($system['commission2'])}
+                                <li class="panel-list">
+                                    <a class="panel-list-text" href="{php echo webUrl('commission/apply', array('status'=>2))}">待打款申请<span class="pull-right text-danger">({$system['commission2']})</span></a>
+                                </li>
+                                {/if}
+                                {if empty($system['commission1'])&&empty($system['commission2'])}
+                                <li class="panel-list">
+                                    <div class="panel-list-text text-center">暂无消息提醒</div>
+                                </li>
+                                {/if}
+                            </ul>
+                        </div>
+                    </div>
+                    {/if}
+                {/if}
+                {ifp 'shop.comment.edit'}
+                <div class="panel panel-default">
+                    <div class="panel-heading" role="tab" id="headingFour" data-toggle="collapse" data-parent="#panel-accordion" href="#collapseFour" aria-expanded="false" aria-controls="collapseThree">
+                        <h4 class="panel-title">
+                            <i class="icow icow-pingjia"></i> <a>评价</a> <span></span>
+                        </h4>
+                    </div>
+                    <div id="collapseFour" class="panel-collapse collapse {if $_W['action']=='shop.comment'}in{/if}" role="tabpanel" aria-labelledby="headingFour">
+                        <ul class="panel-body">
+                            {if empty($system['comment'])}
+                            <li class="panel-list">
+                                <div class="panel-list-text text-center">暂无消息提醒</div>
+                            </li>
+                            {else}
+                            <li class="panel-list">
+                                <a class="panel-list-text" href="{php echo webUrl('shop/comment')}">待审核评价<span class="pull-right text-warning">({$system['comment']})</span></a>
+                            </li>
+                            {/if}
+                        </ul>
+                    </div>
+                </div>
+                {/if}
+                <!--系统更新-->
+                {if $_W['isfounder'] && $_W['routes']!='system.auth.upgrade' && $_W['role'] !='vice_founder'}
+                <div class="panel panel-default">
+                    <div class="panel-heading" role="tab" id="headingFive" data-toggle="collapse" data-parent="#panel-accordion" href="#collapseFive" aria-expanded="false" aria-controls="collapseThree">
+                        <h4 class="panel-title">
+                            <i class="icow icow-lingdang1"></i> <a style="position:relative;">系统提示 <i class="systips"></i></a> <span></span>
+                        </h4>
+                    </div>
+                    <div id="collapseFive" class="panel-collapse collapse {if $_W['action']=='shop.comment'}in{/if}" role="tabpanel" aria-labelledby="headingFour">
+                        <ul class="panel-body">
+                            <li class="panel-list">
+                                <div class="panel-list-text nomsg">暂无消息提醒</div>
+                                <div class="panel-list-text upmsg" style="display: none; max-height: none;">
+                                    <div>检测到更新</div>
+                                    <div>新版本 <span id="sysversion">------</span></div>
+                                    <div>新版本 <span id="sysrelease">------</span></div>
+                                    <div>
+                                        <a class="text-primary" href="{php echo webUrl('system/auth/upgrade')}">立即更新</a>
+                                        <a class="text-warning" href="javascript:check_ewei_shopv2_upgrade_hide();" style="margin-left: 15px;">暂不提醒</a>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                {/if}
+            </div>
+        </div>
+        <div class="wb-panel-fold {if empty($system['foldpanel'])}in{/if}">{if !empty($system['foldpanel'])}<i class="icow icow-info"></i> 消息提醒{else}<i class="fa fa-angle-double-right"></i> 收起面板{/if}</div>
+    {/if}
+    <div class="wb-container {if !empty($system['foldpanel'])}right-panel{/if}">

@@ -1,0 +1,428 @@
+{template 'web/common/common'}
+{template 'web/order/navbar'}
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/order_common.css" />
+<style>
+    #daochu_entry .layui-input-block{margin-left: 0;}
+</style>
+
+<blockquote class="layui-elem-quote layui-text">
+    积分商城订单
+</blockquote>
+<div class="layui-card" style="padding-top: 30px">
+    <form id="myform" class="layui-form" action="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'integral_order','status'=>$_GPC['status'],'action'=>'order')}" method="post">
+        <div class="layui-form-item">
+            <input type="text" style="width: 200px;float: left;margin-right: 20px;height: 34px;" name="order_number" placeholder="订单编号" class="layui-input">
+            <input type="text" style="width: 200px;float: left;margin-right: 20px;height: 34px;" name="name"  placeholder="姓名" class="layui-input">
+            {php echo tpl_form_field_daterange('time', $data['old_time'], $time = false);}
+            <input type="hidden" name="flag" value="">
+            <input type="hidden" name="order_type" value="3">
+            <button type="button" lay-filter="formSubmit" lay-submit="" id="submitForm" class="layui-btn layui-btn-sm" ><i class="layui-icon">&#xe615;</i>搜索</button>
+            <a class="layui-btn layui-btn-sm" id="outOrder" href="#"><i class="layui-icon">&#xe601;</i>批量导出</a>
+        </div>
+
+        <!-- 导出订单信息选择 -->
+        <div id="daochu_mask" class="zent-dialog-backdrop" style="display: none"></div>
+        <div id="daochu_entry" class="zent-dialog" style="display: none; margin: auto">
+            <div class="zent-dialog-header">
+                <div class="zent-dialog-title">选择需要导出的信息</div>
+                <a id="daochu_cha" onclick="daochu_cross()" href="javascript:;" class="zent-dialog-close">×</a>
+            </div>
+            <div class="zent-dialog-body">
+                <div class="layui-form-item" pane="">
+                    <div class="layui-input-block">
+                        <input type="checkbox" name="checkAll" id="checkAll" value="" lay-filter="checkAll" lay-skin="primary" title="全选">
+                    </div>
+                </div>
+
+                <div class="layui-form-item" pane="">
+                    <div class="layui-input-block">
+                        <input type="checkbox" name="field[]" class="field" value="order_number,订单号" lay-filter="check_one" lay-skin="primary" title="订单号">
+                        <input type="checkbox" name="field[]" class="field" value="total_price,总金额" lay-filter="check_one" lay-skin="primary" title="总金额">
+                        <input type="checkbox" name="field[]" class="field" value="create_time,下单时间" lay-filter="check_one" lay-skin="primary" title="下单时间">
+                        <input type="checkbox" name="field[]" class="field" value="status_txt,订单状态" lay-filter="check_one" lay-skin="primary" title="订单状态">
+                        <input type="checkbox" name="field[]" class="field" value="pay_method,支付方式" lay-filter="check_one" lay-skin="primary" title="支付方式">
+                        <input type="checkbox" name="field[]" class="field" value="name,收件人" lay-filter="check_one" lay-skin="primary" title="收件人">
+                        <input type="checkbox" name="field[]" class="field" value="phone,收件人手机号" lay-filter="check_one" lay-skin="primary" title="收件人手机号">
+                        <input type="checkbox" name="field[]" class="field" value="address,收货地址" lay-filter="check_one" lay-skin="primary" title="收货地址">
+                        <input type="checkbox" name="field[]" class="field" value="pra_price,实际付款" lay-filter="check_one" lay-skin="primary" title="实际付款">
+                        <input type="checkbox" name="field[]" class="field" value="send_time,发货时间" lay-filter="check_one" lay-skin="primary" title="发货时间">
+                        <input type="checkbox" name="field[]" class="field" value="confirm_time,收货时间" lay-filter="check_one" lay-skin="primary" title="收货时间">
+                        <input type="checkbox" name="field[]" class="field" value="send_number,快递单号" lay-filter="check_one" lay-skin="primary" title="快递单号">
+                        <input type="checkbox" name="field[]" class="field" value="goods_info,商品信息" lay-filter="check_one" lay-skin="primary" title="商品信息">
+                        <input type="checkbox" name="field[]" class="field" value="express_company,快递公司" lay-filter="check_one" lay-skin="primary" title="快递公司">
+                        <input type="checkbox" name="field[]" class="field" value="send_price,运费" lay-filter="check_one" lay-skin="primary" title="运费">
+                        <input type="checkbox" name="field[]" class="field" value="remark,买家留言" lay-filter="check_one" lay-skin="primary" title="买家留言">
+                        <input type="checkbox" name="field[]" class="field" value="manager_remark,卖家备注" lay-filter="check_one" lay-skin="primary" title="卖家备注">
+                    </div>
+                </div>
+            </div>
+            <div class="zent-dialog-footer">
+                <button class="zent-btn zent-btn-primary js-save" type="button" id="outFiledOrder" lay-filter="outFiledOrder" lay-submit="">确认</button>
+            </div>
+        </div>
+
+    </form>
+</div>
+<div class="layui-card" style="margin-bottom: 100px;">
+
+    <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief" style="top: 200px">
+        <ul class="layui-tab-title">
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'integral_order','is_all'=>1,'action'=>'order')}" ><li class="{if $_GPC['is_all']==1}layui-this{/if}" >全部</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'integral_order','status'=>0,'action'=>'order')}"><li class="{if isset($_GPC['status']) && $_GPC['status']==0}layui-this{/if}">未支付</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'integral_order','status'=>1,'action'=>'order')}"><li class="{if $_GPC['status']==1}layui-this{/if}">待发货</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'integral_order','status'=>2,'action'=>'order')}"><li class="{if $_GPC['status']==2}layui-this{/if}">已发货</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'integral_order','status'=>3,'action'=>'order')}"><li class="{if $_GPC['status']==3}layui-this{/if}">已完成</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'integral_order','status'=>4,'action'=>'order')}"><li class="{if $_GPC['status']==4}layui-this{/if}">申请取消</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'integral_order','status'=>5,'action'=>'order')}"><li class="{if $_GPC['status']==5}layui-this{/if}">已取消</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'integral_order','is_recycel'=>1,'action'=>'order')}"><li class="{if $_GPC['is_recycel']==1}layui-this{/if}">回收站</li></a>
+        </ul>
+
+    </div>
+    <div class="layui-form order" style="margin-top: 60px">
+        <!--头部-->
+        <div class="list-header">
+            <div class="list-header-item goods-cell">商品</div>
+            <div class="list-header-item price-cell">单价/数量</div>
+            <div class="list-header-item aftermarket-cell">售后</div>
+            <div class="list-header-item time-cell">下单时间</div>
+            <div class="list-header-item state-cell">订单状态</div>
+            <div class="list-header-item pay-price-cell">实付金额</div>
+            <div class="list-header-item operate-cell">操作</div>
+        </div>
+
+        <!--开始订单列表-->
+        <div class="order-form" style="height: initial;">
+            {if $data['list']}
+                <div class="order-list">
+                    {loop $data['list'] $key $item}
+                    <div class="list-item">
+                        <div class="list-item-header">
+                            <div class="list-item-header-row">
+                                <div>
+                                    <p class="order-no">下单时间：{$item['create_time']}</p>
+                                    <p class="order-no">订单号：{$item['order_number']}</p>
+                                    <p class="commercial_tenant" style="color: gray;">用户名 (UID) ： {$item['nickname']}  ({$item['uid']})</p>
+                                </div>
+                                <div class="top-opration">
+                                    <a class="layui-btn layui-btn-primary layui-btn-xs" href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'integral_edit','id'=>$item['id'],'action'=>'order')}">
+                                        <i class="iconfont icon-information_o"></i>详情
+                                    </a>
+                                    <!-- recycle bin -->
+                                    {if $item['is_recycel']==1}
+                                    <a href="#" class="layui-btn layui-btn-primary layui-btn-xs move_into_recycel" data-id="{$item['id']}" data-type="1">
+                                        <i class="iconfont icon-Initialization"></i>移出回收站
+                                    </a>
+                                    <a href="#" class="layui-btn layui-btn-primary layui-btn-xs delete_order" data-id="{$item['id']}" data-type="1">
+                                        <i class="iconfont icon-el-icon-dev-delete"></i>删除
+                                    </a>
+                                    {else}
+                                    <a href="#" class="layui-btn layui-btn-primary layui-btn-xs move_into_recycel" data-id="{$item['id']}" data-type="1">
+                                        <i class="iconfont icon-huishouzhan"></i>放入回收站
+                                    </a>
+                                    {/if}
+                                </div>
+                            </div>
+                        </div>
+                        <table class="list-item-body-table">
+                            <tbody class="list-item-body">
+                            <tr class="list-item-row">
+                                <td class="goods-item-cell-td">
+                                    {loop $item['orderDetail'] $k $v}
+                                    <div class="goods-item-cell">
+                                        <img class="goods-info__img" src="{$v['cover']}" alt="">
+                                        <div class="goods-info__info">
+                                            <div class="goods-title">
+                                                <a href="#" rel="noopener noreferrer" target="_blank" class="new-window" title="{$v['goods_name']}">{$v['goods_name']}</a>
+                                                {if $v['skuName']!='' }
+                                                <p>规格：<span style="color: red;">{$v['skuName']}</span></p>
+                                                {/if}
+                                            </div>
+                                            <div></div>
+                                        </div>
+                                        <div class="goods-info__price">
+                                            <div>{$v['price']}积分</div>
+                                            <div>({$v['count']}件)</div>
+                                        </div>
+                                    </div>
+                                    {/loop}
+                                </td>
+                                <td class="aftermarket-cell" rowspan="1">
+                                    <div class="aftermarket">
+                                        {if $item['apply_delete']==1}
+                                        <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','id'=>$item['id'],'action'=>'refund')}">
+                                        <button type="button" class="cancel-order layui-btn layui-btn-danger layui-btn-xs">同意退款</button></a>
+                                        <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','id'=>$item['id'],'op'=>'deny_cancel_integral_order','action'=>'order')}">
+                                            <button type="button" class="cancel-order layui-btn layui-btn-xs">拒绝退款</button></a>
+                                        {/if}
+                                    </div>
+                                </td>
+
+                                <td class="time-cell" rowspan="1">{$item['create_time']}</td>
+                                <td rowspan="1" class="state-cell">
+                                    <div class="td-cont">
+                                        <div class="order-state"><div>
+                                            {$item['status_txt']}
+                                        </div></div>
+                                    </div>
+                                </td>
+                                <td class="pay-price-cell" rowspan="1">
+                                    <div><span>{$item['pra_price']}</span></div>
+                                </td>
+                                <td class="recover-cell" rowspan="1">
+                                    <!--{if $item['is_recycle']==1}-->
+                                    <!--<button class="layui-btn layui-btn-xs move_into_recycel" data-id="{$item['id']}" data-type="2">移出回收站</button>-->
+                                    <!--<button class="layui-btn layui-btn-xs delete_order" data-id="{$item['id']}" data-type="1">删除</button>-->
+                                    <!--{else}-->
+                                    <!--<button class="layui-btn layui-btn-xs move_into_recycel" data-id="{$item['id']}" data-type="1">移入回收站</button>-->
+                                    <!--{/if}-->
+
+                                    {if $item['status_code']==0}
+                                    <p style="color: orangered">待付款</p>
+                                    {/if}
+
+                                    {if $item['status_code']==1 && $item['send_method']==0}
+                                    <p style="color: #40E0D0;margin-bottom: 10px;">待发货</p>
+                                    <a href="#" class="layui-btn layui-btn-xs showSendDialog" data-id="{$item['id']}">
+                                        <i class="iconfont icon-export"></i>确认发货
+                                    </a>
+                                    {/if}
+
+                                    {if $item['status_code']==1 && $item['send_method']==1}
+                                    <p style="color: limegreen;margin-bottom: 10px;">待自提</p>
+                                    {/if}
+
+                                    {if $item['status_code']==2}
+                                    <p style="color: orange;margin-bottom: 10px;">待收货</p>
+                                    <a href="#" class="layui-btn layui-btn-xs ConfirmGoods"  data-id="{$item['id']}">
+                                        <i class="iconfont icon-hezi"></i>确认收货
+                                    </a>
+                                    {/if}
+
+                                    {if $item['status_code']==3}
+                                    <p style="color: #409d40;margin-bottom: 10px;">已完成</p>
+                                    {/if}
+
+                                    {if $item['status_code']==5}
+                                    <p>已取消</p>
+                                    {/if}
+                                </td>
+                            </tr>
+                            <tr class="buyer-msg">
+                                <td colspan="8"  style="background: white;color: gray;border-bottom: none">收货人：{$item['name']}  联系电话：{$item['phone']}  收货地址：{$item['address']}</td>
+                            </tr>
+                            {if $item['remark']!=''}
+                            <tr class="buyer-msg">
+                                <td colspan="8" style="border-bottom: none">买家备注：{$item['remark']}</td>
+                            </tr>
+                            {/if}
+                            </tbody>
+                        </table>
+                    </div>
+                    {/loop}
+                </div>
+            {else}
+            <div style="text-align: center;width: 100%;">暂时还没有相关的订单</div>
+            {/if}
+        </div>
+
+        <div style="text-align: right;">{$data['pager']}</div>
+    </div>
+</div>
+
+
+
+<!-- delivery dialog -->
+<div id="deliveryMask" class="zent-dialog-backdrop" style="display: none;"></div>
+<div id="deliveryContain" class="zent-dialog" style="display: none; top: 250px;">
+    <input type="hidden" name="send_order_id" value="">
+    <div class="zent-dialog-header">
+        <div class="zent-dialog-title">发货</div>
+        <a id="order_status_cha" href="javascript:;" class="zent-dialog-close hideSendDialog">×</a>
+    </div>
+    <div class="zent-dialog-body">
+        <div class="layui-form-item">
+            <label class="layui-form-label">快递公司</label>
+            <div class="layui-input-block">
+                <select name="express_company" id="express_company" style="width: 70%;">
+                    <option value="">请选择快递公司</option>
+                    <option value="EMS">EMS</option>
+                    <option value="圆通">圆通</option>
+                    <option value="中通">中通</option>
+                    <option value="韵达">韵达</option>
+                    <option value="申通">申通</option>
+                    <option value="百世汇通">百世汇通</option>
+                    <option value="顺丰速运">顺丰速运</option>
+                    <option value="DHL">DHL</option>
+                    <option value="畅灵">畅灵</option>
+                    <option value="德邦">德邦</option>
+                    <option value="顺兴">顺兴</option>
+                    <option value="如风达">如风达</option>
+                    <option value="优速">优速</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">快递单号</label>
+            <div class="layui-input-block">
+                <input type="text" name="send_number" value="{$orderData['send_number']}" placeholder="快递单号" class="layui-input">
+            </div>
+        </div>
+    </div>
+    <div class="zent-dialog-footer">
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="zent-btn zent-btn-primary js-save" type="button" id="sendGoods" data-ordertype='1'>立即发货</button>
+                <button class="zent-btn hideSendDialog" type="button" style="margin-left: 15px;">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{template 'common/footer'}
+<script src="../addons/kundian_farm/resource/layui.js" charset="utf-8"></script>
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+
+<script type="text/javascript">
+
+    layui.use(['form','layer'], function() {
+        var $ = layui.jquery, layer = layui.layer;
+        var form = layui.form;
+
+        form.on('submit(formSubmit)',function (data) {
+            $("input[name='flag']").val('');
+
+            var formData = data.field;
+            let start=formData["time[start]"];
+            let end=formData["time[end]"];
+            let url = "{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'integral_order','action'=>'order')}";
+            if(formData['order_number']){
+                url+="&order_number="+formData['order_number'];
+            }
+            if(formData['name']){
+                url+="&name="+formData['name'];
+            }
+            url+='&start='+start+'&end='+end;
+            window.location.href=url;
+            return false;
+        })
+
+        /** 导出订单 */
+        form.on('submit(outFiledOrder)',function (data) {
+            $("input[name='flag']").val(true);
+            var formData = data.field;
+            let start=formData["time[start]"];
+            let end=formData["time[end]"];
+            let url = "{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'integral_order','action'=>'order')}";
+            if(formData['order_number']){
+                url+="&order_number="+formData['order_number'];
+            }
+            if(formData['name']){
+                url+="&name="+formData['name'];
+            }
+            url+='&start='+start+'&end='+end+"&flag=true";
+            $("#myform").attr("action",url);
+            $("#myform").submit();
+        })
+
+
+        /** 导出订单*/
+        $("#outOrder").click(function () {
+            $("#daochu_mask").show();
+            $("#daochu_entry").show();
+        })
+
+        /** 将订单移入或移除回收站 */
+        $(".move_into_recycel").click(function(){
+            console.log("sdsd");
+            var that=$(this);
+            var id=$(this).attr('data-id');
+            var type=$(this).attr('data-type');
+            if(type==1){
+                var title="确定移入回收站吗?";
+            }else{
+                var title="确定移出回收站吗?";
+            }
+            let url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'move_into_integral_recycel','version_id'=>$_GPC['version_id'])}";
+            updateData(url,{order_id:id,type:type},'确认删除该订单吗?');
+        });
+
+        /** 删除订单 */
+        $(".delete_order").click(function () {
+            var id=$(this).attr('data-id');
+            let url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'deleteIntegralOrder','version_id'=>$_GPC['version_id'])}";
+            updateData(url,{order_id:id},'订单删除后将无法找回，确认删除该订单吗？');
+        })
+
+        //全选
+        form.on('checkbox(checkAll)', function(data){
+            var a = data.elem.checked;
+            if(a == true){
+                $(".field").prop("checked", true);
+                form.render('checkbox');
+            }else{
+                $(".field").prop("checked", false);
+                form.render('checkbox');
+            }
+        });
+
+        //其中一个不选，取消全选
+        form.on('checkbox(check_one)', function(data){
+            var item = $(".field");
+            for(var i=0;i<item.length;i++){
+                if(item[i].checked == false){
+                    $("#checkAll").prop("checked", false);
+                    form.render('checkbox');
+                }
+            }
+        });
+
+
+        /** show the delivery dialog*/
+        $(".showSendDialog").click(function () {
+            let order_id=$(this).attr("data-id");
+            $("#deliveryMask").show();
+            $("#deliveryContain").show();
+            $("input[name='send_order_id']").val(order_id);
+        })
+
+        $(".hideSendDialog").click(function () {
+            let order_id=$(this).attr("data-id");
+            $("#deliveryMask").hide();
+            $("#deliveryContain").hide();
+        })
+
+        /** delivery goods*/
+        $("#sendGoods").click(function () {
+            $("#deliveryMask").hide();
+            $("#deliveryContain").hide();
+            let orderid=$("input[name='send_order_id']").val();
+            let send_number=$("input[name='send_number']").val();
+            let express_company=$("#express_company").val();
+            var url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'send_integral_goods','action'=>'order')}"
+            if(send_number==''){
+                alert("请填写配送单号！");
+                return false;
+            }
+            updateData(url,{order_id:orderid,send_number:send_number,express_company:express_company},'确认发货吗？');
+        })
+
+        /** Confirm the goods */
+        $(".ConfirmGoods").click(function () {
+            let order_id=$(this).attr("data-id");
+            var url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'confirmIntegralGoods','action'=>'order')}"
+            updateData(url,{order_id:order_id},'确认收货吗？');
+        })
+
+    })
+
+    function daochu_cross(){
+        daochu_mask.style.display = "none";
+        daochu_entry.style.display ="none";
+        $(document.body).css({
+            "overflow-y": "auto"
+        });
+    }
+
+</script>

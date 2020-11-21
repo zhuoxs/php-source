@@ -1,0 +1,137 @@
+{template 'common/header'}
+<SCRIPT src="{STATIC_ROOT}/js/jquery.lazyload.min.js" type=text/javascript></SCRIPT>
+<meta name="referrer" content="never">
+<style>
+    .l_tableWrap .l_table_tit .l_formBar {
+        border: 0;
+        float: left;
+        font-size: 0;
+    }
+    .y_sele {
+        display: inline-block;
+        padding: 5px 0 12px 12px;
+    }
+    .y_sele_tit {
+        font-size: 14px;
+        padding: 0 0 0 10px;
+    }
+    .l_table_search{
+        margin-left: 10px;
+        margin-bottom: 5px;
+    }
+</style>
+<div class="clearfix">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            文章列表
+        </div>
+        <div class="table-responsive panel-body" style="overflow:visible;">
+            <div class="l_table_tit clearfix">
+                <div class="btn-group l_table_search">
+                    <a href="{php echo $this->createWebUrl('article', array('op' => 'edit'))}" class="btn btn-success">添加文章</a>
+                </div>
+            </div>
+            <style>
+                .table > thead > tr > td, .table > tbody > tr > td, .table > tfoot > tr > td {
+                    white-space: normal;
+                }
+            </style>
+            <table class="table table-hover">
+                <tr>
+                    <th style="width: 120px;">ID</th>
+                    <th style="width: 190px">标题</th>
+                    <th>图片</th>
+                    <th>来源</th>
+                    <th>点赞</th>
+                    <th>阅读</th>
+                    <th>时间</th>
+                    <th style="width: 120px; text-align: center;">操作</th>
+                </tr>
+                {loop $list $row}
+                <tr>
+
+                    <td>
+                        <p class="form-control-static">
+                            {$row['id']} - (<?php echo $row['jump']? '链接':'本地';?>)
+                        <a style="color: red;"><?php if($row['type']==2){echo '图集';}elseif($row['type']==3){echo '视频';}?></a>
+
+                        </p>
+                    </td>
+                    <td>
+                        <p class="form-control-static" title="{$row['buyproinfos']}">
+                            <a target="_blank" href="<?php echo $row['jump'] ? $row['url'] : $this->webmobileUrl('detail',['category_id' => $category_id,'id'=>$row['id']]);?>">{$row['title']}</a>
+                        </p>
+                    </td>
+                    <td>
+                        <p class="form-control-static">
+                         <?php $image = @json_decode($row['image'], true);
+                            if($image) {
+                               echo count($image).'图';
+                               echo '<img width="100px" src="'.formatArrImage($image[0])['url'].'"/>';
+                                }else{echo 0;} ?>
+
+                        </p>
+                    </td>
+                    <td>
+                        <p class="form-control-static">
+                            {$row['author']}
+                        </p>
+                    </td>
+
+                    <td>
+                        <p class="form-control-static">
+                            {$row['praise']}
+                        </p>
+                    </td>
+                    <td>
+                        <p class="form-control-static">
+                            {$row['read_times']}
+                        </p>
+                    </td>
+
+                    <td>
+                        <p class="form-control-static">
+                            {php echo date('Y-m-d H:i:s',$row['create_time']);}
+                        </p>
+                    </td>
+                    <td>
+                        <div class="form-control-static">
+                            <a class="btn btn-success btn-sm" href="{php echo $this->createWebUrl('article', array('op' => 'edit', 'id' => $row['id']))}" >编辑</a>
+                            <a href="javascript:void(0);" class="del-article btn btn-default btn-sm" data-id="{$row['id']}" >删除</a>
+                        </div>
+                        <div>
+                            <!--<a href="{php echo $this->createWebUrl('comment', array('category_id' => $category_id, 'article_id' => $row['id']))}" class="btn btn-default btn-sm" >评论</a>-->
+                            <!--<a href="javascript:void(0);" class="slider btn btn-default btn-sm" data-id="{$row['id']}" >轮播</a>-->
+                        </div>
+                    </td>
+                </tr>
+                {/loop}
+            </table>
+        </div>
+        <div class="panel-body text-right">
+            {$pager}
+        </div>
+    </div>
+</div>
+<script>
+    var url_del = "{php echo $this->createWebUrl('article',['op' => 'del']);}";
+    $(function () {
+        $("img").lazyload({
+            placeholder : "images/loading.gif",
+            effect: "fadeIn"
+        });
+        $('.del-article').click(function () {
+            if(!confirm('确认删除此轮播文章？')) {
+                return false;
+            }
+            var id = $(this).attr('data-id');
+            $.post(url_del,{id:id},function (data) {
+                if(data.code != 0) {
+                    alert(data.msg);
+                }
+                location.reload();
+            },'JSON');
+        });
+    })
+    </script>
+{template 'common/footer'}

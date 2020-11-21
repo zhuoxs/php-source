@@ -1,0 +1,264 @@
+{php include wl_template('common/header');}
+<style type="text/css">
+	.only-time{position:absolute;right:0;bottom:0;height:1.5rem;line-height:1.25rem;color:#fff;font-size:.6rem;background:rgba(0,0,0,.6);border-radius:.5rem 0 0;padding:0 .5rem 0 .75rem}
+.wz-quan-list ul li a .pic .only-time span{margin-left:.25rem}
+.weui_btn + .weui_btn{margin-top: 0;}
+</style>
+<div class="page-group">
+    <div class="page page-current" id="page-order-list">
+    	<div class="buttons-tab" style="z-index: 100;">
+    	{if $orderstatus}
+    	  <a href="#tab1" class="tab-link button {if $status==''}active{/if}" id="">全部</a>
+	      <a href="#tab2" class="tab-link button {if $status=='0'}active{/if}" id="0">待付款</a>
+	      <a href="#tab3" class="tab-link button {if $status=='2'}active{/if}" id="2">待消费</a>
+	      <a href="#tab4" class="tab-link button {if $status=='4'}active{/if}" id="4">已消费</a>
+	      <a href="#tab5" class="tab-link button {if $status=='9'}active{/if}" id="9">已过期</a>
+    	{else}
+	      <a href="#tab1" class="tab-link button {if $status==''}active{/if}" id="">全部</a>
+	      <a href="#tab2" class="tab-link button {if $status=='0'}active{/if}" id="0">待付款</a>
+	      <a href="#tab3" class="tab-link button {if $status=='2'}active{/if}" id="2">待发货</a>
+	      <a href="#tab4" class="tab-link button {if $status=='3'}active{/if}" id="3">待收货</a>
+	      <a href="#tab5" class="tab-link button {if $status=='4'}active{/if}" id="4">已收货</a>
+	    {/if} 
+	    </div>
+		<div class="content infinite-scroll native-scroll" data-distance="10">
+		    <div class="tabs" style="padding-top: 2.8rem;">
+		    </div>
+		     <div class="list" style="background-color: #efeff4;">
+		        <div class="loading_more" style="padding-top: 15px;display: none;"><span class="loading"><i class="icon_load"></i>加载中......</span></div>
+		        <div class="error">加载失败，点击重新加载</div>
+		        <div class="noData">全部数据加载完毕</div>
+	   		</div>
+		</div>
+		{php include wl_template('common/footerbar');}
+	</div>
+</div>
+<script type="text/html" id="orderlist">
+{{# for(var i = 0, len = d.list.length; i < len; i++){ }}
+<div class="field">
+	<div class="field-head">
+	<span class="field-head-name"><i class="icon iconfont icon-shop"></i> {{ d.list[i].merchant_name }}</span>
+		{{# if(d.list[i].myStatus != 0){ }}
+		<span class="field-head-status field-head-status-light">
+		【{{ d.list[i].myStatus }}】
+  		</span>
+		{{# } }}
+  		<span class="field-head-status field-head-status-light">
+  			{{ d.list[i].statusname }}
+  		</span>
+  		<span class="field-head-status field-head-status-light">
+	  		{{# if(d.list[i].pay_type == 4){ }}
+	  		{{# if(d.list[i].is_hexiao == 0){ }}
+	  		（货到付款）
+	  		{{# } }}
+	  		{{# if(d.list[i].is_hexiao == 1){ }}
+	  		（上门自提）
+	  		{{# } }}
+	  		{{# } }}
+  		</span>
+    </div>
+    <a class="field-item" href="{{ d.list[i].ga }}">
+     	<div class="avatar">
+      		<img src="{{ d.list[i].gimg }}" class="j-avatar-img avatar-img">
+        </div>
+        <div class="contentt">
+	        <p class="delivery_tip">{{ d.list[i].name }}</p>
+	        <p class="order-time">{{ d.list[i].date }}</p>
+        	<p class="price">￥{{ d.list[i].pay_price }}</p>
+        	{{# if(d.list[i].status == 2){ }}
+        		{{# if(d.list[i].sytime >0 ){ }}
+        			<p class="only-time" id="timer{{ d.list[i].id }}" sytime="{{ d.list[i].sytime }}" ></p>
+        		{{# } }}
+        	{{# } }}
+        </div>
+        <i class="field-arrow icon-arrow-right"></i>
+    </a>
+    <div class="field-console">
+        <div class="field-console-btns">
+        	{{# if(d.list[i].deteflag){ }}
+	        <div class="weui_btn weui_btn_mini weui_btn_warn delete" oid="{{ d.list[i].id }}">删除订单</div>
+        	{{# } }}
+        	{{# if(d.list[i].status == 0){ }}
+	        <div class="weui_btn weui_btn_mini weui_btn_tran cancel" oid="{{ d.list[i].id }}">取消订单</div>
+	        <div class="weui_btn weui_btn_mini weui_btn_yellow field-btn-gray topay" oid="{{ d.list[i].id }}">去支付</div>
+	        {{# } else { }}
+	        {{# if(d.list[i].tocom){ }}
+	        <div class="weui_btn weui_btn_mini weui_btn_tran tocommebt" oid="{{ d.list[i].id }}">去评价</div>
+	        {{# } }}
+	        {{# if(d.list[i].ta){ }}
+	        <a href="{{ d.list[i].ta }}" class="external weui_btn weui_btn_mini weui_btn_tran">团详情</a>
+	        {{# } }}
+	        <a href="{{ d.list[i].a }}" class="weui_btn weui_btn_mini weui_btn_yellow field-btn-gray external">订单详情</a>
+	        {{# } }}
+	        {{# if(d.list[i].status ==2 && d.list[i].is_hexiao==1){ }}
+	        {{# if(d.list[i].lottery_status !=0 && (d.list[i].lottery_status==2 || d.list[i].lottery_status==7) || d.list[i].lottery_status ==0){ }}
+	        <a href="{{ d.list[i].qrcodea }}" class="weui_btn weui_btn_mini weui_btn_yellow field-btn-gray  combtn bottombar-btn-red open-popup"  ><i class="fa fa-qrcode"></i>&nbsp二维码</a>
+        	{{# } }}{{# } }}
+        </div>
+    </div>
+</div>
+{{# } }}
+</script>
+<script type="text/javascript">
+	$(document).on('click','#open',function(){
+		var orderid = $(this).attr('oid');
+      	$.post("{php echo app_url('order/order/qrcode')}",{orderid:orderid},function(d){
+			$('#ma').html(d.hexiaoma);
+		},"json");
+	});
+	$('.buttons-tab').find('a').click(function(){
+		var status = $(this).attr('id');
+		$(this).addClass('active').siblings().removeClass('active');
+		location.href = "{php echo app_url('order/order/list')}&status="+status;
+	});
+	//取消订单
+	$(document).on('click','.cancel',function(){
+		var orderid = $(this).attr('oid');
+		$.confirm('确认取消订单？',
+	        function () {
+	          	$.post("{php echo app_url('order/order/cancel')}",{orderid:orderid},function(d){
+					if(d.status == 1){
+					    $.toast('订单取消成功！');
+					    setTimeout(function () {
+							location.reload();
+						}, 1000);
+					}else{
+						$.toast(d.result);
+					}
+				},"json");
+	        }
+	    );
+	});
+	//删除订单
+	$(document).on('click','.delete',function(){
+		var orderid = $(this).attr('oid');
+		$.confirm('确认删除订单？',
+	        function () {
+	          	$.post("{php echo app_url('order/order/delete')}",{orderid:orderid},function(d){
+					if(d.status == 1){
+					    $.toast('订单删除成功！');
+					    setTimeout(function () {
+							location.reload();
+						}, 1000);
+					}else{
+						$.toast(d.result);
+					}
+				},"json");
+	        }
+	    );
+	});
+	
+	//支付订单
+	$(document).on('click','.topay',function(){
+		var orderid = $(this).attr('oid');
+      	$.post("{php echo app_url('order/order/topay')}",{orderid:orderid},function(d){
+			if(d.status == 1){
+				location.href = "{php echo app_url('pay/paytype')}"+'&orderid='+orderid+'&paytype=wechat';
+			}else{
+				$.toast(d.result);
+			}
+		},"json");
+	});
+	//去评论
+	$(document).on('click','.tocommebt',function(){
+	    $.showIndicator();
+	    var orderid = $(this).attr('oid');
+	   location.href = "{php echo app_url('member/comment')}&orderid="+orderid;
+	});
+	$(function () {
+	  'use strict';
+		$(document).on("pageInit", "#page-order-list", function(e, id, page) {
+		    var loading = false;
+		    var thispagesize = 10;
+		    var thispagesizemax = 0;
+		    var thispage = 1;
+		    function addItems(thispage, thispagesize) {
+		    	var status = "{$status}";
+		    	var ajaxurl = "{php echo app_url('order/order/ajax')}"+"&page="+thispage+"&pagesize="+thispagesize+"&status="+status;
+		    	$.ajax({
+						type: "POST",
+						url: ajaxurl,
+						dataType: 'json',
+						beforeSend: function(XMLHttpRequest) {
+							
+						},
+						success: function(data) {
+							thispagesizemax = data.total;
+							if (data.list.length > 0) {
+								var gettpl = document.getElementById('orderlist').innerHTML;
+								laytpl(gettpl).render(data, function(html){
+								    $(".tabs").append(html);
+								});
+							} else if (thispagesizemax > 0) {
+								$(".loading_more").remove();
+								$('.noData').show();
+							} else {
+								var html = '<div class="m-cart" id="s"><div class="empty" id="pro-view-6"><span style="display:block;">暂无订单数据</span><a href="{php echo app_url('goods/index')}" class="external">马上去逛逛~</a></div></div>';
+								if(thispage==1){
+									 $(".tabs").append(html);
+								}else{
+									$('.noData').show();
+								}
+								
+							}
+							$(".only-time").each(function(){
+							    var sytime = $(this).attr('sytime');
+							    var timeid = $(this).attr('id');
+							    if(sytime > 0){
+							    	addTimer(timeid, sytime);
+							    }
+							});
+						},
+						error:function(){
+						var html = '<div class="m-cart" id="s"><div class="empty" id="pro-view-6">暂无订单数据，<a href="{php echo app_url('goods/index')}" class="external">马上去逛逛~</a></div></div>';
+						$('.noData').show();
+					}
+					});
+		    }
+		    addItems(thispage,thispagesize);
+		     
+		    $(page).on('infinite', function() {
+		      	if (loading) return;
+		      	loading = true;
+		      	$(".loading_more").show();
+			   	setTimeout(function() {
+			        loading = false;
+			        thispage++;
+			        addItems(thispage,thispagesize);
+			        $(".loading_more").hide();
+			        $.refreshScroller();
+			    }, 1000);
+		    });
+		});
+	  $.init();
+	});
+	var addTimer = function () {     
+        var list = [],     
+            interval;     
+    
+        return function (id, time) {     
+            if (!interval)     
+                interval = setInterval(go, 1000);     
+            list.push({ ele: document.getElementById(id), time: time });     
+        }     
+    
+        function go() {     
+            for (var i = 0; i < list.length; i++) {     
+                list[i].ele.innerHTML = getTimerString(list[i].time ? list[i].time -= 1 : 0);     
+                if (!list[i].time)     
+                    list.splice(i--, 1);     
+            }     
+        }     
+    
+        function getTimerString(time) {     
+                d = Math.floor(time / 86400),     
+                h = Math.floor((time % 86400) / 3600),     
+                m = Math.floor(((time % 86400) % 3600) / 60),     
+                s = Math.floor(((time % 86400) % 3600) % 60);     
+            if (time>0){
+            	return "剩余：<span><label>" + d + "天</label><label>" + h + "小时</label><label>" + m + "分</label><label>" + s + "秒</label></span>";  
+            }
+        }     
+    } ();
+</script>
+{php include wl_template('common/footer');}

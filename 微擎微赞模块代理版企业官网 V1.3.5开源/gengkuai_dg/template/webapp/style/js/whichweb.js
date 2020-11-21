@@ -1,0 +1,25 @@
+var s=location.href;
+console.log(111)
+s=s.replace(/\?.*$/,'');
+s=s.replace(/^.*\//,'');
+if(s=="index.html"){
+	$("#index").addClass("active");
+	}
+if(s=="/module/"){
+	$("#module").addClass("active");
+	}
+if(s=="/#zhao"){
+	$("#zhao").addClass("active");
+	}
+if(s=="/mfcase/"){
+	$("#mfcase").addClass("active");
+	}
+if(s=="aboutus.html"){
+	$("#aboutus").addClass("active");
+	}
+if(s=="/dnews/"){
+	$("#dnews").addClass("active");
+	}
+if(s=="/zhidao/"){
+	$("#zhidao").addClass("active");
+}

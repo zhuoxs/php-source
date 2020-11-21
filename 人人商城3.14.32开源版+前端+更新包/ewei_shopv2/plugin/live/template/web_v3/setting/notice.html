@@ -1,0 +1,140 @@
+<style>
+    .notice-default{margin:5px 0 0 0;}
+</style>
+<div class="form-group">
+    <label class="col-sm-2 control-label">订阅消息通知</label>
+    <div class="col-sm-10 col-xs-12">
+        {ifp 'live.setting.edit'}
+            <div class="col-sm-6">
+                <select class="select2 is_advanced" name="tdata[livefollow_template]" style="width:210px;">
+                    <option value=''>[默认]订阅消息通知</option>
+                    {loop $template_group['livefollow'] $template_val}
+                    <option value="{$template_val['id']}" {if $tdata['livefollow_template'] == $template_val['id'] }selected{/if}>{$template_val['title']}</option>
+                    {/loop}
+                </select>
+            </div>
+            <div class="col-sm-4">
+                <label class="notice-default">
+                    <input class="js-switch small checkone"  type="hidden" name="tdata[livefollow_close_advanced]" data-type="tpl-advanced"   data-tag="livefollow" type="checkbox" value="{php echo intval($tdata['livefollow_close_advanced'])}" {if empty($tdata['livefollow_close_advanced'])}checked{/if}/>
+                </label>
+                <label style="display: none;">
+                    <img src="../addons/ewei_shopv2/static/images/loading.gif" width="20" alt=""/>
+                </label>
+            </div>
+        {else}
+            <div class='form-control-static'>{$template_val['title']}</div>
+        {/if}
+    </div>
+</div>
+<div class="form-group">
+    <label class="col-sm-2 control-label">直播间消息通知</label>
+    <div class="col-sm-10 col-xs-12">
+        {ifp 'live.setting.edit'}
+            <div class="col-sm-6">
+                <select class="select2 is_advanced" name="tdata[liveroom_template]" style="width:210px;">
+                    <option value=''>[默认]直播消息通知</option>
+                    {loop $template_group['liveroom'] $template_val}
+                    <option value="{$template_val['id']}" {if $tdata['liveroom_template'] == $template_val['id'] }selected{/if}>{$template_val['title']}</option>
+                    {/loop}
+                </select>
+            </div>
+            <div class="col-sm-1">
+                <label class="notice-default">
+                    <input class="js-switch small checkone" type="hidden" name="tdata[liveroom_close_advanced]" value="{php echo intval($tdata['liveroom_close_advanced'])}" data-type="tpl-advanced" data-tag="liveroom" type="checkbox" {if empty($tdata['liveroom_close_advanced'])}checked{/if}/>
+                </label>
+                <label style="display: none;">
+                    <img src="../addons/ewei_shopv2/static/images/loading.gif" width="20" alt=""/>
+                </label>
+            </div>
+            <div class="col-sm-5">
+                <div class="input-group">
+                    <span class="input-group-addon">直播开始前</span>
+                    <input type="number" class="form-control livenoticetime" name="data[livenoticetime]" value="{$data[livenoticetime]}">
+                    <span class="input-group-addon">分提醒</span>
+                </div>
+            </div>
+        {else}
+            <div class='form-control-static'>{$template_val['title']}</div>
+        {/if}
+    </div>
+</div>
+<script type="text/javascript">
+    $(function () {
+        //开启通知
+        $(".checkone").on("click",function (e) {
+            var _this =$(this);
+            var type = _this.data('type');
+            var val = _this.val();
+
+            var tag = _this.data('tag');
+            var stop = _this.data('stop');
+            if(stop==1){
+                return;
+            }
+            //判断是否开启模板通知
+            if(tag != '' && val==1&&type=='tpl-advanced') {
+                $(this).data('stop', 1);
+                $(this).parent().hide().next().show();
+
+                var data = {
+                    'tag': tag,
+                    checked:val
+                };
+                //申请微信模板,并将模板ID更新至数据库.
+                $.ajax({
+                    url: "{php echo webUrl('sysset/settemplateid')}",
+                    type:'get',
+                    dataType:'json',
+                    timeout : 3000, //超时时间设置，单位毫秒
+                    data:data,
+                    success:function(ret){
+                        var _this = $(".checkone[data-tag='"+ret.result.tag+"']");
+                        if (ret.result.status == '0') {
+                            this.value=0;
+                            _this.prev().val(1);
+                            _this.next().removeClass('checked');
+
+                            console.log(ret.result.messages);
+                            alert(ret.result.messages);
+                        }
+
+                        $(_this).data('stop', 0);
+                        $(_this).parent().show().next().hide();
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        $(".table").each(function () {
+                            var _this = $(this);
+                            _this.find(".checkone[data-type='tpl-advanced']").each(function () {
+                                $(this).data('stop', 0);
+                                $(this).parent().show().next().hide();
+                            });
+                        });
+                    }
+                });
+            }
+
+
+            var type = $(this).data('type');
+            var val = $(this).val();
+            if(val==0){
+                $(this).attr("checked","false").val("1").next().removeClass("checked");
+                //$(this).closest(".table").find(".checkall[data-type='"+type+"']").val("1").attr("checked","false").next().removeClass("checked");
+            }else{
+                $(this).attr("checked","true").val("0").next().addClass("checked");
+                var all = true;
+                $(this).closest(".table").find(".checkone[data-type='"+type+"']").each(function () {
+                    var val = $(this).val();
+                    if(val!='on' && val==1){
+                        all = false;
+                        return;
+                    }
+                });
+                if(all){
+                    $(this).closest(".table").find(".checkall[data-type='"+type+"']").val("0").attr("checked","true").next().addClass("checked");
+                }
+            }
+
+        });
+    })
+</script>
+<!--6Z2S5bKb5piT6IGU5LqS5Yqo572R57uc56eR5oqA5pyJ6ZmQ5YWs5Y+4-->

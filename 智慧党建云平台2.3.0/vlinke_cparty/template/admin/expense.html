@@ -1,0 +1,133 @@
+{template 'admin/common/header'}
+<ul class="we7-page-tab">
+<li class="active"><a href="{php echo $this->createWebUrl('admin',array('r'=>'expense'));}">党费记录 </a></li>
+
+<li class="pull-right"><a href="{php echo $this->createWebUrl('admin',array('r'=>'expcate'));}">党费类目</a></li>
+<li class="pull-right"><a href="{php echo $this->createWebUrl('admin',array('r'=>'expense'));}">党费记录</a></li>
+</ul>
+{if $op=='display'}
+
+<div class="panel panel-default">
+<div class="panel-heading">筛选</div>
+<div class="panel-body">
+<form action="" method="get" class="form-horizontal form" role="form">
+<input type="hidden" name="c" value="site" />
+<input type="hidden" name="a" value="entry" />
+<input type="hidden" name="m" value="vlinke_cparty" />
+<input type="hidden" name="do" value="admin" />
+<input type="hidden" name="r" value="expense" />
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label"> 所属组织</label>
+        <div class="col-sm-10">
+            <div class="input-group">
+                <input type="text" class="form-control" name="branchname" id="branchname" value="{$branch['name']}" placeholder="请输入组织名称点击查询并选择...">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" onclick="javascript:checkBranch();">点击查询</button>
+                </span>
+            </div>
+            <div class="help-block" id="branchbox"></div>
+        </div>
+    </div>
+    <input type="hidden" name="branchid" id="branchid" value="{$branch['id']}" />
+
+    {if !empty($cateid)}
+    <input type="hidden" name="cateid" value="{$cateid}" />
+    <div class="form-group">
+        <label class="col-sm-2 control-label">党费类目</label>
+        <div class="col-sm-10">
+            <input class="form-control" name="catename" type="text" placeholder="党费类目..." value="{$cate['name']}" readonly>
+        </div>
+    </div>
+    {/if}
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label">真实姓名</label>
+        <div class="col-sm-2">
+            <input class="form-control" name="realname" type="text" placeholder="党员真实姓名..." value="{$realname}">
+        </div>
+        <div class="col-sm-2">
+            <select class="form-control" name="status">
+                <option value="0" {if $status==0} selected {/if}>全部</option>
+                <option value="1" {if $status==1} selected {/if}>待支付</option>
+                <option value="2" {if $status==2} selected {/if}>已支付</option>
+            </select>
+        </div>
+        <div class="col-sm-6">
+            <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+            <button class="btn btn-default" name="output" value="1"><i class="fa fa-file"></i> 导出</button>
+            <button type="button" class="btn btn-default">总记录数：{$total['tol']}</button>
+            <button type="button" class="btn btn-default">总金额：{$total['paymoneytol']}</button>
+        </div>
+    </div>
+</form>
+</div>
+</div>
+
+<table class="table we7-table table-hover vertical-middle">
+<thead class="navbar-inner">
+    <tr>
+        <th style="width:10%;">ID</th>
+        <th style="width:40%;">信息</th>
+        <th style="width:10%;">金额</th>
+        <th style="width:20%;">状态/创建/支付时间</th>
+        <th style="width:20%; text-align:right;">
+            <a class="btn btn-success btn-sm" href="javascript:$('.trbox').show();"><i class="fa fa-eye"></i> 显示</a>
+            <a class="btn btn-success btn-sm" href="javascript:$('.trbox').hide();"><i class="fa fa-eye-slash"></i> 隐藏</a>
+        </th>
+    </tr>
+</thead>
+<tbody>
+    {loop $list $row}
+    <tr> 
+        <td>{$row['id']}</td>
+        <td>
+            <p>
+                <a href="{php echo $this->createWebUrl('admin',array('r'=>'expense','userid'=>$row['userid']))}">
+                <strong>{$row['realname']}-{$row['mobile']}</strong>
+                </a>
+            </p>
+            【<a href="{php echo $this->createWebUrl('admin',array('r'=>'expense','branchid'=>$row['branchid']))}">{$lbranchall[$row['branchid']]['name']}</a>】<a href="{php echo $this->createWebUrl('admin',array('r'=>'expense','cateid'=>$row['cateid']))}">{$row['name']}</a>
+        </td>
+        <td>{$row['paymoney']}</td>
+        <td>
+            <p>
+                {if $row['cstatus']==1}
+                <span class="label label-success">自由金额</span>
+                {elseif $row['cstatus']==2}
+                <span class="label label-primary">固定金额</span>
+                {elseif $row['cstatus']==3}
+                <span class="label label-info">指定党员</span>
+                {/if}
+                {if $row['status']==1}
+                <span class="label label-default">待支付</span>
+                {else}
+                <span class="label label-success">已支付</span>
+                {/if}
+            </p>
+            <p>{php echo date('Y-m-d H:i',$row['createtime'])}</p>
+            {if $row['status']==2}{php echo date('Y-m-d H:i',$row['paytime'])}{/if}
+        </td>
+        <td class="text-right">
+            <a class="btn btn-primary btn-sm" href="javascript:$('#trbox{$row['id']}').slideToggle();"><i class="fa fa-eye"></i> 详情</a>
+        </td>
+    </tr>
+    <tr class="trbox" id="trbox{$row['id']}" style="display: none;">
+        <td></td>
+        <td class="text-left" colspan="4">
+            <p>单号：{$row['paynumber']}</p>
+            备注：{$row['remark']}
+        </td>
+    </tr>
+    {/loop}
+    <tr>
+        <td class="text-right" colspan="5">
+            <a class="btn btn-success btn-sm" href="javascript:$('.trbox').show();"><i class="fa fa-eye"></i> 显示</a>
+            <a class="btn btn-success btn-sm" href="javascript:$('.trbox').hide();"><i class="fa fa-eye-slash"></i> 隐藏</a>
+        </td>
+    </tr>
+</tbody>
+</table>
+<div class="pull-right">{$pager}</div>
+{/if}
+{template 'admin/common/footer'}

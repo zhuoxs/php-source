@@ -1,0 +1,165 @@
+{extend name="common/index" /}
+{block name="search_box"}
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入关键字..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="type" id="state" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+{/block}
+
+<!--数据表-操作列-->
+{block name="tool_template"}
+<script type="text/html" id="dataTools">
+    {{# if(d.check_state==1 ){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnChecked">通过</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnCheckedFail">拒绝</a>
+    {{# } }}
+    {{# if(d.check_state==2 && d.state == 0 ){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnTake">打款</a>
+    {{# } }}
+</script>
+{/block}
+{block name="tool_box"}
+<!--工具栏-->
+<!--<div class="tool-box">-->
+    <!--<div class="layui-btn-group">-->
+        <!--<a href="javascript:;" id="btnBatchChecked" class="layui-btn layui-btn-danger layui-btn-sm">通过</a>-->
+        <!--<a href="javascript:;" id="btnBatchCheckedFail" class="layui-btn layui-btn-primary layui-btn-sm">打回</a>-->
+    <!--</div>-->
+<!--</div>-->
+{/block}
+{block name="table_config"}
+<script type="text/html" id="dataShowIndex">
+    <input type="checkbox" name="show_index" value="{{d.id}}" lay-skin="switch" lay-text="是|否" lay-filter="show_index" {{ d.show_index == 1 ? 'checked' : '' }}>
+</script>
+<script type="text/html" id="dataWdType">
+    {{# if(d.wd_type == 1){ }}
+    微信
+    {{# } }}
+    {{# if(d.wd_type == 2){ }}
+    支付宝
+    {{# } }}
+    {{# if(d.wd_type == 3){ }}
+    银行卡
+    {{# } }}
+</script>
+<script type="text/html" id="dataState2">
+    {{# if(d.check_state == 1){ }}
+    待审核
+    {{# } }}
+    {{# if(d.check_state == 3){ }}
+    已拒绝
+    {{# } }}
+    {{# if(d.check_state == 2 && d.state == 0){ }}
+    待打款
+    {{# } }}
+    {{# if(d.state == 1){ }}
+    已提现
+    {{# } }}
+    {{# if(d.state == 2){ }}
+    提现失败
+    {{# } }}
+</script>
+<script>
+    layui.use(['table','form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_list')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'leader_name', width:180, title: '团长',fixed:'left'},
+                {field:'create_time', width:180, title: '申请时间',sort:false},
+                {field:'wd_type', width:180, title: '提现方式',sort:true,templet: '#dataWdType'},
+                {field:'wd_account', width:180, title: '账号',sort:true},
+                {field:'wd_name', width:180, title: '姓名',sort:true},
+                {field:'wd_phone', width:180, title: '电话',sort:true},
+                {field:'amount', width:200, title: '提现金额',sort:true},
+                {field:'paycommission', width:250, title: '平台提成',sort:false},
+                {field:'ratesmoney', width:180,height:500, title: '转账手续费',sort:false},
+                {field:'money', width:180, title: '实际金额',sort:false},
+                {field:'state', width:180, title: '提现状态',sort:false,templet: '#dataState2'},
+                {field:'fail_reason', width:180, title: '打回原因',sort:false},
+                {field:'err_code', width:180, title: '失败原因',sort:false},
+                {field:'o',fixed:'right',width:200, title: '操作',templet: '#dataTools'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+        //        搜索
+        $('#btnSearch').unbind('click').click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    state: $('#state').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        state: $('#state').val(),
+                    }
+                });
+            }
+        })
+        //打款
+        $(document).on('click','.btnTake',function(e){
+            var id = $(this).data('id')
+            var url = "{:adminurl('batchtake')}";
+            $.post(url, {ids:id}, function(data){
+                if (typeof data == 'string'){
+                    data = $.parseJSON(data);
+                }
+                if (data.code == 0) {
+                    layer.msg('打款成功',{icon: 6,anim: 6});
+                    table.reload('laytable',{});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        var ret = [
+            {"id":0,"text":"全部"},
+            {"id":1,"text":"待审核"},
+            {"id":2,"text":"待打款"},
+            {"id":3,"text":"已提现"},
+            {"id":4,"text":"已拒绝"},
+            {"id":5,"text":"提现失败"},
+            ];
+        ret.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            return obj;
+        });
+        $('#state').select2({
+            data: ret,
+        })
+
+    })
+</script>
+{/block}

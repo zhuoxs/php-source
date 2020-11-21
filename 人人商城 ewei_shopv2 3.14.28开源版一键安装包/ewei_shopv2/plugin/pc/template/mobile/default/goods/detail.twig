@@ -1,0 +1,1109 @@
+{% extends 'common/layout.twig' %}
+{% block css %}
+    <link rel="stylesheet" href="{{ basePath }}/layui/css/layui.css?v={{ v }}">
+    <link rel="stylesheet" href="{{ basePath }}/css/common.css">
+    <link rel="stylesheet" href="{{ basePath }}/css/color.css">
+    <link rel="stylesheet" href="{{ basePath }}/css/form/city-picker.css">
+    <link rel="stylesheet" href="{{ basePath }}/css/form/index.css">
+    <link rel="stylesheet" href="{{ basePath }}/css/goods/goods-detail.css">
+
+{% endblock %}
+
+{% block js %}
+    <script type="text/javascript" src="{{ basePath }}/js/glass.js"></script>
+    <script src="{{ basePath }}/js/page/goods/detail.js?v={{ v }}"></script>
+    <script src="{{ basePath }}/font/iconfont.js"></script>
+    <script src="{{ basePath }}/layui/layui.js?v={{ v }}"></script>
+    <script src="{{ basePath }}/js/city/city-picker.data.min.js"></script>
+    <script src="{{ basePath }}/js/city/city-picker.js"></script>
+    <script type="text/javascript" src="{{ basePath }}/js/commentImg.js"></script>
+
+    <script>
+
+        window.goodsOption = {{ options|json_encode|raw }}
+
+        var imgArr = [];
+        var resultArr = [];
+
+        layui.use(['form', 'layedit', 'laydate', 'upload'], function () {
+            var form = layui.form
+                , layer = layui.layer
+                , layedit = layui.layedit
+                , laydate = layui.laydate
+                , upload = layui.upload;
+
+            laydate.render({
+                elem: '#test-date'
+            });
+
+            $('.date-component').each(function () {
+                //日期
+                laydate.render({
+                    elem: this,
+                    eventElem: '#test-date-icon',
+                    trigger: 'click',
+                    format: 'yyyy-MM-dd',
+                    value: new Date(),
+                    change: function (value, date, endDate) {
+                        console.log(value, 'value'); //得到日期生成的值，如：2017-08-18
+                    }
+                });
+            });
+
+            //日期范围
+            $('.date-range-component').each(function () {
+                laydate.render({
+                    elem: this,
+                    eventElem: '#test-dateScoped-icon',
+                    trigger: 'click',
+                    range: '至',
+                    format: 'yyyy-M-d',
+                    change: function (value, date, endDate) {
+                        console.log(value, 'value'); //得到日期生成的值，如：2017-08-18
+                    }
+                });
+            });
+
+
+            // 时间
+            $('.time-component').each(function () {
+                laydate.render({
+                    elem: this
+                    , eventElem: '#test-time-icon'
+                    , trigger: 'click'
+                    , type: 'time'
+                    , format: 'H:m'
+                    , value: new Date()
+                    , change: function (value, date, endDate) {
+                        console.log(value, 'value'); //得到日期生成的值，如：2017-08-18
+                    }
+                });
+            })
+            //时间范围
+            $('.time-frame-component').each(function () {
+                laydate.render({
+                    elem: this
+                    , eventElem: '#test-timeScoped-icon'
+                    , trigger: 'click'
+                    , type: 'time'
+                    , range: '至'
+                    , format: 'H:m'
+                    , change: function (value, date, endDate) {
+                        console.log(value, 'value'); //得到日期生成的值，如：2017-08-18
+                    }
+                });
+            })
+
+            //自定义验证规则
+            form.verify({
+                pass: [
+                    /^[\S]{6,12}$/
+                    , '密码必须6到12位，且不能出现空格'
+                ]
+                , content: function (value) {
+                    layedit.sync(editIndex);
+                }
+            });
+
+            $('.img-upload-component').each(function () {
+
+                var $this = $(this);
+
+                var inputName = $this.data('inputname');
+
+                var counterKey = 'count' + inputName;
+
+                window[counterKey] = 0;
+
+
+                //多图片上传
+                upload.render({
+                    elem: this,
+                    url: window.API.imageUpload,
+                    multiple: true,  // 多文件上传
+                    // ,method: ''  //可选项。HTTP类型，默认post
+                    // ,data: {} //可选项。额外的参数，如：{id: 123, abc: 'xxx'},
+                    before: function (obj) {
+                        imgArr = resultArr;
+                        var files = obj.pushFile();
+                        //预读本地文件示例，不支持ie8
+                        obj.preview(function (index, file, result) {
+                            console.log(file)
+                            $this.siblings().eq(0).append('<div class="imgContainer" data-index=' + index + '><i onclick="removeImg(this,' + index + ')" class="imgDelete iconfont">&#xe67f;</i><img src="' + result + '" alt="' + file.name + '" class="layui-upload-img"></div>')
+                        });
+                        imgArr = Object.keys(files);
+                        console.log(files);
+                    }, done: function (res, index, upload) {
+                        //如果上传失败
+                        if (res.error > 0) {
+
+                            return layer.msg('上传失败');
+                        }
+                        //上传成功
+                        if (res.error === 0) {
+                            // 获取文件
+                            var files = res.files[0];
+
+
+                            var counter = window[counterKey];
+
+                            console.log(counter)
+
+                            $('.layui-form')
+                                .append(`<input type="hidden" name="diyformdata[${inputName}][images][${counter}][filename]" value="${files['filename']}"/>`)
+                                .append(`<input type="hidden" name="diyformdata[${inputName}][images][${counter}][url]" value="${files['url']}"/>`)
+
+
+                            window[counterKey] += 1;
+                            return layer.msg('上传成功');
+                        }
+                    }
+                });
+            })
+
+            form.on('submit(*)', function (data) {
+                console.log(data.elem); //被执行事件的元素DOM对象，一般为button对象
+                console.log(data.form); //被执行提交的form对象，一般在存在form标签时才会返回
+                console.log(data.field); //当前容器的全部表单字段，名值对形式：{name: value}
+
+                // 给当前对象增加属性
+                data.field['id'] = window.PARAMS.id;
+                data.field['optionid'] = window.goodsOptionId || 0;
+                data.field['total'] = 1;
+
+                $.ajax({
+                    url: window.API.addShopCart,
+                    type: 'post',
+                    data: data.field,
+                    dataType: 'json',
+                    success: function (response) {
+                        // 隐藏自定义表单
+                        $('#diyForm_J').hide();
+                        if (response.error === 0) {
+                            layer.msg('加入购物车成功')
+                            return;
+                        }
+
+                        layer.msg(response.message)
+                    }
+                });
+                return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+            });
+            form.render();
+        });
+
+        // 删除图片
+        function removeImg(obj, index) {
+            var str = '';
+            for (var i = 0; i < $(".imgContainer").length; i++) {
+                str = $(".imgContainer").eq(i).data("index");
+                var inx = str.indexOf("-");
+                var str1 = str.substring(0, inx);
+                if (str1 == index) {
+                    $(".imgContainer").eq(i).remove();
+                }
+            }
+            imgArr.splice(str, 1);
+            resultArr = imgArr;
+            if (resultArr.length >= 5) {
+                $('#test2').hide();
+            } else {
+                $('#test2').show();
+            }
+        }
+
+        var num = $(".choose-num input[ type='text' ] ").val();
+        // 增加数量
+        $('.addNum').click(function () {
+            num++;
+            $(".choose-num input[ type='text' ] ").val(num);
+            console.log('num', num);
+        })
+        //减少数量
+        $('.reduceNum').click(function () {
+            num--;
+            if (num < 1) {
+                $(".choose-num input[ type='text' ] ").val(1);
+                alert('已经不能在减少了');
+                return;
+            }
+            $(".choose-num input[ type='text' ] ").val(num);
+        })
+
+        $('.select-city-icon').click(function () {
+            $('.city-picker-dropdown').show();
+        })
+
+    </script>
+
+{% endblock %}
+
+{% block content %}
+
+    <!-- 自定义表单 -->
+    {% if diyform %}
+        <div class="form-diy" id="diyForm_J" style="display: none">
+            <div class="form-box">
+                <div class="close">
+                    <i class="iconfont">&#xe635;</i>
+                </div>
+                <div class="main">
+                    <div class="good flex">
+                        <div class="img">
+                            <img src="{{ goods.thumb }}"/>
+                        </div>
+                        <h3 class="title">{{ goods.title }}</h3>
+                    </div>
+                    <!-- 规格 -->
+                    <div class="tb-key">
+                        <div class="tb-skin">
+                            <div class="tb-sku">
+                                {#                                    {% if specs %}#}
+                                {#                                        {% for spec in  specs %}#}
+                                {#                                            <dl data-attr="spec">#}
+                                {#                                                <dt>{{ spec.title }}</dt>#}
+                                {#                                                <dd class="size">#}
+                                {#                                                    <ul class="flex">#}
+                                {#                                                        {% for item in spec.items %}#}
+                                {#                                                            <li>#}
+                                {#                                                                <a data-optionid="{{ item.id }}"#}
+                                {#                                                                   href="javascript:void(0)"><span>{{ item.title }}</span></a>#}
+                                {#                                                            </li>#}
+                                {#                                                        {% endfor %}#}
+                                {#                                                    </ul>#}
+                                {#                                                </dd>#}
+                                {#                                            </dl>#}
+                                {#                                        {% endfor %}#}
+                                {#                                    {% endif %}#}
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- 赠品弹窗  -->
+
+                    <div class="form">
+                        <form class="layui-form" action="">
+                            {# 带上商品ID #}
+                            <input type="hidden" name="id" value="{{ global.params.id }}">
+
+                            {% for key,diyfield in diyform.fields %}
+                                {# 单行文本 #}
+                                {% if diyfield.data_type == 0 %}
+                                    <div class="layui-form-item" data-formtype="{{ diyfield.data_type }}">
+                                        <label class="layui-form-label">
+                                            {% if diyfield.tp_must %}
+                                                <i class="noempty">
+                                                    <svg class="icon" aria-hidden="true">
+                                                        <use xlink:href="#iconbitian2"></use>
+                                                    </svg>
+                                                </i>
+                                            {% endif %}
+                                            {{ diyfield.tp_name }}
+                                        </label>
+                                        <div class="layui-input-block">
+                                            <input type="text"
+                                                   name="diyformdata[{{ diyfield.diy_type }}]"
+                                                    {% if diyfield.tp_must %} lay-verify="required" {% endif %}
+                                                   placeholder="{{ diyfield.placeholder }}" class="layui-input">
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {# 多行文本 #}
+                                {% if diyfield.data_type == 1 %}
+                                    <div class="layui-form-item" data-formtype="{{ diyfield.data_type }}">
+                                        <label class="layui-form-label">
+                                            {% if diyfield.tp_must %}
+                                                <i class="noempty">
+                                                    <svg class="icon" aria-hidden="true">
+                                                        <use xlink:href="#iconbitian2"></use>
+                                                    </svg>
+                                                </i>
+                                            {% endif %}
+                                            {{ diyfield.tp_name }}
+                                        </label>
+                                        <div class="layui-input-block">
+                                            <textarea name="diyformdata[{{ diyfield.diy_type }}]"
+                                                      data-field="{{ diyfield.diy_type }}
+                                                      {% if diyfield.tp_must %}lay-verify=" required"{% endif %}
+                                            placeholder="{{ diyfield.placeholder }}" class="layui-textarea">
+                                            </textarea>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {#下拉框#}
+                                {% if diyfield.data_type == 2 %}
+
+                                    <div class="layui-form-item" data-formtype="{{ diyfield.data_type }}">
+                                        <label class="layui-form-label">{{ diyfield.placeholder }}</label>
+                                        <div class="layui-input-block">
+                                            <select name="diyformdata[{{ diyfield.diy_type }}]" lay-filter="aihao">
+                                                <option value=""></option>
+                                                {% for key, tp_text in diyfield.tp_text %}
+                                                    <option value="{{ key }}">{{ tp_text }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                {% endif %}
+
+                                {# 多选框 #}
+                                {% if diyfield.data_type == 3 %}
+
+                                    <div class="layui-form-item" data-formtype="{{ diyfield.data_type }}">
+                                        <label class="layui-form-label">
+                                            {% if diyfield.tp_must %}
+                                                <i class="noempty">
+                                                    <svg class="icon" aria-hidden="true">
+                                                        <use xlink:href="#iconbitian2"></use>
+                                                    </svg>
+                                                </i>
+                                            {% endif %}
+                                            {{ diyfield.tp_name }}</label>
+                                        <div class="layui-input-block">
+                                            {% for tp_text in diyfield.tp_text %}
+                                                <input type="checkbox" name="diyformdata[{{ diyfield.diy_type }}]"
+                                                       lay-skin="primary"
+                                                       title="{{ tp_text }}">
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+
+                                {% endif %}
+
+
+                                {# 没有此类型 #}
+                                {% if diyfield.data_type == 4 %}
+                                    <input type="text" value="表单4">
+                                {% endif %}
+
+                                {# 图片上传 #}
+                                {% if diyfield.data_type == 5 %}
+                                    <div class="layui-form-item" data-formtype="{{ diyfield.data_type }}">
+                                        <label class="layui-form-label">
+                                            {% if diyfield.tp_must %}
+                                                <i class="noempty">
+                                                    <svg class="icon" aria-hidden="true">
+                                                        <use xlink:href="#iconbitian2"></use>
+                                                    </svg>
+                                                </i>
+                                            {% endif %}
+                                            {{ diyfield.tp_name }}
+                                        </label>
+                                        <div class="layui-input-block flex">
+                                            <div class="layui-upload-list img-upload flex"
+                                                 lay-data="{field:{{ diyfield.diy_type }}"></div>
+                                            <div class="upload img-upload-component" id="test2"
+                                                 data-inputname="{{ diyfield.diy_type }}">
+                                                <i class="iconfont">&#xe631;</i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+
+                                {% if diyfield.data_type == 6 %}
+                                    <div class="layui-form-item" data-formtype="{{ diyfield.data_type }}">
+                                        <label class="layui-form-label">
+                                            <i class="noempty">
+                                                <svg class="icon" aria-hidden="true">
+                                                    <use xlink:href="#iconbitian2"></use>
+                                                </svg>
+                                            </i>
+                                            {{ diyfield.tp_name }}
+                                        </label>
+                                        <div class="layui-input-block">
+                                            <input type="text" name="diyformdata[{{ diyfield.diy_type }}]"
+                                                   lay-verify="identity"
+                                                   placeholder="{{ diyfield.placeholder }}" autocomplete="off"
+                                                   class="layui-input">
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+
+                                {# 日期选择 #}
+                                {% if diyfield.data_type == 7 %}
+                                    <div class="layui-form-item" data-formtype="{{ diyfield.data_type }}">
+                                        <label class="layui-form-label">
+                                            <i class="noempty">
+                                                <svg class="icon" aria-hidden="true">
+                                                    <use xlink:href="#iconbitian2"></use>
+                                                </svg>
+                                            </i>
+                                            {{ diyfield.tp_name }}
+                                        </label>
+                                        <div class="layui-input-block">
+                                            <input type="text" name="diyformdata[{{ diyfield.diy_type }}]"
+                                                   class="layui-input date-component"
+                                                   placeholder="{{ diyfield.placeholder }}">
+                                            <i class="iconfont date-icon" id="test-date-icon">&#xe6bb;</i>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {# 日期范围 #}
+                                {% if diyfield.data_type == 8 %}
+                                    <div class="layui-form-item" data-formtype="{{ diyfield.data_type }}">
+                                        <label class="layui-form-label">
+                                            <i class="noempty">
+                                                <svg class="icon" aria-hidden="true">
+                                                    <use xlink:href="#iconbitian2"></use>
+                                                </svg>
+                                            </i>
+                                            {{ diyfield.tp_name }}</label>
+                                        <div class="layui-input-block">
+                                            <input type="text" name="diyformdata[{{ diyfield.diy_type }}]"
+                                                   class="layui-input date-range-component"
+                                                   lay-verify="required" id="test-dateScoped"
+                                                   placeholder="{{ diyfield.placeholder }}">
+                                            <i class="iconfont date-icon" id="test-dateScoped-icon">&#xe6bb;</i>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {# 城市选择 #}
+                                {% if diyfield.data_type == 9 %}
+                                    <div class="layui-form-item" data-formtype="{{ diyfield.data_type }}">
+                                        <label class="layui-form-label">
+                                            <i class="noempty">
+                                                <svg class="icon" aria-hidden="true">
+                                                    <use xlink:href="#iconbitian2"></use>
+                                                </svg>
+                                            </i>
+                                            {{ diyfield.tp_name }}</label>
+                                        <div class="layui-input-block">
+                                            <div style="position: relative;" class="wrap">
+                                                <input
+                                                        name="diyformdata[{{ diyfield.diy_type }}]"
+                                                        class="layui-input" lay-verify="required" readonly type="text"
+                                                        data-toggle="city-picker"
+                                                        placeholder="{{ diyfield.placeholder }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {# 重复确认 #}
+                                {% if diyfield.data_type == 10 %}
+                                    <div class="layui-form-item" data-formtype="{{ diyfield.data_type }}">
+                                        <label class="layui-form-label">{{ diyfield.tp_name }}</label>
+                                        <div class="layui-input-block">
+                                            <div class="layui-input-inline">
+                                                <input type="text" name="diyformdata[{{ diyfield.diy_type }}]"
+                                                       lay-verify="password"
+                                                       placeholder="{{ diyfield.placeholder }}" autocomplete="off"
+                                                       class="layui-input">
+                                            </div>
+                                            <div class="layui-input-inline">
+                                                <input type="text" lay-verify="rePassword"
+                                                       placeholder="{{ diyfield.tp_name2 }}" autocomplete="off"
+                                                       class="layui-input">
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {# 时间选择 #}
+                                {% if diyfield.data_type == 11 %}
+                                    <div class="layui-form-item" data-formtype="{{ diyfield.data_type }}">
+                                        <label class="layui-form-label">
+                                            <i class="noempty">
+                                                <svg class="icon" aria-hidden="true">
+                                                    <use xlink:href="#iconbitian2"></use>
+                                                </svg>
+                                            </i>
+                                            {{ diyfield.tp_name }}</label>
+                                        <div class="layui-input-block">
+                                            <input type="text"
+                                                   name="diyformdata[{{ diyfield.diy_type }}]"
+                                                   class="layui-input time-component" id="test-time"
+                                                   placeholder="{{ diyfield.placeholder }}">
+                                            <i class="iconfont date-icon" id="test-time-icon" style="font-size: 20px;">&#xe6ae;</i>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {# 时间区间 #}
+                                {% if diyfield.data_type == 12 %}
+                                    <div class="layui-form-item" data-formtype="{{ diyfield.data_type }}">
+                                        <label class="layui-form-label">
+                                            <i class="noempty">
+                                                <svg class="icon" aria-hidden="true">
+                                                    <use xlink:href="#iconbitian2"></use>
+                                                </svg>
+                                            </i>
+                                            {{ diyfield.tp_name }}</label>
+                                        <div class="layui-input-block">
+                                            <input type="text" name="diyformdata[{{ diyfield.diy_type }}]"
+                                                   class="layui-input time-frame-component"
+                                                   lay-verify="required" id="test-timeScoped"
+                                                   placeholder="{{ diyfield.placeholder }}">
+                                            <i class="iconfont date-icon" id="test-timeScoped-icon"
+                                               style="font-size: 20px;">&#xe6ae;</i>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {# 提示文本 #}
+                                {% if diyfield.data_type == 13 %}
+                                    <div class="layui-form-item" data-formtype="{{ diyfield.data_type }}">
+                                        <label class="layui-form-label">
+                                            {{ diyfield.tp_name }}
+                                        </label>
+                                        <div class="layui-input-block">
+                                            <input type="text" name="diyformdata[{{ diyfield.diy_type }}]"
+                                                   autocomplete="off"
+                                                   placeholder="{{ diyfield.placeholder }}" class="layui-input"
+                                                   disabled>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {# 单项选择 #}
+                                {% if diyfield.data_type == 14 %}
+                                    <div class="layui-form-item" data-formtype="{{ diyfield.data_type }}">
+                                        <label class="layui-form-label">
+                                            <i class="noempty">
+                                                <svg class="icon" aria-hidden="true">
+                                                    <use xlink:href="#iconbitian2"></use>
+                                                </svg>
+                                            </i>
+                                            {{ diyfield.tp_name }}</label>
+                                        <div class="layui-input-block">
+                                            {% for key, tp_text in diyfield.tp_text %}
+                                                <input type="radio" name="diyformdata[{{ diyfield.diy_type }}]"
+                                                       value="男" title="{{ tp_text }}"
+                                                       {% if key == 0 %}checked=true{% endif %} >
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+
+                            <div class="layui-form-item">
+                                <div class="layui-input-block">
+                                    <button class="layui-btn add-cart" lay-submit="" lay-filter="*">确定</button>
+                                    {#                                    <button class="layui-btn" lay-submit="" lay-filter="*">立即购买</button>#}
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+
+
+
+    <!-- 面包屑 -->
+    <div class="crumbs">
+        <div class="inner">
+            {% for key, breadcrumb in goods.breadcrumb %}
+                <a href="{{ breadcrumb.link }}">{{ breadcrumb.title }}</a>
+                {% if key < count(goods.breadcrumb) - 1 %}
+                    <i class="iconfont">&#xe65f;</i>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+
+    <div class="qrcode" id="payCode_J" style="z-index: 999;display:none">
+        <div class="block">
+            <span class="close iconfont">&#xe635;</span>
+            <p>扫描下方二维码进行购买</p>
+            <div class="code">
+                <img/>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 商品详情 -->
+    <div class="goods-detail-box">
+        <div class="inner">
+            <div class="product-intro flex">
+                <!-- 放大镜 -->
+                <div class="glass">
+                    <div class="bg" style="height: 100px;">
+                        <div class="bg_left">
+                            <div class="glass-show">
+                                <img src="{{ goods.thumb }}" alt="">
+                                <i class="iconfont">&#xe621;</i>
+                                <div class="mask"></div>
+                            </div>
+                            <div class="smallshow">
+                                <p class="prev prevnone iconfont">&#xe65f;</p>
+                                <div class="middle_box">
+                                    <ul class="middle">
+                                        {% for thumb in goods.thumbs %}
+                                            <li><img src="{{ thumb }}" alt=""></li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <p class="next iconfont">&#xe65f;</p>
+                            </div>
+                        </div>
+
+                        <div class="bg_right">
+                            <div class="bigshow">
+                                <div class="bigitem">
+                                    <img src="{{ goods.thumb }}" alt="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 收藏分享图标 -->
+                    {#                    <p class="action">#}
+                    {#                        <a href=""><i class="iconfont">&#xe605;</i><span>收藏</span></a>#}
+                    {#                        <a href=""><i class="iconfont">&#xe6a4;</i><span>分享</span></a>#}
+                    {#                    </p>#}
+                </div>
+                <!-- 产品信息 -->
+                <div class="itemInfo-wrap">
+                    <div class="sku-name">{{ goods.title }}</div>
+                    {#                    副标题#}
+                    {% if  goods.subtitle %}
+                        <div class="desc">
+                            <span>{{ goods.subtitle }}</span>
+                        </div>
+                    {% endif %}
+
+                    {# 秒杀信息 #}
+                    {% if goods.seckillinfo %}
+                        <div class="seckill">
+                            <input type="hidden" value="{{ goods.seckillinfo.endtime - time() }}" id="seckill_end_time">
+
+                            <div class="aui-sale-time">
+                                <a href="javascript:void(0);" class="aui-sale-time-link flex">
+                                    <div class="aui-sale-ends">距离结束</div>
+                                    <div class="aui-sale-count flex">
+                                        <div class="aui-sale-count-item">
+                                            <span id="hour_show">00</span>
+                                            <span>：</span>
+                                        </div>
+                                        <div class="aui-sale-count-item">
+                                            <span id="minute_show">00</span>
+                                            <span>：</span>
+                                        </div>
+                                        <div class="aui-sale-count-item">
+                                            <span id="second_show">00</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+
+
+                    <!-- 价格信息 -->
+                    <div class="price-info">
+                        <div class="price">
+                            <span class="label">价格</span>
+                            <span class="rp">
+                                        <span class="rmb">￥</span>
+                                        <span class="num">
+                                            {% if goods.seckillinfo.price %}
+                                                {{ goods.seckillinfo.price }}
+                                            {% else %}
+                                                {{ goods.marketprice }}
+                                            {% endif %}
+                                        </span>
+                                    </span>
+                            {# 划线价格 #}
+                            {% if goods.productprice > goods.marketprice %}
+                                <span class="op">￥{{ goods.productprice }}</span>
+                            {% endif %}
+
+                        </div>
+                        {# 会员价 #}
+                        {% if goods.memberprice %}
+
+                            <div class="vip-price">
+                                <span class="label">会员价</span>
+                                <span class="rp">
+                                        <span>￥</span>
+                                        <span>{{ goods.memberprice.price }}</span>
+                                    </span>
+                            </div>
+                        {% endif %}
+
+
+
+                        {% for key, activity in goods.activity %}
+                            {% if key == 'enough' %}
+                                <div class="full">
+                                    <span class="label">满减</span>
+                                    <div class="full-list">
+                                        {% for enough in activity %}
+
+                                            <span>全场满{{ enough.enough }}立减{{ enough.money }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            {% if key == 'postfree' %}
+                                <div class="full">
+                                    <span class="label">包邮</span>
+                                    <div class="full-list">
+                                        <span>{{ activity.scope }} 满 {{ activity.enoughfree }} 包邮</span>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            {# 返积分#}
+                            {% if key == 'credit' %}
+                                <div class="full">
+                                    <span class="label">积分</span>
+                                    <div class="full-list">
+                                        <span>最高抵扣 {{ activity.deduct }} 积分, 购买赠送 {{ activity.give }} 积分</span>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            {# 复购#}
+                            {% if key == 'buyagain' %}
+                                <div class="full">
+                                    <span class="label">复购</span>
+                                    <div class="full-list">
+                                        <span> 此商品重复购买可享受 {{ activity.discount }} 折</span>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            {% if key == 'fullback' %}
+                                <div class="cashBack">
+                                    <span class="label">全返</span>
+                                    <div class="cashBack-list">
+                                        <span>该商品享受全返<i>{{ activity.all_enjoy }}</i>的优惠</span>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+
+                        {% endfor %}
+
+
+                        <!-- 满减 -->
+
+
+                        <!-- 赠品 -->
+                        {% if goods.isgift %}
+                            <div class="gifts">
+                                <span class="label">赠品</span>
+                                <div class="gifts-list">
+                                    <ul class="flex">
+                                        {% for gifts in goods.gifts %}
+                                            <li>
+                                                <a href="javascript:void(0)" class="flex">
+                                                    {% for gift in gifts.gift %}
+                                                        <img src="{{ gift.thumb }}" alt="{{ gift.title }}">
+                                                    {% endfor %}
+                                                    <span class="gifts-title">{{ gifts.title }}</span>
+                                                </a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <!-- 运费 -->
+                    <div class="meta flex">
+                        <div class="metatit">
+                            <a href="javascript:void(0)">
+                                <span>运费</span>
+                                <span>￥{{ goods.dispatchprice }}</span>
+                            </a>
+                        </div>
+                        <div class="metatit">
+                            <a href="javascript:void(0)">
+                                <span>销量</span>
+                                <span class="count">{{ goods.sales }}{{ goods.unit }}</span>
+                            </a>
+                        </div>
+                        <div class="metatit">
+                            <a href="javascript:void(0)">
+                                <span>评价</span>
+                                <span class="count" id="comment_count">{{ comment.count.all }}</span>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- 规格 -->
+                    <div class="tb-key">
+                        <div class="tb-skin">
+                            <div class="tb-sku">
+                                <!-- 规格 -->
+                                {% if specs %}
+                                    {% for spec in  specs %}
+                                        <dl data-attr="spec">
+                                            <dt>{{ spec.title }}</dt>
+                                            <dd class="size">
+                                                <ul class="flex">
+                                                    {% for item in spec.items %}
+                                                        <li>
+                                                            <a data-optionid="{{ item.id }}"
+                                                               href="javascript:void(0)"><span>{{ item.title }}</span></a>
+                                                        </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </dd>
+                                        </dl>
+                                    {% endfor %}
+
+                                {% endif %}
+
+
+                                <!-- 购买按钮 -->
+                                {% if goods.canbuy %}
+                                    <dl>
+                                        <dt>数量</dt>
+                                        <dd>
+                                            <span class="tb-amount-widget mui-amount-wrap">
+                                                <input type="text" value="1" id="cartNum_J">
+                                                <span class="mui-amount-btn">
+                                                    <span class="mui-amount-increase" data-event="add"><i
+                                                                class="iconfont">&#xe65f;</i>
+                                                    </span>
+                                                    <span class="mui-amount-decrease" data-event="reduce"><i
+                                                                class="iconfont">&#xe65f;</i>
+                                                    </span>
+                                                </span>
+                                                <span class="mui-amount-unit">件</span>
+                                            </span>
+                                        </dd>
+                                    </dl>
+
+
+                                    <dl>
+                                        <dt></dt>
+                                        <dd>
+                                            <div class="tb-action flex">
+                                                {% if goods.canbuy %}
+                                                    <div class="tb-btn-buy">
+                                                        <a id="buyBtn_J" data-qrcode="{{ goods.qrcode }}"
+                                                           href="javascript:void(0)">
+                                                            <span>立即购买</span>
+                                                        </a>
+                                                    </div>
+                                                {% endif %}
+
+                                                {% if goods.canAddCart %}
+                                                    <div class="tb-btn-basket">
+                                                        <a id="addCartBtn_J" data-hasdiyform="{{ diyform|bool }}"
+                                                           href="javascript:void(0)">
+                                                            <span>加入购物车</span>
+                                                        </a>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </dd>
+                                    </dl>
+                                {% endif %}
+
+
+                                <!-- 服务承诺 -->
+                                {% if goods.services %}
+                                    <dl>
+                                        <dt>服务承诺</dt>
+                                        <dd>
+                                            <div class="tb-serPromise">
+                                                <ul class="flex">
+                                                    {% for service in goods.services %}
+                                                        <li><a href="javascript:void(0)">{{ service }}</a></li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        </dd>
+                                    </dl>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 看了又看 -->
+                {% if goods.footerMark %}
+                    <div class="track">
+                        <div class="track-title">
+                            <s></s>
+                            <span>看了又看</span>
+                        </div>
+                        <div class="track-list">
+                            <ul>
+                                {% for footerMark in goods.footerMark %}
+
+                                    <li>
+                                        <a href="{{ pcUrl('pc.goods.detail', {id: footerMark.id}) }}">
+                                            <img src="{{ footerMark.thumb }}" alt="">
+                                            <span>{{ footerMark.title }}</span>
+                                            <span class="price">￥{{ footerMark.marketprice }}</span>
+                                        </a>
+                                    </li>
+                                {% endfor %}
+
+                            </ul>
+                        </div>
+                    </div>
+                {% endif %}
+
+            </div>
+
+            {% if packages %}
+                <div class="mc">
+                    <!-- 套餐组合 -->
+                    <div class="tab tab-combination">
+                        {% if count(packages) > 1 %}
+                            <div class="tab-title flex" id="packagetab_J">
+                                {% for key, package in  packages %}
+                                    <a data-packageid="{{ package.id }}"
+                                       href="javascript:void(0)">
+                                    <span {% if key==0 %}class="current" {% endif %}>{{ package.title }}
+                                    </span>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% for key, package in packages %}
+                            <div class="tab-selected flex" id="package_id_{{ package.id }}"
+                                 {% if key!=0 %}style="display: none"{% endif %}>
+
+                                <div style="width:904px; overflow: hidden;" class="tab-selected-area">
+                                    <div class="tab-selected-box flex">
+
+                                        {% for key,goods in package.goods %}
+                                            <div class="tab-selected-item">
+                                                <a href="{{ pcUrl('pc.goods.detail', {id: goods.id}) }}">
+                                                    <img src="{{ goods.thumb }}" alt="{{ goods.title }}">
+                                                    <span class="tab-selected-title">{{ goods.title }}</span>
+                                                    <span class="price">￥{{ goods.marketprice }}</span>
+                                                </a>
+                                            </div>
+                                            {% if key < count(package.goods) -1 %}
+                                                <div class="add">
+                                                    <img class="add-img" src="{{ basePath }}/img/add.png"/>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="equal add">
+                                    <img class="equal add-img" src="{{ basePath }}/img/equal.png"/>
+                                </div>
+
+                                <div class="tab-gobuy">
+                                    <span>{{ package.title }}  组合价</span>
+                                    <span class="price">￥{{ package.goodsprice }}</span>
+                                    <a href="javascript:void(0)" data-qrcode="{{ package.qrcode }}"
+                                       class="package tab-gobuy-btn"><span>立即购买</span></a>
+                                </div>
+                            </div>
+                        {% endfor %}
+
+                    </div>
+                </div>
+
+            {% endif %}
+
+            <div class="mb flex">
+                <div class="mb-left">
+                    <!-- 店铺信息 -->
+                    <div class="side-shop-info">
+                        <div class="shop-avatar">
+                            <a href="javascript:void(0)">
+                                <img src="{{ goods.shopdetail.logo }}" alt="">
+                                <span>{{ goods.shopdetail.shopname }}</span>
+                            </a>
+                        </div>
+                        <div class="shop-num flex">
+                            <div class="shop-good-num">
+                                <span>商品数量</span>
+                                <span>{{ goods.shopdetail.static_all }}</span>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <!-- 右侧评论 -->
+                <div class="mb-right">
+                    <div class="commonTab">
+                        <div class="tab-title flex" id="tab_J">
+                            <a><span data-tab="goods_detail" class="current">商品详情</span></a>
+                            <a><span data-tab="comment" class="getComm">评论({{ comment.count.all }})</span></a>
+                            {% if goods.params %}
+                                <a><span data-tab="specs">规格参数</span></a>
+                            {% endif %}
+
+                        </div>
+                    </div>
+                    <!-- 商品详情 -->
+                    <div class="shop-detail" id="goods_detail">
+                        {% if goods.content %}
+                            {% autoescape false %}
+                                <div class="shop-detail-content">
+                                    {{ goods.content }}
+                                </div>
+                                {% for bottomFixedImageUrl in goods.bottomFixedImageUrls %}
+                                    <img src="{{ bottomFixedImageUrl }}" alt="">
+                                {% endfor %}
+                            {% endautoescape %}
+                        {% else %}
+                            <div class="no">
+                                <span>暂无详情</span>
+                            </div>
+                        {% endif %}
+
+                    </div>
+                    <!-- 评论 -->
+                    <div class="commentBox" id="comment">
+                        {% if comment.count.all > 0 %}
+                            <!-- 标签 -->
+                            <div class="labelList">
+                                <span class="current" data-comment="all">全部（{{ comment.count.all }}）</span>
+                                <span data-comment="good">好评（{{ comment.count.good }}）</span>
+                                <span data-comment="normal">中评（{{ comment.count.normal }}）</span>
+                                <span data-comment="bad">差评（{{ comment.count.bad }}）</span>
+                                <span data-comment="pic">晒图（{{ comment.count.pic }}）</span>
+                            </div>
+                            <!-- 评论列表 -->
+                            <div class="commonList">
+                                <ul>
+                                </ul>
+                                <div id="pager" style="display: flex; justify-content: flex-end"></div>
+                            </div>
+                        {% else %}
+                            <div class="no">
+                                <span>暂无评论</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {# 规格 #}
+
+                    {% if goods.params %}
+                        <div class="specs" id="specs">
+                            <div class="spec-table">
+                                <table>
+                                    {% for params in goods.params %}
+                                        <tr>
+                                            <td>{{ params.title }}</td>
+                                            <td>{{ params.value }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </table>
+                            </div>
+                        </div>
+
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+

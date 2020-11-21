@@ -1,0 +1,236 @@
+define(['core', 'tpl', './face.js'],
+function(core, tpl, face) {
+var modal = {
+page: 1,
+bid: 0,
+cid: 0,
+keywords: '',
+listpage: 1
+};
+modal.init = function(params) {
+if (params.page != '0') {
+modal.page = params.page
+}
+if (modal.bid != params.bid) {
+modal.page = 1
+}
+modal.bid = params.bid;
+$('#btnFollow').click(function() {
+var isfollow = $(this).data('follow') == '1';
+core.json('sns/board/follow', {
+bid: modal.bid
+},
+function(ret) {
+if (ret.status == 0) {
+FoxUI.toast.show(ret.result.message);
+return
+}
+var isfollow = ret.result.isfollow;
+if (isfollow) {
+$('#btnFollow').html('<i class="icon icon-check"></i> 已关注').removeClass('btn-warning').addClass('btn-default')
+} else {
+$('#btnFollow').html('<i class="icon icon-add"></i> 关注').removeClass('btn-default').addClass('btn-warning')
+}
+$('#btnFollow').removeAttr('stop')
+},
+true, true)
+});
+$('#btnNeedFollow').click(function() {
+var followurl = $(this).data('followurl');
+FoxUI.alert(params.followtip, '提示',
+function() {
+location.href = followurl
+})
+});
+$('.fui-content').infinite({
+onLoading: function() {
+modal.getList()
+}
+});
+if (modal.page == 1) {
+if ($(".post-card").length <= 0) {
+modal.getList()
+} else {
+modal.page++
+}
+}
+$('.post-func .icon').click(function() {
+$('.post-func .icon').removeClass('selected');
+$(".post-face").hide();
+$(".post-image").hide();
+$(this).addClass('selected');
+if ($(this).hasClass('icon-emoji')) {
+$(".post-face").show()
+} else if ($(this).hasClass('icon-pic')) {
+$(".post-image").show()
+}
+});
+face.init({
+class: '.post-face .item',
+input: $('#content')
+});
+$('#btnSend').click(function() {
+if ($(this).attr('stop')) {
+return
+}
+if ($('#title').isEmpty()) {
+FoxUI.toast.show('标题没有填写哦~');
+return
+}
+if ($('#content').isEmpty()) {
+FoxUI.toast.show('说点什么吧~');
+return
+}
+var images = [];
+$('#cell-images').find('li').each(function() {
+images.push($(this).data('filename'))
+});
+$(this).attr('stop', 1);
+core.json('sns/post/submit', {
+bid: modal.bid,
+title: $("#title").val(),
+content: $('#content').val(),
+images: images
+},
+function(ret) {
+$('#btnSend').removeAttr('stop');
+if (ret.status == 0) {
+FoxUI.toast.show(ret.result.message);
+return
+}
+var msg = ret.result.checked == '1' ? '发表成功!': '发表成功，请等待审核!';
+FoxUI.alert(msg, '提示',
+function() {
+if (ret.result.checked == '1' || $('.post-card').length <= 0) {
+$('.empty').hide(),
+$('.container').html(''),
+$('.infinite-loading').show();
+modal.page = 1;
+modal.getList()
+}
+$.router.back()
+})
+},
+true, true)
+});
+modal.bindPostEvents()
+};
+modal.getList = function() {
+core.json('sns/board/getlist', {
+page: modal.page,
+bid: modal.bid
+},
+function(ret) {
+var result = ret.result;
+if (result.total <= 0) {
+$('.board-list-empty').show();
+$('.fui-content').infinite('stop')
+} else {
+$('.board-list-empty').hide();
+$('.content').infinite('init');
+if (result.list.length <= 0 || result.list.length < result.pagesize) {
+$('.fui-content').infinite('stop')
+}
+}
+modal.page++;
+core.tpl('.container', 'tpl_board_post_list', result, modal.page > 1);
+modal.bindEvents()
+})
+};
+modal.bindEvents = function() {
+$('.like-good').unbind('click').click(function() {
+var link = $(this);
+if ($(this).attr('stop')) {
+return
+}
+var pid = $(this).data('pid');
+$(this).attr('stop');
+core.json('sns/post/like', {
+bid: modal.bid,
+pid: pid
+},
+function(ret) {
+if (ret.status == 0) {
+link.removeAttr('stop');
+FoxUI.toast.show(ret.result.message);
+return
+}
+link.removeAttr('stop');
+$(".like-good[data-pid='" + pid + "'] span").html(ret.result.good)
+},
+true, true)
+})
+};
+modal.bindPostEvents = function() {
+$('.fui-uploader').uploader({
+uploadUrl: core.getUrl('util/uploader'),
+removeUrl: core.getUrl('util/uploader/remove'),
+imageCss: 'image-md'
+})
+};
+modal.initList = function(params) {
+modal.cid = params.cid;
+if (params.page != '0') {
+modal.listpage = params.page
+}
+$('.fui-content').infinite({
+onLoading: function() {
+modal.getBoardList()
+}
+});
+if (modal.listpage == 1) {
+if ($('.board-lists-item').length <= 0) {
+modal.getBoardList()
+} else {
+modal.listpage++
+}
+}
+$('#tab nav').click(function() {
+$('#board-list-group').hide();
+$(this).siblings().removeClass("on");
+$(this).addClass("on");
+$('.title').html($(this).html());
+$('.infinite-loading').show(),
+$('#board-list-group').html('');
+modal.listpage = 1,
+modal.cid = $(this).data('cid'),
+modal.keywords = '';
+modal.getBoardList()
+});
+$('form').submit(function() {
+$('.infinite-loading').show(),
+$('#board-list-group').html('');
+modal.listpage = 1;
+modal.cid = '';
+modal.keywords = $('#keywords').val();
+modal.getBoardList();
+return false
+})
+};
+modal.getBoardList = function() {
+core.json('sns/board/get_boardlist', {
+page: modal.listpage,
+cid: modal.cid,
+keywords: modal.keywords
+},
+function(ret) {
+var result = ret.result;
+if (result.total <= 0) {
+$('#board-list-group').hide();
+$('.empty').show();
+$('.fui-content').infinite('stop');
+$('.board-list-group').hide()
+} else {
+$('#board-list-group').show();
+$('.empty').hide();
+$('.content').infinite('init');
+if (result.list.length <= 0 || result.list.length < result.pagesize) {
+$('.fui-content').infinite('stop')
+}
+}
+modal.listpage++;
+core.tpl('#board-list-group', 'tpl_board_lists', result, modal.listpage > 1)
+})
+};
+return modal
+});

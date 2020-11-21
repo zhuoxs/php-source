@@ -1,0 +1,154 @@
+{% extends 'common/layout.twig' %}
+{% block title %}{{ title }}{% endblock %}
+{% block css %}
+    <link rel="stylesheet" href="{{ basePath }}/css/color.css?v={{ v }}">
+    <link rel="stylesheet" href="{{ basePath }}/css/common.css?v={{ v }}">
+    <link rel="stylesheet" href="{{ basePath }}/css/member.css?v={{ v }}">
+{% endblock %}
+{% block content %}
+<body class="red">
+    <div class="member">
+        {% include 'common/nav.twig' %}
+
+            <div class="inner flex">
+                <!-- 左侧菜单 -->
+                <div class="aside">
+                    <ul class="aside-submenu">
+                        <li>
+                            <ul class="aside_menu">
+                                <li><a href="{{ pcUrl('pc.member') }}" class="cuurent">个人中心</a></li>
+
+                            </ul>
+                        </li>
+                        <li>
+                            <ul class="aside_menu">
+                                <li><a href="{{ pcUrl('pc.order') }}">我的订单</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <!-- 右侧内容 -->
+
+                <div class="main">
+                    <!-- 用户信息 -->
+                    <div class="userinfo flex">
+                        <div class="info flex">
+                            <div class="avatar">
+                                {% if userinfo.avatar %}
+                                <img src="{{ userinfo.avatar }}"/>
+                                {% else %}
+                                    <img src="{{ basePath }}/images/noface.png"/>
+                                {% endif %}
+                            </div>
+                            <div class="name">
+                                <div class="nickname">{{ userinfo.nickname }}</div>
+                                <div class="grade"><i class="iconfont">&#xe643;</i>{{ userinfo.levelname }}</div>
+                            </div>
+                        </div>
+                        <div class="asset flex">
+                            <div class="balance">
+                                <span>{{ userinfo.credit2 ? userinfo.credit2 : '0'}}</span>
+                                <span>{{ userinfo.moneytext ? userinfo.moneytext : '余额'}}</span>
+                            </div>
+                            <div class="integral">
+                                <span>{{ userinfo.credit1 ? userinfo.credit1 : '0'}}</span>
+                                <span>{{ userinfo.credittext ? userinfo.credittext : '积分'}}</span>
+                            </div>
+                            {% if membercard %}
+                            <div class="card">
+                                <span>{{ membercard.list_my.count }}</span>
+                                <span>会员卡</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="main-tb flex">
+                        <!-- 我的订单 -->
+                        <div class="user-order">
+                            <div class="user-order-title flex">
+                                <h3>我的订单</h3>
+                                <!--<a href="" class="more">查看全部</a>-->
+                            </div>
+                            <div class="state-icon">
+                                <ul class="flex">
+                                    <li><a href="{{ pcUrl('pc.order',{'status':0}) }}">{% if ordercount.order_0>0 %}<i class="num">{{ ordercount.order_0?:0 }}</i>{% endif %}<span class="iconfont">&#xe613;</span><span>待付款</span></a></li>
+                                    <li><a href="{{ pcUrl('pc.order',{'status':2}) }}">{% if ordercount.order_2>0 %}<i class="num">{{ ordercount.order_2?:0 }}</i>{% endif %}<span class="iconfont">&#xe615;</span><span>待收货</span></a></li>
+                                    <li><a href="{{ pcUrl('pc.order',{'status':3}) }}">{% if ordercount.order_3>0 %}<i class="num">{{ ordercount.order_3?:0 }}</i>{% endif %}<span class="iconfont">&#xe617;</span><span>已完成</span></a></li>
+                                    <li><a href="{{ pcUrl('pc.order',{'status':4}) }}">{% if ordercount.order_4>0 %}<i class="num">{{ ordercount.order_4?:0 }}</i>{% endif %}<span class="iconfont">&#xe618;</span><span>退换/售后</span></a></li>
+                                    <li><a href="{{ pcUrl('pc.order',{'status':6}) }}"><span class="iconfont" style="color: #ccc;">&#xe619;</span><span>全部订单</span></a></li>
+                                </ul>
+                            </div>
+                            <!-- user-order-list -->
+                            <div class="user-order-list">
+                                {% for order in neworderlist %}
+                                <div class="user-order-list-item flex">
+                                    <div class="goods-img">
+                                        <img src={{ order.thumb }} />
+                                    </div>
+                                    <div class="block">
+                                        <span>订单号：</span><a href="javascript:void(0);"  class="order-num">{{ order.ordersn }}</a>
+                                        <p class="time">{{ order.createtime|date("Y/m/d H:i:s") }}</p>
+                                    </div>
+                                    <div class="money">
+                                        <span>￥ {{ order.price }}</span>
+                                        <p>&nbsp;</p>
+                                    </div>
+                                    <div class="state">
+                                        <p>{{ order.status }}</p>
+                                        <a href="javascript:;" onclick="getCode({{ order.id }})">查看</a>
+                                        <span id="getcodeurl" style="display: none">{{ pcUrl('pc/getCode')}}</span>
+                                    </div>
+                                </div>
+                                    {% else %}
+                                        <div style="text-align: center;margin: 50px">
+                                            暂时没有订单哦~
+                                        </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+    </div>
+    <div class="qrcode show">
+        <div class="block">
+            <span class="close iconfont">&#xe635;</span>
+            <p>请扫码前往手机端操作</p>
+            <div class="code">
+                <img src="{{ basePath }}/img/goods-list.jpg" class="img"/>
+            </div>
+        </div>
+    </div>
+</body>
+{% endblock %}
+ {% block js %}
+     <script src="{{ basePath }}/js/common.js"></script>
+     <script src="{{ basePath }}/js/jquery.js"></script>
+     <script>
+         function getCode(id){
+             var url =   $("#getcodeurl").text();
+             $.ajax({
+                 type : 'post',
+                 url : url,
+                 data : {'id':id,'url':'order.detail'},
+                 dataType : 'json',
+                 success : function(ret){
+                     if (ret.status == 1) {
+                         var imgPath = ret.img;
+                         $('.img').attr('src', imgPath);
+                         $('.qrcode').removeClass("show");
+                     }
+                 }},JSON)
+         }
+         $(function () {
+             $('.close').click(function () {
+                 $('.qrcode').addClass("show");
+             });
+             height = $('html').height() - 182 - $('.footer').innerHeight();
+             $('.aside').css('min-height', height);
+         });
+
+     </script>
+ {% endblock %}

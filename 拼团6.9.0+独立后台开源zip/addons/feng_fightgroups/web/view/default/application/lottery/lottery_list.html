@@ -1,0 +1,468 @@
+{php include wl_template('common/header');}
+{if $todo=='display'}
+<ul class="nav nav-tabs" id="myTab">
+	<li {if $op == 'list' && $status == '1' }class="active"{/if}><a  href="{php echo web_url('application/lottery/list',array('status'=>'1'))}">进行中 <span class="label label-warning pull-right" style="margin-left: 10px;">{$all1}</span></a></li>
+	<li {if $op == 'list' && $status == '4' }class="active"{/if}><a  href="{php echo web_url('application/lottery/list',array('status'=>'4'))}">暂停中 <span class="label label-warning pull-right" style="margin-left: 10px;">{$all4}</span></a></li>
+	<li {if $op == 'list' && $status == '2' }class="active"{/if}><a  href="{php echo web_url('application/lottery/list',array('status'=>'2'))}">未开始 <span class="label label-warning pull-right" style="margin-left: 10px;">{$all2}</span></a></li>
+	<li {if $op == 'list' && $status == '3' }class="active"{/if}><a  href="{php echo web_url('application/lottery/list',array('status'=>'3'))}">已结束 <span class="label label-warning pull-right" style="margin-left: 10px;">{$all3}</span></a></li>
+</ul>
+<style>
+table thead tr th, table tbody tr td {text-align: center; width: 10%;}
+table thead tr th:last-child, table tbody tr td:last-child {text-align: right;}
+</style>
+<div class="panel">
+	<div class="panel-body">
+	    <form action="" method="get" class="form-horizontal" role="form" id="form1">
+	    	<input type="hidden" name="c" value="site" />
+            <input type="hidden" name="a" value="entry" />
+            <input type="hidden" name="m" value="feng_fightgroups" />
+	        <input type="hidden" name="do" value="application" />
+	        <input type="hidden" name="ac" value="lottery" />
+	        <input type="hidden" name="status" value="{$status}"/>
+	        <input type="hidden" name="op" value="{$op}"/>
+	        <input type="hidden" name="todo" value="{$todo}"/>
+	        <div class="form-group">
+	            <div class="col-md-2">
+	                <select name="timetype" class="form-control">
+	                    <option value="">时间类型</option>
+	                    <option value="1" {if $_GPC['timetype']==1}selected="selected"{/if}>活动开始时间</option>
+	                    <option value="2" {if $_GPC['timetype']==2}selected="selected"{/if}>活动结束时间</option>
+	                </select>
+	            </div>
+	             <div class="col-md-4">
+	             	<div class="input-group">
+	                    {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d H:i:s', $starttime),'endtime'=>date('Y-m-d H:i:s', $endtime)),true);}
+	                </div>
+	            </div>
+	            <div class="col-md-2">
+	                <select name="keywordtype" class="form-control">
+	                	<option value="">关键字</option>
+	                	<option value="1">商品名称</option>
+	                    <option value="2">商品ID</option>
+	                </select>
+	            </div>
+	            <div class="col-md-4">
+					<div class="input-group">
+						<input type="text" name="keyword" class="form-control" value="{$_GPC['keyword']}"  placeholder="请输入关键字"/>
+						<span class="input-group-addon" id="search">搜索</span><!--<span class="input-group-addon" id="output">导出</span>-->
+					</div>
+				</div>
+			</div>
+			<input type="hidden" name="token" value="{$_W['token']}" />
+			<div class="form-group">
+							<div class="col-md-12">
+								<div class="alert alert-warning">
+									<h5 style="text-indent: 18px;">注: 抽奖团使用步骤。</h5>
+									<ol>
+										<li>新建抽奖商品（可通过“复制商品”功能快速创建抽奖商品，创建后该商品存在于 “商品”-> “抽奖商品”->“仓库”中，每个抽奖团都需要新建一个抽奖商品）。</li>
+										<li>添加抽奖团（可通过“复制”功能快速添加抽奖团，复制后存在于“未开始”中，需要重新选择抽奖商品以及修改时间等信息）。</li>
+									</ol>
+								</div>
+							</div>
+						</div>
+	    </form>
+	</div>
+	<script type="text/javascript">
+		$("#search").click(function(){
+			$('#form1')[0].submit();
+		})
+	</script>
+</div>
+<div class="panel panel-default">
+	<div class="table-responsive">
+		<table class="table table-hover">
+			<thead>
+			<tr>
+				<th style="width:240px;">商品</th>
+				<th class="text-center" style="width:180px;">开始时间<br>结束时间</th>
+				<th class="text-center" style="width:80px;">二等奖</th>
+				<th class="text-center" style="width:80px;">三等奖</th>
+				<th class="text-center" style="width:80px;">状态</th>
+				<th class="text-center" style="width:240px;">操作</th>
+			</tr>
+			</thead>
+			<tbody>
+			{loop $lottery $item}
+			<tr data-toggle="popover" data-trigger="hover" data-placement="left" class="js-goods-img">
+				<td style="text-align: left;">
+					<img class="scrollLoading" src="{IMAGE_PIXEL}" data-url="{php echo tomedia($item['gimg'])}" onerror="this.src='{IMAGE_NOPIC_SMALL}'" height="50" width="50"/>
+					{php echo cutstr($item['gname'], 30, true);}
+				</td>
+				<td class="text-center" style="line-height:25px;">
+					<span class="label label-success">{php echo date("Y-m-d H:i:s",$item['starttime'])}</span><br><span class="label label-danger">{php echo date("Y-m-d H:i:s",$item['endtime'])}</span>
+				</td>
+				<td class="text-center" style="line-height:25px;">
+					<span class="label label-success">{if $item['prize']['first']['radio']==1}退款{elseif $item['prize']['first']['radio']==2}赠送优惠券{elseif $item['prize']['first']['radio']==3}退款并赠送优惠券{elseif $item['prize']['first']['radio']==4}无奖{/if}</span>
+				</td>
+				<td class="text-center" style="line-height:25px;">
+					<span class="label label-success">{if $item['prize']['second']['radio']==1}退款{elseif $item['prize']['second']['radio']==2}赠送优惠券{elseif $item['prize']['second']['radio']==3}退款并赠送优惠券{elseif $item['prize']['second']['radio']==4}无奖{/if}</span>
+				</td>
+				<td class="text-center" style="line-height:25px;">
+					{if $item['status']==1}<span class="label label-info">进行{elseif $item['status']==2}<span class="label label-default">未开始{elseif $item['status']==3}<span class="label label-success">已结束{else}<span class="label label-danger">暂停{/if}</span>
+				</td>
+				<td class="text-center">
+					{if $item['dostatus']!=1}
+					<a href="javascript:;"  onclick="jsdolottery({$item['id']});">手动抽奖</a> -
+					{/if}
+					<a href="{php echo web_url('application/lottery/create', array('id' => $item['id']))}" class="">编辑</a>-
+					<a href="{php echo web_url('application/lottery/list/detail', array('lottery_id' => $item['id']))}" class="">详情</a>-
+					<a href="javascript:;"  onclick="jscopy({$item['id']});">复制</a> -
+					<a href="javascript:;" onclick="jsdelete({$item['id']});">删除</a>
+				</td>
+			</tr>
+			{/loop}
+			</tbody>
+		</table>
+	</div>
+</div>
+{/if}
+<script type="text/javascript">
+function jscopy(id){
+	if(confirm("提示:复制本活动需要重新编辑 新活动时间以及活动的商品,并且状态未为开始状态! 确认复制？")){
+		location.href = "{php echo web_url('application/lottery/list/detail', array('copy'=>'copy'))}&lottery_id="+id;
+	}
+}
+
+function jsdelete(id){
+	if(confirm("警告:删除本活动将无法抽奖以及对奖项进行处理！！！确定删除？？？")){
+		location.href = "{php echo web_url('application/lottery/list/detail', array('delete'=>'delete'))}&lottery_id="+id;
+	}
+}
+function jsdolottery(id){
+	if(confirm("警告:手动抽奖只能在抽奖活动结束后，系统没有自动抽奖的情况下使用！！！确定抽奖？？？")){
+		location.href = "{php echo web_url('application/lottery/list', array('ceshi'=>'ceshi'))}&lottery_id="+id;
+	}
+}
+$(function(){
+	$(".js-displayorder").blur(function(e){
+		e.stopPropagation();
+		var $this = $(this);
+		var good_id = $this.data("id");
+		var displayorder = parseInt($this.val());
+		if (isNaN(displayorder)) {
+			$this.parent().addClass('has-error');
+			util.tips('必须为数字', 2000);
+			return false;
+		};
+	});
+});
+</script>
+
+{if $todo=='detail'}
+<style type="text/css">
+.main .form-horizontal .form-group{margin-bottom:0;}
+.main .form-horizontal .modal .form-group{margin-bottom:15px;}
+#modal-confirmsend .control-label{margin-top:0;}
+.order-overview .order-info .info-group{width:25%; text-align:center; float:left;}
+.order-overview .order-info .info-group+.info-group{border-left:1px dotted #ccc; }
+.order-overview .h4{font-size:22px; display:block;}
+.order-overview .order-widget .info-group{width:33.3%; text-align:center; float:left; }
+.order-overview .order-widget .info-group+.info-group{border-left:1px solid #ddd;}
+.order-overview .coordinate{margin-top:20px;}
+</style>
+<div class="main">
+	<div class="order-overview">
+		<div class="order-info panel panel-default">
+			<div class="panel-body clearfix">
+				<div class="info-group">
+					<span class="h4">
+						<a href="#">{$all}</a>
+					</span>
+					<span class="info-description">团数量 </span>
+				</div>
+				<div class="info-group">
+					<span class="h4">
+						<a href="#">{$orders}</a>
+					</span>
+					<span class="info-description">订单数量</span>
+				</div>
+				<div class="info-group">
+					<span class="h4">
+						<a href="#">{php echo date("Y-m-d H:i:s",$lottery['endtime'])}</a>
+					</span>
+					<span class="info-description">结束时间</span>
+				</div>
+				<div class="info-group">
+					<span class="h4">
+						{if $lottery['status']==1 }
+							<span class="label label-info">进行中</span>
+						{/if}
+						{if $lottery['status']==2 }
+							 <span class="label label-success">未开始</span>
+						{/if}
+						{if $lottery['status']==3 }
+							 <span class="label label-warning">已结束</span>
+						{/if}
+						{if $lottery['status']==4 }
+							 <span class="label label-warning">暂停中</span>
+						{/if}
+					</span>
+					<span class="info-description">活动状态</span>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="panel panel-default">
+			<div class="table-responsive">
+				<table class="table table-hover">
+					<thead>
+					<tr>
+						<th style="width:180px;">一奖品({$lottery['num']})</th>
+						<th style="width:100px;">二等奖({$lottery['num2']})</th>
+						<th style="width:100px;">三等奖({$lottery['num3']})</th>
+					</tr>
+					</thead>
+					<tbody>
+					<tr data-toggle="popover" data-trigger="hover" data-placement="left" class="js-goods-img">
+						<td><img class="scrollLoading" src="{IMAGE_PIXEL}" data-url="{$lottery['gimg']}" onerror="this.src='{IMAGE_NOPIC_SMALL}'" height="50" width="50"/>
+						{php echo cutstr($lottery['gname'], 30, true);}
+						</td>
+						<td class="line-feed">
+							{if intval($prize['first']['radio'])==1}
+							自动退款
+							{elseif intval($prize['first']['radio'])==2}
+							自动赠送优惠券
+							{elseif intval($prize['first']['radio'])==3}
+							自动退款并赠送优惠券
+							{/if}
+						</td>
+						<td class="line-feed">
+							{if intval($prize['second']['radio'])==1}
+							自动退款
+							{elseif intval($prize['second']['radio'])==2}
+							自动赠送优惠券
+							{elseif intval($prize['second']['radio'])==3}
+							自动退款并赠送优惠券
+							{else}
+							无此奖项
+							{/if}
+						</td>
+					</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<ul class="nav nav-tabs" id="myTab">
+			<li {if $op == 'list' && $todo == 'detail' && ($type=='group'||empty($type))}class="active"{/if}><a  href="{php echo web_url('application/lottery/list/detail',array('type'=>'group','lottery_id'=>$_GPC['lottery_id']))}">抽奖团 <span class="label label-warning pull-right" style="margin-left: 10px;">{$all1}</span></a></li>
+			<li {if $op == 'list' && $todo == 'detail' && $type=='order' }class="active"{/if}><a  href="{php echo web_url('application/lottery/list/detail',array('type'=>'order','lottery_id'=>$_GPC['lottery_id']))}">抽奖订单 <span class="label label-warning pull-right" style="margin-left: 10px;">{$all4}</span></a></li>
+			<li {if $op == 'list' && $todo == 'detail' && $type=='process' }class="active"{/if}><a  href="{php echo web_url('application/lottery/list/detail',array('type'=>'process','lottery_id'=>$_GPC['lottery_id']))}">中奖纪录 <span class="label label-warning pull-right" style="margin-left: 10px;">{$all2}</span></a></li>
+		</ul>
+		{if $op == 'list' && $todo == 'detail' && ($type=='group'||empty($type))}
+	<div class="panel panel-default">
+		<div class="table-responsive">
+			<table class="table table-hover table-bordered">
+				<thead class="navbar-inner">
+					<tr>
+						<th style="width:80px; text-align: center;">团编号</th>
+						<th style="width:80px;text-align: center;">商品ID</th>
+						<th style="width:220px;text-align: center;">商品名称</th>
+						<th style="width:60px;text-align: center;">状态</th>
+						<th style="width:80px;text-align: center;">已买/总需</th>
+						<th style="width:170px;text-align: center;">开团时间</th>
+						<th style="width:170px;text-align: center;">到期时间</th>
+						<th style="width:60px;text-align: center;">已发货</th>
+						<th style="width:150px; text-align: center;">操作</th>
+					</tr>
+				</thead>
+				<tbody style="text-align: center;">
+					{loop $alltuan $key $item}
+					<tr>
+						<td>{$item['groupnumber']}</td>
+						<td>{$item['goodsid']}</td>
+						<td>{$item['goodsname']}</td>
+						<td>
+							{if $item['groupstatus']==1 }
+								<span class="label label-warning">失败</span>
+							{/if}
+							{if $item['groupstatus']==2 }
+								 <span class="label label-success">成功</span>
+							{/if}
+							{if $item['groupstatus']==3 }
+								 <span class="label label-info">进行</span>
+							{/if}
+						</td>
+						<td>
+							<font color="red">{php echo $item['neednum']-$item['lacknum']}</font>/{$item['neednum']}
+						</td>
+						<td>{php echo date('Y-m-d H:i', $item['starttime'])}</td>
+						<td>{php echo date('Y-m-d H:i', $item['endtime'])}</td>
+						<td>
+							{if $item['sendnum']>0}
+							<span class="label label-danger">{$item['sendnum']}人</span>
+							{else}
+							<span class="label label-default">0人</span>
+							{/if}
+						</td>
+						<td style="text-align:right;">
+							<a href="{php echo web_url('application/lottery/group/group_detail', array('groupnumber' => $item['groupnumber'],'lottery_id'=>$item['lottery_id']))}" class="btn btn-success btn-sm">查看团信息</a>
+						</td>
+					</tr>
+					{/loop}
+				</tbody>
+			</table>
+		</div>
+		{$pager}
+	</div>
+	{/if}
+	{if $op == 'list' && $todo == 'detail' && $type=='order'}
+		<div class="order-list">
+		<div class="panel-body">
+	    <form action="" method="get" class="form-horizontal" role="form" id="form1">
+	    	<input type="hidden" name="c" value="site" />
+            <input type="hidden" name="a" value="entry" />
+            <input type="hidden" name="m" value="feng_fightgroups" />
+	        <input type="hidden" name="do" value="application" />
+	        <input type="hidden" name="ac" value="lottery" />
+	        <input type="hidden" name="status" value="{$status}"/>
+	        <input type="hidden" name="op" value="{$op}"/>
+	        <input type="hidden" name="todo" value="{$todo}"/>
+	        <input type="hidden" name="type" value="{$type}"/>
+	        <input type="hidden" name="lottery_id" value="{$_GPC['lottery_id']}"/>
+	        <div class="form-group">
+	            <div class="col-md-4">
+					<div class="input-group">
+						<input type="text" name="keyword" class="form-control" value="{$_GPC['keyword']}"  placeholder="请输入收货人信息"/>
+						<span class="input-group-addon" id="search">搜索</span>
+					</div>
+				</div>
+			</div>
+			<input type="hidden" name="token" value="{$_W['token']}" />
+	    </form>
+	</div>
+	<script type="text/javascript">
+		$("#search").click(function(){
+			$('#form1')[0].submit();
+		})
+	</script>
+		{loop $list $y $item}
+		<div class="panel panel-default">
+			<div class="panel-heading clearfix" style="padding: 10px 15px;">
+				<div class="pull-left">
+					<span class="label label-warning">拼团单：{$item['orderno']}号</span>
+				</div>
+				{if $item['lottery_status']>0}
+				<div class="pull-right">
+					<span class="text-muted"></span>&nbsp;&nbsp;
+					<a href="javascript:;" class="js-one" onclick="setprize({$item['id']},this,5)">内定一等奖</a> - 
+					<a href="javascript:;" class="js-two" onclick="setprize({$item['id']},this,6)" >内定二等奖</a> - 
+					<a href="javascript:;" class="js-three" onclick="setprize({$item['id']},this,7)" >内定三等奖</a>
+				</div>
+				{/if}
+			</div>
+			<div class="panel-body table-responsive" style="padding: 0px;">
+				<table class="table table-bordered">
+					<tbody >
+						<tr>
+							<td style="width: 50px;" ><center>{php echo $y+1}</center></td>
+							<td class="text-center" style="width:100px;">
+								<span><img src="{php echo tomedia($item['member']['avatar'])}" height="50" width="50"/>
+								<p>{if $item['cname']}{$item['cname']}{else}{$item['addname']}{/if}</p>
+								<p>{if $item['tel']}{$item['tel']}{else}{$item['mobile']}{/if}</p></span>
+							</td>
+							<td class="text-center" style="width:110px;">{php echo date('Y-m-d', $item['createtime'])}<br>{php echo date('H:i:s', $item['createtime'])}</td>
+							<td class="text-center" style="width:120px;">
+									{if $item['lottery_status']==0}<span class="label label-default">未组团成功
+									{elseif $item['lottery_status']==-1 && $lottery['dostatus']==0}<span class="label label-default">组团中
+									{elseif $item['lottery_status']==1 && $lottery['dostatus']==0}<span class="label label-default">待抽奖
+									{elseif $item['lottery_status']==2}<span class="label label-danger">一等奖
+									{elseif $item['lottery_status']==3}<span class="label label-success">二等奖
+									{elseif $item['lottery_status']==4}<span class="label label-warning">三等奖
+									{elseif $item['lottery_status']==5}<span class="label label-info">内定一等奖
+									{elseif $item['lottery_status']==6}<span class="label label-info">内定二等奖
+									{elseif $item['lottery_status']==7}<span class="label label-info">内定三等奖
+									{elseif $lottery['dostatus']==1}<span class="label label-default">未中
+									{/if}</span>
+							</td>
+							<td style="width:120px;">{$item['optionname']}</td>
+							<td class="text-center" style="width:130px;">总额：{if empty($item['pay_price'])}{$item['price']}{else}{$item['pay_price']}{/if}<br>实付：{if empty($item['price'])}0.00{else}{$item['price']}{/if}<br>（含运费：{$item['freight']}）</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		{/loop}
+	</div>
+	{$pager}
+	{/if}
+	<script type="text/javascript">
+	function setprize(a,b,c){
+		$.post("{php echo web_url('application/lottery/list/detail',array('type'=>'order','lottery_id'=>$_GPC['lottery_id'],'setone'=>1))}",{id:a,lottery_status : c},function(d){
+				if(!d.errno){
+					util.tips("设置成功");
+					location.reload();
+				}
+			});
+	}
+	</script>
+	{if $op == 'list' && $todo == 'detail' && $type=='process'}
+	<ul class="nav nav-tabs" id="myTab">
+			<li {if $op == 'list' && $todo == 'detail' && $type=='process' && $lottery_status==2 }class="active"{/if}><a  href="{php echo web_url('application/lottery/list/detail',array('type'=>'process','lottery_id'=>$_GPC['lottery_id'],'lottery_status'=>2))}">一等奖 <span class="label label-warning pull-right" style="margin-left: 10px;">{$all1}</span></a></li>
+			<li {if $op == 'list' && $todo == 'detail' && $type=='process' && $lottery_status==3 }class="active"{/if}><a  href="{php echo web_url('application/lottery/list/detail',array('type'=>'process','lottery_id'=>$_GPC['lottery_id'],'lottery_status'=>3))}">二等奖 <span class="label label-warning pull-right" style="margin-left: 10px;">{$all4}</span></a></li>
+			<li {if $op == 'list' && $todo == 'detail' && $type=='process' && $lottery_status==4 }class="active"{/if}><a  href="{php echo web_url('application/lottery/list/detail',array('type'=>'process','lottery_id'=>$_GPC['lottery_id'],'lottery_status'=>4))}">三等奖 <span class="label label-warning pull-right" style="margin-left: 10px;">{$all2}</span></a></li>
+		</ul>
+	<div class="order-list">
+		{loop $list $y $item}
+		<div class="panel panel-default">
+			<div class="panel-body table-responsive" style="padding: 0px;">
+				<table class="table table-bordered">
+					<tbody >
+						<tr>
+							<td style="width: 50px;" ><center>{php echo $y+1}</center></td>
+							<td class="text-center" style="width:100px;">
+								<img src="{php echo tomedia($item['member']['avatar'])}" height="50" width="50"/>
+								<p>{if $item['cname']}{$item['cname']}{else}{$item['addname']}{/if}</p>
+								<p>{if $item['tel']}{$item['tel']}{else}{$item['mobile']}{/if}</p>
+							</td>
+							<td class="text-center" style="width:110px;">{php echo date('Y-m-d', $item['createtime'])}<br>{php echo date('H:i:s', $item['createtime'])}</td>
+							<td class="text-center" style="width:120px;">
+								<span class="label label-info">{if $item['lottery_status']==0}未组团成功{elseif $item['lottery_status']==1}待抽奖{elseif $item['lottery_status']==2}一等奖{elseif $item['lottery_status']==3}二等奖{elseif $item['lottery_status']==4}三等奖{elseif $item['lottery_status']==5}内定一等{elseif $item['lottery_status']==6}内定二等{elseif $item['lottery_status']==7}内定三等{else}无抽奖权限{/if}</span>
+							</td>
+							<td class="text-center" style="width:130px;">
+								{if $lottery_status==2}
+								{if $item['is_hexiao']==0}
+								<a href="{php echo web_url('order/order/detail', array('id' => $item['id']))}">
+									去发货{$item['is_hexiao']}
+								</a> 
+								{/if}
+								{if $item['is_hexiao']==1}
+									{if $item['status']==2}
+									<span class="label label-success js-bdelete" order-id="{$item['id']}">确认核销</span>
+									{/if}
+									{if $item['status']==3 || $item['status']==4}
+									<span class="label label-info" >已核销</span>
+									{/if}
+								{/if}
+								{else}
+								已完成
+								{/if}
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		{/loop}
+	</div>
+	{/if}
+</div>
+{/if}
+<script type="text/javascript">
+$(function(){
+	$('.js-bdelete').click(function(e) {
+			e.stopPropagation();
+			var _this = $(this).parent().parent().parent().parent().parent().parent();
+			var order_id = $(this).attr('order-id');
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				$.post("{php echo web_url('order/order/confirmHexiao')}",{id:order_id},function(d){
+				if(!d.errno){
+					util.tips(d.message, 2000);
+					location.reload();
+				}
+			},"json");
+			}, {html: '确认核销?'});
+			
+		});
+});
+</script>
+{php include wl_template('common/footer');}

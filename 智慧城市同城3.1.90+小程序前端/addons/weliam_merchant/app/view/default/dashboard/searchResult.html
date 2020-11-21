@@ -1,0 +1,158 @@
+{php include wl_template('common/header');}
+<link rel="stylesheet" href="{URL_WEB_DIY}css/diy.min.css">
+<div class="page-group">
+    <div class="page page-current" id="page-index">
+        <!--返回按钮-->
+        <div class="hm_view_nav" style="z-index: 1000">
+            <a href="{php echo app_url('dashboard/home/index')}"><i class="icon iconfont icon-back" style="top: 10px;left: 5px;"></i></a>
+        </div>
+        <!--搜索框-->
+        <div class="content-block" id="search_start">
+            <div class="searchbar row">
+                <div class="search-input col-85" id="keyword">
+                    <i class="icon iconfont icon-search"></i>
+                    <input type="search"  placeholder='请输入商品名称/商户名称' name='search' value="{$search}"/>
+                </div>
+                <a class="col-15 external" id='search-form'>搜索</a>
+            </div>
+            {if $shout && !$search}
+            	<div class="hot-search">
+	                <span class="search-title">热门搜索</span>
+	                <ul class="search-tips">
+	                    {loop $shout $sh}
+	                        <li><a href="{php echo app_url('dashboard/home/searchInfo',array('search'=>$sh))}" class="button button-warning search_hot">{$sh}</a></li>
+	                    {/loop}
+	                </ul>
+	            </div>
+            {/if}
+        </div>
+        <!--类型，排序，分类-->
+        {if $search}
+        <div class="row no-gutter index-nav navbar-fixed-top" id="search_title">
+            {if $meroof['searchset'] == 1}
+                <div class="index-navbar sherry-click active" data-type="shopList">
+                    <em>店铺</em>
+                </div>
+                <div class="index-navbar sherry-click" data-type="goodsList">
+                    <em>商品</em>
+                </div>
+            {else}
+                <div class="index-navbar sherry-click active" data-type="goodsList">
+                    <em>商品</em>
+                </div>
+                <div class="index-navbar sherry-click" data-type="shopList">
+                    <em>店铺</em>
+                </div>
+            {/if}
+
+        </div>
+		<div class="content infinite-scroll-bottom infinite-scroll" style="margin-top: calc(44px + 2.1rem);">
+            <div class="" id="dataBox"></div>
+            <div class="infinite-scroll-preloader" id="Loading">
+                <div class="weui-loadmore">
+                    <i class="weui-loading"></i>
+                    <span class="weui-loadmore__tips">正在加载</span>
+                </div>
+            </div>
+            <div class="infinite-scroll-preloader" id="reachFooter">
+                <div class="weui-loadmore">
+                    <span class="weui-loadmore__tips">到底了</span>
+                </div>
+            </div>
+        </div>
+        {/if}
+    </div>
+</div>
+<script>
+    //点击搜索
+    $("#search-form").on('click',function () {
+        var val = $("[name='search']").val();
+        location.href = "{php echo app_url('dashboard/home/searchInfo')}"+'&search='+val;
+    });
+    var search = "{$search}",//搜索内容
+        page = 1,//页数
+        pageState = true,//是否进行分页加载
+        lat,//纬度
+        lng,//经度
+        mainData,//主要信息 全局使用
+        search_type = "{if  $meroof['searchset'] == 1}shopList{else}goodsList{/if}";;//当前显示类型,默认为店铺类型
+    $(function () {
+        getSearch();
+        wx.ready(function(){
+            wx.getLocation({
+                type: 'gcj02',
+                success: function (res) {
+                    lat = res.latitude;
+                    lng = res.longitude;
+                    getSearch();
+                },
+                cancel: function (res) {
+                    console.log(res);
+                }
+            });
+        });
+    });
+    //获取后台数据 并且调用数据进行渲染
+    function getSearch() {
+        var getUrl  = "{php echo app_url('dashboard/home/searchInfo')}";
+        var where = {search:search,lat:lat,lng:lng,page:page};
+        $.post(getUrl,where,function(res){
+            mainData = res.data;
+            showData();//数据信息渲染
+        },"json");
+    }
+    //根据类型进行信息的渲染
+    function showData() {
+        var tplHtml = $('#shop').html();
+        if (search_type == 'goodsList') {
+            tplHtml = $('#goods').html();
+        }
+        //没有内容时 更换模板
+        if (Object.keys(mainData[search_type]).length == 0 && pageState) {
+            tplHtml = $('#notHasInfo').html()
+        }
+        //加载信息
+        laytpl(tplHtml).render(mainData[search_type], function (html) {
+            if (pageState) {
+                $('#dataBox').html(html);
+                $("#reachFooter").hide();
+            } else {
+                pageState = true;
+                if (Object.keys(mainData[search_type]).length == 0) {
+                    $("#reachFooter").show();
+                } else {
+                    $('#dataBox').append(html);
+                }
+            }
+        });
+        $("#Loading").hide();
+    }
+    //点击更换信息类型
+    $("#search_title").on('click','.sherry-click',function () {
+        search_type = $(this).data("type");
+        $("#search_title .sherry-click").removeClass("active");
+        $(this).addClass("active");
+        page = 1;
+        getSearch();
+        //showData();
+    });
+    //查看是否到底，到底进行分页
+    $(".content").scroll(function(){
+        var $this =$(this),
+            viewH =$(this).height(),//可见高度
+            contentH =$(this).get(0).scrollHeight,//内容高度
+            scrollTop =$(this).scrollTop();//滚动高度
+        if(scrollTop/(contentH -viewH)>=0.95){ //到达底部100px时,加载新内容
+            //进行分页再次加载
+            if(pageState && $("#reachFooter").is(":hidden")){
+                $("#Loading").show();
+                pageState = false;
+                page++;
+                getSearch();
+            }
+        }
+    });
+
+</script>
+{php include wl_template('dashboard/searchTpl');}
+{php include wl_template('common/footer');}

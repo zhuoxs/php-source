@@ -1,0 +1,217 @@
+{template 'common/header'}
+<link rel="stylesheet" type="text/css" href="../addons/{php echo $_GPC['m']}/resource/css/style.css" />
+<link rel="stylesheet" type="text/css" href="../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.css" />
+<link rel="stylesheet" type="text/css" href="../addons/{php echo $_GPC['m']}/resource/bootstrap-select/bootstrap-select.min.css" />
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">
+            评论
+        </h3>
+    </div>
+    <div class="panel-body">
+        <div class="ibox-content">
+            <form action="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'version_id'=>$_GPC['version_id'])}" id="searchform" method="get">
+                <input type="hidden" class="form-control" name="c" value="site">
+                <input type="hidden" class="form-control" name="a" value="entry">
+                <input type="hidden" class="form-control" name="do" value="{$_GPC['do']}">
+                <input type="hidden" class="form-control" name="m" value="{$_GPC['m']}">
+                <input type="hidden" class="form-control" name="version_id" value="{$_GPC['version_id']}">
+                <div class="row" style="padding: 0 15px;">
+                    <div class="col-sm-3">
+                        <input type="text" class="form-control" placeholder="用户id" name="openid" value="{$openid}">
+                    </div>
+                    <div class="col-sm-3">
+                        <select class="selectpicker show-tick form-control bs-select-hidden" data-live-search="true" name="type" style="width: 50%;">
+                            <option value="0" hassubinfo="true">请选择类型</option>
+                            <option value="1" {if $type==1}selected{/if}>课程</option>
+                            <option value="2" {if $type==2}selected{/if}>视频</option>
+                            <option value="3" {if $type==3}selected{/if}>音频</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-2">
+                        <button type="submit" class="btn btn-default " style="margin-right:5px;">查询</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <form action="" method="post" class="form-horizontal form">
+            <input type="hidden" name="token" value="{$_W['token']}">
+
+            <div class="table-responsive panel-body">
+                <table class="table-striped table-bordered table-hover dataTables-example table">
+                    <thead class="navbar-inner">
+                    <tr>
+                        <th style="width: 10%;">用户id</th>
+                        <th style="width: 10%;">类型</th>
+                        <th style="width: 10%;">课程</th>
+                        <th style="width: 30%;">评论内容</th>
+                        <th style="width: 30%;">回复内容</th>
+                        <th>状态</th>
+                        <th style="width: 10%;">添加时间</th>
+                        <th style="width: 10%;" style="text-align: right;">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="level-list">
+                    {loop $list $index $item}
+                    <tr>
+                        <td><div class="type-parent">{$item['openid']}</div></td>
+                        <td><div class="type-parent">{$item['type_name']}</div></td>
+                        <td><div class="type-parent">{$item['pname']}</div></td>
+                        <td><div class="type-parent">{$item['content']}</div></td>
+                        <td><div class="type-parent reply_content">{$item['reply_content']}</div></td>
+                        <td><div class="type-parent" style="width: 52px;height: 32px;">
+                            {if $item['status']==1}
+                            <input type="checkbox" checked class="js-switch" value="1" name="status" data-id="{$item['id']}">
+                            {else}
+                            <input type="checkbox" class="js-switch" name="status" value="1" data-id="{$item['id']}">
+                            {/if}
+                        </div></td>
+                        <td><div class="type-parent">{$item['createtime']}</div></td>
+                        <td>
+                            {if $item['reply_status']==-1}
+                            <a class="btn btn-primary btn-xs reply" data-toggle="modal" data-target="#selectUrl" data-id="{$item['id']}"><i class="fa fa-edit"></i>回复</a>
+                            {/if}
+                            <a class="btn btn-danger btn-xs delete" data-id="{$item['id']}"><i class="fa fa-edit"></i>删除</a>
+                        </td>
+                    </tr>
+                    {/loop}
+                    </tbody>
+                </table>
+                <div style="text-align: right;">
+                    {$pager}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal fade" id="selectUrl"><div class="modal-dialog">
+    <style>
+        #selectUrl .modal-body {padding: 10px 15px;}
+        #selectUrl .tab-pane {margin-top: 5px; min-height: 400px; max-height: 400px; overflow-y: auto;}
+        #selectUrlTab{margin-bottom: 10px;}
+    </style>
+    <div class="modal-content">
+        <div class="modal-header">
+            <button data-dismiss="modal" class="close" type="button">×</button>
+            <h4 class="modal-title">评论回复</h4>
+        </div>
+        <div class="modal-body">
+            <form class="form-horizontal">
+                <div class="form-group">
+                    <label  class="col-sm-2 control-label">评论回复</label>
+                    <div class="col-sm-8">
+                        <textarea id="reply_content" class="form-control" placeholder="请输入评论回复" rows="10"></textarea>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button data-dismiss="modal" class="btn btn-primary" id="select-btn" type="button">确定</button>
+            <button data-dismiss="modal" class="btn btn-default" id="select-close" type="button">关闭</button>
+        </div>
+        <script>
+            var obj='';
+            $(function(){
+                $("#selectUrl").find('#selectUrlTab a').click(function(e) {
+                    $('#tab').val($(this).attr('href'));
+                    e.preventDefault();
+                    $(this).tab('show');
+                });
+                $("#sut_shop").find("nav").click(function(){
+                    $(obj).parent().prev().val($(this).attr("data-href"));
+                });
+                $("body").on("click",'.reply',function(){
+                    obj=this;
+                });
+                $("#select-btn").click(function(){
+                    var content=$("#reply_content").val();
+                    if(content!=""){
+                        var id=$(obj).attr("data-id");
+                        $.ajax({
+                            type:"post",
+                            url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'reply','version_id'=>$_GPC['version_id'])}",
+                            data:{id:id,content:content},
+                            dataType:'json',
+                            success:function(res){
+                                if(res.status==1){
+                                    $("#reply_content").val("");
+                                    $(obj).parent().parent().find(".reply_content").html(content);
+                                    $(obj).remove();
+                                    swal('操作成功!', '操作成功!', 'success');
+                                }else{
+                                    swal('操作失败!', '操作失败!', 'error');
+                                }
+                            }
+                        })
+                    }else{
+                        swal('错误!', '请输入回复内容!', 'error');
+                    }
+                });
+            });
+        </script>
+    </div>
+</div></div>
+<script>
+    require(["../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.js","../addons/{php echo $_GPC['m']}/resource/bootstrap-select/bootstrap-select.min.js"],function(){
+        $(function(){
+            //改变状态
+            $(".js-switch").change(function(){
+                var status;
+                var that=$(this);
+                if($(this).is(":checked")){
+                    status=1;
+                }else{
+                    status=-1;
+                }
+                var id=$(this).attr("data-id");
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'statuschange','version_id'=>$_GPC['version_id'])}",
+                    data:{id:id,status:status},
+                    dataType:'json',
+                    success:function(res){
+                        if(res.status==1){
+                            swal('操作成功!', '操作成功!', 'success');
+                        }else{
+                            that.prop("checked",!that.is(":checked"));
+                            swal('操作失败!', '操作失败!', 'error');
+                        }
+                    }
+                })
+            });
+            //删除
+            $(".delete").click(function(){
+                var that=$(this);
+                var id=$(this).attr('data-id');
+                swal({
+                    title: '确定删除吗?',
+                    text: "确定删除吗?",
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: '删除',
+                    cancelButtonText: '取消',
+                }).then(function(isConfirm) {
+                    if (isConfirm) {
+                        $.ajax({
+                            type:"post",
+                            url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'delete','version_id'=>$_GPC['version_id'])}",
+                            data:{id:id},
+                            dataType:'json',
+                            success:function(res){
+                                if(res.status==1){
+                                    swal('操作成功!', '操作成功!', 'success');
+                                    that.parent().parent().remove();
+                                }else{
+                                    swal('操作失败!', '操作失败!', 'error');
+                                }
+                            }
+                        })
+                    }
+                })
+            });
+        })
+    })
+</script>
+{template 'common/footer'}

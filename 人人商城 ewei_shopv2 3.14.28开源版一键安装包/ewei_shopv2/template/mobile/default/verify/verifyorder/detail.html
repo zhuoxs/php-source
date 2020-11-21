@@ -1,0 +1,332 @@
+{template '_header'}
+{if is_h5app()}
+<style>
+    .fui-page-group.statusbar .fui-statusbar {background: #1ab394;}
+    .fui-header a, .fui-header i, .fui-header .title {color: #fff;}
+    .head-menu-mask, .fui-tab.fixed {top: 3.2rem !important;}
+    .head-menu {top: 3.65rem !important;}
+    .fui-tab.fixed ~ .fui-content {top: 5.2rem !important;}
+</style>
+{/if}
+
+<link href="../addons/ewei_shopv2/template/mobile/default/static/css/verifyorder.css?v=2.0.3"rel="stylesheet"type="text/css"/>
+{php $hideLayer=true}
+
+<div class='fui-page fui-page-current order-detail-page'>
+    <div class="fui-header fui-header-success">
+        <div class="fui-header-left">
+            <a class="back btn-back"></a>
+        </div>
+        <div class="title">订单详情</div>
+        <div class="fui-header-right"></div>
+    </div>
+    <div class='fui-content'>
+
+        <div class="fui-list-group result-list nomargin">
+            <div class="fui-list order-status">
+                <div class="fui-list-inner">
+                    <div class="title">
+                        {if $item['status'] == 3}
+                            交易已完成
+                        {/if}
+                    </div>
+                    <div class="text">订单金额: ¥ {php echo price_format($item['price'])}<span></span></div>
+                </div>
+                <div class="fui-list-media">
+                    <i class="icon icon-money"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="fui-cell-group info-cell-group" style="table-layout:fixed;">
+            <div class="fui-cell">
+                <div class="fui-cell-label">订单编号:</div>
+                <div class="fui-cell-info"></div>
+                <div class="fui-cell-remark noremark black">{$item['ordersn']}</div>
+            </div>
+            <div class="fui-cell">
+                <div class="fui-cell-label">订单状态:</div>
+                <div class="fui-cell-info"></div>
+                <div class="fui-cell-remark noremark">
+                    {if $item['status'] == 3}
+                        <span class="fui-label fui-label-success round">交易完成</span>
+                    {/if}
+                </div>
+            </div>
+            <div class="fui-cell">
+                <div class="fui-cell-label">支付状态:</div>
+                <div class="fui-cell-info"></div>
+                <div class="fui-cell-remark noremark">
+                    {if $item['paytype'] == 0}未支付
+                    {elseif $item['paytype'] == 1}余额支付
+                    {elseif $item['paytype'] == 11}后台付款
+                    {elseif $item['paytype'] == 21}微信支付
+                    {elseif $item['paytype'] == 22}支付宝支付
+                    {elseif $item['paytype'] == 23}银联支付
+                    {elseif $item['paytype'] == 3}货到付款{/if}
+                </div>
+            </div>
+            <div class="fui-cell">
+                <div class="fui-cell-label">配送方式:</div>
+                <div class="fui-cell-info"></div>
+                <div class="fui-cell-remark noremark black">
+                    {if $item['isverify'] == 1}
+                        线下核销
+                    {elseif $item['dispatchtype']}
+                        自提
+                    {else}
+                        其他
+                    {/if}
+                </div>
+            </div>
+
+            {if !empty($saler)}
+            <div class="fui-cell">
+                <div class="fui-cell-label">核销人:</div>
+                <div class="fui-cell-info"></div>
+                <div class="fui-cell-remark noremark black">{$saler['nickname']}({$saler['salername']})</div>
+            </div>
+            {/if}
+
+            {if $item['verified']}
+                <div class="fui-cell">
+                    <div class="fui-cell-label">核销时间:</div>
+                    <div class="fui-cell-info"></div>
+                    <div class="fui-cell-remark noremark black">{php echo date('Y-m-d H:i:s', $item['verifytime'])}</div>
+                </div>
+            {/if}
+
+        </div>
+
+        <div class="fui-cell-group">
+            <div class="fui-cell">
+                <div class="fui-cell-info"><i class="icon icon-card"></i> 会员信息</div>
+            </div>
+        </div>
+        <div class="fui-list-group nomargin">
+            <a class="fui-list" href="#" data-nocache="true">
+                <div class="fui-list-media">
+                    <img src="{$member['avatar']}" class="round">
+                </div>
+                <div class="fui-list-inner">
+                    <div class="title">{php echo empty($member['nickname'])?"未更新":$member['nickname']} {if !empty($member['realname'])}<small>({$member['realname']})</small>{/if}</div>
+                    <div class="subtitle">
+                        <div class="total half">手机号: {php echo empty($member['mobile'])?"未设置":$member['mobile']}</div>
+                        <div class="total half">微信号: {php echo empty($member['weixin'])?"未设置":$member['weixin']}</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- 订单商品明细 -->
+        {if !empty($item['goods'])}
+            <div class="fui-cell-group">
+                <div class="fui-cell">
+                    <div class="fui-cell-info"><i class="icon icon-gifts"></i> 订单商品</div>
+                    <div class="fui-cell-remark noremark"><small>(价格单位: 元)</small></div>
+                </div>
+            </div>
+            <div class="fui-list-group goods-list-group nomargin">
+                {loop $item['goods'] $og}
+                    <div class="fui-list goods-list check-param" data-action="diyform-goods-{$og['id']}">
+                        <a class="fui-list-media" href="{php echo mobileUrl('mmanage/goods/edit', array('id'=>$g['id']))}">
+                            <img src="{php echo tomedia($og['thumb'])}" class="round" onerror="this.src='../addons/ewei_shopv2/static/images/nopic100.jpg';" />
+                        </a>
+                        <div class="fui-list-inner">
+                            <div class="title">
+                                {if !empty($og['diyformdata']) && $og['diyformdata'] != 'false'}<span class="fui-label fui-label-warning round"> </span>{/if}
+                                {if $goods['seckill_task']}<span class="fui-label fui-label-danger round">{$goods['seckill_task']['tag']}</span>{if $goods['seckill_room']}<span class="fui-label fui-label-primary">{php echo $goods['seckill_room']['tag']?:$goods['seckill_room']['title']}</span>{/if}{/if}
+                                {if !empty($goods['invoice'])}<label class='fui-label fui-label-success round'>支持开票</label>{/if}
+                                {$og['title']}</div>
+                            <div class="text goodstitle">规格: {$og['optionname']} {if !empty($og['goodssn'])}编码: {$og['goodssn']}{/if} {if !empty($og['productsn'])}条码: {$og['productsn']}{/if}</div>
+                            <div class="subtitle">
+                                <div class="total half">单价/数量: {$og['marketprice']}x{$og['total']}</div>
+                                <div class="total half text-right">{if $item['ispackage']}商品价格{else}折扣前/后{/if}: {if $item['ispackage']}&yen;{php echo price_format($og['marketprice'])}{else}{php echo price_format($og['orderprice'])}/{php echo price_format($og['realprice'])}{/if}</div>
+                            </div>
+                        </div>
+                    </div>
+                {/loop}
+            </div>
+        {/if}
+
+        <!-- 订单价格小计 -->
+        <div class="fui-cell-group">
+            <div class="fui-cell">
+                <div class="fui-cell-label gray">商品小计</div>
+                <div class="fui-cell-info"></div>
+                <div class="fui-cell-remark noremark black">￥{php echo price_format($item['goodsprice'] )}</div>
+            </div>
+
+            {if !$item['ispackage']}
+                {if $item['taskdiscountprice']>0 }
+                    <div class="fui-cell">
+                        <div class="fui-cell-label auto gray">任务活动优惠</div>
+                        <div class="fui-cell-info"></div>
+                        <div class="fui-cell-remark noremark black">-￥{php echo price_format($item['taskdiscountprice'])}</div>
+                    </div>
+                {/if}
+                {if $item['lotterydiscountprice']>0}
+                    <div class="fui-cell">
+                        <div class="fui-cell-label auto gray">游戏活动优惠</div>
+                        <div class="fui-cell-info"></div>
+                        <div class="fui-cell-remark noremark black">-￥{php echo price_format($item['lotterydiscountprice'])}</div>
+                    </div>
+                {/if}
+                {if $item['discountprice']>0}
+                    <div class="fui-cell">
+                        <div class="fui-cell-label gray">会员折扣</div>
+                        <div class="fui-cell-info"></div>
+                        <div class="fui-cell-remark noremark black">-￥{php echo price_format($item['discountprice'])}</div>
+                    </div>
+                {/if}
+                {if $item['deductprice']>0}
+                    <div class="fui-cell">
+                        <div class="fui-cell-label gray">积分抵扣</div>
+                        <div class="fui-cell-info"></div>
+                        <div class="fui-cell-remark noremark black">-￥{php echo price_format($item['deductprice'])}</div>
+                    </div>
+                {/if}
+                {if $item['deductenough']>0}
+                    <div class="fui-cell">
+                        <div class="fui-cell-label auto gray">商城满额立减</div>
+                        <div class="fui-cell-info"></div>
+                        <div class="fui-cell-remark noremark black">-￥{php echo price_format($item['deductenough'])}</div>
+                    </div>
+                {/if}
+                {if $item['merchdeductenough']>0}
+                    <div class="fui-cell">
+                        <div class="fui-cell-label auto gray">商户满额立减</div>
+                        <div class="fui-cell-info"></div>
+                        <div class="fui-cell-remark noremark black">-￥{php echo price_format($item['merchdeductenough'])}</div>
+                    </div>
+                {/if}
+                {if $item['couponprice']>0}
+                    <div class="fui-cell">
+                        <div class="fui-cell-label gray">优惠券优惠</div>
+                        <div class="fui-cell-info"></div>
+                        <div class="fui-cell-remark noremark black">-￥{php echo price_format($item['couponprice'])}</div>
+                    </div>
+                {/if}
+                {if $item['isdiscountprice']>0}
+                    <div class="fui-cell">
+                        <div class="fui-cell-label gray">促销优惠</div>
+                        <div class="fui-cell-info"></div>
+                        <div class="fui-cell-remark noremark black">-￥{php echo price_format($item['isdiscountprice'])}</div>
+                    </div>
+                {/if}
+                {if $item['buyagainprice']>0}
+                    <div class="fui-cell">
+                        <div class="fui-cell-label auto gray">重复购买优惠</div>
+                        <div class="fui-cell-info"></div>
+                        <div class="fui-cell-remark noremark black">-￥{php echo price_format($item['buyagainprice'])}</div>
+                    </div>
+                {/if}
+
+            {/if}
+            {if intval($item['changeprice'])!=0}
+                <div class="fui-cell">
+                    <div class="fui-cell-label gray">卖家改价</div>
+                    <div class="fui-cell-info"></div>
+                    <div class="fui-cell-remark black">
+                        <span style='{if 0<$item['changeprice']}color:green{else}color:red{/if}'>{if 0<$item['changeprice']}+{else}-{/if}￥{php echo number_format(abs($item['changeprice']),2)}</span>
+                    </div>
+                </div>
+            {/if}
+
+            <div class="fui-cell">
+                <div class="fui-cell-label auto gray">实付费</div>
+                <div class="fui-cell-info"></div>
+                <div class="fui-cell-remark noremark black">￥{php echo price_format($item['price'])}</div>
+            </div>
+        </div>
+
+        {if !empty($coupon)}
+            <div class="fui-cell-group">
+                <div class="fui-cell">
+                    <div class="fui-cell-info"><i class="icon icon-gifts"></i> 优惠券优惠: {$coupon['couponname']}</div>
+                </div>
+                <div class="fui-cell">
+                    <div class="fui-cell-label">优惠方式</div>
+                    <div class="fui-cell-info">
+                        {if $coupon['backtype']==0}
+                        立减 {$coupon['deduct']} 元
+                        {else if $coupon['backtype']==1}
+                        打 {$coupon['discount']} 折
+                        {else if $coupon['backtype']==2}
+                        {if $coupon['backmoney']>0}返 {$coupon['backmoney']} 余额{/if}
+                        {if $coupon['backcredit']>0}返 {$coupon['backcredit']} 积分{/if}
+                        {if $coupon['backredpack']>0}返 {$coupon['backredpack']} 红包{/if}
+                        {/if}
+                    </div>
+                </div>
+                {if $coupon['backtype']==2}
+                    <div class="fui-cell">
+                        <div class="fui-cell-label">返利方式</div>
+                        <div class="fui-cell-info">
+                            {if $item['backwhen']==0}
+                            交易完成后(过退款期限)
+                            {else if $item['backwhen']==1}
+                            订单完成后(收货后)
+                            {else}
+                            订单付款后
+                            {/if}
+                        </div>
+                    </div>
+                    <div class="fui-cell">
+                        <div class="fui-cell-label">返利情况</div>
+                        <div class="fui-cell-info">{if empty($coupon['back'])}未返利{else}已返利{/if}</div>
+                    </div>
+                    {if !empty($coupon['back'])}
+                        <div class="fui-cell">
+                            <div class="fui-cell-label">返利时间</div>
+                            <div class="fui-cell-info">{php echo date('Y-m-d H:i',$coupon['backtime'])}</div>
+                        </div>
+                    {/if}
+                {/if}
+            </div>
+        {/if}
+
+        <div class="fui-cell-group info-cell-group" style="table-layout:fixed;">
+            {if $item['status']>=0}
+                <div class="fui-cell">
+                    <div class="fui-cell-label">下单时间:</div>
+                    <div class="fui-cell-info">{php echo date("Y-m-d H:i:d", $item['createtime'])}</div>
+                </div>
+            {/if}
+            {if $item['status']>=1}
+                <div class="fui-cell">
+                    <div class="fui-cell-label">支付时间: </div>
+                    <div class="fui-cell-info">{php echo date("Y-m-d H:i:d", $item['paytime'])}</div>
+                </div>
+            {/if}
+
+            {if $item['status']>=3}
+                <div class="fui-cell">
+                    <div class="fui-cell-label">完成时间: </div>
+                    <div class="fui-cell-info">{php echo date("Y-m-d H:i:d", $item['finishtime'])}</div>
+                </div>
+            {/if}
+        </div>
+
+        {if !empty($order_fields) && !empty($order_data)}
+            <div class="fui-cell-group">
+                <div class="fui-cell">
+                    <div class="fui-cell-info"><i class="icon icon-form"></i> 统一下单信息</div>
+                </div>
+                {php $datas = $order_data}
+                {loop $order_fields $key $value}
+                    <div class="fui-cell">
+                        <div class="fui-cell-label">{php echo $value['tp_name']}</div>
+                        <div class="fui-cell-info"></div>
+                        <div class="fui-cell-remark noremark">{template 'diyform/mdiyform'}</div>
+                    </div>
+                {/loop}
+            </div>
+        {/if}
+
+        <div class="fui-title center">更多信息请至PC端查看</div>
+    </div>
+
+</div>
+
+{template '_footer'}

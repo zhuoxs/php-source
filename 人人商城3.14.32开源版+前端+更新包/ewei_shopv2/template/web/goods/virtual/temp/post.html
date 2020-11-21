@@ -1,0 +1,183 @@
+{template '_header'}
+
+<div class="page-heading"> 
+
+    <span class='pull-right'>
+
+        {ifp 'goods.virtual.temp.add'}
+        <a class="btn btn-primary btn-sm" href="{php echo webUrl('goods/virtual/temp/add')}">添加新模板</a>
+        {/if}
+
+        <a class="btn btn-default  btn-sm" href="{php echo webUrl('goods/virtual/temp')}">返回列表</a>
+
+
+    </span>
+    <h2>{if !empty($item['id'])}编辑{else}添加{/if}模板 <small>{if !empty($item['id'])}修改【{$item['title']}】{/if}</small></h2> 
+</div>
+
+{ife 'goods.virtual.temp' $item}
+{if !empty($_GPC['id'])}
+<div class="alert alert-danger">警告：当模板中已经添加数据后改变模板结构有可能导致无法使用！</div>
+{/if}
+{/if}
+
+
+<form action="" method="post" class="form-horizontal form-validate" enctype="multipart/form-data">
+    <input type="hidden" name="tp_id" value="{$item['id']}" />
+
+
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label" > 分类</label>
+        <div class="col-sm-9 col-xs-12">
+            {ife 'goods.virtual.temp' $item}
+            <select name="cate" class="form-control">
+                <option value=""></option>
+                {loop $category $c}
+                <option value="{$c['id']}" {if $item['cate']==$c['id']}selected{/if}>{$c['name']}</option>
+                {/loop}
+            </select>
+            {else}
+            {loop $category $c}
+            {if $item['cate']==$c['id']}{$c['name']}{/if}
+            {/loop}
+            {/if}
+        </div> 
+    </div>
+    <div class="form-group">
+        <label class="col-sm-2 control-label must" >模版名称</label>
+        <div class="col-sm-9 col-xs-12">
+            {ife 'goods.virtual.temp' $item}
+            <input type="text" name="tp_title" class="form-control" value="{$item['title']}" placeholder="模版名称，例：话费充值卡" data-rule-required='true' />
+            {else}
+            <div class='form-control-static'>{$item['title']}</div>
+            {/if}
+        </div> 
+    </div>
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label" >自定义链接</label>
+        <div class="col-sm-9 col-xs-12">
+            <div class="input-group">
+                <span class="input-group-addon">文字</span>
+                <input type="text" class="form-control novalidate" value="{php echo empty($item['linktext'])? '使用地址': $item['linktext']}" {ife "goods.virtual.temp" $item}name="tp_linktext"{else}disabled{/if}>
+                <span class="input-group-addon" style="border-left: 0; border-right: 0;">链接</span>
+                <input type="text" class="form-control novalidate" value="{$item['linkurl']}" id="linkurl"  {ife "goods.virtual.temp" $item}name="tp_linkurl"{else}disabled{/if}>
+                <span class="input-group-addon btn btn-default" data-toggle="selectUrl" data-input="#linkurl">选择链接</span>
+            </div>
+            <div class="help-block">提示：文字不设置默认为"使用地址"，不选择链接则不显示</div>
+        </div>
+    </div>
+
+    <div class="form-group-title">数据结构</div>
+
+    <div class="fileds">
+    {php $key="key";}
+    {php $name= $item['fields']['key'];}
+    {template 'goods/virtual/temp/tpl'}
+
+    {loop $item['fields'] $key $name}
+    {if $key!='key'}
+       {template 'goods/virtual/temp/tpl'}
+    {/if}
+    {/loop}
+
+    <div id="type-items"></div>
+    {if $datacount<=0}
+    {ife 'goods.virtual.temp' $item}
+    <div class="form-group">
+        <label class="col-sm-2 control-label" ></label>
+        <div class="col-sm-9 col-xs-12">
+            <a class="btn btn-default btn-add-type" href="javascript:;" onclick="addType();"><i class="fa fa-plus" title=""></i> 增加一条键</a>
+        </div>
+    </div>
+    {/if}
+    {/if}
+
+        </div>
+
+
+
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label" ></label>
+        <div class="col-sm-9 col-xs-12">
+            {ife 'goods.virtual.temp' $item}
+            <input type="submit" value="提交" class="btn btn-primary"  />
+            
+            {/if}
+            <a href="{php echo webUrl('goods/virtual/temp')}"  {ife 'goods.virtual.temp' $item}style='margin-left:10px;'{/if}><span class="btn btn-default" style='margin-left:10px;'>返回列表</span></a>
+        </div>
+    </div>
+
+</form>
+<script language='javascript'>
+    var kw = 1;
+    function addType() {
+        $(".btn-add-type").html("loading").addClass('disabled');
+        $.ajax({
+            url: "{php echo webUrl('goods/virtual/temp/tpl')}&kw=" + kw,
+            cache: false
+        }).done(function (html) {
+            $(".btn-add-type").html('<i class="fa fa-plus" title=""></i> 增加一条键').removeClass('disabled');
+            $("#type-items").append(html);
+        });
+        kw++;
+    }
+
+    function removeType(obj) {
+        $(obj).parent().remove();
+    }
+
+    $('form').submit(function () {
+
+
+        var check = true;
+        $(".fileds input[type=text]").each(function () {
+            var val = $(this).val();
+            if (!val) {
+                $('form').validate('false');
+                $(this).focus();
+                tip.msgbox.err('不能为空');
+                check = false;
+
+                return false;
+            }
+        });
+        if (!check) {
+            $('form').attr('stop', 1);
+            return false;
+        }
+        $('form').removeAttr('stop');
+        var o = {}; // 判断重复
+        $(".fileds input[mk=1]").each(function () {
+            if (!(o[$(this).val()])) {
+                o[$(this).val()] = true;
+            } else {
+                var val = $(this).val();
+                $(".fileds input[mk=1]").each(function () {
+                    if ($(this).val() == val) {
+                        $(this).css("border-color", "#f01");
+                    } else {
+                        $(this).css("border-color", "#ccc");
+                    }
+                });
+                tip.msgbox.err("红圈里的数据不能重复");
+
+                check = false;
+                return false;
+            }
+        });
+        if (!check) {
+            $('form').attr('stop', 1);
+            return false;
+        }
+        $('form').removeAttr('stop');
+        return check;
+    });
+
+</script>
+
+{template '_footer'}
+
+<!--4000097827-->

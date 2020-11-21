@@ -1,0 +1,713 @@
+{include file="common/head"}
+<?php $login_status = check_is_login();?>
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/mobile/static/css/play.css">
+<style type="text/css">
+    .layui-m-layercont{
+        text-align: left;
+    }
+</style>
+<script type="text/javascript" src="/static/ckplayer/ckplayer.js"></script>
+<script src="/static/msvodx/js/video_mobile.js"></script>
+<script>
+    $(function(){
+        var _width = $(window).width()/2;
+        $(".video-box").height(_width);
+        $(".baiduyytf").height(_width-39);
+    });
+
+</script>
+<script>
+    var page = 0;
+    var addLiIndex=1;
+    var status =1;
+
+    function  clearReply() {
+        layer.closeAll();
+    }
+
+    function replyComment(username,id,to_id){
+        var reply = '回复 @'+username+' : ';
+        var length = reply.length;
+        $('#to_user').val(id);
+        layer.open({
+            type: 1
+            ,content: '<input type="hidden" id="to_user" value="'+id+'"><input type="hidden" id="to_id" value="'+to_id+'"><p id="reply_title" style="text-align: left;padding-left: 10px;padding: 0 0 5px 20px;">'+reply+'</p><div class="area-box" style=" width: 90%;margin: 0"> <textarea id="reply_content"></textarea>  <div class="btn-box"> <a class="canel" onclick="clearReply()">取消</a> <a class="reply_send" style="background: #218aff;">发送</a> </div> </div>'
+            ,anim: 'up'
+            ,style: 'position:fixed; bottom:0; left:0; width: 100%; height: 155px; padding:10px 0; border:none;'
+            ,success: function(){
+                $('#reply_content').focus();
+                $('.reply_send').click(function () {
+                    var content =  $.trim($('#reply_content').val());
+                    var reply_title =  $('#reply_title').html();
+                    if((content == "" || content == undefined || content == null || content == $(".comment-atuser").html())) {
+                        layer.open({content:'请输入评论的内容!',skin:'msg',time:1});
+                        return false;
+                    }
+                    var to_user = $('#to_user').val();
+                    var to_id = $("#to_id").val();
+                    content = reply_title + content;
+                    var reqData={resourceType:'1',resourceId:{$videoInfo['id']},content:content,to_user:to_user,to_id:to_id};
+                    $.post('{:url("api/comment")}',reqData,function(data){
+                        if(data.resultCode==0){
+                            clearReply();
+                            layer.open({time:1,content:data.message,skin:'msg'});
+                            if(data.data.comment_examine_on != 1){
+                                var headimgurl = '/static/images/user_dafault_headimg.jpg';
+                                if(data.data.userinfo.headimgurl){
+                                    headimgurl = data.data.userinfo.headimgurl;
+                                }
+                                var html = '';
+                                $('#not-comment').remove();
+                                if(data.data.to_id != 0){
+                                    html += '<div style="padding: 15px 0 15px 20px;overflow: hidden;border-top: 1px solid #f3f3f3;"  id="common_'+data.data.id+'">';
+                                    html += '    <div class="user-avatar">';
+                                    html += '    <a href="javascript:">';
+                                    html += '    <img src="'+headimgurl+'">';
+                                    html += '    </a>';
+                                    html += '    </div>';
+                                    html += '    <div class="comment-section">';
+                                    html += '        <div class="user-info">';
+                                    html += '        <a href="javascript:" class="user-name">'+data.data.userinfo.nickname+'</a>';
+                                    html += '        <span class="comment-timestamp">刚刚</span>';
+                                    html += '       <span class="comment-Reply" onclick="replyComment(\''+data.data.userinfo.nickname+'\',\''+data.data.userinfo.id+'\',\''+data.data.to_id+'\')" ></span>';
+                                    html += '        </div>';
+                                    html += '    <div class="comment-text">'+data.data.content+'</div>';
+                                    html += '    </div>';
+                                    html += '</div>';
+                                    $("#common_"+data.data.to_id).append(html);
+                                    var go_id = 'common_'+data.data.id;
+                                    window.location.href="#"+go_id;
+                                }else{
+                                    html += '<li id="common_'+data.data.id+'">';
+                                    html += '<div style="overflow: hidden;">';
+                                    html += '   <div class="user-avatar">';
+                                    html += '       <a href="javascript:">';
+                                    html += '           <img src="'+headimgurl+'">';
+                                    html += '       </a>';
+                                    html += '    </div>';
+                                    html += '    <div class="comment-section">';
+                                    html += '   <div class="user-info">';
+                                    html += '       <a href="javascript:" class="user-name">'+data.data.userinfo.nickname+'</a>';
+                                    html += '       <span class="comment-timestamp">刚刚</span>';
+                                    html += '       <span class="comment-Reply" onclick="replyComment(\''+data.data.userinfo.nickname+'\',\''+data.data.userinfo.id+'\',\''+data.data.id+'\')" ></span>';
+                                    html += '   </div>';
+                                    html += '   <div class="comment-text">'+data.data.content+'</div>';
+                                    html += '   </div>';
+                                    html += '</div>';
+                                    html += ' </li>';
+                                    $("#comment-list ").prepend(html);
+                                    window.location.href="#comment_content";
+                                }
+                                $("#common_"+addLiIndex).hide().slideDown('fast');
+                                addLiIndex++;
+                            }
+                        }else{
+                            layer.open({content:'评论失败，原因：'+data.error,time:1,skin:'msg'});
+                        }
+                    },'JSON');
+                });
+            }
+        });
+
+    }
+
+    function getCommentList(){
+        var nowDate = new Date().getTime();
+        var times = "";
+        var url = "{:url('api/getCommentList')}";
+        var  resourceId = " {$videoInfo['id']}";
+        var data = {
+            "page":page,
+            "resourceId":resourceId,
+            "resourceType":1,
+        };
+        var html = '';
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: data,
+            dataType: 'json',
+            success: function(data){
+                console.log(data);
+                $('#comment_num').html("("+data.data.count+")");
+                var datas = data.data.list;
+                if(datas){
+                    page++;
+                    datas.forEach(function(item) {
+                        var headimgurl = '/static/images/user_dafault_headimg.jpg';
+                        if(item.headimgurl){
+                            headimgurl = item.headimgurl;
+                        }
+                        var time = parseInt(item.last_time*1000);
+                        if(parseInt(time+60*30*1000) > nowDate){
+                            times = '刚刚';
+                        }else if(parseInt(time+60*60*1000) > nowDate){
+                            times = '半个小时前';
+                        } else if(parseInt(time+2*60*60*1000) > nowDate){
+                            times = '1小时前';
+                        }else{
+                            var oDate = new Date(time);
+                            var Hours = oDate.getHours()>10 ? oDate.getHours() :  '0'+oDate.getHours();
+                            var Minutes = oDate.getMinutes()>10 ? oDate.getMinutes() :  '0'+oDate.getMinutes();
+                            times = oDate.getFullYear()+'-'+(oDate.getMonth()+1)+'-'+oDate.getDate()+' '+Hours+':'+Minutes;
+                        }
+                        html += '<li id="common_'+item.id+'">';
+                        html += '<div style="overflow: hidden;">';
+                        html += '       <div class="user-avatar">';
+                        html += '           <a href="javascript:">';
+                        html += '           <img src="'+headimgurl+'">';
+                        html += '           </a>';
+                        html += '           </div>';
+                        html += '           <div class="comment-section">';
+                        html += '           <div class="user-info">';
+                        html += '           <a href="javascript:" class="user-name">'+item.nickname+'</a>';
+                        html += '           <span class="comment-timestamp">'+times+'</span>';
+                        html += '           <span class="comment-Reply" onclick="replyComment(\''+item.nickname+'\',\''+item.send_user+'\',\''+item.id+'\')" ></span>';
+                        html += '       </div>';
+                        html += '       <div class="comment-text">'+item.content+'</div>';
+                        html += '       </div>';
+                        html += '</div>';
+                        var list = item.list;
+                        if(list!=undefined) {
+                            list.forEach(function(it) {
+                                var headimgurl = '/static/images/user_dafault_headimg.jpg';
+                                if(it.headimgurl){
+                                    headimgurl = it.headimgurl;
+                                }
+                                var time = parseInt(it.last_time*1000);
+                                if(parseInt(time+60*30*1000) > nowDate){
+                                    times = '刚刚';
+                                }else if(parseInt(time+60*60*1000) > nowDate){
+                                    times = '半个小时前';
+                                } else if(parseInt(time+2*60*60*1000) > nowDate){
+                                    times = '1小时前';
+                                }else{
+                                    var oDate = new Date(time);
+                                    var Hours = oDate.getHours()>10 ? oDate.getHours() :  '0'+oDate.getHours();
+                                    var Minutes = oDate.getMinutes()>10 ? oDate.getMinutes() :  '0'+oDate.getMinutes();
+                                    times = oDate.getFullYear()+'-'+(oDate.getMonth()+1)+'-'+oDate.getDate()+' '+Hours+':'+Minutes;
+                                }
+                                html += '<div style="padding: 15px 0 15px 20px;overflow: hidden;border-top: 1px solid #f3f3f3;">';
+                                html += '    <div class="user-avatar">';
+                                html += '    <a href="javascript:">';
+                                html += '    <img src="'+headimgurl+'">';
+                                html += '    </a>';
+                                html += '    </div>';
+                                html += '    <div class="comment-section">';
+                                html += '        <div class="user-info">';
+                                html += '        <a href="javascript:" class="user-name">'+it.nickname+'</a>';
+                                html += '        <span class="comment-timestamp">'+times+'</span>';
+                                html += '        <span class="comment-Reply" onclick="replyComment(\''+it.nickname+'\',\''+it.send_user+'\',\''+item.id+'\')" ></span>';
+                                html += '        </div>';
+                                html += '         <div class="comment-text">'+it.content+'</div>';
+                                html += '    </div>';
+                                html += '</div>';
+                            })
+                        }
+                        html += ' </li>';
+                    })
+                    $('#not-comment').remove();
+                    $('#comment-list').append(html);
+                    status =1;
+                }
+            }
+        });
+    }
+    function clearComment(){
+        $('.send').removeClass('submit');
+        $("#length").html('0/300');
+        $("#comment_content").val(' ');
+    }
+    function  addComment() {
+        var content =  $.trim($("#comment_content").val());
+        var to_user = $("#to_user").val();
+        var to_id = $("#to_id").val();
+        if((content == "" || content == undefined || content == null || content == $(".comment-atuser").html())) {
+            layer.open({content:'请输入评论的内容!',skin:'msg',time:1});
+            return false;
+        }
+        var reqData={resourceType:'1',resourceId:{$videoInfo['id']},content:content,to_user:to_user,to_id:to_id};
+        $.post('{:url("api/comment")}',reqData,function(data){
+            if(data.resultCode==0){
+                layer.open({time:1,content:data.message,skin:'msg'});
+                if(data.data.comment_examine_on != 1){
+                    var headimgurl = '/static/images/user_dafault_headimg.jpg';
+                    if(data.data.userinfo.headimgurl){
+                        headimgurl = data.data.userinfo.headimgurl;
+                    }
+                    var html = '';
+                    html += '<li id="common_'+data.data.id+'">';
+                    html += '   <div class="user-avatar">';
+                    html += '       <a href="javascript:">';
+                    html += '           <img src="'+headimgurl+'">';
+                    html += '       </a>';
+                    html += '    </div>';
+                    html += '    <div class="comment-section">';
+                    html += '   <div class="user-info">';
+                    html += '       <a href="javascript:" class="user-name">'+data.data.userinfo.nickname+'</a>';
+                    html += '       <span class="comment-timestamp">刚刚</span>';
+                    html += '       <span class="comment-Reply" onclick="replyComment(\''+data.data.userinfo.nickname+'\',\''+data.data.userinfo.id+'\',\''+data.data.id+'\')" ></span>';
+                    html += '   </div>';
+                    html += '   <div class="comment-text">'+data.data.content+'</div>';
+                    html += '   </div>';
+                    html += ' </li>';
+                    $('#not-comment').remove();
+                    $("#comment-list ").prepend(html);
+                    $("#liAdd_"+addLiIndex).hide().slideDown('fast');
+                    addLiIndex++;
+                }
+                clearComment();
+            }else{
+                layer.open({content:'评论失败，原因：'+data.error,time:1,skin:'msg'});
+            }
+        },'JSON');
+    }
+    $(function () {
+        getCommentList();
+        $(window).scroll(function(){
+            var srollPos = $(window).scrollTop();
+            if(srollPos+$(window).height() > $(document).height() - 80){
+                if(status == 1){
+                    status = 0;
+                    getCommentList();
+                }
+            }
+        });
+        $("#comment_content").on("keyup",function () {
+            var length = $("#comment_content").val().length;
+            $("#length").html(length+'/300');
+            if(length > 0){
+                $('.send').addClass('submit');
+                $('.submit').unbind();
+                $('.submit').bind('click',function (){
+                    addComment();
+                })
+            }else{
+                $('.send').removeClass('submit');
+            }
+            if(length > 300){
+                var text = $("#comment_content").val().substring(0,300);
+                $("#comment_content").val(text);
+            }
+        });
+
+        getGift();
+
+    })
+
+    function getGift(){
+        var url = "{:url('Api/getGift')}";
+        var data = {
+            "func": "getNameAndTime" ,
+        };
+        var html = '';
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: data,
+            dataType: 'json',
+            success: function(data){
+                data.forEach(function(item) {
+                    html+='<li>' +
+                        '<a onclick="reward('+item.id+','+item.price+',{$videoInfo.id},1)">'+
+                        '       <img src="'+item.images+'">\n' +
+                        '       <span>'+item.name+'</span>\n' +
+                        '       <span class="money">'+item.price+'金币</span>\n' +
+                        '       </a>'+
+                        '  </li>';
+                })
+                $('#gift_box').html(html);
+            }
+        });
+    }
+</script>
+<!--播放-->
+
+{php}
+$subject = strip_tags(htmlspecialchars_decode($videoInfo['info']));//去除html标签
+$pattern = '/\s/';//去除空白
+$content = preg_replace($pattern, '', $subject);
+$infodata = mb_substr($content, 0, 20);//截取80个汉字
+{/php}
+<div class="layui-m-layerchild  layui-m-anim-up" id="layui-comment" style="position:fixed; bottom:0; left:0; width: 100%; height: 200px; padding:10px 0; border:none;display: none ">
+    <div class="layui-m-layercont">可传入任何内容，支持html。一般用于手机页面中</div>
+</div>
+<!--    <div class="video-box" id="playerBox">
+        <img src="{$videoInfo['thumbnail']}" width="100%" height="100%" />
+    </div>-->
+<!--对联-左-->
+<div class="ads_dl ads-box" id="ads_dl" style="width:30%;float:left;position:fixed;left:0;z-index:1000;top:40%;padding-bottom: 0;border-radius: 0;">
+  <span class="ads-close"><a style="width:12px;height:12px;display:block;" onclick="document.getElementById('ads_dl').style.display='none'" href="javascript:void(0);"></a></span>
+  <script language="javascript" src="{:url('/poster/index',array('pid'=>2))}"></script>
+</div>
+<!--对联-右-->
+<div class="ads_dr ads-box" id="ads_dr" style="width:30%;float:right;position:fixed;right:0;z-index:1000;top:40%;padding-bottom: 0;border-radius: 0;">
+  <span class="ads-close"><a style="width:12px;height:12px;display:block;" onclick="document.getElementById('ads_dr').style.display='none'" href="javascript:void(0);"></a></span>
+  <script language="javascript" src="{:url('/poster/index',array('pid'=>3))}"></script>
+</div>
+<!--底部-->
+<div class="ads_b ads-box" id="ads_b" style="position:fixed;z-index:1000;bottom:51px;background:#000000ba;width:100%;text-align:center;padding-bottom: 0;border-radius: 0;">
+  <span class="ads-close"><a style="width:12px;height:12px;display:block;" onclick="document.getElementById('ads_b').style.display='none'" href="javascript:void(0);"></a></span>
+  <script language="javascript" src="{:url('/poster/index',array('pid'=>4))}"></script>
+</div>
+<div class="video-box" style="position: relative;height:215px;">
+    <div class="video-box" id="playerBox">
+</div>
+</div>
+
+<div class="panel p-title" style='margin-top: 20px;'>
+    <p class="biaoti">{$videoInfo['title']}</p>
+    <span><i class="btn fn-bofang"></i>{$videoInfo['click']}</span>&nbsp;&nbsp;
+    <span><i class="btn fn-time" style="font-size: 12px;"></i>{:date('Y-m-d H:i:s',(int)$videoInfo['add_time'])}</span>
+    <div class="drop-down"><i class="btn fn-down-bold"></i></div>
+    <div class="desc">
+        <p class="up_user_info">
+            {if $videoInfo.user_id>0}
+            <a title="进入ta的主页"  class="member_link" href="{:url('homepage/index',array('uid'=>$videoInfo['user_id']))}">
+                <img title="上传者" width="30" src="{$videoInfo['headimgurl']|default='/static/images/user_dafault_headimg.jpg'}" />
+            </a>
+            <a title="进入ta的主页"  class="member_link" href="{:url('homepage/index',array('uid'=>$videoInfo['user_id']))}"><span>{$videoInfo['member']|default='无名氏'}</span></a>
+            {else/}
+            <img title="上传者" width="30" src="{$videoInfo['headimgurl']|default='/static/images/user_dafault_headimg.jpg'}" />
+            <span>{$videoInfo['member']|default='无名氏'}</span>
+            {/if}
+        </p>
+        <p><label>分类：</label><a href="/video/lists.html?cid={$videoInfo['classid']|default=''}">{$videoInfo['classname']|default=''}</a></p>
+        <p><label>标签：</label>
+            {volist name="$videoInfo['taglist']|default=''" id="v"}
+            <a  href="/video/lists.html?tag_id={$v['id']}">{$v['name']}</a>
+            {/volist}
+        </p>
+        {notempty name="videoInfo.info"}
+        <h3 style="font-weight: bold;margin-bottom: 5px;">视频简介：</h3>
+        <div style="height: 75px; display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 4;overflow: hidden;line-height: 20px;"> {$videoInfo['info']|htmlspecialchars_decode}</div>
+        {/notempty}
+    </div>
+</div>
+<ul class="panel powerful">
+    <li id="giveGoodBtn"><i class="btn fn-zan2 {if $isGooded==true}gived{/if}"></i>点赞(<var id="goodNum">{$videoInfo.good|default="0"}</var>)</li>
+    <li><i class="btn fn-shoucang1 {if $isCollected==true}gived{/if}"></i><var id="shoucang">{if $isCollected==true}已收藏{else/}未收藏{/if}</var></li>
+    <!--<li><i class="btn fn-xiazai"></i>下载</li>-->
+    <li onclick="layer.open({skin:'msg',content:'建议使用浏览器自带的分享功能 ',time:2})"><i class="btn fn-fenxiang"></i>分享</li>
+</ul>
+<!--视频播放器下方-->
+<div class="ads_01" style="border-bottom: 5px solid #eee;"><script language="javascript" src="{:url('/poster/index',array('pid'=>5))}"></script></div>
+<div class="reward">
+    <p>打赏</p>
+    <ul id="gift_box">
+
+    </ul>
+</div>
+
+<!--截图-->
+{notempty name="img"}
+<div class="new-video-img"  id="gallery">
+    <p>视频截图</p>
+    <div id="video-img">
+        {volist name="img" id="v"}
+        <a href="{$v}"><img src="{$v}"/></a>
+        {/volist}
+    </div>
+</div>
+{/notempty}
+
+<div class="tab">
+    {if condition="isset($videoSet)"}
+    <span data-for="drama" class="active">剧集</span>
+    {/if}
+    <span data-for="discuss">网友评论</span>
+    <span data-for="r-list" >推荐视频</span>
+</div>
+<div class="set-box">
+    <!--剧集-->
+    {if condition="isset($videoSet)"}
+    <div class="panel drama" style="display: block;">
+        <ul>
+            {volist name="videoSet" id="video"}
+            <li {if condition="$video['id'] eq $videoInfo['id']"}class="curlPlayVideoLi"{/if}>
+            <a href="{:url('video/play',array('id'=>$video.id))}">
+                <div class="img-box">
+                    <img src="{$video.thumbnail}" />
+                    <span>{$video['play_time']}</span>
+                </div>
+                <div class="font-box">
+                    <p>{$video['title']}</p>
+                    <span><i class="btn fn-zan2"></i>{$video['good']}</span>
+                    <span style="margin-left: 20px;"><i class="btn fn-see"></i>{$video['click']}</span>
+                </div>
+            </a>
+            </li>
+            {/volist}
+        </ul>
+    </div>
+    {/if}
+    <!--推荐-->
+    <div class="panel r-list">
+        <!--<p class="title">大家都在看</p>-->
+        <ul>
+            {volist name="recom_list" id="vo"}
+            <li>
+                <a href="{:url('video/play',array('id'=>$vo['id']))}">
+                    <div class="img-box">
+                        <img src="{$vo['thumbnail']}">
+                        <span>{$vo['play_time']}</span>
+                    </div>
+                    <div class="font-box">
+                        <p>{$vo['title']}</p>
+                        <span><i class="btn fn-zan2"></i>{$vo['good']}</span>
+                        <span style="margin-left: 20px;"><i class="btn fn-see"></i>{$vo['click']}</span>
+                    </div>
+                </a>
+            </li>
+            {/volist}
+        </ul>
+    </div>
+    <!--评论-->
+    <div class="panel discuss">
+        <p class="title">共有<span id="comment_num">0</span>网友评论过</p>
+        <!--<div class="cmt-input">快来说说你的感想吧</div>-->
+        <div class="font-text">
+            <img src="/tpl/happy2018/static/images/header.png">
+            <input type="text" />
+            <div class="area-box">
+              <textarea name="textarea" id="comment_content"></textarea>
+              <span id="length">0/300</span>
+                <div class="btn-box">
+                    <a class="canel" onclick="clearComment()">取消</a>
+                    <a class="send">发送</a><!--class="submit"-->
+                </div>
+          </div>
+        </div>
+        <div class="comment-list">
+            <ul id="comment-list">
+                <li class='not-comment' id='not-comment'>暂没评论 ~</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+</div>
+<input type="hidden" id="ad_on" value="0">
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/mobile/static/css/touchTouch.css">
+
+<script src="__ROOT__/tpl/peixun/mobile/static/js/touchTouch.jquery.js"></script>
+
+<script>
+    $(function () {
+
+        $("#video-img a").touchTouch();
+
+    });
+    function check_logins(){
+        $.post('/api/get_login_status','{}',function (e) {
+            if(e.resultCode == 3){
+                layer.open(
+                    {
+                        content:'该账号已在其他地方登陆！',
+                        time:3,
+                        skin:'msg',
+                        end: function(){
+                            window.location.reload();
+                        }
+                    });
+            }
+        },'json');
+        setTimeout('check_logins()', 5000);
+    }
+    $(function(){
+        /*推荐，评论，剧集的切换*/
+        $(".tab span").click(function(){
+            var $t = $(this).attr("data-for");
+            $(".set-box").children().hide();
+            $(".set-box").find("."+$t).show();
+            $(".tab span").removeClass("active");
+            $(this).addClass("active");
+        });
+
+        $(".drop-down").click(function () {
+            if($(this).hasClass("on")==false){
+                $(".p-title .desc").stop().show();
+                $(this).find(".fn-down-bold").css("transform","rotate(180deg)");
+                $(this).addClass("on");
+            }else{
+                $(".p-title .desc").stop().hide();
+                $(this).find(".fn-down-bold").css("transform","rotate(0deg)");
+                $(this).removeClass("on");
+            }
+        });
+
+    });
+
+
+    //---------play video ---------------------------------------------------------
+
+    var playRequestUrl='{:url("api/payVideo")}';    //*必需配置项
+    var player,timer;
+    var page = 0;
+    var addLiIndex=1;
+    var trySeeTime=10;
+    var loginPageUrl="{:url('index/login')}";
+
+    function adjump(){
+        var canJumpAd="{$adSetting['skip_ad_on']}";
+        if(canJumpAd==1){
+            player.videoPlay();
+        }else{
+            layer.msg('您不能跳过广告',{icon:2,time:2000});
+        }
+    }
+
+    function loadedHandler(){
+        if(player.getMetaDate()){
+            player.addListener('pause', pauseHandler);
+            player.addListener('play', playHandler);
+        }
+    }
+
+    function pauseHandler(){
+        console.log('pause');
+        clearInterval(timer);
+        if(trySeeTime>0)layer.open({content:'试看计时暂停',time:1,skin:'msg'});
+    }
+
+    function playHandler(){
+        layer.open({content:'试看计时开始……',time:1,skin:'msg'});
+        timer=setInterval(checkTrySeeTime,1000);
+    }
+
+    function checkTrySeeTime(){
+        if(trySeeTime<=0){
+            layer.open({content:'很抱歉，试看时间到.',time:1,skin:'msg'});
+            //setTimeout("videoPlayInit({$videoInfo['id']})",2000);
+
+            setTimeout("location.reload()",1000);
+            player.videoPause();
+        }else{
+            trySeeTime--;
+            console.log(trySeeTime);
+        }
+    }
+
+    function createPlayer(playParams,isTrySee){
+        if(isTrySee==undefined) isTrySee=false;
+        if(layer!=undefined) layer.closeAll();
+        var vodUrl=(playParams==undefined)?'#':playParams.videoInfo.url;
+        var params={
+            container: '#playerBox',
+            variable: 'player',
+            poster:'{$videoInfo["thumbnail"]}',
+            video: vodUrl,
+            //loaded:'loadedHandler',
+            autoplay:false,
+            flashplayer: true,
+        };
+
+
+        if(playParams!=undefined){
+            $.ajax({
+                url:playRequestUrl,
+                type:'POST',
+                dataType:'JSON',
+                data:{id:playParams.videoInfo.id,surePlay:1,isTrySee:isTrySee},
+                async:false,
+                success:function(resp){
+                    if(resp.resultCode!=0){
+                        layer.open({content:'您不能观看此影片！',time:1,skin:'msg'});
+                        return false;
+                    }
+                    params.video=resp.data.videoInfo.url;
+
+                    if(resp.data.freeType==2 && resp.data.videoInfo.gold>0 && isTrySee){
+                        //按时长试看
+                        trySeeTime=resp.data.freeNum;
+                        console.log('begion try see:'+trySeeTime+'s');
+                        params.loaded="loadedHandler";
+                    }
+
+                },
+                error:function(){
+                    layer.open({content:'影片信息加载失败！',time:2,skin:'msg'});
+                    return false;
+                }
+            });
+        }
+
+        {if $adSetting['ad_on']==1}
+        $('#ad_on').val(1);
+        params.adfront='{$adSetting["pre_ad"]}';
+        params.adfrontlink='{$adSetting["pre_ad_url"]}';
+        params.adfronttime='{$adSetting["play_video_ad_time"]}';
+
+        params.adpause='{$adSetting["suspend_ad"]}';
+        params.adpauselink='{$adSetting["suspend_ad_url"]}';
+        params.adpausetime='{$adSetting["play_video_ad_time"]}';
+        {/if}
+
+            params.skipButtonShow=false;
+            player = new ckplayer(params);
+            if(isTrySee) setTimeout("player.changeControlBarShow(false)",1000); //hide control
+            if(playParams!=undefined) setTimeout("player.videoPlay()",1000); //play
+        }
+
+
+        $(function(){
+            createPlayer(null,null);
+            videoPlayInit({$videoInfo['id']});
+
+            $(".tab").find('span').first().click();
+
+            //点赞
+            {if condition='$isGooded==false'}
+            $("#giveGoodBtn").on('click',function(){
+                var reqData={resourceType:'video',resourceId:{$videoInfo['id']}};
+                $.post('{:url("api/giveGood")}',reqData,function(data){
+                    //console.log(data);
+                    if(data.resultCode==0){
+                        $('#goodNum').html(data.data.good);
+                        $('#giveGoodBtn').find('.fn-zan2').addClass("gived");
+                        $('#giveGoodBtn').unbind('click')
+                        layer.open({content:'点赞成功',skin:'msg',time:2});
+                    }else{
+                        if(data.error=='用户未登陆'){
+                            layer.open({content:'点赞失败,请登陆后再试!',skin:'msg',time:2,end:function () {
+                                location.href="{:url('index/login')}";
+                            }});
+                        }else{
+                            layer.open({content:'点赞失败，原因：'+data.error,skin:'msg',time:2});
+                        }
+                    }
+                },'JSON');
+            });
+            {/if}
+
+                //收藏
+                {if condition='!$isCollected'}
+                $(".fn-shoucang1").on("click",function () {
+                    var collectData={type:'1',id:'{$videoInfo["id"]}'};
+                    $.post('{:url("api/colletion")}',collectData,function (data) {
+                        if(data.resultCode==0){
+                            $('#shoucang').html('已收藏');
+                            $('.fn-shoucang1').addClass("gived").unbind('click');
+                            layer.open({content:'收藏成功',skin:'msg',time:2});
+                        }else{
+                            if(data.error=='用户未登陆'){
+                                layer.open({content:'收藏失败,请登陆后再试!',skin:'msg',time:2,end:function () {
+                                    location.href="{:url('index/login')}";
+                                }});
+                            }else{
+                                layer.open({content:'收藏失败，原因：'+data.error,skin:'msg',time:2});
+                            }
+                        }
+                    },'json');
+                });
+                {/if}
+                });
+
+</script>
+
+{if condition="$login_status['resultCode'] eq 1 "}
+<script>
+    check_logins();
+</script>
+{/if}
+{include file="common/footer"}

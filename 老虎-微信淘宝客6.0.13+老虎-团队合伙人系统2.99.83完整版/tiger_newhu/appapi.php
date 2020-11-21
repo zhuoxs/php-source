@@ -1,0 +1,22 @@
+<?php
+define('IN_SYS', true);
+require '../../framework/bootstrap.inc.php';
+require '../../web/common/bootstrap.sys.inc.php';
+global $_W,$_GPC;
+file_put_contents(IA_ROOT."/addons/tiger_newhu/log--app.txt","\n".json_encode($_GPC),FILE_APPEND);
+echo "<pre>";
+	print_r($_GPC);
+	exit;
+$siteroot = substr($_W['siteroot'], 0, stripos($_W['siteroot'], '/addons'));
+$url = $siteroot.'/app/index.php';
+$data = array('i'=>2,'c'=>'entry','do'=>'pddsign','m'=>'tiger_zhaoshang','code'=>$_GPC['code'],'state'=>$_GPC['state']);
+$query = http_build_query($data);
+$url .= '?'.$query;
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+curl_setopt($ch, CURLOPT_HEADER, 0);
+$output = curl_exec($ch);
+curl_close($ch);
+echo "<pre>";
+print_r($output);

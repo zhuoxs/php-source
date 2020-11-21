@@ -1,0 +1,150 @@
+{template '_header'}
+<div class="page-heading">
+	
+	<span class='pull-right'>
+		
+		{ifp 'lottery.add'}
+        <a class='btn btn-primary btn-sm' href="{php echo webUrl('lottery/add',array('lottery_type'=>1))}"><i class="fa fa-plus"></i> 添加大转盘</a>
+		<a class='btn btn-primary btn-sm' href="{php echo webUrl('lottery/add',array('lottery_type'=>2))}"><i class="fa fa-plus"></i> 添加刮刮卡</a>
+		<a class='btn btn-primary btn-sm' href="{php echo webUrl('lottery/add',array('lottery_type'=>3 ))}"><i class="fa fa-plus"></i> 添加九宫格</a>
+		{/if}
+
+		<a class="btn btn-default  btn-sm" href="{php echo webUrl('lottery')}">返回列表</a>
+
+
+	</span>
+    <h2>{if !empty($item['lottery_id'])}编辑{else}添加{/if}抽奖 <small>{if !empty($item['lottery_id'])}修改【{$item['lottery_title']}】{/if}</small></h2>
+</div>
+
+<link rel="stylesheet" href="../addons/ewei_shopv2/plugin/lottery/static/style/post.css" />
+<form action="" method="post" class="form-horizontal form-validate" enctype="multipart/form-data">
+    <input type="hidden" name="id" value="{$item['lottery_id']}" />
+    <ul class="nav nav-arrow-next nav-tabs" id="myTab">
+        <li {if $_GPC['tab']=='basic' || empty($_GPC['tab'])}class="active"{/if} ><a href="#tab_basic">基本</a></li>
+        {if !empty($item['lottery_id'])}
+        <li {if $_GPC['tab']=='design'}class="active"{/if} ><a href="#tab_design">设计</a></li>
+        {if $type!=2}
+        <li {if $_GPC['tab']=='preview'}class="active"{/if} ><a href="#tab_preview">预览</a></li>
+        {/if}
+        {/if}
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane  {if $_GPC['tab']=='basic' || empty($_GPC['tab'])}active{/if}" id="tab_basic">{template 'lottery/post/basic'}</div>
+        <div class="tab-pane  {if $_GPC['tab']=='design'}active{/if}" id="tab_design">{template 'lottery/post/design'}</div>
+        {if $type!=2}
+        <div class="tab-pane  {if $_GPC['tab']=='design'}active{/if}" id="tab_preview">{template 'lottery/post/preview'}</div>
+        {/if}
+    </div>
+
+    <div class="form-group"></div>
+    <div class="form-group">
+        <label class="col-sm-2 control-label"></label>
+        <div class="col-sm-9 col-xs-12">
+            {ife 'lottery' $item}
+            <input type="submit" value="提交" class="btn btn-primary"  />
+            <input type="hidden" name="reward_data" value="">
+            <input type="hidden" name="reward_rank" value="">
+
+            <input type="hidden" name="lottery_type" value="{$type}" />
+            {/if}
+            <input type="button" name="back" onclick='history.back()' {ifp 'lottery.add|lottery.edit'}style='margin-left:10px;'{/if} value="返回列表" class="btn btn-default" />
+        </div>
+    </div>
+</form>
+
+<script language='javascript'>
+    require(['bootstrap'],function(){
+        $('#myTab a').click(function (e) {
+            e.preventDefault();
+            $('#tab').val( $(this).attr('href'));
+            $(this).tab('show');
+        })
+    });
+
+    function showGoodsSelect(show){
+        if(show){
+            $('#goodsdiv').show();
+        }
+        else{
+            $('#goodsdiv').hide();
+        }
+    }
+
+    $('form').submit(function(){
+        if($('.rec_reward_data').length < $('#rec-rank .panel').length){
+            tip.msgbox.err('有未选择奖励的奖项');
+            $('form').attr('stop',1);
+            return false;
+        }
+        var rec_reward = [];
+        $('.rec_reward_data').each(function () {
+            var obj = $(this);
+            var type = obj.data('type');
+            var d = {};
+            d.rank = obj.data('rank');
+            if(type==1){
+                d.type=1;
+                d.num=obj.data('value');
+            }else if(type==2){
+                d.type=2;
+                d.num=obj.data('value');
+                d.total=obj.data('total');
+                d.moneytype=obj.data('moneytype');
+            }else if(type==3){
+                d.type=3;
+                d.num=obj.data('value');
+                d.total=obj.data('total');
+                if(d.num<1){
+                    tip.msgbox.err('微信企业付款需支付1元以上!');
+                    $('form').attr('stop',1);
+                    return false;
+                }
+            }else if(type==4){
+                d.type=4;
+                d.goods_id=obj.data('goodsid');
+                d.img=obj.data('img');
+                d.goods_name = obj.data('goodsname');
+                d.goods_price = obj.data('goodsprice');
+                var goods_spec = obj.data('goodsec');
+                if(goods_spec>0){
+                    d.goods_spec = goods_spec;
+                    d.goods_specname = obj.data('specname');
+                }else{
+                    d.goods_spec = 0;
+                    d.goods_specname = '无规格';
+                }
+                d.goods_total = obj.data('goodsnum');
+                d.goods_totalcount = obj.data('goodstotal');
+            }else if(type==5){
+                d.type=5;
+                d.coupon_id=obj.data('couponid');
+                d.img=obj.data('img');
+                d.coupon_name=obj.data('couponname');
+                d.coupon_num=obj.data('couponnum');
+                d.coupon_total=obj.data('coupontotal');
+
+            }
+            rec_reward.push(d);
+        });
+        var reward_rank = [];
+        $('#rec-rank .panel').each(function () {
+            var obj = $(this);
+            var d = {};
+            d.rank = obj.data('rank');
+            d.title = obj.data('title');
+            d.icon = obj.data('icon');
+            d.probability = obj.data('probability');
+            reward_rank.push(d);
+        });
+        $('input[name="reward_data"]').val( JSON.stringify(rec_reward));
+        $('input[name="reward_rank"]').val( JSON.stringify(reward_rank));
+        $('form').removeAttr('stop');
+        return true;
+
+    });
+
+</script>
+{template '_footer'}
+
+<!--913702023503242914-->

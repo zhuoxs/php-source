@@ -1,0 +1,167 @@
+{template 'common/header'}
+<div class="main">
+    <ul class="nav nav-tabs">
+        <li class="active"><a href="{php echo $this->createWebUrl('coupon')}">卡券管理</a></li>
+    </ul>
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site">
+                <input type="hidden" name="a" value="entry">
+                <input type="hidden" name="do" value="coupon">
+                <input type="hidden" name="m" value="crad_qrcode_red">
+                <input type="hidden" name="cid" value="{$cid}">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">卡券类型</label>
+                    <div class="col-sm-7 col-lg-8 col-md-8 col-xs-12">
+                        <a href="{php echo filter_url('coupon_type:0')}" class="btn btn-{if empty($_GPC['coupon_type'])}primary{else}default{/if}">全部</a>
+                        <a href="{php echo filter_url('coupon_type:1')}" class="btn btn-{if $_GPC['coupon_type'] == 1}primary{else}default{/if}">折扣券</a>
+                        <a href="{php echo filter_url('coupon_type:2')}" class="btn btn-{if $_GPC['coupon_type'] == 2}primary{else}default{/if}">现金券</a>
+                        <a href="{php echo filter_url('coupon_type:3')}" class="btn btn-{if $_GPC['coupon_type'] == 3}primary{else}default{/if}">礼品券</a>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">状态</label>
+                    <div class="col-sm-7 col-lg-8 col-md-8 col-xs-12 btn-group">
+                        <a class="btn btn-default {if $_GPC['status'] == '0'||$_GPC['status'] == ''}btn-primary{/if}" href="{php echo filter_url('status:0');}">不限</a>
+                        <a class="btn btn-default {if $_GPC['status'] == '1'}btn-primary{/if}" href="{php echo filter_url('status:1');}">未核销</a>
+                        <a class="btn btn-default {if $_GPC['status'] == '3'}btn-primary{/if}" href="{php echo filter_url('status:3');}">已核销</a>
+                        <a class="btn btn-default {if $_GPC['status'] == '2'}btn-primary{/if}" href="{php echo filter_url('status:2');}">已删除</a>
+                    </div>
+                </div>
+                <div class="form-group" >
+                    <label class="col-xs-12 col-sm-2 col-md-2 control-label">所属活动</label>
+                    <div class="col-sm-8 col-md-8 col-lg-8 col-xs-12">
+                        <select  name="aid" id="aid">
+                            <option value="0" {if empty($aid)}selected{/if}>所有</option>
+                            {loop $activity_info $activity_val}
+                            <option value="{$activity_val['id']}" {if $activity_val['id']==$aid}selected{/if}>{$activity_val['name']}</option>
+                            {/loop}
+                        </select>
+                        <span class="help-block"></span></div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">领取人</label>
+                    <div class="col-sm-7 col-lg-8 col-md-8 col-xs-12">
+                        <input class="form-control" name="nickname" id="nickname" placeholder="粉丝昵称" type="text" value="{$_GPC['nickname']}">
+                    </div>
+                    <div class="pull-right col-xs-12 col-sm-3 col-lg-2">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">总数：{$total}</div>
+        <div class="table-responsive panel-body">
+            <form action="" method="post" id="form1" class="form-horizontal form" enctype="multipart/form-data">
+
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th class='with-checkbox' style="width: 20px;"><input type="checkbox" class="check_all" /></th>
+                            <th width="40">ID</th>
+                            <th>领取人</th>
+                            <th>所属活动</th>
+                            <th width="140">卡券内容</th>
+                            <th>领核时间</th>
+                            <th width="120">到期时间</th>
+                            <th width="60">状态</th>
+                            <th width="120">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loop $list $row}
+                        <tr>
+                            <td class="with-checkbox"><input type="checkbox" name="ids[]" value="{$row['id']}"></td>
+                            <td>{$row['id']}</td>
+
+                            <td>
+                                {if $row['nickname']}
+                                {$row['nickname']}
+                                {else}
+                                {php echo cutstr($row['openid'], 8);}
+                                {/if}
+                            </td>
+                            <td>{$row['activity_name']}</td>
+                            <td>
+                            {$row['coupon_content']}{if $row['coupon_friend']==1}
+                            <span class="label label-danger">【联盟】</span>
+                            {/if}</td>
+
+                            <td>
+                                {php echo date('Y-m-d H:i', $row['createtime']);}
+                                {if $row['usetime']}
+                                </br>{php echo date('Y-m-d H:i', $row['usetime']);}
+                                {/if}
+                            </td>
+                            <td>{$row['coupon_validity']}</td>
+                            <td>
+                                {if $row['status'] == 1}
+                                <span class="label label-success">未核销</span>
+                                {elseif $row['status'] == 2}
+                                <span class="label label-warning">已失效</span>
+                                {elseif $row['status'] == 3}
+                                <span class="label label-danger">已核销</span>
+                                {elseif $row['status'] == 4}
+                                <span class="label label-default">已删除</span>
+                                {/if}
+                            </td>
+                            
+                            <td style="text-align:center;">
+                                {if $row['status'] == 1 && $row['usetime']<1 }
+                                <a href="{php echo $this->createWebUrl('coupon', array('op' => 'consume','id' => $row['id']))}" onclick="return confirm('是否确认核销卡券？');
+                                        return false;" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="核销卡券">核销</a>
+                                {/if}
+                                <a href="{php echo $this->createWebUrl('coupon', array('op' => 'del','id' => $row['id']))}" onclick="return confirm('是否确认删除？');
+                                        return false;" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="删除">删除</a>
+                            </td>
+                        </tr>
+                        {/loop}
+                    </tbody>
+                    <tr>
+                        <td colspan="10">
+                            <input name="op" id="op" type="hidden" value="" />
+                            <input name="token" type="hidden" value="{$_W['token']}" />
+                            <button type="button" class="btn btn-primary" name="btndeleteall" id="btndeleteall"/>批量删除</button>&nbsp;&nbsp;&nbsp; &nbsp; 
+                            <button  type="button" class="btn btn-danger text-right" onclick="delete_all()">清空（删除所有记录）</button>
+                        </td>
+                    </tr>
+                </table>
+            </form>                        
+        </div>
+    </div>
+    {$pager}
+</div>
+<script type="text/javascript">
+    function delete_all() {
+        if (confirm('确认删除所有信息吗,删除完不可恢复?')) {
+            var aid = $("#aid").val();
+            var cid = $("#cid").val();
+            var keyword = $("#keyword").val();
+            window.location.href = "{php echo $this->createWebUrl('coupon',array('op'=>'deleteall','status'=>$status,'coupon_type'=>$coupon_type))}" + "&aid=" + aid + "&cid=" + cid + "&nickname=" + keyword;
+        }
+    }
+    $(function() {
+        $(".check_all").click(function() {
+            var checked = $(this).get(0).checked;
+            $("input[type=checkbox]").attr("checked", checked);
+        });
+
+        $("#btndeleteall").click(function() {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if (check.length < 1) {
+                alert('请选择要删除的任务!');
+                return false;
+            }
+            if (confirm("确认要删除选择的任务?删除后不可恢复")) {
+                $('#op').val('deleteids');
+                $('#form1').submit();
+            }
+        });
+
+    });
+</script>
+{template 'common/footer'}

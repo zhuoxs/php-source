@@ -1,0 +1,475 @@
+{template 'common/header'}
+{if IMS_VERSION<1}
+<link href="{MODULE_URL}/template/static/css/wq1.0.css" rel="stylesheet">
+{/if}
+<style>
+
+.audit,.lock,.clearposter{cursor:pointer;}
+.table>thead>tr>td, .table>tbody>tr>td, .table>tfoot>tr>td{
+white-space: normal;
+word-wrap: break-word;
+word-break: normal;
+}
+.label {
+    line-height: 1.8;
+}
+.MagicThumb img,.MagicThumb-container img{margin:2px;padding:1px;border:1px solid #ccc;}
+.label{margin:3px 0;}
+.we7-margin-right{margin-right: 10px;}
+.vertical-middle
+{
+	padding: 6px !important;
+}
+.jiahua
+{
+	display: -webkit-flex !important;
+	flex-direction: row;
+}
+.caohu
+{
+	padding: 20px 0;
+}
+.zaijia
+{
+	padding: 9.5px 12px !important;
+}
+</style>
+<script src="{MODULE_URL}/template/static/js/mzp-packed-me.js"></script>
+
+<link href="http://libs.baidu.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet" />
+<script src="http://libs.baidu.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+
+
+{if empty($_SESSION['auditcode'.$_GPC['rid']])}
+<form action="{php echo $this->createMobileUrl('votelist',array('todo'=>'login','rid'=>$_GPC['rid']))}" method='post'>
+    密码:<input type='text' name='pwd'>
+    <input type='submit' value='登录'>
+</form>
+{else}
+
+<div class="main1">
+
+    <div class="we7-page-title caohu">查看选手</div>
+
+
+    <div class="we7-padding-bottom clearfix">
+        <form action="./index.php" method="get" role="form" >
+            <div class="jiahua">
+            <div class="input-group pull-left col-sm-4 jiahua">
+            <input type="hidden" name="i" value="{$_GPC['i']}" />
+			<input type="hidden" name="c" value="entry" />
+        	<input type="hidden" name="m" value="silence_vote" />
+        	<input type="hidden" name="do" value="votelist" />
+			<input type="hidden" name="rid" value="{$_GPC['rid']}" />
+                        <input type="hidden" name="flag" value="1" />
+                         <select class='easyui-combobox' name='saiquid' id='saiquid'  style='width:200px; height: 40px;'
+                                  data-options=''></select>
+            <script type="text/javascript" src="{MODULE_URL}/template/static/web/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="{MODULE_URL}/template/static/web/jquery-easyui/jquery.portal.js"></script>
+<script type="text/javascript" src="{MODULE_URL}/template/static/web/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+
+<link rel="stylesheet" type="text/css" href="{MODULE_URL}/template/static/web/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css" href="{MODULE_URL}/template/static/web/jquery-easyui/themes/color.css" />
+<link rel="stylesheet" type="text/css" href="{MODULE_URL}/template/static/web/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="{MODULE_URL}/template/static/web/jquery-easyui/themes/IconExtension.css" />
+            <script>
+                $('#saiquid').combobox({
+                    valueField:'id',
+                    textField:'text',
+                    url:"{php echo $this->createMobileUrl('votelist',array('op'=>'getsaiqu','rid'=>$_GPC['rid']))}",
+                    filter: function(q, row){
+                        var opts = $(this).combobox('options');
+                        return row[opts.textField].indexOf(q) != -1;
+                    },
+                    onLoadSuccess:function(){
+                        {if $_GPC['flag']}
+                            $(this).combobox('select',{$_GPC['saiquid']});
+                        {else}
+                            $(this).combobox('select',-1);
+                        {/if}
+                        
+                    }
+                }); 
+            </script>
+            <input type="text" name="keyword" value="{$keyword}" class="form-control" placeholder="输入姓名，手机号或ID" style="margin-left: 10px;"/>
+            <span class="input-group-btn"><button class="btn btn-default zaijia"><i class="fa fa-search"></i></button></span>
+            </div>
+            </div>
+        </form>
+        <div class="pull-right" hidden>
+        <a href="{php echo $this->createWebUrl('uploadvote',array('rid'=>$_GPC['rid']));}" class="btn btn-primary  we7-margin-left">+批量导入用户</a>
+            <a href="{php echo $this->createWebUrl('edit',array('rid'=>$_GPC['rid']));}" class="btn btn-primary  we7-margin-left">+添加投票用户</a>
+            <a href="{php echo $this->createWebUrl('download',array('rid'=>$_GPC['rid']));}" class="btn btn-primary  we7-margin-left">导出用户数据</a>
+        </div>
+    </div>
+        <table class="table we7-table table-hover">
+            <thead class="navbar-inner">
+                <tr>
+				<th style="width:30px;">选手id</th>
+				<th  width="90">用户</th>	
+                <th>用户信息</th>	
+                <th>赛区</th>										
+                <th>图片</th>
+                <th>视频</th>
+				<th  width="125" hidden>数据</th>
+				<th width="95">参加时间</th>
+                <th width="95">状态</th>
+                <th width="130" hidden>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {loop $list $row}
+                <tr>
+                    <td  class="text-left vertical-middle"><input type="checkbox" name="uid[]" value="{$row['id']}" class="">{$row['id']}</td>
+					<td  class="text-left vertical-middle"><img src="{php  echo tomedia($row['avatar']);}" width="48"><br />{$row['nickname']}
+<br>
+编号：{$row['noid']}
+<br>
+                                        {if $row['agent_id']>0}
+                                            <div class="jiakuan">
+                                                经纪人：{$row['agentname']}
+                                            </div>
+                                        {/if}
+
+					</td>
+                                        
+					
+
+					<td class="text-left vertical-middle" style="">
+					<p>姓名：<span class="label label-success">{$row['name']}</span></p>
+					<p>{php echo $reply['bmzdy']?:'参赛简历'}：<span class="label label-default">{$row['resume']}</span></p>
+					 {loop $row['joindata'] $join}
+					 <p >
+					     {if $join['name']=="性别"}
+						    {$join['name']}：<span class="label label-default">
+						    {if $join['val']==2}
+							  女
+							{else}
+							  男
+							{/if}({$join['val']})
+							</span><br>
+						 {else}
+
+						    {$join['name']}：<span class="label label-default" >{$join['val']}</span><br/>
+						 {/if}
+					 </p>
+					 {/loop}
+					</td>
+					<td  class="text-left vertical-middle" >
+						<p>赛区：<span class="label label-default">{$row['saiqu']}</span></p>
+					</td>										
+                    <td  class="text-left vertical-middle">
+					<a  href="{php  echo tomedia($row['img1']);}" class=" MagicThumb">
+					<img src="{php  echo tomedia($row['img1']);}" width="48"></a>
+					{if $row['img2']!=""}<a  href="{php  echo tomedia($row['img2']);}" class=" MagicThumb"><img src="{php  echo tomedia($row['img2']);}" width="48"></a>{/if}
+					{if $row['img3']!=""}<a  href="{php  echo tomedia($row['img3']);}" class=" MagicThumb"><img src="{php  echo tomedia($row['img3']);}" width="48"></a>{/if}
+					{if $row['img4']!=""}<a  href="{php  echo tomedia($row['img4']);}" class=" MagicThumb"><img src="{php  echo tomedia($row['img4']);}" width="48"></a>{/if}
+					{if $row['img5']!=""}<a  href="{php  echo tomedia($row['img5']);}" class=" MagicThumb"><img src="{php  echo tomedia($row['img5']);}" width="48"></a>{/if}
+					
+					</td>
+					<td class="text-left vertical-middle">
+						<!-- 按钮触发模态框 -->
+					<button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#myModal{$row['id']}">预览</button>
+					<!-- 模态框（Modal） -->
+					<div class="modal fade" id="myModal{$row['id']}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+					    <div class="modal-dialog">
+					        <div class="modal-content">
+					            <div class="modal-header">
+					                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times</button>
+					                <h4 class="modal-title" id="myModalLabel">视频预览</h4>
+					            </div>
+					            <div class="modal-body">
+					            	<video src="{php  echo tomedia($row['video']);}" width="100%" height="500" style="background: #000;" controls preload="metadata"></video>
+					            </div>
+					            <!--<div class="modal-footer">
+					                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					            </div>-->
+					        </div><!-- /.modal-content -->
+					    </div><!-- /.modal -->
+					</div>
+					
+					<script>
+					   $(function () { $('#myModal{$row['id']}').on('hide.bs.modal', function () {
+					   	 $('video').trigger('pause');
+					   })
+					   });
+					</script>
+					</td>
+	                <td class="text-left vertical-middle" hidden>
+<p>
+	                票数：<span class="label label-primary">{$row['votenum']}</span>
+</p><p>
+	                礼物：<span class="label label-success">{$row['giftcount']}元</span>
+</p><p>
+	                浏览：<span class="label label-info">{$row['pvtotal']}</span>
+</p><p>
+	                分享：<span class="label label-warning">{$row['sharetotal']}</span>
+</p>
+	                </td>
+					<td class="text-left vertical-middle">{php echo date('Y-m-d H:i:s',$row['createtime'])}</td>
+                    <td class="text-left vertical-middle">
+                    <p>
+                    {if $row['status']==0}<span class="label label-info audit" data-id="{$row['id']}" data-s="1">待审核</span> {elseif $row['status']==1}<span class="label label-success audit" data-id="{$row['id']}" data-s="0">已审核</span>{/if}
+					</p>
+					<p hidden>
+					{if $row['locktime']>time() }<span class="label label-danger lock" data-id="{$row['id']}" data-s="1" title="点击解锁">已锁定</span> {elseif $row['locktime']<time()}<span class="label label-success lock" data-id="{$row['id']}" data-s="0"title="点击锁定">非锁定</span>{/if}
+					</p>
+					<p hidden>
+					<span class="label label-danger clearposter" data-id="{$row['id']}" title="点击清除个人海报"title="点击锁定">清除海报</span>
+					</p>
+					<p>
+					</td>
+                    <td  class="text-left vertical-middle" hidden>
+					<p>
+					<a class="color-default we7-margin-right" title="投票数据" href="{php echo $this->createWebUrl('votedata',array('rid'=>$row['rid'],'id'=>$row['id'],'ty'=>'votenum'))}" ><i class="fa fa-star-o"></i> 投票数据</a>
+					</p><p>
+					<a class="color-default we7-margin-right" title="钻石数据" href="{php echo $this->createWebUrl('giftlist',array('rid'=>$row['rid'],'id'=>$row['id']))}" ><i class="fa fa-codepen"></i> 礼物订单</a>
+					</p><p>
+					<a class="color-default we7-margin-right jsgift_acid" title="送礼物" href="javascript:;" data-toggle="modal" data-target="#jsgift_acid" data-id="{$row['id']}" ><i class="fa fa-plus-circle"></i>  送礼物</a>
+					</p><p>
+					<a class="color-default we7-margin-right" title="编辑" href="{php echo $this->createWebUrl('edit',array('rid'=>$row['rid'],'id'=>$row['id']))}" ><i class="fa fa-edit"></i> 编辑</a>
+					</p><p>
+					
+					<a class="color-default we7-margin-right" rel="tooltip" href="#" onclick="drop_confirm('您确定要删除吗?删除不可恢复，同时删除所有相关数据！', '{php echo $this->createWebUrl('otherset',array('ty'=>'deletevoteuser','id'=>$row['id'],'rid'=>$row['rid']))}');" title="删除"><i class="fa fa-times"></i> 删除</a></p>
+                    </td>
+                </tr>
+                {/loop}
+				<tr>
+			<td><input type="checkbox" name="" onclick="var ck = this.checked;$(':checkbox').each(function(){this.checked = ck});"></td>
+			<td colspan="7"><input type="hidden" name="isstatus" class="btn btn-primary" value="审核"></td>
+		</tr>
+            </tbody>
+        </table>
+		<div class="modal fade" id="jsgift_acid" tabindex="-1" data-id="" role="dialog" aria-hidden="true" data-fanid="" data-nickname=""  data-openid=""  data-headimgurl="">
+			<div class="we7-modal-dialog modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+						<div class="modal-title">选择送礼物</div>
+					</div>
+					<div class="modal-body">
+					<div class="form-group"  style="margin-top:10px;clear:both; margin：0 auto; ">
+						    <p>送礼用户：</p>
+						    <p class="guser_img" style="border:1px solid #ccc; clear:both;margin-top:10px; width:82px;"><img src="" width="80" height="80" /></p> 
+							<p class="guser_text"></p> 
+						</div>
+					<div class="form-group">
+						<p>请选择礼物：</p>
+						{loop $giftlist  $item}
+							<div class="gift_choose">
+							{loop $item $index $rom}
+								<div class="donate_money" dada-key="{$index}" dada-tip="单价{$rom['giftprice']}元，抵{$rom['giftvote']}票！">
+								<p class="donate_money_icon"><img src="{media $rom['gifticon']}" width="50%" /></p> 
+								<span class="donate_money_title">{$rom['gifttitle']}</span>
+								<span class="donate_money_num">{php echo $rom['giftprice']*$reply['giftscale'];}{$reply['giftunit']};{$rom['giftvote']}票</span>
+								</div>
+							{/loop}
+							</div>
+						{/loop}
+					</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-primary giftup_js" data-dismiss="modal">确定</button>
+						<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+					</div>
+				</div>
+			</div><style>
+		.gift_choose .donate_money{width:120px; float:left;    text-align: center;}
+		.gift_choose .active{border: 3px solid #f00;}
+		</style>
+	    </div>
+      <div class="pull-right">
+        {$pager}
+    </div>
+</div>
+<script>
+$(function(){
+
+
+   
+
+	$(".check_all").click(function(){
+	var checked = $(this).get(0).checked;
+			$("input[type=checkbox]").attr("checked", checked);
+	});
+	$("input[name=isstatus]").click(function(){
+
+		var check = $("input:checked");
+				if (check.length < 1){
+		err('请选择要删除的记录!');
+				return false;
+		}
+		if (confirm("确认要删除选择的记录?")){
+		var id = new Array();
+				check.each(function(i){
+				id[i] = $(this).val();
+				});
+				$.post('{php echo create_url('site/entry', array('do' => 'otherset','rid' => $_GPC["rid"],'ty' => 'statusAll', 'm' => 'silence_vote'))}', {idArr:id}, function(data){
+				if (data.errno == 0)
+				{
+					location.reload();
+				} else {
+					alert(data.error);
+				}
+				}, 'json');
+		}
+
+	});
+			
+			
+
+	
+	var giftid="";
+	$(".donate_money").click(function(){
+		var tip = $(this).attr("dada-tip"); 
+		giftid=$(this).attr("dada-key"); 
+		$(".donate_money").removeClass("active");
+		$(this).addClass("active");
+    });
+	
+	$(".jsgift_acid").click(function(){
+	    var clickthis=$(this);
+		var id=clickthis.attr('data-id');
+		$("#jsgift_acid").attr('data-id',id);
+		$.ajax({
+		type : "post",
+		url : "{php echo $this->createWebUrl('otherset',array('rid'=>$_GPC['rid'],'ty'=>'loaduser'))}",
+		dataType : "json",
+		success : function(res) {
+			if (res.status == 200) {
+				   $("#jsgift_acid").attr('data-fanid',res['fanid']);
+				   $("#jsgift_acid").attr('data-nickname',res['nickname']);
+				   $("#jsgift_acid").attr('data-openid',res['openid']);
+				   $("#jsgift_acid").attr('data-headimgurl',res['headimgurl']);
+				   $(".guser_img img").attr('src',res['headimgurl']);
+				   $(".guser_text").html(res['nickname']);
+			   }
+			}
+		});
+	});	
+	$(".giftup_js").click(function(){
+	    if(giftid==""){alert("请选择你要赠送的礼物");return false;}
+	    var clickthis=$(this).parent().parent().parent().parent();
+		
+		var id=clickthis.attr('data-id');
+		var fanid=clickthis.attr('data-fanid');
+		var nickname=clickthis.attr('data-nickname');
+		var openid=clickthis.attr('data-openid');
+		var headimgurl=clickthis.attr('data-headimgurl');
+		$.ajax({
+		type : "post",
+		url : "{php echo $this->createWebUrl('otherset',array('rid'=>$_GPC['rid'],'ty'=>'upgift'))}",
+		data: {id:id,giftid:giftid,fanid:fanid,nickname:nickname,openid:openid,headimgurl:headimgurl},
+		dataType : "json",
+		success : function(res) {
+			if (res.status == 200) {
+				   alert("送礼成功");
+			   }else{
+			       alert("操作失败");
+			   }
+			}
+		});
+	});
+
+$(".audit").click(function(){
+	// return false;
+    var clickthis=$(this);
+    var did=clickthis.attr('data-id');
+	var audit=clickthis.attr('data-s');
+	$.ajax({
+		type : "post",
+		url : "{php echo $this->createMobileUrl('otherset',array('rid'=>$_GPC['rid'],'ty'=>'audit'))}",
+		data : {
+			id : did,
+			audit : audit,
+		},
+		dataType : "json",
+		success : function(res) {
+			if (res.status == 200) {
+			    clickthis.attr('data-s',(1-audit));
+				if(clickthis.hasClass('label-success')){
+				    clickthis.removeClass("label-success");
+                    clickthis.addClass('label-info');
+					clickthis.html('待审核');
+                }else{
+				    clickthis.removeClass("label-info");
+				    clickthis.addClass('label-success');
+					clickthis.html('已审核');
+				}
+			}
+		}
+
+	});
+});		
+			
+
+$(".lock").click(function(){
+    var clickthis=$(this);
+    var did=clickthis.attr('data-id');
+	var lock=clickthis.attr('data-s');
+	$.ajax({
+		type : "post",
+		url : "{php echo $this->createWebUrl('otherset',array('rid'=>$_GPC['rid'],'ty'=>'lock'))}",
+		data : {
+			id : did,
+			lock : lock,
+		},
+		dataType : "json",
+		success : function(res) {
+			if (res.status == 200) {
+			    clickthis.attr('data-s',(1-lock));
+				if(clickthis.hasClass('label-success')){
+				    clickthis.removeClass("label-success");
+                    clickthis.addClass('label-danger');
+					clickthis.html('已锁定');
+                }else{
+				    clickthis.removeClass("label-danger");
+				    clickthis.addClass('label-success');
+					clickthis.html('非锁定');
+				}
+			}
+		}
+
+	});
+});	
+
+$(".clearposter").click(function(){
+    var clickthis=$(this);
+    var did=clickthis.attr('data-id');
+	$.ajax({
+		type : "post",
+		url : "{php echo $this->createWebUrl('otherset',array('rid'=>$_GPC['rid'],'ty'=>'clearposter'))}",
+		data : {
+			id : did
+		},
+		dataType : "json",
+		success : function(res) {
+			if (res.status == 200) {
+			    alert("清除成功，可以重新生成！");
+			}else if(res.status == 404){
+			    alert("该用户还没有生成海报。");
+			}else{
+			     alert("删除失败，请检查是否有删除权限！");
+			}
+		}
+
+	});
+});	
+
+	
+			
+});
+
+
+</script>
+<script>
+            function drop_confirm(msg, url){
+            if (confirm(msg)){
+            window.location = url;
+            }
+            }
+
+</script>
+
+
+{/if}

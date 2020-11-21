@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{{ title }}</title>
+
+    {% block css %}
+        <link rel="stylesheet" href="{{ basePath }}/css/color.css">
+        <link rel="stylesheet" href="{{ basePath }}/css/common.css">
+        <link rel="stylesheet" href="{{ basePath }}/css/login.css">
+    {% endblock %}
+
+    {% block js %}
+        <script src="{{ basePath }}/js/common.js"></script>
+        <script src="{{ basePath }}/js/jquery.js"></script>
+
+    {% endblock %}
+</head>
+<body class="red">
+<div class="loginBox">
+    <div class="logo">
+        <div class="inner">
+            <div class="left fl flex">
+                {% if global.shopSetting.logo %}
+                    <img src="{{ tomedia(global.shopSetting.logo) }}" style="width: 100px">
+                {% else %}
+                    <img src="{{ basePath }}/images/LOGO.png" alt="">
+                {% endif %}
+                <span>欢迎注册</span>
+            </div>
+            <div class="right fr go-regist">
+                <span>已有账号？</span>
+                <a href="{{ pcUrl('pc/member/login') }}" class="goRegist"><span>立即登录</span></a>
+            </div>
+        </div>
+    </div>
+    <div style="position: relative;">
+    <div class="login">
+        <h3>注册账号</h3>
+        <div class="inp"><input type="tel" name="mobile" placeholder="请输入手机号" maxlength="11"></div>
+        <div class="code flex">
+            <input type="text" name="verifycode"  placeholder="请输入验证码">
+            <button id="sendMobile">获取验证码</button>
+        </div>
+        <div class="inp"><input type="password"   id="pwd" name="pwd"  placeholder="请输入密码"></div>
+        <div class="inp"><input type="password"   id="bakpwd" name="bakpwd" placeholder="请再次输入密码"></div>
+        <div class="inp"><input type="hidden"  name="sendurl" value="{{ pcUrl('pc/member/verifycode') }}"></div>
+        <div class="inp"><input type="hidden"  name="registerurl" value="{{ pcUrl('pc/member/regiinfo') }}"></div>
+        <div class="inp"><input type="hidden"  name="loginurl" value="{{ pcUrl('pc/member/login') }}"></div>
+        <div class="submit"><button  id="register">立即注册</button></div>
+        <div class="go-regist">
+            <span>已有账号？</span>
+            <a href="{{ pcUrl('pc/member/login') }}" class="goRegist"><span>立即登录</span></a>
+        </div>
+    </div>
+     <div class="copyright">{{ global.setting.copyright ?:'无'}}</div>
+    </div>
+</div>
+</body>
+</html>
+<script>
+
+    var modal = {
+        seconds: 60
+    };
+    function jump(loginurl){
+        location.href = loginurl;
+    }
+    // 发验证码
+    $("#sendMobile").on("click", function () {
+
+       var mobile =  $(" input[ name='mobile' ] ").val();
+       var url =  $(" input[ name='sendurl' ] ").val();
+       if(mobile != undefined){
+           mobile = mobile.replace(/\D/g,""); /* 替换手机号中的空格*/
+        }
+
+        if(!(/^1[3|4|5|7|8][0-9]{9}$/.test(mobile))){
+            alert("请输入正确的手机号");return;
+        }
+       $.ajax({
+           type : 'get',
+           url : url,
+           data : {'mobile':mobile,'temp':'sms_reg'},
+           dataType : 'json',
+           success : function(ret){
+               console.log(ret);
+            if (ret.status != 1) {
+                alert(ret.result.message);
+                return;
+            }
+            if (ret.status == 1) {
+                 alert(ret.result.message);
+                 verifycode()
+            }
+        }},JSON)
+    });
+    //注册
+    $(".submit").on("click", function () {
+        var registerurl =  $(" input[ name='registerurl' ] ").val();
+        var verifycode =  $(" input[ name='verifycode' ] ").val();
+        var loginurl =  $(" input[ name='loginurl' ] ").val();
+        var mobile =  $(" input[ name='mobile' ] ").val();
+        var pwd =  $("#pwd").val();
+        var bakpwd =  $("#bakpwd").val();
+
+        if(!(/^1[3|4|5|7|8][0-9]{9}$/.test(mobile))){
+            alert("请输入正确的手机号");return;
+        }
+        if (pwd !== bakpwd) {
+            alert('两次输入密码不一致');return;
+        }
+        if (pwd =='') {
+            alert("请输入密码");return;
+        }
+        if (verifycode =='') {
+            alert("请输入验证码");return;
+        }
+        if (pwd.length <6) {
+            alert("请输入大于6位的密码");return;
+        }
+        $.ajax({
+            type : 'post',
+            url : registerurl,
+            data : {'mobile':mobile,'verifycode':verifycode,'pwd':pwd},
+            dataType : 'json',
+            success : function(ret){
+                if (ret.status != 1) {
+                    alert(ret.result.message);
+                    return;
+                } else {
+                    alert(ret.message);
+                    jump(loginurl);
+                    return;
+                }
+            }},JSON)
+    });
+    //验证码倒计时
+    function verifycode(){
+
+        modal.seconds--;
+        console.log(modal.seconds);
+        if (modal.seconds > 0) {
+            $('#sendMobile').html(modal.seconds + '秒后重发').addClass('disabled').attr('disabled', 'disabled');
+            setTimeout(function () {
+                verifycode();
+            }, 1000)
+        } else {
+            $('#sendMobile').html('获取验证码').removeClass('disabled').removeAttr('disabled')
+            modal.seconds = 60;
+        }
+    };
+</script>

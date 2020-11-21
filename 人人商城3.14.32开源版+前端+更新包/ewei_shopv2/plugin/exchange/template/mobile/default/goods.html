@@ -1,0 +1,198 @@
+{template '_header'}
+<script>document.title = "选择兑换商品"; </script>
+<style>
+    .option-picker .fui-navbar {
+        height: 2.5rem;
+    }
+</style>
+<form action="{php echo mobileUrl('exchange/calculate',array(),1);}" method="post" class="form-horizontal form-validate" novalidate="novalidate" data-status="0">
+<div id="status">
+<div class='fui-page fui-page-current'>
+    <div class="fui-content">
+        {if !empty($banner)}
+        <div class="fui-swipe" style="height: 200px">
+            <div class="fui-swipe-wrapper">
+                {loop $banner $k $v}
+                <div class="fui-swipe-item"><img src="{php echo tomedia($v);}" style="height: 100%"></div>{/loop}
+            </div>
+            <div class="fui-swipe-page"></div>
+        </div>
+        {/if}
+        <div class="fui-card">
+            <div class="fui-card-content" style="margin-left: 50px">
+                您的兑换码是 <b style="color: #ff445f;">{$key}</b><br>
+                {if $groupResult['showcount'] == 0}已查询{$codeResult['count']} 次 <br>{/if}
+                您可以凭兑换码兑换 {if $groupResult['type'] == 1}{if $groupResult['max']>0}{$groupResult['max']}{else}任意{/if} 件{else}价值 <span style="color: #ff445f;">{$groupResult['value']}</span> 元的{/if}商品 <br>
+                已选 <span style="color: #ff445f;" class="total">0</span> 件{if $groupResult['type']==1}还可以再选 <span style="color: #ff445f;" class="again"> {if $groupResult['max']>0} {$groupResult['max']} {else}任意{/if}</span> 件 {/if}<br>
+                已选<span class="total">0</span>件商品，需付<span class="value" style="color: #ff445f;">0</span>元
+            </div>
+
+        </div>
+        <div class="fui-goods-group block three border" style="padding-bottom: 70px">
+{loop $goodsList $key $value}
+            <input type="hidden" name="goods[]" id="goods{$value['id']}" value="">
+            <div class="fui-goods-item" data-goodsid="{$value['id']}">
+                <a href="{php echo mobileUrl('goods/detail',array('id'=>$value['id']),1);}"><div class="image" data-lazyloaded="true" style="background-image: url({php echo tomedia($value['thumb']);});" data-value="{php echo tomedia($value['thumb']);}" data-id="g{$value['id']}"></div></a>
+                <div class="detail">
+                    <div class="name">{$value['title']}</div>
+                    <div class="price">
+                        <span class="text" style="font-size: smaller">原价 ￥<span class="g{$value['id']}">{$value['marketprice']}</span></span>
+                    </div>
+                </div>
+                    <div class="btn btn-info btn-sm block x" type="default" data="{$value['id']}" value="{$value['marketprice']}" onclick="initialize();">选择</div>
+            </div>
+{/loop}
+{loop $optionList $key $value}
+            <input type="hidden" name="option[]" id="option{$value['id']}" value="" class="option{$value['option']}">
+            <div class="fui-goods-item" data-goodsid="{$value['id']}">
+                <a href="{php echo mobileUrl('goods/detail',array('id'=>$value['id']),1);}"><div class="image" data-lazyloaded="true" style="background-image: url({php echo tomedia($value['thumb']);});"></div></a>
+                <div class="detail">
+                    <div class="name">{$value['title']}</div>
+                    <div class="price">
+                        <span class="text" style="font-size: smaller">原价 ￥{$value['marketprice']}</span>
+                    </div>
+                </div>
+                <a class="btn btn-info btn-sm block order-verify {php $o = explode('-',$value['optionstr']);}{loop $o $k $v} inoption{$v}{/loop}" value="{php echo mobileUrl('exchange/modal',array('goods'=>$value['id'],'option'=>$value['optionstr']),1);}" data="{$value['id']}" onclick="initialize();">选择</a>
+            </div>
+{/loop}
+        </div>
+    </div>
+        <input type="hidden" name="total" value="">
+        <input type="hidden" name="value" value="0">
+</div>
+
+</div>
+
+        <div class="fui-navbar" style="position: absolute;bottom: 0px;padding-bottom: 50px">
+
+        </div>
+    <div class="fui-navbar" style="bottom: 5px">
+        <a class="btn btn-warning block" style="width: 45%;float: left;left: 5px;position: absolute;" onclick="$('.cart').show();">查看已选</a>
+        <button type="submit" class="btn btn-danger block" style="width: 45%;float: left;right: 5px;position: absolute" id="nav">立即兑换</button>
+    </div>
+</form>
+
+<!--这是cart-->
+<div class="cart fui-modal in" style="width: 100%;height:100%;background-color: #fff;display: none;overflow-y: scroll">
+
+    <div class="fui-list-group" style="float: left;overflow-y: scroll">
+    </div>
+    <button class="btn btn-danger block" style="width: 96%;float: left;" onclick="$('.cart').hide();" id="closecart">关闭</button>
+</div>
+<!--cart结束-->
+<script language="javascript">
+    var goodsArr = new Array();
+    var optionArr = new Array();
+    var optionsss = new Array();
+    var exchangetype = {$groupResult['type']};
+    var exchangevalue = {if $groupResult['type'] == 2}{$groupResult['value']}{else}{$groupResult['max']}{/if};
+    require(['../addons/ewei_shopv2/plugin/exchange/static/js/op.js'], function (modal) {
+        modal.init();
+    });
+    
+    function initialize() {
+        if($("form").attr('data-status') == '0'){
+            $("input[name='total']").val('0');
+            $("input[name='value']").val('0');
+            $("input[name='option[]']").val('');
+            $("input[name='goods[]']").val('');
+            $("form").attr('data-status','1');
+        }
+    }
+
+    $('#status').click(function () {
+        initialize();
+    });
+
+    $('#nav').click(function () {
+        initialize();
+        var amount = Number($("input[name='total']").val());
+        if (amount==0){
+            $("form").attr('onsubmit','return checkInput();');
+            return;
+        }else{
+            $("form").attr('onsubmit','');
+        }
+
+        var money = Number($(".value").text());
+
+        $("form").attr('onsubmit','return checkMoney();');
+
+
+
+    });
+    
+    function checkInput() {
+        FoxUI.alert("未选择任何商品");
+        return false;
+    }
+    function checkMoney() {
+        var money = Number($(".value").text());
+        if (money==0){
+            FoxUI.confirm("",'确定兑换所选商品吗?',function () {
+                $('form').attr('data-status','0');
+                $("form").attr('onsubmit','');
+                $('form').submit();
+            });
+        }else if(money>0){
+            FoxUI.confirm("确定支付"+money+"元兑换所选商品吗?",'',function () {
+                $('form').attr('data-status','0');
+                $("form").attr('onsubmit','');
+                $('form').submit();
+            });
+        }else{
+            return false;
+        }
+
+        return false;
+    }
+    
+    function plus(a) {
+        var goods = $(a).attr('data-id');
+        var val = $("div[data-id="+goods+"]").find('input').val();
+        var newval = Number(val) + Number(1);
+        var val = $("div[data-id="+goods+"]").find('input').val(newval);
+        var total = $("input[name='total']").val();
+        var new_total = Number(total) + Number(1);
+        $("input[name='total']").val(new_total);
+        $('.total').html(new_total);
+        if($(a).attr('data-option') == '0'){//无规格
+            goodsArr.push([$(a).attr('data-id'), $("div[data="+$(a).attr('data-id')+"]").attr('value')]);
+        }else{
+            optionsss.push([$(a).attr('data-option'), $("div[data-id="+goods+"]").find('input').attr('data-value')]);
+        }
+        require(['../addons/ewei_shopv2/plugin/exchange/static/js/op.js'], function (modal) {
+            modal.caculate(goodsArr,optionsss);
+        });
+
+
+    }
+    
+    function minus(a) {
+        var goods = $(a).attr('data-id');
+        var val = $("div[data-id="+goods+"]").find('input').val();
+        if (Number(val)<=1){
+            return;
+        }
+        var newval = Number(val) - Number(1);
+        var val = $("div[data-id="+goods+"]").find('input').val(newval);
+        if($(a).attr('data-option') == '0'){//无规格
+            goodsArr.splice($.inArray([$(a).attr('data-id'), $("div[data="+$(a).attr('data-id')+"]").attr('value')],goodsArr),1);
+        }else{
+            optionsss.splice($.inArray([$(a).attr('data-option'), $("div[data-id="+goods+"]").find('input').attr('data-value')],optionsss),1);
+        }
+
+        var total = $("input[name='total']").val();
+        var new_total = Number(total) - Number(1);
+        $("input[name='total']").val(new_total);
+        $('.total').html(new_total);
+        require(['../addons/ewei_shopv2/plugin/exchange/static/js/op.js'], function (modal) {
+            modal.caculate(goodsArr,optionsss);
+        });
+    }
+</script>
+
+
+
+{template '_footer'}
+<!--青岛易联互动网络科技有限公司-->

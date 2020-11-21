@@ -1,0 +1,130 @@
+{template '_header'}
+<style type='text/css'>
+    .trhead td {  background:#efefef;text-align: center}
+    .trbody td {  text-align: center; vertical-align:top;border-left:1px solid #f2f2f2;overflow: hidden; font-size:12px;}
+    .trorder { background:#f8f8f8;border:1px solid #f2f2f2;text-align:left;}
+    .ops { border-right:1px solid #f2f2f2; text-align: center;}
+</style>
+<div class="page-heading">
+    <h2>销售记录 <small>数量: <span class='text-danger'>{$total}</span> 条</small></h2> </div>
+<form action="./index.php" method="get" class="form-horizontal table-search" role="form">
+    <input type="hidden" name="c" value="site" />
+    <input type="hidden" name="a" value="entry" />
+    <input type="hidden" name="m" value="ewei_shopv2" />
+    <input type="hidden" name="do" value="web" />
+    <input type="hidden" name="r" value="system.plugin.pluginsale" />
+    <!--<input type="hidden" name="status" value="{$status}" />
+    <input type="hidden" name="agentid" value="{$_GPC['agentid']}" />
+    <input type="hidden" name="refund" value="{$_GPC['refund']}" />-->
+    <div class="page-toolbar row m-b-sm m-t-sm">
+        <div class="col-sm-7">
+            <div class="btn-group btn-group-sm" style='float:left'>
+                <button class="btn btn-default btn-sm"  type="button" data-toggle='refresh'><i class='fa fa-refresh'></i></button>
+            </div>
+            <div class='input-group input-group-sm'>
+                <select name='searchtime'  class='form-control  input-sm select-md'   style="width:85px;padding:0 5px;"  >
+                    <option value=''>不按时间</option>
+                    <option value='create' {if $_GPC['searchtime']=='create'}selected{/if}>创建时间</option>
+                </select>
+                {php echo tpl_form_field_eweishop_daterange('time', array('starttime'=>date('Y-m-d H:i', $starttime),'endtime'=>date('Y-m-d H:i', $endtime)),true);}
+            </div>
+        </div>
+        <div class="col-sm-5 pull-right">
+            <select name='searchfield'  class='form-control  input-sm select-md'   style="width:95px;padding:0 5px;"  >
+                <option value='uniacid' {if $_GPC['searchfield']=='uniacid'}selected{/if}>公众号</option>
+                <option value='plugin' {if $_GPC['searchfield']=='plugin'}selected{/if}>应用名称</option>
+            </select>
+            <div class="input-group">
+                <input type="text" class="form-control input-sm"  name="keyword" value="{$_GPC['keyword']}" placeholder="请输入关键词"/>
+                <span class="input-group-btn">
+                    <button class="btn btn-sm btn-primary" type="submit"> 搜索</button>
+                    <!--<button type="submit" name="export" value="1" class="btn btn-success btn-sm">导出</button>-->
+                </span>
+            </div>
+
+        </div>
+    </div>
+
+</form>
+
+
+{if count($list)>0}
+<table class="table table-hover table-responsive">
+    <thead>
+    <tr>
+        <th style="width:60px;">应用</th>
+        <th>&nbsp;</th>
+        <th style="width:120px;">公众号/会员账号</th>
+        <th>成交金额</th>
+        <th style="width: 100px;">上次授权</th>
+        <th style="width:100px;">授权时长</th>
+        <th style="width: 100px;text-align: center;">状态</th>
+        <!--<th style="width: 120px;text-align: center;">操作</th>-->
+    </tr>
+    </thead>
+    <tbody>
+    {loop $list $row}
+    <tr class='trorder'>
+        <td colspan='3' >
+            订单编号：{$row['logno']}
+        </td>
+        <td colspan='4'style="text-align: right;">
+            付款时间：{php echo date('Y-m-d H:i',$row['createtime'])}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <img src="{php echo tomedia($row['thumb'])}" style="width:40px;height:40px;padding:1px;border:1px solid #ccc;"  />
+        </td>
+        <td class='full'>
+            {$row['pname']}
+        </td>
+        <td>
+            {$row['wname']}<br />{$row['username']}
+        </td>
+        <td>
+            {if strpos($row['opluginid'],",")>0}
+            套餐总价：&yen;{$row['price']}
+            {else}
+            &yen;{$row['price']}
+            {/if}
+            <br />
+            {if $row['paytype'] == 1}
+            <label class='label label-success'>微信</label>
+            {else if $row['paytype'] == 2}
+            <label class='label label-warning'>支付宝</label>
+            {/if}
+        </td>
+        <td>{if $row['permlasttime']>0}{php echo date('Y-m-d',$row['permlasttime'])}<br />{php echo date('H:i',$row['permlasttime'])}{else}-{/if}</td>
+        <td>
+            {if $row['month']==0}永久{else}{$row['month']}个月{/if}
+        </td>
+        <td style="text-align: center;">
+            <span class='label {if $row['isperm']==1}label-danger{else}label-default{/if}'
+            {if $row['isperm']==0}
+            data-toggle='ajaxSwitch'
+            data-switch-value='{$row['isperm']}'
+            data-switch-value0='0|授权|label label-default|{php echo webUrl('system/plugin/plugingrant/grant',array('id'=>$row['id']))}'
+            data-switch-value1='1|已授权|label label-danger|{php echo webUrl('system/plugin/plugingrant/grant',array('id'=>$row['id']))}'{/if}>
+            {if $row['isperm']==1}已授权{else}授权{/if}</span>
+        </td>
+        <!--<td style="text-align: center;">
+            <a class='btn btn-default btn-sm' href="{php echo webUrl('system/plugin/grant/edit',array('id' => $row['id']));}" title="编辑"><i class='fa fa-edit'></i></a>
+        </td>-->
+    </tr>
+    {/loop}
+    </tbody>
+</table>
+<div style="text-align:right;width:100%;">
+    {$pager}
+</div>
+{else}
+
+<div class='panel panel-default'>
+    <div class='panel-body' style='text-align: center;padding:30px;'>
+        暂时没有任何记录!
+    </div>
+</div>
+{/if}
+
+{template '_footer'}

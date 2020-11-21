@@ -1,0 +1,273 @@
+{include file="common/head"}
+
+<script>
+    //init vars
+    var timerIndex = null;
+    var curTime = 0;
+    var curMailObj = null;        //当前邮箱地址对象
+    var curGetCodeBtn = null;     //当前获取按钮对象
+    var curVerifyBox = null;      //当前验证码输入框对象
+    var email = "{$memberInfo['email']}";
+
+    $(function () {
+        $('#getCodeBtn').on('click', step1);
+        $('#getCodeBtnNew').on('click', step2);
+
+
+        $('#saveBindBtn').click(function(){
+            checkCode(true,function(resp){
+                if(resp.resultCode==0){
+                    $('#step2').hide('slow');
+                    $('#step3').show('slow');
+                    clearInterval(timerIndex);
+                }else{
+                    layer.open({content: resp.message, skin: 'msg', time: 2});
+                }
+            });
+        });
+
+        $('#nextStepBtn').click(function(){
+            checkCode(false,function(resp){
+                if(resp.resultCode==0){
+                    $('#step1').hide('slow');
+                    $('#step2').show('slow');
+                    curMailObj=null;
+                    clearInterval(timerIndex);
+                }else{
+                    layer.open({content: resp.message, skin: 'msg', time: 2});
+                }
+
+            });
+        });
+
+        if(email){
+            step1();
+        }else{
+            $('#step1').hide();
+            $('#step2').show();
+            step2();
+        }
+
+        //to and footer nav setting
+        var navTopTitle="{$navTopTitle|default='视频站'}";
+        $('#navTopTitle').html(navTopTitle);
+        $('.navFooter').removeClass('active');
+        $('.navFooter:nth-child({$curFooterNavIndex|default=2})').addClass('active');
+
+    });
+
+    function step1(){
+        curMailObj = $('#email');
+        curGetCodeBtn = $('#getCodeBtn');
+        curVerifyBox = $('#mailVerifyCode');
+        sendCode(false);
+    }
+
+    function step2(){
+        curMailObj = $('#emailNew');
+        curGetCodeBtn = $('#getCodeBtnNew');
+        curVerifyBox = $('#mailVerifyCodeNew');
+        sendCode(true);
+    }
+
+    //timer
+    function timer(isBindNew) {
+        curTime--;
+        if (curTime <= 0) {
+            clearInterval(timerIndex);
+            curGetCodeBtn.html('获取验证码').on('click', function(){
+                if(isBindNew){
+                    step2();
+                }else{
+                    step1();
+                }
+            }).removeClass('sent');
+        }else{
+            curGetCodeBtn.html(curTime + '秒').addClass('sent');
+        }
+    }
+
+    //send code
+    function sendCode(isBindNew) {
+        var pregStr = /^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+(.[a-zA-Z0-9_-])+/;
+        var mailUrl=curMailObj.val();
+        if (pregStr.test(mailUrl)) {
+            var url = "{:url('api/member_email_send')}";
+            var postData = {email: mailUrl};
+            if (isBindNew==true) postData.type = 'authNew';
+            var _tmpClick=curGetCodeBtn.click;
+            curGetCodeBtn.unbind();
+            $.post(url, postData, function (resp) {
+                if (resp.resultCode == 0) {
+                    curVerifyBox.focus();
+                    layer.open({content: '验证码已发送至您邮件', skin: 'msg', time: 2});
+
+                    curTime = 35;//验证重复获取间隔
+                    curGetCodeBtn.html(curTime + '秒').addClass('sent');
+                    timerIndex = setInterval("timer(" + isBindNew + ")", 1000);
+                } else {
+                    layer.open({content: resp.message, skin: 'msg', time: 2});
+                    curGetCodeBtn.on('click',function(){
+                        if(isBindNew==true){
+                            step2();
+                        }else{
+                            step1();
+                        }
+                    })
+                }
+            }, 'JSON');
+        } else {
+            layer.open({content: '请输入正确的邮箱地址', skin: 'msg', time: 2});
+            return false;
+        }
+    }
+
+    function checkCode(isBindNew,callBack){
+        if(curMailObj==null || curMailObj.val()==''){
+            layer.open({content: '请发送验证码后重试！', skin: 'msg', time: 2});
+            return false;
+        }
+        var url='{:url("api/member_mail_verify_code")}';
+        var postData={code:curVerifyBox.val(),mail:curMailObj.val()};
+        if(isBindNew==true) postData.type='authNew';
+        $.ajax({
+            url:url,
+            type:'POST',
+            dataType:'JSON',
+            data:postData,
+            async:false,
+            success:function(resp){
+                callBack(resp);
+            }
+        });
+    }
+
+</script>
+
+<div id="block-B" class="pp_con_wrap">
+    <div class="pp_main fc-main clearfix" id="J_verify-phone">
+        <!--安全验证-->
+        <div id="step1"  class="pp_pw_retakeStep">
+            <div class="retakeStep_wrap">
+                <div class="pp_icon step_bg stepOne">
+                    <div class="step_list">
+                        <ul>
+                            <li class="step_pass">1.进行安全验证</li>
+                            <li>2.设置新邮箱</li>
+                            <li>3.修改成功</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="step_con">
+                    <form action="">
+                        <div class="pp_account_form_item" style="color: #888;font-size: 12px;">
+                            {if condition="empty($memberInfo['email']) "}
+                            您当前未绑定邮箱，请输入完整邮箱地址后获取验证码进行绑定。
+                            {else/}
+                            您当前的邮箱为：<var>{:hidden_mail_str($memberInfo['email'])}</var>，请输入完整邮箱地址后获取验证码进行下一步：
+                            {/if}
+                        </div>
+                        <div class="pp_account_form_item">
+                            <span class="vl-inline item_title_big">
+                                <label>现有邮箱地址：</label>
+                            </span>
+                            <span class="vl-inline item_input">
+                                <input id="email" class="input-common input-common-ph" type="text"
+                                       placeholder="请输入您现用的完整邮箱地址">
+                            </span>
+
+                            <!--<span class="error-warnning">邮箱不正确</span>-->
+                        </div>
+                        <div class="pp_account_form_item">
+                            <span class="vl-inline item_title_big">
+                                <label>请输入验证码：</label>
+                            </span>
+                            <span class="vl-inline item_input" style="width: 66%;display: inline-block;">
+                                <input id="mailVerifyCode" class="input-common input-common-ph" type="text" placeholder="请输入验证码">
+                            </span>
+                            <a class="set-warnning" id="getCodeBtn">获取验证码</a><!--发送之后追加class="sent"-->
+                        </div>
+                        <!--发送验证按钮开始-->
+                        <div class="pp_account_form_item">
+                            <span class="vl-inline">
+                             <a id="nextStepBtn" class="pc-btn pc-btn-green" href="javascript:void(0)">下一步</a>
+                            </span>
+                        </div>
+                        <!--发送验证邮件按钮结束-->
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!--设置新邮箱-->
+        <div id="step2" style="display: none" class="pp_pw_retakeStep">
+            <div class="retakeStep_wrap">
+                <div class="pp_icon step_bg stepThree">
+                    <div class="step_list">
+                        <ul>
+                            <li class="step_pass">1.进行安全验证</li>
+                            <li class="step_pass">2.设置新邮箱</li>
+                            <li>3.修改成功</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="step_con">
+                    <form action="">
+                        <div class="pp_account_form_item">
+                            <span class="vl-inline item_title_big">
+                                <label>新的邮箱地址：</label>
+                            </span>
+                            <span class="vl-inline item_input">
+                                <input id="emailNew" class="input-common input-common-ph" type="text"
+                                       placeholder="请输入您要绑定的邮箱地址">
+                            </span>
+                            <!--发送之后"验证码已发送，重新发送(32秒)"追加class="sent"-->
+                            <!--<span class="error-warnning">邮箱不正确</span>-->
+                        </div>
+                        <div class="pp_account_form_item">
+                            <span class="vl-inline item_title_big">
+                                <label>请输入验证码：</label>
+                            </span>
+                            <span class="vl-inline item_input" style="width: 66%;display: inline-block;">
+                                <input id="mailVerifyCodeNew" class="input-common input-common-ph"type="text" placeholder="输入验证码">
+                            </span>
+                            <a class="set-warnning" id="getCodeBtnNew">获取验证码</a>
+                        </div>
+                        <!--发送验证按钮开始-->
+                        <div class="pp_account_form_item">
+                            <span class="vl-inline">
+                             <a id="saveBindBtn" class="pc-btn pc-btn-green" href="javascript:void(0)">确认修改</a>
+                            </span>
+                        </div>
+                        <!--发送验证邮件按钮结束-->
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!--修改成功-->
+        <div id="step3" style="display: none" class="pp_pw_retakeStep">
+            <div class="retakeStep_wrap">
+                <div class="pp_icon step_bg stepTwo">
+                    <div class="step_list">
+                        <ul>
+                            <li class="step_pass">1.进行安全验证</li>
+                            <li class="step_pass">2.设置新邮箱</li>
+                            <li class="step_pass">3.修改成功</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="step_con">
+                    <div class="success_note">
+                        <i class="success_hint_bd btn fn-baocunchenggong"></i>
+                        <span>恭喜您，邮箱修改成功！</span><br>
+                        <a href="{:url('member/member')}">个人中心</a>
+                        <a href="/">首页</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

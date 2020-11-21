@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {template 'common/edithead'}
+    <!--微擎 -->
+    <!--这个放在最后一切平白安全-->
+    <script type="text/javascript" src="./resource/js/require.js?v=20170915"></script>
+    <script type="text/javascript">
+        var urobj=[];
+    </script>
+    <style>
+        #inventory td,#inventory th{
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="nav-md" style="min-width: 800px">
+<div>
+    <div class="container xc_edit_from" >
+        <div class="main_container" style="overflow-x: hidden;min-height: 100vh;background-color: white;width: 100%;">
+                <div class="col-md-12 col-xs-12">
+                    <div class="x_panel">
+                        <ul class="we7-page-tab">
+                            <li >今日订单量汇总</li>
+
+                        </ul>
+                        <div class="x_content">
+                            <br/>
+                            <form class="form-horizontal form-label-left input_mask" method="post" action="{php echo $this->createWebUrl($do, array('op'=>'confirmInventory'));}" id="xc_form">
+
+                                <div class="from-group">
+
+                                <table width="100%" border="1" id="inventory">
+                                    <thead>
+                                    <tr>
+                                        <th>商品ID</th>
+                                        <th>商品名称</th>
+                                        <th>图片</th>
+                                        <th>属性</th>
+                                        <th>供应商</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {loop $goods $index $good}
+                                    <tr>
+                                        <td>{$index}</td>
+                                        <td>{$good['name']}</td>
+                                        <td><img src="{$good['img']}" width="100px"></td>
+                                        <td>
+                                            {loop $good['attrs'] $attrname $attr}
+                                            <div class="input-group">
+                                                <span class="input-group-addon">属性名称</span>
+                                                <input class="form-control" value="{$attrname}" readonly>
+                                                <span class="input-group-addon">数量</span>
+                                                <input class="form-control" value="{$attr['num']}">
+                                            </div>
+                                            {/loop}
+                                        </td>
+                                        <td>
+                                            {if !empty($good['supplier'])}
+                                            <select class="form-control" >
+                                            {loop $good['supplier'] $supinex  $supplier}
+                                            <option value="{$supplier['id']}">{$supplier['name']}</option>
+                                            {/loop}
+                                                {/if}
+                                        </select></td>
+                                    </tr>
+                                    {/loop}
+                                    </tbody>
+                                    <tfoot>
+                                    <tr>
+                                        <td>备注</td>
+                                        <td colspan="4">
+                                            <textarea style="width: 100%" placeholder="备注信息" id="remark"></textarea>
+                                        </td>
+                                    </tr>
+                                    </tfoot>
+                                </table>
+                                </div>
+
+                                <div class="row xc_btnmar"  ></div>
+                                <div class="form-group "  >
+                                    <div class="col-md-9 col-sm-9 col-xs-12 col-md-offset-5 col-sm-offset-5  col-md-xs-5 ">
+                                        <button type="submit" class="btn btn-primary" id="btsave">确认下单</button>
+                                                                            <a type="button" class="btn btn-default"  href="{php echo $this->createWebUrl($do, array('op'=>'list','xtitleb'=> urlencode($xtitleb),'xtitlea'=>urlencode($xtitlea)));}" >返回</a>
+
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+
+</div>
+{template 'common/editfoot'}
+
+<script>
+
+ var xvalidator =null;
+        $.validator.setDefaults({
+            highlight: function (e) {
+                $(e).closest(".col-xs-12").removeClass("has-success").addClass("has-error")
+            }, success: function (e) {
+                e.closest(".col-xs-12").removeClass("has-error").addClass("has-success")
+            }, errorClass: "help-block m-b-none", validClass: "help-block m-b-none"
+        }), $().ready(function () {
+            var e = "<i class='fa fa-times-circle'></i> ";
+            var vlidp = {
+                rules: {
+                    "xc[img]": {required: !0},
+                    "xc[img]":{url:false}
+                },
+                messages: {
+                    "xc[img]": {required: e + "请选择内容"},
+                },
+                submitHandler: function (form) {
+                    //手动验证所以这里不需要执行
+                    xajaxfrom(form);
+                    return false;
+                }
+            };
+            xvalidator= $("#xc_form").validate(vlidp);
+        });
+        $("#btsave").click(function () {
+            $brvalue= $("#xc_form").valid();
+            if($brvalue){
+                xajaxfrom("#xc_form");
+            }
+            return false;
+        });
+
+       function message(data) {
+            $mesoption = {};
+            if (data["status"] === 1) {
+
+                $mesoption["timer"] = 1000;
+                $mesoption["type"] = replyrdata[data["status"]];
+            }
+            $mesoption["title"] = data["message"];
+            $mesoption["text"] = data["message"];
+            swal($mesoption).then(function () {
+                window.location.href = "{php echo $this->createWebUrl('supplier_order',array('op'=>'list'))}";
+            });
+
+        }
+        function xajaxfrom(form) {
+            if($('#inventory tbody tr').length <= 0){
+                return;
+            }
+           var _postdata = {};
+           $('#inventory tbody tr').each(function () {
+              if ($(this).find('select').length > 0){
+                  var arr = {};
+                  var  supplier_id = $(this).find('select').val();
+                  arr['id'] = $(this).find('td:eq(0)').text();
+                  arr['name'] = $(this).find('td:eq(1)').text();
+                  arr['img'] = $(this).find('td:eq(2) img').attr('src');
+                  var attr = {};
+                  $(this).find('td:eq(3) .input-group').each(function () {
+                     attr[$(this).find('input:eq(0)').val()] = $(this).find('input:eq(1)').val();
+                  });
+                  arr['attrs']= attr;
+                  if(!_postdata.hasOwnProperty(supplier_id)){
+                      _postdata[supplier_id] = [];
+                  }
+                  _postdata[supplier_id].push(arr);
+              }
+           });
+
+           var $postdate = {};
+           $postdate['xc']= _postdata;
+           $postdate['remark'] = $('#remark').val();
+           console.log($postdate);
+            xpagecss.xload();
+            $.ajax({
+                type: $(form).attr("method"),
+                url: $(form).attr("action"),
+                dataType: "json",
+                data: $postdate,
+                success: function (msg) {
+                    message(msg)
+                }
+            });
+        }
+</script>
+</body>
+</html>
+

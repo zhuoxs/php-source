@@ -1,0 +1,2 @@
+<?php
+ goto owSeX; y67d5: $list = pdo_getall(table . "\x75\x73\x65\162", array("\162\x65\x69\x64" => $u["\151\x64"])); goto NbTfb; AA2mS: $u = pdo_get(table . "\165\x73\x65\x72", array("\165\x6e\x69\141\x63\151\144" => uniacid, "\x6f\x70\x65\156\x69\x64" => openid)); goto y67d5; T13Be: $title = "\xe5\x9b\242\xe9\230\237\345\x88\227\350\241\xa8"; goto AA2mS; owSeX: global $_GPC, $_W; goto T13Be; NbTfb: include $this->template("\164\145\141\x6d\154\151\x73\x74");

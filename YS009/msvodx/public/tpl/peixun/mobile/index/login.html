@@ -1,0 +1,130 @@
+﻿{include file="common/head"}
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/mobile/static/css/login.css">
+<style>
+    .login-box button {
+        margin: 60px auto 10px;
+    }
+
+    .login-box p span {
+        border: 0;
+        width: 100px;
+    }
+</style>
+
+
+<div>
+    <div class="login-box">
+        <p><i class="btn fn-zhanghao"></i><input type="text" id="userName" placeholder="请输入登录账号" class="name"></p>
+        <p><i class="btn fn-201"></i><input type="password" id="password" placeholder="请输入登录密码" class="pwd"></p>
+        {if condition="get_config('verification_code_on')"}
+        <p><i class="btn fn-verification-code"></i><input type="text" name="verifyCode" id="verifyCode"
+                                                          placeholder="验证码">
+            <span id="register_code">
+            <img src="{:url('api/getCaptcha')}" onclick="this.src='{:url(\'api/getCaptcha\')}?'+Math.random()"
+                 id="verifyCodeImg"/>
+        </span></p>
+        {/if}
+        <button class="button" onclick="login()">登录</button>
+        <div class="forget">{if condition="get_config('register_validate')"}<a href="{:url('member/seek_pwd')}">忘记密码？</a>{/if}<a class="register-btn" href="{:url('index/register')}">新用户注册</a></div>
+        <div class="login-Third">
+            
+            {php} $longwait=get_sanfanlogin();{/php}
+            {foreach name="longwait" item="vo"}
+            {if condition="$vo['login_code'] eq 'qq'"}
+            <a href="{:url('open/login',['code'=>'qq'])}"><i class="btn fn-QQ"></i>QQ</a>
+            {/if}
+            {if condition="$vo['login_code'] eq 'wechat'"}
+            <a  href="{:url('open/login',['code'=>'wechat'])}" ><i class="btn fn-weixin1"></i>微信</a>
+            {/if}
+            {/foreach}
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        $("input").focus(function () {
+            $(this).parent().css("border-bottom", "1px solid #c1dffd");
+        });
+        $("input").blur(function () {
+            $(this).parent().css("border-bottom", "1px solid #eee");
+        });
+
+        $(".submit").click(function () {
+            var name = $(".name").val();
+            var pwd = $(".pwd").val();
+            var rePwd = $(".rePwd").val();
+            var code = $(".code").val();
+
+            if (name == '') {
+                layer.open({
+                    content: '账号不能为空！'
+                    , skin: 'msg'
+                    , time: 2
+                });
+            } else if (pwd == '') {
+                layer.open({
+                    content: '密码不能为空！'
+                    , skin: 'msg'
+                    , time: 2
+                });
+            } else if (6 > pwd.length || pwd.length > 20) {
+                layer.open({
+                    content: '密码不能小于6或者大于20！'
+                    , skin: 'msg'
+                    , time: 2
+                });
+            }
+        });
+
+    });
+
+    //登陆
+    function login() {
+        var user = $('#userName').val();
+        var password = $('#password').val();
+        var verifyCode = $('#verifyCode');
+        if (user == '' || password == '') {
+            layer.open({skin: 'msg', time: 1, content: '用户名或密码不能为空.'});
+            return false;
+        }
+
+        if (verifyCode.val() == '') {
+            layer.open({skin: 'msg', time: 1, content: '验证码不能为空.'});
+            verifyCode.focus();
+            return false;
+        }
+
+        var url = "{:url('api/login')}";
+        var refererUrl = "{$refererUrl}";
+        var jumpUrl = "{:url('member/member')}";
+        if (refererUrl != '') jumpUrl = refererUrl;
+
+        $.post(url, {userName: user, password: password, verifyCode: verifyCode.val()}, function (data) {
+
+            if (data.statusCode == 0) {
+                layer.open({
+                    content: '登陆成功', time: 1, skin: 'msg', end: function () {
+                        location.href = jumpUrl;
+                    }
+                });
+            } else {
+                layer.open({content: data.error, skin: 'msg', time: 1});
+                $("#verifyCodeImg").click();
+            }
+        }, 'JSON');
+
+    }
+
+    $(function () {
+        //to and footer nav setting
+        var navTopTitle = "{$navTopTitle|default='视频站'}";
+        $('#navTopTitle').html(navTopTitle);
+        $('.navFooter').removeClass('active');
+        $('.navFooter:nth-child({$curFooterNavIndex|default=2})').addClass('active');
+    });
+</script>
+
+
+</body>
+</html>

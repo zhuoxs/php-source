@@ -1,0 +1,2 @@
+<?php
+ defined("\111\116\x5f\111\101") or exit("\x41\x63\x63\145\163\x73\x20\104\145\156\151\x65\x64"); class Superman_Hand2_Plugin_WechatErrno { const OK = 0; const SYSTEM_ERROR = 1; const PARAM_ERROR = 2; public static $ERRMSG = array(self::OK => "\x6f\x6b", self::SYSTEM_ERROR => "\347\263\xbb\xe7\273\x9f\xe9\x94\x99\350\xaf\xaf", self::PARAM_ERROR => "\xe5\217\202\xe6\225\xb0\xe9\x94\231\350\xaf\xaf"); }

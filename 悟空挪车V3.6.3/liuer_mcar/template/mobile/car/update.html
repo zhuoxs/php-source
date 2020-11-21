@@ -1,0 +1,204 @@
+{template 'header'}
+<style>
+    .pageBind header{
+        background: none;
+    }
+</style>
+<body class="pageBind pageFooter">
+<div id="hook-app">
+    <?php if($config['header_isshow']): ?>
+    <div class="header">
+        <yd-navbar title="修改我的车辆">
+            <a href="<?php echo $this->createMobileUrl('user'); ?>" slot="left">
+                <yd-navbar-back-icon></yd-navbar-back-icon>
+            </a>
+        </yd-navbar>
+    </div>
+    <?php endif; ?>
+    <div class="user-form">
+        <yd-cell-group>
+            <!--<yd-cell-item>
+                <yd-icon slot="icon" name="ucenter" size=".4rem"></yd-icon>
+                <span slot="left">车牌ID</span>
+                <input type="text" slot="right" placeholder="车牌ID" value="12391" />
+            </yd-cell-item>-->
+            <yd-cell-item>
+                <yd-icon slot="icon" name="discover" size=".4rem"></yd-icon>
+                <span slot="left">车牌号</span>
+                <!-- <a href="">京</a>
+                 <a href="">A</a>-->
+                <div class="yd-cell-right yd-cell-wrapper" slot="right">
+                    <a href="javascript:;" @click.prevent="provinceModal = true">{{province}}</a>
+                    <a href="javascript:;" @click.prevent="wordModal = true">{{word}}</a>
+                    <input type="text" placeholder="输入车牌号" v-model="chepaihao" style="text-transform: uppercase" maxlength="6"/>
+                    <!--todo 小写变大写 https://juejin.im/post/5ab9e7e96fb9a028ce7b9dc3 -->
+                </div>
+
+
+            </yd-cell-item>
+            <yd-cell-item>
+                <yd-icon slot="icon" name="phone3" size=".4rem"></yd-icon>
+                <span slot="left">手机号</span>
+                <input type="number" slot="right" placeholder="输入手机号码" v-model="mobile"/>
+            </yd-cell-item>
+            <?php if($config['is_sms']): ?>
+            <yd-cell-item>
+                <yd-icon slot="icon" name="verifycode" size=".4rem"></yd-icon>
+                <span slot="left">验证码</span>
+                <input type="number" slot="right" placeholder="输入验证码" v-model="verifyCode"/>
+
+                <yd-sendcode
+                        slot="right"
+                        v-model="start"
+                        storage-key="code"
+                        @click.native="sendCode"
+                        type="warning"
+                ></yd-sendcode>
+            </yd-cell-item>
+            <?php endif; ?>
+        </yd-cell-group>
+        <div class="tips">
+            <yd-icon name="checkoff" size=".4rem" color="#1AAD19"></yd-icon>
+            遵照法律保护您的隐私安全
+        </div>
+        <yd-button size="large" type="warning" shape="angle" @click.native="bind">立即修改</yd-button>
+    </div>
+    <yd-popup v-model="provinceModal" position="center" width="auto">
+        <div style="background-color:#fff;" class="modal-wrap">
+            <ul class="province-list">
+                <li v-for="(item,index) in allProvince" :key="index" @click="choseMe(index,'province')" :class="{active:province == item}">{{item}}</li>
+            </ul>
+        </div>
+    </yd-popup>
+    <yd-popup v-model="wordModal" position="center" width="auto">
+        <div style="background-color:#fff;">
+            <ul class="word-list">
+                <li v-for="(item,index) in allWord" :key="index" @click="choseMe(index,'word')" :class="{active:word == item}">{{item}}</li>
+            </ul>
+        </div>
+    </yd-popup>
+</div>
+
+<script>
+    var user_id = "{$user_id}";
+    var bindUrl = "{php echo $this->createMobileUrl('bind-code');}";
+    var smsUrl = "{php echo $this->createMobileUrl('send-sms');}";
+    var checkVerify = "{php echo $this->createMobileUrl('check-verify');}";
+    var is_sms = parseInt("{php echo $config['is_sms']}");
+
+    var reg = /^1[3456789][0-9]\d{8}$/;
+
+    var app = new Vue({
+        el: '#hook-app',
+        data: {
+            chepaihao: '<?php echo $hao ?>',
+            mobile: '',
+            verifyCode: '',
+            start: false,
+            provinceModal:false,
+            province: '<?php echo $province ?>',
+            allProvince:[
+                '京','津','沪','渝','蒙',
+                '新','藏','宁','桂','港',
+                '澳','黑','吉','辽','晋',
+                '冀','青','鲁','豫','苏',
+                '皖','浙','闽','赣','湘',
+                '鄂','粤','琼','甘','陕',
+                '贵','云','川'
+            ],
+            wordModal:false,
+            word: '<?php echo $word ?>',
+            allWord:[
+                'A','B','C','D','E',
+                'F','G','H','I','J',
+                'K','L','M','N','O',
+                'P','Q','R','S','T',
+                'U','V','W','X','Y',
+                'Z'
+            ],
+            needGuanzhu: 0
+        },
+        methods: {
+            choseMe: function(index,type) {
+                if(type == 'province'){
+                    this.province = this.allProvince[index];
+                    this.provinceModal = false;
+                }else{
+                    this.word = this.allWord[index];
+                    this.wordModal = false;
+                }
+            },
+            bind: function(){
+                if(!this.chepaihao.trim()){
+                    this.message("请输入车牌号");
+                    return false;
+                }
+                if(!this.mobile.trim()){
+                    this.message("请输入手机号");
+                    return false;
+                }
+                if(!reg.test(this.mobile)){
+                    this.message("手机号格式错误");
+                    return false;
+                }
+                if(is_sms == 1) {
+                    if (!this.verifyCode.trim()) {
+                        this.message("请输入验证码");
+                        return false;
+                    }
+                }
+                var chepaihao = this.province + this.word + this.chepaihao;
+                this.$dialog.loading.open('提交中...');
+                $.post(bindUrl,{user_id:user_id,chepaihao:chepaihao,mobile:this.mobile,verifyCode:this.verifyCode,op:'update'}).then(function(resp){
+                    app.$dialog.loading.close();
+                    resp = JSON.parse(resp);
+                    console.log(typeof resp);
+                    if(!resp.error){
+                        console.log(1);
+                        app.message(resp.msg);
+                        setTimeout(function(){
+                            location.href = resp.url;
+                        },1500)
+//                        location.href = resp.url;
+                    }else{
+                        app.message(resp.msg);
+                        return false;
+                    }
+                });
+                return false;
+            },
+            sendCode: function() {
+                //检测手机号格式
+                if(!this.mobile.trim()){
+                    this.message("请输入手机号");
+                    return false;
+                }
+                if(!reg.test(this.mobile)){
+                    this.message("手机号格式错误");
+                    return false;
+                }
+                this.$dialog.loading.open('发送中...');
+                $.post(smsUrl,{mobile:this.mobile}).then(function(resp){
+                    resp = JSON.parse(resp);
+
+                    app.start = true;
+                    app.$dialog.loading.close();
+                    app.$dialog.toast({
+                        mes: resp.msg,
+                        icon: resp.error ? 'error' : 'success',
+                        timeout: 1500
+                    });
+
+                })
+            },
+            message:function(msg){
+                this.$dialog.toast({
+                    mes: msg,
+                    timeout: 1500
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>

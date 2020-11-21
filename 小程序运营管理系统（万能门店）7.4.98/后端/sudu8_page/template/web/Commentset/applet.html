@@ -1,0 +1,402 @@
+{template 'web/common/header'}
+
+<div class="page">
+
+    <div class="page_content">
+{if $opt == 'display'}
+
+<div style="height:55px">
+
+    <h3 style="float: left;margin-top: 0;">小程序管理</h3>
+
+    <div class="pull-right">
+
+        <a href="{php echo $this->createWebUrl('Commentset', array('op' => 'applet', 'opt' => 'post', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']))}"  class="btn btn-primary we7-padding-horizontal" style="margin-bottom: 20px">添加小程序</a>
+
+    </div>
+
+</div>
+
+
+
+<form class="form-horizontal" action="" method="post">
+
+<div style="margin-bottom:10px">
+
+    <div style="display: inline-block;">
+
+        搜索栏目:
+
+    </div>
+
+    <div style="display: inline-block;">
+
+        <select name="sid" style="width: 200px">
+
+            <option value="0">栏目选择</option>
+
+            {loop $cates $item}
+
+                <option value="{$item['id']}">{$item['name']}</option>
+
+                {if $item['ziji']}
+
+                    {loop $item['ziji'] $iis}
+
+                        <option value="{$iis['id']}">|--{$iis['name']}</option>
+
+                    {/loop}
+
+                {/if}
+
+            {/loop}
+
+        </select>
+
+    </div>   
+
+    <div style="display: inline-block;">
+
+        <input type="text" name="skey" class="form-control ng-pristine ng-untouched ng-valid ng-empty" style="border-radius: 0px"  placeholder="搜索关键字" autocomplete="off">
+
+    </div> 
+
+    <div style="display: inline-block;">
+
+        <input name="token" type="hidden" value="{$_W['token']}" />
+
+        <div class="btn btn-primary" id="filter" style="display: inline-block;font-size: 12px;" />提交</div>
+
+    </div> 
+
+</div>
+
+</form>
+
+
+
+<form class="form-horizontal" action="" method="post">
+
+    <table class="table we7-table table-hover article-list vertical-middle">
+
+        <tr>
+
+            <td style="width:100px">排序</td>
+
+            <td>ID</td>
+
+            <td>所属栏目</td>
+
+            <td>缩略图</td>
+
+            <td>标题</td>
+
+            <td class="text-right">操作</td>
+            <td >
+                <input type="checkbox" id="all" />全选&nbsp;&nbsp;
+                <a class="btn btn-default btn-sm" onclick="delall()">批量删除</a>
+            </td>
+
+        </tr>
+
+        {loop $wxapps $item}
+
+        <tr>
+
+            <td>
+
+                {$item['num']}
+
+            </td>
+
+            <td style="width: 100px">
+                <a href="javascript:;" href="javascript:;" data-id="{$item['id']}" class="label label-success ng-scope js-clip" >{$item['id']}</a>
+            </td>
+
+            <td style="width: 100px">
+
+                {$item['name']}
+
+            </td>
+
+            <td style="width: 150px">
+
+                <img src="{media $item['thumb']}" width="100px" alt="">
+
+            </td>
+
+            <td>
+
+                {$item['title']}
+
+            </td>
+
+            <td class="text-right">
+
+                <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('Commentset', array('op' => 'applet', 'opt' => 'post', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}" >编辑</a>
+
+                <a class="btn btn-default btn-sm" onclick="return confirm('此操作不可恢复，确认吗？'); return false;" href="{php echo $this->createWebUrl('Commentset', array('op' => 'applet', 'opt' => 'delete', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}">删除</a>
+
+            </td>
+            <td>
+                <input type="checkbox" name="csb"  value="{$item['id']}"/>
+            </td>
+
+        </tr>
+
+        {/loop}
+
+    </table>
+
+</form>
+{$pager}
+<script>
+$('#all').on('click',function(){
+    if (this.checked) {
+        $("input[name='csb']").prop("checked", true);
+    } else {
+        $("input[name='csb']").removeAttr("checked");
+    }
+});
+function delall(){
+    var id_arr = new Array();
+    $.each($("input[name='csb']"),function(){
+        if(this.checked){
+            id_arr.push($(this).val());
+        }
+    });
+   if(id_arr.length>0){
+    $.ajax({
+
+            url : "{php echo $this->createWebUrl('Commentset',['op' => 'batchdel'])}",
+
+            type:'post',
+
+            dataType:'json',
+
+            data:{
+                id_arr:id_arr,
+                type:'wxapps'
+            },
+            success:function (res) {
+
+                alert(res.message);
+       
+                if(res.code == 1){
+
+                    window.location.href="{php echo $this->createWebUrl('Commentset',['op' => 'applet','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']])}";
+
+                }
+
+            }
+
+        });
+
+
+
+   }else{
+       alert("您未选择删除对象");
+       return false;
+   }
+}
+$("#filter").click(function(){
+    window.location.href = "{php echo $this->createWeburl('commentset', array('id' => $item['id'], 'opt' =>'display','op'=>'applet','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'page'=>$_GPC['page']))}" + "&sid=" + $('#sid').val() + '&skey=' + $('#skey').val();
+})
+$('.js-clip').each(function(){
+    util.clip(this, $(this).data('id'));
+});
+</script>
+{/if}
+
+{if $opt == 'post'}
+
+<form class="form-horizontal" action="" method="post">
+
+    <div class="panel panel-default">
+
+        <div class="panel-heading">
+
+            <h3 class="panel-title">小程序管理</h3>
+
+        </div>
+
+        <div class="panel-body">
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">序号</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="number" min='0' name="num" value="{$item['num']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">序号越大越靠前</div>
+
+            </div>
+
+             <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">所属栏目</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <select name="cid" class="form-control">
+
+                         {loop $listAll $cateP}
+
+                        	<option value="{$cateP['id']}" {if $cateP['id']==$item['cid']}selected{/if}>{if $cateP['cid'] == 0}{/if}{$cateP['name']}</option>
+
+	                        {loop $cateP['data'] $cate}
+
+			                	<option value="{$cate['id']}" {if $cate['id']==$item['cid']}selected{/if}>{if $cate['cid'] !== 0}&nbsp;&nbsp;|----{/if}{$cate['name']}</option>
+
+					        {/loop}
+
+				        {/loop}
+
+                    </select>
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">选择所属栏目，不选为顶级</div>
+
+            </div>  
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">推荐到首页栏目</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <label style="margin-right: 20px">
+
+                        <input type="radio" name="type_i" value="0" {if $item['type_i'] == '0'} checked{/if} />
+
+                        不推荐
+
+                    </label>
+
+                    <label style="margin-right: 20px">
+
+                        <input type="radio" name="type_i" value="1" {if $item['type_i'] == '1'} checked{/if} />
+
+                        推荐
+
+                    </label>
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">推荐后会在首页该栏目块显示</div>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">小程序名称</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="text" name="title" id="title" value="{$item['title']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">请填写小程序名称</div>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">缩略图</label>
+
+                <div class="form-controls col-sm-5">
+
+                    {php echo tpl_form_field_image('thumb', $item['thumb'])}
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">最宽750px，高度随意</div>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">appId</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="text" name="appId" value="{$item['appId']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">要打开的小程序 appId</div>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">打开路径</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="text" name="path" value="{$item['path']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">打开的页面路径，如果为空则打开首页</div>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">简介</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <textarea class="form-control" rows="3" name="desc" placeholder="">{$item['desc']}</textarea>
+
+                    <div class="help-block">请输入简介</div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="form-group">
+
+        <div class="col-sm-12">
+
+            <input name="token" type="hidden" value="{$_W['token']}" />
+
+            <input type="submit" class="btn btn-primary col-lg-1" name="submit" value="提交" />
+
+        </div>
+
+    </div>
+
+</form>
+
+{/if}
+
+
+	</div>
+
+</div>

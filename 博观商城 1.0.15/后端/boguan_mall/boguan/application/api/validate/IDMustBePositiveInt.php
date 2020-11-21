@@ -1,0 +1,2 @@
+<?php
+ namespace app\api\validate; class IDMustBePositiveInt extends BaseValidate { protected $rule = array("\151\144" => "\x72\x65\x71\x75\x69\x72\x65\x7c\151\x73\x50\157\x73\x69\x74\151\166\145\x49\x6e\x74\x65\147\x65\x72"); protected $message = array("\151\144" => "\151\x64\xe5\xbf\x85\351\241\273\346\230\257\346\xad\243\xe6\x95\264\xe6\x95\xb0"); }

@@ -1,0 +1,129 @@
+{php include wl_template('common/header');}
+<div class="page-group">
+    <div class="page page-current" id="page-order-check">
+    	<div class="content infinite-scroll" >
+    		{if $is_hexiao_member}
+	    	{if $result=='success'}
+	    	<div class="msg">
+			<div class="weui_msg">
+			    <div class="weui_icon_area"><i class="weui_icon_success weui_icon_msg"></i></div>
+			    <div class="weui_text_area">
+			        <h2 class="weui_msg_title">核销成功</h2>
+			        <p class="weui_msg_desc">点击确定，可返回微信</p>
+			    </div>
+			    <div class="weui_opr_area">
+			        <p class="weui_btn_area">
+			            <a id="closewindow" class="weui_btn weui_btn_primary">确定</a>
+			        </p>
+			    </div>
+			</div>
+			</div>
+			{else}
+			<div class="list-block cards-list" style="margin: 0;">
+		      <ul>
+		        <li class="card" style="border-radius: .2rem;">
+		          <div class="card-header"><h3 class="font-size-14">核销订单提货凭证</h3></div>
+		          <div class="card-content">
+		            <div class="card-content-inner">
+				        <div class="voucher-code">
+				            <p>提货码：{$order['hexiaoma']}</p>
+				            <p>
+				                <img src="{php echo app_url('order/qrcode/qr',array('url' => $qrcodeurl))}" alt="">
+				            </p>
+				        </div>
+				        <div class="voucher-address font-size-14">
+				            <p>提货人：{$order['addname']}&nbsp; {$order['mobile']}</p>
+				            <p>提货地址：{$order['address']}</p>
+				        </div>
+						<div class="good_speci" show="1">选择核销门店</div>
+			  			<div>
+			  				
+				  			{loop $stores $store}
+				  			<table style="width: 13rem;">
+				  				<tr>
+				  					<td style="padding-left: 10px;"><input type="radio" name="radio" id="radio{$store['id']}" value="{$store['id']}"  {if $store['id']==$stores[0]['id']}checked="checked"{/if}/></td>
+				  					<td>
+				  						<label for="radio{$store['id']}">
+				  						<div class="store">
+								            <div class="info">
+								            <div class="ico"></div>
+								            <div class="info1">
+								                <div class="inner">
+								                     <div class="user">{$store['storename']}</div>
+								                     <div class="addresss">地址: {$store['address']}</div>
+								                     <div class="tel">电话: {$store['tel']}</div>
+								                 </div>
+								             </div>
+								        	</div>
+								        </div>
+								        </label>
+				  					</td>
+				  				</tr>
+				  			</table>
+					        
+							{/loop}
+				       	</div>
+				        <div class="voucher-goods-info font-size-14">
+				            <p>商品信息：{$goods['gname']} </p>
+				            {if $order['optionname']}<p>商品规格：{$order['optionname']} </p>{/if}
+				            <p>购买数量：{$order['gnum']} {$order['unit']}</p>
+					        <p>实付金额：{$order['price']}元</p>
+					        </div>
+					    </div>
+		          </div>
+		        </li>
+		      </ul>
+		    </div>
+		    <div class="weui_btn_area">
+		    	<a id="conbdel" class="weui_btn weui_btn_primary">核销订单</a>
+	        	<a id="closewindow" class="weui_btn weui_btn_default">返回微信</a>
+	    	</div>
+			{/if}
+		    {else}
+	    	<div class="msg">
+			<div class="weui_msg">
+			    <div class="weui_icon_area"><i class="weui_icon_msg weui_icon_warn"></i></div>
+			    <div class="weui_text_area">
+			        <h2 class="weui_msg_title">非核销人员</h2>
+			        <p class="weui_msg_desc">点击确定，可返回微信</p>
+			    </div>
+			    <div class="weui_opr_area">
+			        <p class="weui_btn_area">
+			            <a id="closewindow" class="weui_btn weui_btn_primary">确定</a>
+			        </p>
+			    </div>
+			</div>
+			</div>
+			{/if}
+    	</div>
+	</div>
+</div>
+<script>
+	$(document).on('click','#conbdel',function(){
+		$.confirm('是否确认核销？',
+	        function () {
+	        	
+	        	var storeid = $('input:radio:checked').val();
+	        	var slen = $(':radio:checked');
+	        	{if !empty($stores)}
+	        	if(slen.length<1){
+	        		$.confirm('未选择核销门店');return false;
+	        	}
+	        	{/if}
+	          	$.post("{php echo app_url('order/check',array('mid' => $orderno))}",{storeid:storeid},function(d){
+					if(!d.errno){
+						location.href = "{php echo app_url('order/check',array('mid' => $orderno,'result' => 'success'))}";
+					}else{
+						$.toast(d.message);
+					}
+				},"json");
+	        }
+	    );
+	});
+	wx.ready(function(){
+		$('#closewindow').click(function(){
+			wx.closeWindow();
+		});
+	});
+</script>
+{php include wl_template('common/footer');}

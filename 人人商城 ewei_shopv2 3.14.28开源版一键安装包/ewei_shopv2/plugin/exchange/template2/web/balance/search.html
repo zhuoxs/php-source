@@ -1,0 +1,125 @@
+{template '_header'}
+<div class="page-content" style="display: block;">
+    <div class="page-heading">
+        {ifp 'exchange.balance.setting'}
+    <span class="pull-right">
+            <a class="btn btn-success btn-sm" href="{php echo webUrl('exchange/balance/setting',array('id'=>0));}"><i class="fa fa-plus"></i> 添加余额兑换任务</a>
+        </span>
+        {/if}
+        <h2>商品兑换组
+            <!--<small>数量: <span class="text-danger">0</span> 条</small>-->
+        </h2>
+    </div>
+
+    <ul class="nav nav-arrow-next nav-tabs" id="myTab">
+        <li {if $_W['action'] == 'balance'}class="active"{/if}>
+        <a href="{php echo webUrl('exchange/balance')}">进行中 (<span class="balance-ing">{$allStart}</span>)</a>
+        </li>
+        <li {if $_W['action'] == 'balance.nostart'}class="active"{/if}>
+        <a href="{php echo webUrl('exchange/balance/nostart')}">未开始 (<span class="balance-ing">{$allNostart}</span>)</a>
+        </li>
+        <li {if $_W['action'] == 'balance.end'}class="active"{/if}>
+        <a href="{php echo webUrl('exchange/balance/end')}">已结束 (<span class="balance-sold">{$allEnd}</span>)</a>
+        </li>
+        <li {if $_W['action'] == 'balance.search'}class="active"{/if}>
+        <a>搜索结果 (<span class="balance-sold">{php echo count($list);}</span>)</a>
+        </li>
+    </ul>
+
+    <div class="page-toolbar row m-b-sm m-t-sm">
+        <div class="col-sm-4">
+            <div class="input-group-btn">
+                <button class="btn btn-default btn-sm" type="button" data-toggle="refresh">
+                    <i class="fa fa-refresh"></i>
+                </button>
+                {ifp 'exchange.balance.delete'}
+                <button class="btn btn-default btn-sm" type="button" data-toggle="batch-remove" data-confirm="确认要删除选中的商品吗?" data-href="{php echo webUrl('exchange/balance/delete');}" disabled="disabled">
+                    <i class="fa fa-trash"></i> 删除
+                </button>
+                {/if}
+            </div>
+        </div>
+            <div class="pull-right" style="width: 250px">
+                <div class="input-group">
+                    <input type="text" class="input-sm form-control" name="keyword" value="{$keyword}" placeholder="请输入关键词" id="keyword">
+                    <span class="input-group-btn">
+                    <button class="btn btn-sm btn-primary" type="submit" id="so">搜索</button>
+                </span>
+                </div>
+            </div>
+    </div>
+    <script language="JavaScript" type="text/javascript">
+        function clearNoNum(obj){
+            obj.value = obj.value.replace(/[^\d.]/g,"");  //清除“数字”和“.”以外的字符
+            obj.value = obj.value.replace(/\.{2,}/g,"."); //只保留第一个. 清除多余的
+            obj.value = obj.value.replace(".","$#$").replace(/\./g,"").replace("$#$",".");
+            obj.value = obj.value.replace(/^(\-)*(\d+)\.(\d\d).*$/,'$1$2.$3');//只能输入两个小数
+            if(obj.value.indexOf(".")< 0 && obj.value !=""){//以上已经过滤，此处控制的是如果没有小数点，首位不能为类似于 01、02的金额
+                obj.value= parseFloat(obj.value);
+            }
+        }
+        $(document).ready($('#so').click(function () {
+                    var v = $('#keyword').val();
+                    var so_url = '{php echo webUrl("exchange/balance/search")}';
+                    var canshu = '&keyword='+v;
+                    var so_url = so_url + canshu;
+                    window.location.href = so_url;
+                })
+        );
+    </script>
+    <table class="table table-hover table-responsive table_kf active" id="tab_sold"><thead>
+    <tr>
+        <th style="width:25px;"><input type="checkbox"></th>
+        <th style="width:60px;">排序</th>
+        <th style="width:90px;">兑换标题</th>
+        <th style="width:90px;">&nbsp;</th>
+        <th style="width:100px;">已兑/总量</th>
+        <th style="width:100px;">结束时间</th>
+        <th style="width:60px;">类型</th>
+        <th style="width:90px;">状态</th>
+        <th>操作</th>
+    </tr>
+    </thead>
+        <tbody>
+        <!--{loop $list $key $value}-->
+        <tr>
+            <!--<td colspan="10" style="text-align: center;">暂时没有任何商品!</td>-->
+            <td><input type="checkbox" name="checkbox[]" value="{$value['id']}" class="checkbox"></td>
+            <td>{php echo $key+$pstart+1;}</td>
+            <td colspan="2"><a href="{php echo webUrl('exchange/balance/detail',array('id'=>$value['id']));}">{$value['title']}</a></td>
+            <td>{$value['use']}/{$value['total']}</td>
+            <td>{php echo substr($value['endtime'],0,10);}</td>
+            <td align="center">
+                {if $value['type'] == 1}<span class="label label-success">指定</span>{/if}
+                {if $value['type'] == 2}<span class="label label-danger">随机</span>{/if}
+                {if $value['type'] == 3}<span class="label label-primary">充值</span>{/if}
+            </td>
+            <td>
+                </button>
+                {php $s = strtotime($value['starttime'])<time();$e = strtotime($value['endtime'])>time();}
+                {if $s && $e}
+                <span class="label {if $value['status']==1}label-primary{else}label-danger{/if}" data-toggle="ajaxSwitch" data-confirm="确认暂停此兑换活动？" data-switch-refresh="true" data-switch-value="{$value['status']}" data-switch-value0="0|已暂停|label label-default|{php echo webUrl('exchange/balance/status',array('id'=>$value['id'],'status'=>0));}" data-switch-value1="1|进行中|label label-success|{php echo webUrl('exchange/balance/status',array('id'=>$value['id'],'status'=>1));}">{if $value['status']==1}进行中{else}已暂停{/if}</span>
+                {/if}
+                {if !$s}
+                <span class="label label-warning" data-toggle="ajaxSwitch" data-confirm="确认立即开始此兑换活动？" data-switch-refresh="true" data-switch-value="1" data-switch-value0="">未开始</span>
+                {/if}
+                {if $s && !$e}
+                <span class="label label" {ifp 'exchange.balance.status'}data-toggle="ajaxSwitch"{/if} data-confirm="确认再次开启兑换活动？" data-switch-refresh="true" data-switch-value="1" data-switch-value0="">已结束</span>
+                {/if}
+            </td>
+            <td>
+                <a class="btn btn-default btn-sm" title="查看" href="{php echo webUrl('exchange/balance/detail',array('id'=>$value['id']));}"><i class="fa fa-search"></i> 查看</a>
+                {ifp 'exchange.balance.setting'}
+                <a class="btn btn-default btn-sm" href="{php echo webUrl('exchange/balance/setting',array('id'=>$value['id']));}" title="编辑"><i class="fa fa-edit"></i> 编辑</a>
+                {/if}
+                {ifp 'exchange.balance.delete'}
+                <a class="btn btn-default btn-sm" data-toggle="ajaxRemove" href="{php echo webUrl('exchange/balance/delete',array('id'=>$value['id']));}" data-confirm="确认删除此兑换组？"><i class="fa fa-trash"></i> 删除</a>
+                {/if}
+            </td>
+        </tr>
+        <!--{/loop}-->
+        </tbody>
+    </table>
+    {$pager}
+</div>
+{template '_footer'}

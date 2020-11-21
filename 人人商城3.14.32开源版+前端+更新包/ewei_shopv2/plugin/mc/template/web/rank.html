@@ -1,0 +1,195 @@
+{template '_header'}
+<div class='page-heading'><h2>排行榜设置  {ifp 'commission.rank'}{/if}</h2></div>
+
+<form action="" method="post" class='form-horizontal form-validate'>
+
+    <div class="form-group">
+        <label class="col-xs-12 col-sm-3 control-label">排行榜开关</label>
+        <div class="col-sm-9 col-xs-12">
+            <label class="radio-inline">
+                <input type="radio" name="status" value="0" {if empty($item['status'])}checked{/if} /> 关闭
+            </label>
+            <label class="radio-inline">
+                <input type="radio" name="status" value="1" {if $item['status']==1}checked{/if} /> 开启
+            </label>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-xs-12 col-sm-3 control-label">排行榜类型</label>
+        <div class="col-sm-9 col-xs-12">
+            <label class="radio-inline">
+                <input type="radio" name="type" value="0" {if empty($item['type'])}checked{/if} /> 按累计佣金
+            </label>
+            <label class="radio-inline">
+                <input type="radio" name="type" value="1" {if $item['type']==1}checked{/if} /> 按已提现佣金
+            </label>
+            <label class="radio-inline">
+                <input type="radio" name="type" value="2" {if $item['type']==2}checked{/if} /> 虚拟排行榜
+            </label>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-sm-3 col-xs-12 control-label">排行榜显示数量</label>
+        <div class="col-sm-9 col-xs-12">
+            {ife 'commission.rank' $item}
+            <input type="text" name="num" class="form-control" value="{$item['num']}"/>
+            {else}
+            <div class='form-control-static'>{$item['num']}</div>
+            {/if}
+        </div>
+    </div>
+
+    <div class="form-group refresh">
+        <label class="col-sm-3 col-xs-12 control-label"></label>
+        <div class="col-sm-9 col-xs-12">
+            <a id="refresh" href="javascript:;" class="btn btn-primary">刷新排行榜</a>
+            <!--<a href="javascript:;" class="btn btn-primary"></a>-->
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-sm-3 col-xs-12 control-label"></label>
+        <div class="col-sm-9 col-xs-12">
+            <table class="table table-responsive">
+        <thead class="navbar-inner">
+        <tr>
+            <th  style="width:300px;">昵称</th>
+            <th  style="width:150px;"> <input type="text" name="title" class="form-control" value="{$item['title']}" placeholder="例如 : 累计佣金"/></th>
+            <th style="width:80px;">头像</th>
+            <th style="width:80px;"></th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody id='tbody-items'>
+        {loop $list $key $row}
+        <tr>
+            <td>
+                {ifp 'commission.rank'}
+                <input type="hidden" name="id[]" value="" >
+                <input type="text" class="form-control" name="nickname[]" value="{$row['nickname']}" >
+                {else}
+                {$row['nickname']}
+                {/if}
+            </td>
+
+            <td>
+                {ifp 'commission.rank'}
+                <input type="text" class="form-control" name="commission_total[]" value="{$row['commission_total']}" >
+                {else}
+                {$row['commission_total']}
+                {/if}
+            </td>
+
+            <td>
+                <input type='hidden'  name="avatar[]" value="{$row['avatar']}" />
+                <img onclick="selectImage(this)" onerror="this.src='{EWEI_SHOPV2_LOCAL}static/images/nopic100.jpg'"
+                     src="{if empty($row['avatar'])}{EWEI_SHOPV2_LOCAL}static/images/nopic100.jpg{else}{php echo tomedia($row['avatar'])}{/if}"
+                style="width:40px;height:40px">
+            </td>
+            <td>
+                {ifp 'commission.rank.delete'}
+                <a href="{php echo webUrl('commission.rank.delete', array('id' => $key))}" data-toggle='ajaxRemove' class="btn btn-default btn-sm" data-confirm="确认删除此虚拟用户?"><i class="fa fa-trash"></i> 删除</a>{/if}
+            </td>
+
+        </tr>
+        {/loop}
+        </tbody>
+                <tr>
+                    <td>
+                        {ifp 'commission.rank'}
+                        <input name="button" type="button" class="btn btn-warning" value="添加虚拟用户" onclick='addlink()'>
+                        {/if}
+                    </td>
+                </tr>
+    </table>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-sm-3 col-xs-12 control-label"></label>
+        {ifp 'commission.rank'}
+        <input type="submit" class="btn btn-primary" value="保存">
+        {/if}
+    </div>
+</form>
+<script>
+
+    function addlink(){
+        var html ='<tr>';
+        html+='<td>';
+        html+='<input type="hidden" name="id[]" value="" ><input type="text" class="form-control" name="nickname[]" value="">';
+        html+='</td>';
+        html+='<td>';
+        html+='<input type="text" class="form-control" name="commission_total[]" value="">';
+        html+='</td>';
+        html+='<td>';
+        html+='<input type="hidden"  name="avatar[]" value="{$row[\'avatar\']}" />';
+        html+='<img onclick="selectImage(this)" onerror="this.src=\'{EWEI_SHOPV2_LOCAL}static/images/nopic100.jpg\'" src="{EWEI_SHOPV2_LOCAL}static/images/nopic100.jpg>" style=\'width:40px;height:40px;\'';
+        html+='</td>';
+
+        html+='<td></td></tr>';;
+        $('#tbody-items').append(html);
+    }
+
+    function selectImage(obj){
+        util.image('',function(val){
+            $(obj).attr('src',val.url);
+            var group  =$(obj).parent();
+            group.find(':hidden').val(val.url);
+        });
+    }
+
+    $(function () {
+
+        if($(":radio[name=type][checked]").val() != 2)
+        {
+            $("table").hide();
+        }
+        if($(":radio[name=type][checked]").val() != 0)
+        {
+            $(".refresh").hide();
+        }
+        $(":radio[name=type]").click(function () {
+            var _this = this;
+            $("table").show();
+            $(".refresh").show();
+            if($(_this).val() != '2')
+            {
+                $("table").hide();
+            }
+            if($(_this).val() != '0')
+            {
+                $(".refresh").hide();
+            }
+        });
+    })
+
+    $(".refresh div a").click(function (e) {
+        $.getJSON("{php echo webUrl('commission/rank/ajaxgetcommissionopenid')}",function (data) {
+            $("#refresh").addClass("disabled");
+            var i = 1;
+            $.each(data.result.openid,function (key,val) {
+                $.getJSON("{php echo webUrl('commission/rank/ajaxgetcommission')}",{openid:val},function (json) {
+                    if(json.status == '1')
+                    {
+                        $("#refresh").text("完成 "+i+"/"+data.result.openid.length);
+                        if(data.result.openid.length <=i)
+                        {
+                            $("#refresh").removeClass("disabled");
+                            $("#refresh").text("刷新排行榜");
+                        }
+                        i++;
+                    }
+                    if(json.status == '0')
+                    {
+                        alert("error");
+                    }
+                });
+            });
+        })
+    });
+</script>
+
+{template '_footer'}

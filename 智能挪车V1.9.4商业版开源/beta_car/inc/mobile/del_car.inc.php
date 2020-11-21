@@ -1,0 +1,2 @@
+<?php
+ goto llGTJ; qQqrP: v9m13: goto CFrH5; Fj4jF: if (!empty($res)) { goto aCMSU; } goto AK8Os; DDg81: if (!$_W[isajax]) { goto O3J00; } goto sCut3; llGTJ: global $_GPC, $_W; goto DDg81; nJUAw: $res = pdo_delete(table . "\x63\141\162", array("\163\156" => $sn, "\x6f\160\x65\156\151\x64" => openid)); goto Fj4jF; sCut3: $sn = $_GPC["\163\156"]; goto nJUAw; CFrH5: echo json_encode($msg); goto w48FG; AK8Os: $msg = array("\145\170\x74" => 1); goto hGCAg; AJdcP: $msg = array("\145\170\x74" => 0); goto qQqrP; kVjVk: aCMSU: goto AJdcP; hGCAg: goto v9m13; goto kVjVk; w48FG: O3J00:

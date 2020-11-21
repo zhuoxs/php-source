@@ -1,0 +1,157 @@
+{extend name="common/index" /}
+{block name="search_box"}
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入订单号搜索..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="lottery_status" id="lottery_status" style="width: 200px;" class="select2" lay-ignore></select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+<input type="hidden" id="goods_id" value="{$goods_id}">
+{/block}
+{block name="tool_box"}
+<!--工具栏-->
+
+{/block}
+{block name="tool_template"}
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    {{# if(d.pre_prize == 0){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnPrePrize">设为预中奖</a>
+    {{# } }}
+    {{# if(d.pre_prize == 1){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnCancelPrePrize">取消预中奖</a>
+    {{# } }}
+
+
+</script>
+{/block}
+
+{block name="table_config"}
+<script type="text/html" id="lotteryStatus">
+    {{# if(d.lottery_status == 0){ }}未开奖{{# } }}
+    {{# if(d.lottery_status == 1){ }}未中奖{{# } }}
+    {{# if(d.lottery_status == 2){ }}已中奖{{# } }}
+</script>
+<script>
+    layui.use('table', function () {
+        var table = layui.table;
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_join_list')}"
+            ,where:{
+                goods_id:$('#goods_id').val(),
+            }
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'order_no', width:200, title: '订单号',fixed:'left',sort:true},
+                {field:'nickname', width:180, title: '参与人姓名',fixed:'left'},
+                {field:'lottery_status', width:100, title: '活动类型',sort:true,templet:'#lotteryStatus'},
+                {field:'tel', width:100, title: '电话'},
+                {field:'remark', width:150, title: '备注',sort:true},
+                {field:'create_time', width:200, title: '参与时间',sort:true},
+                {field:'write_off_time', width:200, title: '使用时间',sort:true},
+                {field:'o',fixed:'right',width:200, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true,
+            height:'full-300',
+            // layer.full(index);
+        });
+        //        搜索
+        $('#btnSearch').unbind().click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    lottery_status: $('#lottery_status').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        lottery_status: $('#lottery_status').val(),
+                    }
+                });
+            }
+        })
+        // 设为预中奖
+        $(document).on('click','.btnPrePrize',function(e){
+            var id = $(this).data('id')
+            layer.confirm('即将设置为预中奖', {
+                btn: ['确定','取消'] //按钮
+            }, function(){
+                var url = "{:adminurl('PrePrize')}";
+                $.post(url, {id:id,type:5}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('设置成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            });
+            return false;
+        })
+        //取消预中奖
+        $(document).on('click','.btnCancelPrePrize',function(e){
+            var id = $(this).data('id')
+            layer.confirm('即将取消预中奖', {
+                btn: ['确定','取消'] //按钮
+            }, function(){
+                var url = "{:adminurl('CancelPrePrize')}";
+                $.post(url, {id:id,type:5}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('设置成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            });
+            return false;
+        })
+
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        var ret = [
+            {"id":0,"text":"未开奖"},
+            {"id":1,"text":"未中奖"},
+            {"id":1,"text":"已中奖"},
+        ];
+        ret.unshift({id: '', text: '请选择活动状态'});
+        ret.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            return obj;
+        });
+        $('#lottery_status').select2({
+            data: ret,
+        })
+
+    })
+
+</script>
+{/block}

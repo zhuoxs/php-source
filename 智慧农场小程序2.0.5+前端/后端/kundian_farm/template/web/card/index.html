@@ -1,0 +1,117 @@
+{template 'web/common/common'}
+{template 'web/coupon/navbar'}
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/style.css" />
+<link rel="stylesheet" type="text/css" href="../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/layui.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/new-common.css" />
+<style type="text/css">
+    .layui-form-item input{width: 325px;float: left;margin-right: 20px;height: 34px;}
+    .layui-tab{width: 100%;margin-left: 0}
+</style>
+<blockquote class="layui-elem-quote layui-text">
+    兑换卡列表
+</blockquote>
+<div class="new-style">
+    <blockquote class="layui-elem-quote layui-quote-nm" style="font-size: 14px;">
+        <form action="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'card_index','action'=>'card')}" method="post">
+            <div class="layui-form-item">
+                <input type="text" name="keywords" value="{$keywords}" placeholder="关键词 例如：卡号 、用户昵称" class="layui-input">
+                <button type="submit" class="layui-btn layui-btn-sm" ><i class="layui-icon">&#xe615;</i>搜索</button>
+                <a class="layui-btn layui-btn-sm" id="outOrder" href="#"><i class="layui-icon">&#xe601;</i>批量导出</a>
+            </div>
+        </form>
+        <form action="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'uploadExcel','action'=>'card')}" method="post" enctype="multipart/form-data">
+            {if in_array('card.uploadExcel',$perm)}
+            <div class="layui-form-item">
+                <input type="file" class="form-control" name="upfile" />
+                <button type="submit" id="submitForm" class="layui-btn layui-btn-sm"><i class="layui-icon">&#xe681;</i>导入兑换卡</button>
+                <a class="layui-btn layui-btn-sm" href="{$_W['siteroot']}addons/kundian_farm/resource/card_template.xls"><i class="layui-icon">&#xe601;</i>下载模板</a>
+            </div>
+            {/if}
+        </form>
+    </blockquote>
+    <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief" style="top: 0;">
+        <ul class="layui-tab-title">
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'card_index','status'=>4,'action'=>'card')}" ><li class="{if $data['status']==4}layui-this{/if}">全部</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'card_index','status'=>3,'action'=>'card')}"><li class="{if $data['status']==3}layui-this{/if}">未激活</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'card_index','status'=>1,'action'=>'card')}"><li class="{if $data['status']==1}layui-this{/if}">已兑换</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'card_index','status'=>2,'action'=>'card')}"><li class="{if $data['status']==2}layui-this{/if}">已过期</li></a>
+        </ul>
+    </div>
+
+    <div class="layui-form">
+        <table class="layui-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>卡号</th>
+                    <th>密码</th>
+                    <th>导入时间</th>
+                    <th>使用时间</th>
+                    <th>过期时间</th>
+                    <th>用户</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {loop $data['list'] $index $item}
+                <tr>
+                    <td>{$item['id']}</td>
+                    <td>{$item['card_num']}</td>
+                    <td>{$item['card_pwd']}</td>
+                    <td>{$item['import_time']}</td>
+                    <td>{$item['use_time']}</td>
+                    <td>{$item['expire_time']}</td>
+                    <td>
+                        {if $item['nickname']!=undefined }
+                            {$item['nickname']}（UID:{$item['uid']}）
+                        {else}
+                        --
+                        {/if}
+                    </td>
+                    <td>
+                        {if $item['status']==0}
+                        <span class="layui-badge layui-bg-gray">未激活</span>
+                        {else if $item['status']==1}
+                        <span class="layui-badge layui-bg-green">已兑换</span>
+                        {else if $item['status']==2}
+                        <span class="layui-badge">已过期</span>
+                        {/if}
+                    </td>
+                    <td>
+                        {if $item['status']==0}
+                        {if in_array('card.card_delete',$perm)}
+                        <a class="layui-btn layui-btn-xs layui-btn-danger delete" data-id="{$item['id']}"><i class="layui-icon">&#xe640;</i>删除</a>
+                        {else}
+                        --
+                        {/if}
+                        {else}
+                        --
+                        {/if}
+                    </td>
+                </tr>
+              {/loop}
+
+             </tbody>
+        </table>
+        <div style="text-align: right;">
+            {$data['pager']}
+        </div>
+    </div>
+</div>
+{template 'common/footer'}
+<script src="../addons/kundian_farm/resource/layui.js" charset="utf-8"></script>
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form,layer = layui.layer;
+        $(".delete").click(function(){
+            var that=$(this);
+            var id=$(this).attr('data-id');
+            var url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'card_delete','action'=>'card')}";
+            updateData(url,{id:id},'确认删除吗？');
+        });
+
+    });
+</script>

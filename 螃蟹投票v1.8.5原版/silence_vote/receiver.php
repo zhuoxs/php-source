@@ -1,0 +1,2 @@
+<?php
+ defined("\x49\116\x5f\x49\101") or exit("\x41\143\143\145\163\x73\x20\x44\145\x6e\151\145\144"); class Silence_voteModuleReceiver extends WeModuleReceiver { public function receive() { $type = $this->message["\x74\171\x70\x65"]; } }

@@ -1,0 +1,2 @@
+<?php
+ namespace app\api\model; class PickPoint extends BaseModel { public function city() { return $this->hasOne("\x50\151\x63\153\103\x69\x74\171", "\x69\144", "\x63\x69\164\x79\137\151\144")->field("\151\x64\x2c\156\x61\x6d\145"); } }

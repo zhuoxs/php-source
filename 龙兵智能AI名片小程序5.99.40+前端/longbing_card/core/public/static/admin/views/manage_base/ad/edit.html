@@ -1,0 +1,189 @@
+
+<title>广告管理</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>广告管理</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-header">广告管理</div>
+        <div class="layui-card-body" style="padding: 15px;">
+
+            <form class="layui-form" action="" lay-filter="component-form-group">
+
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">选择广告位</label>
+                        <div class="layui-input-block">
+                            <input type="radio" name="type" value=1 title="人脉圈-广告位">
+                        </div>
+                    </div>
+                    <!--图标-->
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">图片</label>
+                        <div class="layui-upload">
+                            <button type="button" class="layui-btn" id="test-upload-normal">上传图片</button>
+                            <div class="layui-upload-list">
+                                <img style="margin-left: 110px" class="layui-upload-img" id="test-upload-normal-img">
+                                <p id="test-upload-demoText"></p>
+                                <!--隐藏域-->
+                                <input type="hidden" name="path" id="cover_value">
+                                <blockquote style="margin-left: 110px" class="layui-elem-quote">建议图片尺寸：750*350</blockquote>
+                            </div>
+                        </div>
+                    </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">跳转类型</label>
+                    <div class="layui-input-block">
+                        <input type="radio" name="link_type" value=1 title="拨打电话">
+                        <input type="radio" name="link_type" value=2 title="跳转小程序">
+                        <input type="radio" name="link_type" value=3 title="跳转网页">
+                    </div>
+                </div>
+
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">跳转链接</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="link" required  lay-verify="required" placeholder="" autocomplete="off" class="layui-input">
+                            <blockquote class="layui-elem-quote">拨打电话:填入电话号码；跳转小程序:填入Appid；跳转网页:填入完整URL(需要配置业务域名)</blockquote>
+                        </div>
+                    </div>
+
+                    <!--状态-->
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">状态</label>
+                        <div class="layui-input-block">
+                            <input type="radio" name="status" value=1 title="正常">
+                            <input type="radio" name="status" value=0 title="隐藏">
+                        </div>
+                    </div>
+
+                    <div class="layui-form-item">
+                        <div class="layui-input-block">
+                            <button class="layui-btn" lay-submit lay-filter="LAY-filter-demo-form">立即提交</button>
+                            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                        </div>
+                    </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.use(['admin', 'form'], function(){
+        var $ = layui.$
+                ,admin = layui.admin
+                ,element = layui.element
+                ,layer = layui.layer
+                ,form = layui.form;
+
+        //id的值（判断是否编辑）
+        var router = layui.router();
+        var id=router.search.id;
+        if(typeof(id)=='undefined'){
+            id=0;//默认新增
+        }
+
+        //发送请求获取数据(数据的回显)
+        admin.req({
+            type:'POST',
+            url: config.url+'manage_base/ad/getOneData'//数据接口
+            ,data:{"id":id},
+            done:function(res){
+                if(res.data){
+                    //预设元素
+                    form.val("component-form-group", {
+                        "status": res.data.status,// "name": "value"
+                        "type": res.data.type,// "name": "value"
+                        "path": res.data.path,// "name": "value"
+                        "link": res.data.link,// "name": "value"
+                        "link_type": res.data.link_type,// "name": "value"
+                    });
+                    //图片的回显
+                    if(res.data.cover_path){
+                        $('#test-upload-normal-img').attr('src', res.data.cover_path);
+                    }
+                }else{
+                    form.val("component-form-group", {
+                        "status": 1,// "name": "value"
+                        "type": 2,// "name": "value"
+                        "link_type": 1// "name": "value"
+                    });
+                }
+            }
+        });
+
+        /* 自定义验证规则 */
+        form.verify({
+            title: function(value){
+                if(value.length < 3){
+                    return '标题至少得3个字符啊';
+                }
+            }
+            ,pass: [/(.+){6,12}$/, '密码必须6到12位']
+            ,content: function(value){
+                layedit.sync(editIndex);
+            }
+        });
+
+        /* 监听提交 */
+        form.on('submit', function(data){
+            console.log(data);
+            //发送请求
+            admin.req({
+                type:'POST',
+                url: config.url+'manage_base/ad/edit'//数据接口
+                ,data:{"id":id,"data":data.field},
+                done:function(res){
+                    layer.msg('成功', {
+                        offset: '15px'
+                        ,icon: 1
+                        ,time: 1000
+                    }, function(){
+                        window.location.href =config.html_url+'manage_base/ad/';
+                    });
+                }
+            });
+            return  false;
+        });
+    });
+    /*上传图片*/
+    layui.use(['admin', 'upload'], function(){
+        var $ = layui.jquery
+                ,upload = layui.upload;
+        //单图片上传
+        var uploadInst = upload.render({
+            elem: '#test-upload-normal'
+            ,url: config.url+'manage_base/base_admin/upload'//上传地址
+            ,data:{"type":"picture"}
+            ,before: function(obj){
+                //预读本地文件示例，不支持ie8
+                obj.preview(function(index, file, result){
+                    $('#test-upload-normal-img').attr('src', result); //图片链接（base64）
+                });
+            }
+            ,done: function(res){
+                //如果上传失败
+                if(res.code > 0){
+                    return layer.msg('上传失败');
+                }
+                //上传成功  将返回值放到隐藏域中
+                $('#cover_value').val(res.data.id);
+            }
+            ,error: function(){
+                //演示失败状态，并实现重传
+                var demoText = $('#test-upload-demoText');
+                demoText.html('<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-mini demo-reload">重试</a>');
+                demoText.find('.demo-reload').on('click', function(){
+                    uploadInst.upload();
+                });
+            }
+        });
+
+    });
+</script>

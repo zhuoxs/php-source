@@ -1,0 +1,277 @@
+{template 'header'}
+<style>
+    .pageBind{
+        background: #ffffff!important;
+    }
+    .user-form{
+        border-radius:0px;
+    }
+    .liuer_btn{
+        background: <?php echo $config['btn_color'];?>!important;
+        border-radius:<?php echo $config['btn_border'];?>!important;
+    }
+    #hook-app{
+        position: relative;
+    }
+    .yd-mask{
+        /*position: absolute!important;*/
+    }
+    .yd-popup-center{
+        /*position: absolute!important;*/
+    }
+
+</style>
+<body class="pageBind">
+<div id="hook-app">
+    <?php if($show_need_guanzhu && !$_W['fans']['follow']): ?>
+    <div class="topic">
+        <div class="topic-text">
+            <i class="fa fa-heart"></i> {$show_wenan}
+        </div>
+        <div class="topic-close">
+            <yd-button type="warning" @click.native="showGz" size="mini" class="follow_guanzhu">去关注</yd-button>
+        </div>
+    </div>
+    <?php endif; ?>
+    <div class="scroll-img" style="margin-bottom: 15px;">
+        <yd-slider autoplay="5000">
+            {loop $banners $index $banner}
+            <yd-slider-item>
+                <a href="<?php echo $linkurls[$index]; ?>"><img src="{php echo tomedia($banner)}" width="100%"/></a>
+            </yd-slider-item>
+            {/loop}
+        </yd-slider>
+    </div>
+    <!--<header>
+        <div class="wenan">
+            <p>不留手机号-保护双方隐私，闪电挪车</p>
+            <p>隐私号码、微信通知双重保证</p>
+            <p>位置定位一目了然</p>
+            <p>语音留言、ui diy等进行中...</p>
+        </div>
+        <div class="slogan"><img src="{$_W['fans']['avatar']}" alt="" /></div>
+    </header>-->
+    <div class="user-form">
+        <yd-cell-group>
+            <!--<yd-cell-item>
+                <yd-icon slot="icon" name="ucenter" size=".4rem"></yd-icon>
+                <span slot="left">车牌ID</span>
+                <input type="text" slot="right" placeholder="车牌ID" value="12391" />
+            </yd-cell-item>-->
+            <yd-cell-item>
+                <yd-icon slot="icon" name="discover" size=".4rem"></yd-icon>
+                <span slot="left">车牌号</span>
+                   <!-- <a href="">京</a>
+                    <a href="">A</a>-->
+                <div class="yd-cell-right yd-cell-wrapper" slot="right">
+                    <a href="javascript:;" @click.prevent="provinceModal = true">{{province}}</a>
+                    <a href="javascript:;" @click.prevent="wordModal = true">{{word}}</a>
+                    <input type="text" placeholder="输入车牌号" v-model="chepaihao" style="text-transform: uppercase" maxlength="6" @blur="fixScroll"/>
+                    <!--todo 小写变大写 https://juejin.im/post/5ab9e7e96fb9a028ce7b9dc3 -->
+                </div>
+
+
+            </yd-cell-item>
+            <yd-cell-item>
+                <yd-icon slot="icon" name="phone3" size=".4rem"></yd-icon>
+                <span slot="left">手机号</span>
+                <input type="number" maxlength="11" slot="right" placeholder="输入手机号码" v-model="mobile" @blur="fixScroll"/>
+            </yd-cell-item>
+            <?php if($config['is_sms']): ?>
+            <yd-cell-item>
+                <yd-icon slot="icon" name="verifycode" size=".4rem"></yd-icon>
+                <span slot="left">验证码</span>
+                <input type="number" slot="right" placeholder="输入验证码" v-model="verifyCode" @blur="fixScroll"/>
+
+                <yd-sendcode
+                        class="liuer_btn"
+                        slot="right"
+                        v-model="start"
+                        storage-key="code"
+                        @click.native="sendCode"
+                        type="warning"
+                ></yd-sendcode>
+            </yd-cell-item>
+            <?php endif; ?>
+        </yd-cell-group>
+        <div class="tips">
+            <yd-icon name="checkoff" size=".4rem" color="#1AAD19"></yd-icon>
+            遵照法律保护您的隐私安全
+        </div>
+        <yd-button size="large" type="warning" @click.native="bind" class="liuer_btn">立即绑定</yd-button>
+    </div>
+    <yd-popup v-model="needGuanzhu" position="center" width="90%" class="guanzhu-modal" :close-on-masker="false">
+        <div style="background-color:#fff;">
+            <div class="msg-success">
+                <yd-icon name="checkoff" size="1.2rem" color="#1AAD19"></yd-icon>
+            </div>
+            <div class="header-title">恭喜您，绑定完成～</div>
+            <div class="header-tip">
+                <i class="fa fa-volume-up"></i> 关注公共号，及时收到挪车提醒
+            </div>
+            <div class="qr_code"><img src="{$gz_img}" alt="" /></div>
+        </div>
+    </yd-popup>
+    <yd-popup v-model="provinceModal" position="center" width="auto">
+        <div style="background-color:#fff;" class="modal-wrap">
+            <ul class="province-list">
+                <li v-for="(item,index) in allProvince" :key="index" @click="choseMe(index,'province')" :class="{active:province == item}">{{item}}</li>
+            </ul>
+        </div>
+    </yd-popup>
+    <yd-popup v-model="wordModal" position="center" width="auto">
+        <div style="background-color:#fff;">
+            <ul class="word-list">
+                <li v-for="(item,index) in allWord" :key="index" @click="choseMe(index,'word')" :class="{active:word == item}">{{item}}</li>
+            </ul>
+        </div>
+    </yd-popup>
+    <?php if($show_need_guanzhu): ?>
+    <yd-popup v-model="indexGuanzhu" position="center" width="90%" class="guanzhu-modal">
+        <div style="background-color:#fff;">
+            <div class="qr_code"><img src="{$gz_img}" alt="" /></div>
+        </div>
+    </yd-popup>
+    <?php endif; ?>
+</div>
+<script>
+    var code_id = "{$codeInfo['id']}";
+    var bindUrl = "{php echo $this->createMobileUrl('bind-code');}";
+    var smsUrl = "{php echo $this->createMobileUrl('send-sms');}";
+    var checkVerify = "{php echo $this->createMobileUrl('check-verify');}";
+    var word = "{php echo $config['area_prefix']}";
+    var is_sms = parseInt("{php echo $config['is_sms']}");
+
+
+    var reg = /^1[3456789][0-9]\d{8}$/;
+
+    var app = new Vue({
+        el: '#hook-app',
+        data: {
+            indexGuanzhu: 0,
+            chepaihao: '',
+            mobile: '',
+            verifyCode: '',
+            start: false,
+            provinceModal:false,
+            province: '{$config["area"]}',
+            allProvince:[
+                '京','津','沪','渝','蒙',
+                '新','藏','宁','桂','港',
+                '澳','黑','吉','辽','晋',
+                '冀','青','鲁','豫','苏',
+                '皖','浙','闽','赣','湘',
+                '鄂','粤','琼','甘','陕',
+                '贵','云','川'
+            ],
+            wordModal:false,
+            word: "{php echo $config['area_prefix'] ? $config['area_prefix'] : 'A'}",
+            allWord:[
+                'A','B','C','D','E',
+                'F','G','H','I','J',
+                'K','L','M','N','O',
+                'P','Q','R','S','T',
+                'U','V','W','X','Y',
+                'Z'
+            ],
+            needGuanzhu: 0
+        },
+        methods: {
+            choseMe: function(index,type) {
+                if(type == 'province'){
+                    this.province = this.allProvince[index];
+                    this.provinceModal = false;
+                }else{
+                    this.word = this.allWord[index];
+                    this.wordModal = false;
+                }
+            },
+            fixScroll:function(){
+                window.scrollTo(0,0);
+            },
+            bind: function(){
+                if(!this.chepaihao.trim()){
+                    this.message("请输入车牌号");
+                    return false;
+                }
+                if(!this.mobile.trim()){
+                    this.message("请输入手机号");
+                    return false;
+                }
+                if(!reg.test(this.mobile)){
+                    this.message("手机号格式错误");
+                    return false;
+                }
+                if(is_sms == 1){
+                    if(!this.verifyCode.trim()){
+                        this.message("请输入验证码");
+                        return false;
+                    }
+                }
+
+                var chepaihao = this.province + this.word + this.chepaihao;
+                this.$dialog.loading.open('提交中...');
+                $.post(bindUrl,{code_id:code_id,chepaihao:chepaihao,mobile:this.mobile,verifyCode:this.verifyCode}).then(function(resp){
+                    app.$dialog.loading.close();
+                    resp = JSON.parse(resp);
+                    console.log(typeof resp);
+                    if(!resp.error){
+                        console.log(1);
+                        if(resp.isfollow == 0){  //需要关注
+                            app.needGuanzhu = 1;
+                        }else{
+                            //加一个绑定成功
+                            app.$dialog.toast({
+                                mes: resp.msg,
+                                timeout: 1500,
+                                icon:'success'
+                            });
+                            setTimeout(function(){
+                                location.href = resp.url;
+                            },1500)
+                        }
+                    }else{
+                        app.message(resp.msg);
+                        return false;
+                    }
+                });
+                return false;
+            },
+            sendCode: function() {
+                //检测手机号格式
+                if(!this.mobile.trim()){
+                    this.message("请输入手机号");
+                    return false;
+                }
+                if(!reg.test(this.mobile)){
+                    this.message("手机号格式错误");
+                    return false;
+                }
+                this.$dialog.loading.open('发送中...');
+                $.post(smsUrl,{mobile:this.mobile}).then(function(resp){
+                    resp = JSON.parse(resp);
+
+                    app.start = true;
+                    app.$dialog.loading.close();
+                    app.$dialog.toast({
+                        mes: resp.msg,
+                        icon: resp.error ? 'error' : 'success',
+                        timeout: 1500
+                    });
+
+                })
+            },
+            showGz: function(){
+                this.indexGuanzhu = 1;
+            },
+            message:function(msg){
+                this.$dialog.toast({
+                    mes: msg,
+                    timeout: 1500
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>

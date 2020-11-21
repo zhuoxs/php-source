@@ -1,0 +1,184 @@
+{{include file='common/head.html'}}
+<script language='javascript'>
+//var mproducts;
+//var m_count;
+$(document).ready(function(){
+	var count = '{{count($list)}}';
+	if (count!=''){
+		$.ajax({
+			type:'get',
+			url:'?c=mproduct&a=listMproduct',
+			dataType:'json',
+			async:false,
+			success:function(ret){
+				var mproducts = ret['mproducts'];
+				$(".mproduct_id").each(function(){
+					var mproduct_id = $(this).html();
+					var name;
+					for(var i in mproducts) {
+						if (mproduct_id ==mproducts[i]['id'] ) {
+							name = mproducts[i]['name'];
+							$(this).html(name);
+						}
+					}
+				})
+			}
+		});
+		
+	}
+});
+function commodity_del(id)
+{
+	if (!confirm("确定要删除?")) {
+		return;
+	}
+	verificationAjax('?c=commodity&a=commodityDel','id='+id)
+}
+function select_status(val)
+{
+	if (isNaN(val)) {
+		return;
+	}
+	var url = '?c=commodity&a=commodityPagelist&status=' + val;
+	var mproduct_id = '{{$mproduct_id}}';
+	if (mproduct_id != '') {
+		url += '&mproduct_id='+ mproduct_id;
+	}
+	window.location = url;
+}
+function select_mproduct(mproduct_id)
+{
+	if (isNaN(mproduct_id)) {
+		return;
+	}
+	var url = '{{$hrefurl}}&mproduct_id='+ mproduct_id;
+	var status = '{{$status}}';
+	if (status != '') {
+		url += '&status=' + status;
+	}
+	window.location = url;
+}
+function go_commodity_add()
+{
+	var url = '?c=commodity&a=commodityFrom';
+	window.location = url;
+}
+/**
+ * 2013-05-14
+ */
+function go_commodity_update(id)
+{
+	var url = '?c=commodity&a=commodityUpdateFrom';
+	var isverification = 0;
+	jQuery.ajax({
+		url : '?c=setting&a=isVerification',
+		dataType : 'json',
+		async : false,
+		success : function(ret) {
+			if (ret['code'] == 200) {
+				isverification = 1;
+			}
+			var str = '';
+			if (isverification == 1) {
+				str = prompt('该操作需要验证,请输入操作验证码');
+				if (str == null) {
+					return;
+				}
+				if (jQuery.trim(str) == '') {
+					alert("验证码不能为空");
+					return;
+				}
+			} 
+			url += '&operating_string='+str + '&id='+id;
+			window.location = url;
+		}
+	});
+}
+</script>
+
+<body bgcolor='#ffffff' text='#000000' leftmargin='0' topmargin='0'>
+	<div align="center">
+		<div class="wid_main mar_main" align="left">
+			<div class="block_top" align="left">当前位置：非自动化产品 -->商品列表</div>
+			<table class="table_main2" cellpadding="0" cellspacing="1">
+				<tr>
+					<td colspan="1" class="bg_main"><input type='button' onclick='go_commodity_add()' value='增加商品'></td>
+						
+					<td colspan="1" class="bg_main">
+						查询:
+						<select name='status' onchange='select_status(this.value)'>
+						<option value='null'>状态</option>
+						<option value='0'>未使用</option>
+						<option value='1'>已使用</option>
+						<option value='2'>暂停使用</option>
+						</select>
+					</td>
+					
+					<td colspan="1" class="bg_main">
+						查询:
+						<select onchange='select_mproduct(this.value)'>
+						<option value='null'>所属产品</option>
+						{{foreach from=$mproducts item=row}}
+						<option value='{{$row.id}}'>{{$row.name}}</option>
+						{{/foreach}}
+						</select>
+					</td>
+					
+					<td colspan="1" class="bg_main">
+					<form action="{{$hrefurl}}" method="post">
+					搜索:<input name='select' size='12'><input type='submit' value='查询'>
+					</form>
+						
+					</td>
+					
+					<td colspan="5" class="bg_main">
+					<form action="{{$hrefurl}}" method="post">
+					直达:<input name='page' size='5'>页<input type='submit' value='GO'>
+					</form>
+						
+					</td>
+					
+				</tr>
+			</table>
+		<table class="table_main2" cellpadding="0" cellspacing="1">
+				<tr id="bg_yellow">
+					<td>操作</td>
+					<td><a href="{{$hrefurl}}&order=id">产品ID</a></td>
+					<td><a href="{{$hrefurl}}&order=mproduct_id">所属产品</a></td>
+					<td><a href="{{$hrefurl}}&order=commodity_name">商品名称</a></td>
+					<td><a href="{{$hrefurl}}&order=add_time">创建时间</a></td>
+					<td><a href="{{$hrefurl}}&order=try_time">使用时间</a></td>
+					<td><a href="{{$hrefurl}}&order=username">使用用户</a></td>
+					<td>商品信息</td>
+					<td><a href="{{$hrefurl}}&order=status">状态</a></td>
+				</tr>
+				{{foreach from=$list item=row}}
+				<tr>
+					<td>[<a href="javascript:commodity_del({{$row.id}})">删除</a>]
+					 	[<a href="javascript:go_commodity_update({{$row.id}})">更改</a>]
+					</td>
+					<td>{{$row.id}}</td>
+					<td class='mproduct_id' >{{$row.mproduct_id}}</td>
+					<td title='{{$row.commodity_name}}'>{{if $row.status==1}}<font color='red'>{{$row.commodity_name|truncate:20}}</font>{{else}} {{$row.commodity_name|truncate:20}}{{/if}}</td>
+					<td title='{{$row.add_time}}'>{{substr($row.add_time,0,10)}}</td>
+					<td title='{{$row.try_time}}'>{{if $row.try_time}}{{substr($row.try_time,0,10)}}{{/if}}</td>
+					<td>{{$row.username}}</td>
+					<td >{{$row.commodity_info|truncate:32}}</td>
+					<td>{{if $row.status==0}}未使用{{else if $row.status==1}}<font color='red'>已使用</font>{{else}}暂停使用{{/if}}</td>
+				</tr>
+				{{/foreach}}
+				<tr>
+					<td colspan="9" id="bg_yellow" align="right">{{if $page>1}} <a
+						href='{{$hrefurl}}&order={{$order}}&&page=0&status={{$status}}&mproduct_id={{$mproduct_id}}'>首页</a> <a
+						href='{{$hrefurl}}&order={{$order}}&page={{$page-1}}&status={{$status}}&mproduct_id={{$mproduct_id}}'>上一页</a>
+						{{else}} 首页 上一页 {{/if}} {{if $page!=$total_page}} <a
+						href='{{$hrefurl}}&order={{$order}}&page={{$page+1}}&status={{$status}}&mproduct_id={{$mproduct_id}}'>下一页</a> <a
+						href='{{$hrefurl}}&order={{$order}}&page={{$total_page}}&status={{$status}}&mproduct_id={{$mproduct_id}}'>尾页</a>
+						{{else}}下一页 尾页 {{/if}} {{$page}}/{{$total_page}}&nbsp;
+						共计{{$count}}记录&nbsp;
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</body>

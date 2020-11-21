@@ -1,0 +1,2 @@
+<?php
+ namespace app\boguan\model; use think\Model; class BaseModel extends Model { protected $autoWriteTimestamp = true; protected $updateTime = false; protected function prefixImgUrl($value, $data) { return BG_URL . $value; } public function getUniacid() { $uniacid = session("\165\156\x69\x61\x63\x69\144"); return $uniacid; } }

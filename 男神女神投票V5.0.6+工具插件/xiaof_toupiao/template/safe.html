@@ -1,0 +1,108 @@
+{template 'common/header'}
+
+<ul class="nav nav-tabs">
+    <li><a href="{php echo $this->createWebUrl('overview', array('sid' => $_GPC['sid'],'version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}">数据概览</a></li>
+    <li><a href="{php echo $this->createWebUrl('charts', array('version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}">统计图表</a></li>
+    <li class="active"><a href="{php echo $this->createWebUrl('safe', array('version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}">数据监控</a></li>
+    <li><a href="{php echo $this->createWebUrl('votelog', array('version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}">投票日志</a></li>
+    <li><a href="{php echo $this->createWebUrl('sharelog', array('version_id' => $_GPC['version_id'],'edition' => $_GPC['edition']));}">分享日志</a></li>
+</ul>
+<div class="main">
+	{if empty($_GPC['pid'])}
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site">
+                <input type="hidden" name="a" value="entry">
+                <input type="hidden" name="m" value="xiaof_toupiao">
+                <input type="hidden" name="do" value="safe">
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">活动期数</label>
+                    <div class="col-xs-12 col-sm-8 col-lg-8">
+                        <select name="sid" class="form-control">
+                            {loop $settinglists $items}
+								<option {if $_GPC['sid'] === $items['id']} selected{/if} value="{$items['id']}">{$items['tit']}</option>
+							{/loop}
+                        </select>
+                    </div>
+                    <div class="col-xs-12 col-sm-2 col-lg-2">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+	{/if}
+    <form action="?{$_SERVER['QUERY_STRING']}" method="post" id="form1">
+        <table class="table table-hover"  style="width:100%;z-index:-10;" cellspacing="0" cellpadding="0">
+            <thead class="navbar-inner">
+            <tr>
+                <th style="width:180px;">昵称</th>
+				<th style="width:100px;">同ip投票<br/>登陆微信</th>
+				<th style="width:160px;">投票ip<br/>地区</th>
+				<th style="width:160px;">最后投票时间</th>
+				<th style="width:90px;">IP状态</th>
+				<th style="width:90px;">票数状态</th>
+				<th style="min-width:70px;" class="text-right">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $list $item}
+            <tr {if $item['hide'] == '1'}style="background:#e6e6e6"{/if}>
+                <td>{$item['nickname']}</td>
+				<td >
+					<span class="label label-primary" title="同一个ip给选手投票数">{$item['counts']}</span>
+					<br>
+					<span class="label label-warning" title="同一个ip给选手投票使用的微信数量">{$item['ocount']}</span>
+				</td>
+				<td title="{$item['dz']}">
+				{php echo long2ip($item['ip']);}<br>
+				{$item['dz']}
+				</td>
+				<td>{php echo date('Y-m-d H:i:s', $item['created_at'])} </td>
+				<td>{if $item['hide'] == '1'}<span class="label label-danger">ip黑名单</span>{else}<span class="label label-success">正常</span>{/if}</td>
+				<td>{if $item['unum'] != '0'}<span class="label label-danger">已减{$item['unnum']}票</span>{else}<span class="label label-success">正常</span>{/if}</td>
+				<td class="text-right" style="overflow:visible;">
+					<div class="btn-group">
+						<div class="btn-group">
+							<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							ip操作<span class="caret"></span>
+							</button>
+							<ul class="dropdown-menu">
+								<li><a href="{php echo $this->createWebUrl('safe', array('hide'=>'n','safeid'=>$item['safeid'],'sid'=>$item['sid'], 'version_id' => $_GPC['version_id']));}" >ip解除黑名单</a></li>
+								<li><a href="{php echo $this->createWebUrl('safe', array('hide'=>'y','ip'=>$item['ip'],'sid'=>$item['sid'], 'version_id' => $_GPC['version_id']));}" >ip加入黑名单</a></li>
+							</ul>
+						</div>
+						<div class="btn-group">
+							<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							票数操作<span class="caret"></span>
+							</button>
+							<ul class="dropdown-menu">
+								<li><a href="{php echo $this->createWebUrl('safe', array('unum'=>'n','ip'=>$item['ip'],'sid'=>$item['sid'], 'version_id' => $_GPC['version_id']));}" >恢复IP所有投票</a></li>
+								<li><a href="{php echo $this->createWebUrl('safe', array('unum'=>'y','ip'=>$item['ip'],'sid'=>$item['sid'], 'version_id' => $_GPC['version_id']));}" >删除IP所有投票</a></li>
+							</ul>
+						</div>
+						<a href="{php echo $this->createWebUrl('votelog', array('sid'=>$item['sid'], 'ip'=>$item['ip'], 'version_id' => $_GPC['version_id']));}" title="投票记录" class="btn btn-success">投票记录</a>
+					</div>
+				</td>
+            </tr>
+            {/loop}
+            </tbody>
+        </table>
+
+        {$pager}
+    </form>
+</div>
+<script>
+    $('#form1').submit(function(){
+        if($(":checkbox[name='delete[]']:checked").size() > 0){
+            return confirm('删除后不可恢复，您确定删除吗？');
+        }
+        alert('没有选择粉丝');
+        return false;
+    });
+</script>
+{template 'edition'}
+{template 'common/footer'}

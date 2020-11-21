@@ -1,0 +1,194 @@
+<!--<link rel="stylesheet" href="{STATIC_ROOT}/css/swiper.min.4.0.2.css">-->
+<script src="{STATIC_ROOT}/js/swiper.min.4.0.2.js"></script>
+<script type="text/javascript">
+    new Swiper(".top-inner",{
+        autoplay: false,
+        pagination :{
+            el: '#loopImgBar',
+            bulletElement : 'li',
+            bulletActiveClass: 'cur',
+            clickable :true
+        },
+        loop: true,
+        grabCursor: !0
+    });
+</script>
+<script src="{STATIC_ROOT}/js/jquery-3.3.1.min.js"></script>
+<script type="text/javascript">
+var goods_id = {$goods['id']};
+var type = 0;
+var confirm_url = "{php echo $this->createMobileUrl('confirmorder')}";
+var cart_url = "{php echo $this->createMobileUrl('shoppingcart',array('op'=>'ajaxAdd'))}";
+$(function () {
+    $('#detailTab .item').click(function () {
+        var id = $(this).attr('id');
+        $('#detailTab .item').removeClass('cur');
+        $(this).addClass('cur');
+        $('#detailCont .detail_item').hide();
+        $('#detailCont .'+id).show();
+    });
+    $('#detailCont .p_desc').find('img').css('width','100%').css('height', 'auto');
+    var openGuige = function () {
+        $('.spec-menu-content').removeClass('spec-menu-hide').addClass('spec-menu-show').show();
+        $('.flick-menu-mask').show();
+    };
+    var closeGuige = function () {
+        $('.spec-menu-content').removeClass('spec-menu-show').addClass('spec-menu-hide').hide();
+        $('.flick-menu-mask').hide();
+    };
+    $('.addCart2').click(function () {
+        var num = parseInt($('#buyNum').val());
+        if(num <=0 ){
+            showNotice('请填写数量');
+            return false;
+        }
+
+        t_id = 0;
+        $('.goods-type').each(function (i, dom) {
+            if($(dom).hasClass('option_selected')) {
+                t_id = $(dom).attr('data-id');
+            }
+        });
+        if(t_id <=0) {
+            openGuige();
+            return false;
+        }
+        $('#wxloading').show();
+        type = $('.goods-type.option_selected').attr('data-id');
+        $.post(cart_url,{
+            goods_id:goods_id,
+            type:type,
+            amount:num
+        },function (data) {
+            $('#wxloading').hide();
+            if(data.code == 0) {
+                var old_num = parseInt($('#cartNum').html());
+                $('#cartNum').show().html(old_num+num);
+            }
+            showNotice(data.msg);
+            closeGuige();
+        },'JSON');
+    });
+    $('#plus').click(function () {
+        var old_num = parseInt($('#buyNum').val());
+        if(old_num > 0) {
+            if(old_num>=parseInt($('#buyNum').attr('max'))) {
+                $('#remain').html('剩余 '+parseInt($('#buyNum').attr('max'))+' 件');
+                return false;
+            }
+            $('#minus').removeClass('minus_disabled');
+            $('#buyNum').val(old_num+1);
+            $('.amount').html(old_num+1+'件');
+        }
+    });
+    $('#minus').click(function () {
+        var old_num = parseInt($('#buyNum').val());
+        if(old_num > 1) {
+            if(old_num == 2) {
+                $(this).addClass('minus_disabled');
+            }
+            $('#buyNum').val(old_num-1);
+            $('.amount').html(old_num-1+'件');
+        }
+    });
+
+    $('.buyBtn2').click(function () {
+        var t_id = 0;
+        $('.goods-type').each(function (i, dom) {
+            if($(dom).hasClass('option_selected')) {
+                t_id = $(dom).attr('data-id');
+            }
+        });
+        var num = $('#buyNum').val();
+        if(t_id <=0) {
+            openGuige();
+            return false;
+        }
+        if(num <=0) {
+            showNotice('请填写数量');
+            return false;
+        }
+        location.href = confirm_url+'&pay_info='+goods_id+'_'+num+'_'+t_id;
+    });
+    $('.spec-menu-close,.flick-menu-mask').click(function () {
+        closeGuige();
+    });
+    $('.icon-popups').click(function () {
+        openGuige();
+    });
+    $('.goods-type').click(function () {
+        $('#remain').html('');
+        if($(this).hasClass('option_disabled')) {
+            showNotice('已售完');
+            return false;
+        }
+        $('#buyNum').val(1).attr('max', $(this).attr('data-max'));
+        $('#minus').addClass('minus_disabled');
+        $('.goods-type').removeClass('option_selected');
+        $(this).addClass('option_selected');
+        $(".specDetailInfo").html($(this).html());
+        $('.amount').html(parseInt($('#buyNum').val())+'件');
+        $('.priceSale').html('¥<em>'+$(this).attr('data-price1')+'</em>.'+$(this).attr('data-price2'))
+    });
+    <?php if(count($goods_type)==1){?>
+        $('.goods-type').click();
+    <?php }?>
+    var collect_url = "{php echo $this->createMobileUrl('goods',array('op'=>'collect'))}";
+    $('#fav').click(function () {
+        var collect_dom = $(this);
+        var id = $(this).attr('data-id');
+        var type = $(this).hasClass('yes') ? 'remove' : 'collect';
+        $.post(collect_url,{goods_id:goods_id,type:type},function (data) {
+            if(data.code!=0) {
+                showNotice(data.msg);
+            }else {
+                if(type == 'collect') {
+                    collect_dom.addClass('yes').html('已收藏');
+                }else {
+                    collect_dom.removeClass('yes').html('收藏');
+                }
+            }
+        },'JSON');
+    });
+    var poster_url = "{php echo $this->createMobileUrl('qr')}";
+    $('#my-poster').click(function () {
+        $('#wxloading').show();
+        $.get(poster_url,{goods_id:goods_id},function (data) {
+            $('#wxloading').hide();
+            if(data.code!=0) {
+                showNotice(data.msg);
+            }else {
+                showImage(data.data);
+            }
+        },'JSON');
+    });
+
+    <?php if($qianggou){?>
+    var intDiff = parseInt(<?php echo $qianggou['end']-time();?>);//倒计时总秒数量
+    function timer(intDiff){
+        window.setInterval(function(){
+            var day=0,
+                hour=0,
+                minute=0,
+                second=0;//时间默认值
+            if(intDiff > 0){
+                day = Math.floor(intDiff / (60 * 60 * 24));
+                hour = Math.floor(intDiff / (60 * 60)) - (day * 24);
+                minute = Math.floor(intDiff / 60) - (day * 24 * 60) - (hour * 60);
+                second = Math.floor(intDiff) - (day * 24 * 60 * 60) - (hour * 60 * 60) - (minute * 60);
+            }
+            if (minute <= 9) minute = '0' + minute;
+            if (second <= 9) second = '0' + second;
+            $('#day').html(day+"天");
+            $('#hours').html(hour);
+            $('#minutes').html(minute);
+            $('#seconds').html(second);
+            intDiff--;
+        }, 1000);
+    }
+    $(function(){
+        timer(intDiff);
+    });
+    <?php }?>
+})
+</script>

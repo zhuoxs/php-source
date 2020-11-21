@@ -1,0 +1,366 @@
+{extend name="common/index" /}
+{block name="search_box"}
+{/block}
+{block name="tool_box"}
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnAdd" class="layui-btn layui-btn-primary layui-btn-sm">新增</a>
+        <a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchEnable" class="layui-btn layui-btn-primary layui-btn-sm">启用</a>
+        <a href="javascript:;" id="btnBatchUnEnable" class="layui-btn layui-btn-primary layui-btn-sm">禁用</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchHot" class="layui-btn layui-btn-primary layui-btn-sm">推荐</a>
+        <a href="javascript:;" id="btnBatchUnHot" class="layui-btn layui-btn-primary layui-btn-sm">取消推荐</a>
+    </div>
+</div>
+{/block}
+{block name="tool_template"}
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnAdd2">添加分类</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnEdit">编辑</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnCopy">复制新增</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDelete">删除</a>
+</script>
+{/block}
+{block name="table_config"}
+<style>
+    body{
+        overflow: auto!important;
+    }
+</style>
+<script>
+    var editObj=null,ptable=null,treeGrid=null,tableId='laytable',layer=null;
+    layui.config({
+        base: '__STATIC__/bower_components/layui/extend/'
+    }).extend({
+        treeGrid:'treeGrid'
+    }).use(['jquery','treeGrid','layer'], function(){
+        var $=layui.jquery;
+        table = layui.treeGrid;//很重要
+        layer=layui.layer;
+        var data={php}echo json_encode($list);{/php};
+        ptable=table.render({
+            id:tableId
+            ,elem: '#'+tableId
+            ,idField:'id'
+            ,url:'{:adminurl("get_list")}'
+            ,data:data
+            ,cellMinWidth: 100
+            ,treeId:'id'//树形id字段名称
+            ,treeUpId:'parent_id'//树形父id字段名称
+            ,treeShowName:'name'//以树形式显示的字段
+            ,cols: [[
+                {type:'numbers'},
+                {type:'checkbox'},
+                {field:'name', width:180, title: '分类',sort:true},
+                {field:'index', width:180, title: '排序',sort:true},
+                {field:'create_time', width:200, title: '创建时间',sort:true},
+                {field:'update_time', width:200, title: '修改时间',sort:true},
+                {field:'state', width:100, title: '启用状态',sort:true,templet: '#dataState'},
+                {field:'is_hot', width:100, title: '推荐状态',sort:true,templet: '#dataHot'},
+                {field:'o',width:300, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page:false
+        });
+            //        搜索
+            $('#btnSearch').unbind('click').click(function () {
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        parent_id: $('#parent_id').val(),
+                    }
+                });
+            });
+            $('#key').unbind().on('keypress', function (e) {
+                if (e.keyCode == 13){
+                    //执行重载
+                    table.reload('laytable', {
+                        page: {
+                            curr: 1 //重新从第 1 页开始
+                        }
+                        ,where: {
+                            key: $('#key').val(),
+                            parent_id: $('#parent_id').val(),
+                        }
+                    });
+                }
+            })
+            //更新选中状态
+            function updateCheckStyle() {
+                var className = "layui-table-check";//"layui-bg-green"
+                $('.layui-table .laytable-cell-checkbox .layui-form-checkbox:not(\'.layui-form-checked\')').parents('tr[data-index]').each(function (i, e) {
+                    var $this = $(e);
+                    var index = $this.data('index');
+                    var $table = $this.parents('.layui-table-view');
+                    $('tr[data-index='+index+']',$table).removeClass(className);
+                });
+                $('.layui-table .laytable-cell-checkbox .layui-form-checkbox.layui-form-checked').parents('tr[data-index]').each(function (i, e) {
+                    var $this = $(e);
+                    var index = $this.data('index');
+                    var $table = $this.parents('.layui-table-view');
+                    $('tr[data-index='+index+']',$table).addClass(className);
+                })
+            }
+            //		选中样式 - 单选
+            table.on('radio', function(obj){
+                updateCheckStyle();
+            });
+            //		选中样式 - 多选
+            table.on('checkbox', function(obj){
+                var data = obj.data;
+                updateCheckStyle();
+            });
+
+            // 批量删除
+            $('#btnBatchDelete').unbind('click').click(function () {
+                var checkStatus = table.checkStatus('laytable');
+                var data = checkStatus.data;
+                var ids = [];
+                if (data.length > 0){
+                    for (var i in data){
+                        ids.push(data[i].id);
+                    }
+                    layer.confirm('即将删除 '+data.length+' 条记录', {
+                        btn: ['确定','取消'] //按钮
+                    }, function(){
+                        var url = "{:adminurl('delete')}";
+                        $.post(url, {ids:ids.join(',')}, function(data){
+                            if (typeof data == 'string'){
+                                data = $.parseJSON(data);
+                            }
+                            if (data.code == 0) {
+                                layer.msg('删除成功',{icon: 6,anim: 6});
+                                table.reload('laytable',{});
+                            }else{
+                                layer.msg(data.msg,{icon: 5,anim: 6});
+                            }
+                        });
+                    });
+                }else{
+                    layer.msg('请选择记录');
+                }
+            })
+            //启用
+            $('#btnBatchEnable').unbind('click').click(function () {
+                var checkStatus = table.checkStatus('laytable');
+                var data = checkStatus.data;
+                var ids = [];
+                if (data.length > 0){
+                    for (var i in data){
+                        ids.push(data[i].id);
+                    }
+                    var url = "{:adminurl('batchenable')}";
+                    $.post(url, {ids:ids.join(',')}, function(data){
+                        if (typeof data == 'string'){
+                            data = $.parseJSON(data);
+                        }
+                        if (data.code == 0) {
+                            layer.msg('启用成功',{icon: 6,anim: 6});
+                            table.reload('laytable',{});
+                        }else{
+                            layer.msg(data.msg,{icon: 5,anim: 6});
+                        }
+                    });
+                }else{
+                    layer.msg('请选择记录');
+                }
+            })
+            //禁用
+            $('#btnBatchUnEnable').unbind('click').click(function () {
+                var checkStatus = table.checkStatus('laytable');
+                var data = checkStatus.data;
+                var ids = [];
+                if (data.length > 0){
+                    for (var i in data){
+                        ids.push(data[i].id);
+                    }
+                    var url = "{:adminurl('batchunenable')}";
+                    $.post(url, {ids:ids.join(',')}, function(data){
+                        if (typeof data == 'string'){
+                            data = $.parseJSON(data);
+                        }
+                        if (data.code == 0) {
+                            layer.msg('禁用成功',{icon: 6,anim: 6});
+                            table.reload('laytable',{});
+                        }else{
+                            layer.msg(data.msg,{icon: 5,anim: 6});
+                        }
+                    });
+                }else{
+                    layer.msg('请选择记录');
+                }
+            })
+            //推荐
+            $('#btnBatchHot').unbind('click').click(function () {
+                var checkStatus = table.checkStatus('laytable');
+                var data = checkStatus.data;
+                var ids = [];
+                if (data.length > 0){
+                    for (var i in data){
+                        ids.push(data[i].id);
+                    }
+                    var url = "{:adminurl('batchhot')}";
+                    $.post(url, {ids:ids.join(',')}, function(data){
+                        if (typeof data == 'string'){
+                            data = $.parseJSON(data);
+                        }
+                        if (data.code == 0) {
+                            layer.msg('推荐成功',{icon: 6,anim: 6});
+                            table.reload('laytable',{});
+                        }else{
+                            layer.msg(data.msg,{icon: 5,anim: 6});
+                        }
+                    });
+                }else{
+                    layer.msg('请选择记录');
+                }
+            })
+            //取消推荐
+            $('#btnBatchUnHot').unbind('click').click(function () {
+                var checkStatus = table.checkStatus('laytable');
+                var data = checkStatus.data;
+                var ids = [];
+                if (data.length > 0){
+                    for (var i in data){
+                        ids.push(data[i].id);
+                    }
+                    var url = "{:adminurl('batchunhot')}";
+                    $.post(url, {ids:ids.join(',')}, function(data){
+                        if (typeof data == 'string'){
+                            data = $.parseJSON(data);
+                        }
+                        if (data.code == 0) {
+                            layer.msg('取消推荐成功',{icon: 6,anim: 6});
+                            table.reload('laytable',{});
+                        }else{
+                            layer.msg(data.msg,{icon: 5,anim: 6});
+                        }
+                    });
+                }else{
+                    layer.msg('请选择记录');
+                }
+            })
+
+            //新增
+            $(document).on('click','.btnAdd2',function(e){
+                var id = $(this).data('id')
+                var index = layer.open({
+                    type: 2,
+                    title: '新增',
+                    shadeClose: true,
+                    shade: false,
+                    maxmin: true, //开启最大化最小化按钮
+                    area: ['893px', '600px'],
+                    content: "{:adminurl('add')}&parent_id="+id,
+                });
+                layer.full(index);
+                return false;
+            })
+            // 删除
+            $(document).on('click','.btnDelete',function(e){
+                var id = $(this).data('id')
+                layer.confirm('即将删除 1 条记录', {
+                    btn: ['确定','取消'] //按钮
+                }, function(){
+                    var url = "{:adminurl('delete')}";
+                    $.post(url, {ids:id}, function(data){
+                        if (typeof data == 'string'){
+                            data = $.parseJSON(data);
+                        }
+                        if (data.code == 0) {
+                            layer.msg('删除成功',{icon: 6,anim: 6});
+                            table.reload('laytable',{});
+                        }else{
+                            layer.msg(data.msg,{icon: 5,anim: 6});
+                        }
+                    });
+                });
+                return false;
+            })
+
+            layui.table.reload = function (id,data) {
+                data = data || {};
+                layui.treeGrid.reload(id,data);
+            }
+    });
+</script>
+{/block}
+{block name="table_config1"}
+<script>
+    layui.use(['table','form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_list')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'name', width:180, title: '分类',fixed:'left',sort:true},
+                {field:'parent_name', width:180, title: '上级分类',sort:true},
+                {field:'index', width:180, title: '排序',sort:true},
+                {field:'create_time', width:200, title: '创建时间',sort:true},
+                {field:'update_time', width:200, title: '修改时间',sort:true},
+                {field:'state',fixed:'right', width:100, title: '启用状态',sort:true,templet: '#dataState'},
+                {field:'is_hot',fixed:'right', width:100, title: '推荐状态',sort:true,templet: '#dataHot'},
+                {field:'o',fixed:'right',width:200, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+        //        搜索
+        $('#btnSearch').unbind('click').click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    parent_id: $('#parent_id').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        parent_id: $('#parent_id').val(),
+                    }
+                });
+            }
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        $.get("{:adminurl('select_root')}", function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: '', text: '请选择上级分类'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#parent_id').select2({
+                data: ret,
+            })
+        })
+    })
+</script>
+{/block}

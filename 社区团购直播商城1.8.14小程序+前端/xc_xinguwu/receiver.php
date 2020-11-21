@@ -1,0 +1,2 @@
+<?php
+ defined("\111\x4e\x5f\x49\x41") or exit("\x41\143\143\x65\163\163\x20\104\145\x6e\151\145\144"); class xc_xinguwuModuleReceiver extends WeModuleReceiver { public function receive() { $type = $this->message["\164\x79\x70\145"]; } }

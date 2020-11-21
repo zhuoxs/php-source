@@ -1,0 +1,123 @@
+{php include wl_template('common/header');}
+<!--<ul class="nav nav-tabs">
+	<li {if intval($_GPC['status']) == 1 || empty($_GPC['status'])}class="active"{/if}><a href="{php echo web_url('goods/goods/display/',array('status' => '1'));}">出售中商品</a></li>
+	<li {if intval($_GPC['status']) == 3}class="active"{/if}><a href="{php echo web_url('goods/goods/display/',array('status' => '3'));}">已售罄商品</a></li>
+	<li {if intval($_GPC['status']) == 2}class="active"{/if}><a href="{php echo web_url('goods/goods/display/',array('status' => '2'));}">下架的商品</a></li>
+</ul>-->
+<div class="panel">
+	    <div class="panel-body">
+            <form action="" method="get" class="form-horizontal" role="form" id="form1">
+                <input type="hidden" name="c" value="site" />
+	            <input type="hidden" name="a" value="entry" />
+	            <input type="hidden" name="m" value="weliam_merchant" />
+	            <input type="hidden" name="p" value="goodshouse" />
+				<input type="hidden" name="ac" value="goodshouse" />
+				<input type="hidden" name="do" value="goodsList" />
+                <div class="form-group">
+                    <div class="col-md-2">
+                        <select name="keywordtype" class="form-control">
+                        	<option value="">关键字类型</option>
+                            <option value="1" {if $_GPC['keywordtype']==1}selected="selected"{/if}>商品名称</option>
+                            <option value="2" {if $_GPC['keywordtype']==2}selected="selected"{/if}>商品ID</option>
+                            <option value="3" {if $_GPC['keywordtype']==3}selected="selected"{/if}>商家名称</option>
+                            <option value="4" {if $_GPC['keywordtype']==4}selected="selected"{/if}>商品编码</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 pull-right">
+						<div class="input-group">
+							<input type="text" name="keyword" class="form-control" value="{$_GPC['keyword']}"  placeholder="请输入关键字"/>
+							<span class="input-group-addon" id="search">搜索</span>
+						</div>
+					</div>
+				</div>
+            </form>
+	    </div>
+	</div>
+	<script type="text/javascript">
+		$("#search").click(function(){
+			$('#form1')[0].submit();
+		});
+	</script>
+<form  class="form-horizontal" action="" method="post">
+<div class="panel panel-default">
+	<div class="table-responsive">
+		<table class="table table-hover">
+			<thead>
+			<tr>
+				<th style="width:40px;">
+					<input type="checkbox" name="checkall" value="" id="checkall" onclick="var ck = this.checked; $(':checkbox').each(function(){this.checked = ck});"/>
+				</th>
+				<th style="width:40px;">
+					ID
+				</th>
+				<th style="width:80px;">商品图</th>
+				<th style="width:180px;">商品名</th>
+				<th style="width:180px;">所属商户</th>
+				<th class="text-center" style="width:120px;">价格</th>
+				<th class="text-center" style="width:160px;">操作</th>
+			</tr>
+			</thead>
+			<tbody>
+			{loop $goodses $goods}
+			<tr data-toggle="popover" data-trigger="hover" data-placement="left" class="js-goods-img">
+				<td><input type="checkbox" name="items[]" value="{$goods['id']}" class="items" /></td>
+				<td>{$goods['id']}</td>
+				<td><img class="scrollLoading" src="{IMAGE_PIXEL}" data-url="{$goods['thumb']}" onerror="this.src='{IMAGE_NOPIC_SMALL}'" height="50" width="50"/></td>
+				<td class="line-feed">
+					{php echo cutstr($goods['name'], 30, true);}
+				</td>
+				<td class="line-feed">
+					{php echo cutstr($goods['sName'], 30, true);}
+				</td>
+				<td class="text-center" style="line-height:25px;">
+					<span class="label label-success">￥{php echo number_format($goods['oldprice'], 2)}</span>
+				</td>
+				<td  style="position:relative;text-align: center;">
+					<a href="{php echo web_url('goodshouse/goodshouse/editGoods', array('id' => $goods['id']))}" class="">编辑</a>
+					 - <a href="javascript:;" class="js-goods-copy" goods-id="{$goods['id']}" class="pull-right">复制商品</a>
+					 - <a href="javascript:;" class="js-remove" order-id="{$goods['id']}">删除</a>
+				</td>
+			</tr>
+			{/loop}
+			</tbody>
+		</table>
+	</div>
+	
+	<input type="hidden" name="token" value="{$_W['token']}" />
+</div>
+{$pager}
+</form>
+<script>
+	$(function(){
+		$(".js-goods-copy").click(function(e){
+			e.stopPropagation();
+			var html="确定复制本商品？";
+			var id = $(this).attr('goods-id');
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				$.post("{php echo web_url('goodshouse/goodshouse/copyGoods');}", {id:id}, function(data){
+					if(!data.errno){
+						util.tips("复制成功");
+						location.href = "{php echo web_url('goodshouse/goodshouse/goodsList');}";
+					};
+				}, 'json');
+			}, {html: html});
+		});
+		
+		$('.js-remove').click(function(e){
+			e.stopPropagation();
+			var $this = $(this);
+			var id = $this.attr('order-id');
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				$.post("{php echo web_url('goodshouse/goodshouse/delete')}", { id : id }, function(data){
+					if(!data.errno){
+						$this.parent().parent().remove();
+						util.tips("删除成功！");
+					};
+				}, 'json');
+			}, {html: '确认删除?'});
+		});
+	});
+</script>
+{php include wl_template('common/footer');}

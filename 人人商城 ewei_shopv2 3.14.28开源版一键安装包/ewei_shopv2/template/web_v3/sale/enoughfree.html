@@ -1,0 +1,191 @@
+{template '_header'}
+<div class='page-header'><span>当前位置：<span class="text-primary">满额包邮设置</span></span></div>
+ 
+   <div class="page-content">
+       <form id="dataform"    {ifp 'sale.enoughfree'}action="" method="post"{/if} class="form-horizontal form-validate">
+
+
+       <div class="panel" >
+           <div class="panel-body">
+               <div class="col-sm-9 col-xs-12">
+                   <h4 class="set_title">满额包邮</h4>
+                   <span> 开启满包邮, 订单总金额超过多少可以包邮</span>
+               </div>
+               <div class="col-lg pull-right" style="padding-top:10px;text-align: right" >
+                   {ifp 'sale.enoughfree'}
+                   <input type="checkbox" class="js-switch" name="data[enoughfree]" value="1" {if $data['enoughfree']==1}checked{/if} />
+                   {else}
+                   {if $data['enoughfree']==1}
+                   <span class='text-success'>开启</span>
+                   {else}
+                   <span class='text-default'>关闭</span>
+                   {/if}
+                   {/if}
+               </div>
+           </div>
+
+           <div id='enoughfree'  {if empty($data['enoughfree'])}style="display:none"{/if}>
+           <div class="form-group">
+               <label class="col-lg control-label">单笔订单满</label>
+               <div class="col-sm-9 col-xs-12">
+                   {ifp 'sale.enoughfree'}
+                   <div class='input-group fixsingle-input-group'>
+                       <input type="text" name="data[enoughorder]"  value="{$data['enoughorder']}" class="form-control" />
+                       <span class='input-group-addon'>元</span>
+                   </div>
+                   <span class='help-block'>如果开启满额包邮，设置0为全场包邮</span>
+                   {else}
+                   <div class='form-control-static'>{if empty($data['enoughmoney'])}全场包邮{else}订单金额满{$data['enoughmoney']}元包邮{/if}</div>
+                   {/if}
+               </div>
+           </div>
+
+
+           <div class="form-group">
+               <label class="col-lg control-label">不参加的地区</label>
+               <div class="col-sm-9 col-xs-12">
+                   {ifp 'sale.enoughfree'}
+                   <div id="areas" class="form-control-static">{$data['enoughareas']}</div>
+                   <a href="javascript:;" class="btn btn-default" onclick="selectAreas()">选择地区</a>
+                   <input type="hidden" id='selectedareas' name="data[enoughareas]" value="{$data['enoughareas']}" />
+                   <input type="hidden" id='selectedareas_code' name="data[enoughareas_code]" value="{$data['enoughareas_code']}" />
+                   {else}
+                   <div class='form-control-static'>{$data['enoughareas']}</div>
+                   {/if}
+               </div>
+           </div>
+
+           <div class="form-group">
+               <label class="col-lg control-label">不参与包邮的商品</label>
+               <div class="col-sm-9">
+                   <div class="form-group" style="height: auto; display: block;">
+                       <div class="col-sm-12 col-xs-12">
+                           {ifp 'sale.enoughfree'}
+                           <div class="input-group">
+                               <input type="text" id="goodsid_text" name="goodsid_text" value="" class="form-control text" readonly="">
+                               <div class="input-group-btn">
+                                   <button class="btn btn-primary select_goods" type="button">选择商品</button>
+                               </div>
+                           </div>
+                           <div class="input-group multi-img-details container ui-sortable goods_show">
+                               {if !empty($goods)}
+                               {loop $goods $g}
+                               <div class="multi-item" data-id="{$g['id']}" data-name="goodsid" id="{$g['id']}">
+                                   <img class="img-responsive img-thumbnail" src="{php echo tomedia($g['thumb'])}" onerror="this.src='../addons/ewei_shopv2/static/images/nopic.png'" style="width:100px;height:100px;">
+                                   <div class="img-nickname">{$g['title']}</div>
+                                   <input type="hidden" value="{$g['id']}" name="goodsid[]">
+                                   <em onclick="removeHtml({$g['id']})" class="close">×</em>
+                                   <div style="clear:both;"></div>
+                               </div>
+                               {/loop}
+                               {/if}
+                           </div>
+                           <script>
+                               $(function(){
+                                   var title = '';
+                                   $('.img-nickname').each(function(){
+                                       title += $(this).html()+';';
+                                   });
+                                   $('#goodsid_text').val(title);
+                               })
+                               myrequire(['web/goods_selector'],function (Gselector) {
+                                   $('.select_goods').click(function () {
+                                       var ids = select_goods_ids();
+                                       Gselector.open('goods_show','',0,true,'',ids);
+                                   });
+                               })
+                               function goods_show(data) {
+//                        console.log(data);
+                                   if(data.act == 1){
+                                       var html = '<div class="multi-item" data-id="'+data.id+'" data-name="goodsid" id="'+data.id+'">'
+                                           +'<img class="img-responsive img-thumbnail" src="'+data.thumb+'" onerror="this.src=\'../addons/ewei_shopv2/static/images/nopic.png\'" style="width:100px;height:100px;">'
+                                           +'<div class="img-nickname">'+data.title+'</div>'
+                                           +'<input type="hidden" value="'+data.id+'" name="goodsid[]">'
+                                           +'<em onclick="removeHtml('+data.id+')" class="close">×</em>'
+                                           +'</div>';
+
+                                       $('.goods_show').append(html);
+                                       var title = '';
+                                       $('.img-nickname').each(function(){
+                                           title += $(this).html()+';';
+                                       });
+                                       $('#goodsid_text').val(title);
+                                   }else if(data.act == 0){
+                                       removeHtml(data.id);
+                                   }
+
+                               }
+                               function removeHtml(id){
+                                   $("[id='"+id+"']").remove();
+                                   var title = '';
+                                   $('.img-nickname').each(function(){
+                                       title += $(this).html()+';';
+                                   });
+                                   $('#goodsid_text').val(title);
+                               }
+                               function select_goods_ids(){
+                                   var goodsids = [];
+                                   $(".multi-item").each(function(){
+                                       goodsids.push($(this).attr('data-id'));
+                                   });
+                                   return goodsids;
+                               }
+                           </script>
+                           {else}
+                           <div class="input-group multi-img-details container ui-sortable">
+                               {loop $goods $item}
+                               <div data-name="goodsid" data-id="{$item['id']}" class="multi-item">
+                                   <img src="{php echo tomedia($item['thumb'])}" class="img-responsive img-thumbnail">
+                                   <div class="img-nickname">{$item['title']}</div>
+                               </div>
+                               {/loop}
+                           </div>
+                           {/if}
+                       </div>
+                   </div>
+
+               </div>
+           </div>
+       </div>
+   </div>
+
+{ifp 'sale.enoughfree'}
+<div class="form-group"></div>
+<div class="form-group">
+
+    <div class="col-sm-9 col-xs-12">
+        <input type="submit"  value="保存设置" class="btn btn-primary"/>
+
+    </div>
+</div>
+{/if}
+
+
+</form>
+   </div>
+ 
+<script language='javascript'>
+  
+                $(function () {
+                    $(":checkbox[name='data[enoughfree]']").click(function () {
+                        if ($(this).prop('checked')) {
+                            $("#enoughfree").show();
+                        }
+                        else {
+                            $("#enoughfree").hide();
+                        }
+                    })
+                   
+
+                })
+         
+             
+	</script>
+
+{if empty($new_area)}
+{template 'shop/selectareas'}
+{else}
+{template 'shop/selectareasNew'}
+{/if}
+
+{template '_footer'}

@@ -1,0 +1,2 @@
+MacPlayer.Html = '<iframe src="https://cj.7g382.cn/cktime.php?url='+MacPlayer.PlayUrl+'" height="'+MacPlayer.Height+'" width="100%" scrolling="no" id="Player"  allowfullscreen="true"></iframe>';
+MacPlayer.Show();

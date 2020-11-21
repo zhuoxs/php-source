@@ -1,0 +1,165 @@
+{template '_header'}
+{if !empty($taskinfo)}
+<script>document.title = "{$taskinfo['title']}"; </script>
+<link rel="stylesheet" href="../addons/ewei_shopv2/plugin/task/static/style/common.css" />
+
+<div class='fui-page  fui-page-current task-detail-page' id="taskinfo">
+
+    <div class="fui-content">
+        <div class="detail-head">
+            {if !empty($taskinfo['poster_banner']) }
+            <img src="{$taskinfo['poster_banner']}" />
+            {else}
+            <img src="../addons/ewei_shopv2/plugin/task/static/images/detail-head.jpg" />
+            {/if}
+        </div>
+
+        <div class="detail-list-title"><i class="icon icon-form"></i> {$taskinfo['title']}</div>
+        <div class="detail-list">
+            {if !empty($taskinfo['reward_data']['rec']) }
+            {loop $taskinfo['reward_data']['rec'] $key $value}
+            {if !empty($value)}
+            <div class="list-item">
+                <div class="inner">
+                    <div class="basic">
+                        <div class="name">{$rankinfo[$key]}</div>
+                        <div class="desc">累计邀请{$value['needcount']}人扫描或关注海报</div>
+                    </div>
+                    <div class="reward">
+                        {if isset($value['credit'])&&$value['credit']>0}
+                        <div class="reward-item">
+                            <div class="reward-info">积分奖励 <span>{$value['credit']}</span></div>
+                        </div>
+                        {/if}
+                        {if isset($value['money'])&&$value['money']>0}
+                        <div class="reward-item">
+                            <div class="reward-info">金额奖励 <span>{$value['money']['num']}</span></div>
+                        </div>
+                        {/if}
+                        {if isset($value['bribery'])&&$value['bribery']>0}
+                        <div class="reward-item">
+                            <div class="reward-info">红包奖励 <span>{$value['bribery']}</span></div>
+                        </div>
+                        {/if}
+                        {if isset($value['coupon']['total'])&&$value['coupon']['total']>0}
+                        <div class="reward-item">
+                            <div class="reward-info">优惠券奖励 <span>{$value['coupon']['total']}</span></div>
+                        </div>
+                        {/if}
+                        {if isset($value['goods'])&&count($value['goods'])>0}
+                        <div class="reward-item">
+                            <div class="reward-info">特价商品奖励 <span>{php echo count($value['goods']);}</span></div>
+                        </div>
+                        {/if}
+                    </div>
+                </div>
+            </div>
+            {else}
+            <div class="list-item">
+                <div class="inner">
+                    <div class="basic">
+                        <div class="name">{$rankinfo[1]}</div>
+                        <div class="desc">无目标人数</div>
+                    </div>
+                    <div class="reward">
+                        <div class="reward-item">
+                            <div class="reward-info">无奖励</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {/if}
+            {/loop}
+            {else}
+            <div class="list-item">
+                <p class="text-center">无奖励</p>
+            </div>
+            {/if}
+        </div>
+        <div class="detail-list-title"><i class="icon icon-information"></i> 注意事项</div>
+
+        <div class="detail-text">{if !empty($res['taskinfo'])}{php $ranktaskinfo = unserialize($res['taskinfo']); echo htmlspecialchars_decode($ranktaskinfo);}{else}暂无说明{/if}</div>
+
+    </div>
+
+    <div class="fui-footer task-detail-btns">
+        <div class="btn full gettask" data-value="{$taskinfo['keyword']}" data-title="{$taskinfo['title']}">立即领取</div>
+        <div class="btn" onclick="history.back(-1);">我再看看</div>
+    </div>
+
+</div>
+<div id="model" style="display: none;">
+    <div class="task-model">
+        <div class="task-model-content" ><h4 id="model-title">恭喜您!领取**任务成功!!</h4><p>请返回公众号查看您的任务海报</p></div>
+        <div class="task-model-footer task-btn-close">好的</div>
+    </div>
+</div>
+<div id="failmodel" style="display: none;">
+    <div class="task-model">
+        <div class="task-model-faile-content" ><h4>很遗憾!您无法领取该任务!!</h4><p>您已经领取了相同类型的任务</p></div>
+        <div class="task-model-footer task-btn-close">好的，我知道了</div>
+    </div>
+</div>
+<script type="text/javascript">
+    $('.gettask').click(function () {
+
+        var is_get = {$is_get};
+        if(is_get==1){
+            var keyword = $(this).data('value');
+            var title = $(this).data('title');
+            $.get("{php echo mobileUrl('task/index/gettask',array(),true);}&content="+keyword,function (data) {
+                if(data.status){
+                    //领取成功
+                    $('#model-title').html('恭喜您!领取'+title+'任务成功!!');
+                    taskget = new FoxUIModal({
+                        content: $('#model').html(),
+                        extraClass: 'picker-modal',
+                        maskClick: function () {
+                            taskget.close();
+                        }
+                    });
+                    taskget.container.find('.task-btn-close').click(function () {
+                        taskget.close();
+                    });
+                    taskget.show();
+                }else{
+                    //领取失败model-fail-title
+                    taskget = new FoxUIModal({
+                        content: $('#failmodel').html(),
+                        extraClass: 'picker-modal',
+                        maskClick: function () {
+                            taskget.close()
+                        }
+                    });
+                    taskget.container.find('.task-btn-close').click(function () {
+                        taskget.close()
+                    });
+                    taskget.show();
+                }
+            },'json');
+        }else{
+            //不能领取
+            taskget = new FoxUIModal({
+                content: $('#failmodel').html(),
+                extraClass: 'picker-modal',
+                maskClick: function () {
+                    taskget.close()
+                }
+            });
+            taskget.container.find('.task-btn-close').click(function () {
+                taskget.close()
+            });
+            taskget.show();
+        }
+    });
+</script>
+{else}
+<script>document.title = '未查到此任务信息'; </script>
+<div class='fui-page  fui-page-current'>
+    <div class="fui-content ">
+        <h3 class="text-center">未查到任务信息</h3>
+    </div>
+</div>
+{/if}
+
+{template '_footer'}

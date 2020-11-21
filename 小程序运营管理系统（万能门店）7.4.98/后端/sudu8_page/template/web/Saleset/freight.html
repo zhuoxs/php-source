@@ -1,0 +1,421 @@
+{template 'web/common/header'}
+<div class="page">
+    <div class="page_content">
+		<style>
+		.label{font-size: 13px}
+		form{
+			margin-top:20px;
+		}
+
+		</style>
+		{if $opt == 'display'}
+		<div style="margin-top:20px">
+		    <h3 style="float: left;margin-top: 0;">运费模板管理</h3>
+		    <div class="pull-right">
+		        <a href="{php echo $this->createWeburl('Saleset', array('op' => 'freight','opt'=>'post','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']));}"  class="btn btn-primary we7-padding-horizontal" style="margin-bottom: 20px">添加模板</a>
+		    </div>
+		</div>
+		<form class="form-horizontal" action="" method="post">
+		    <table class="table we7-table table-hover article-list vertical-middle">
+		        <tr>
+		            <td>模板名称</td>
+		            <td>是否默认</td>
+		            <td class="text-right">操作</td>
+		        </tr>
+		        {loop $freight $item}
+		        <tr>
+		            <td>
+		                {$item['name']}
+		            </td>
+		            <td>
+		               	<label class="change_static"><input type="checkbox" value="{$item['id']}" {if $item['is_enable']==1}checked="checked"{/if}>默认</label>
+		            </td>
+		            <td class="text-right">
+		                <a class="btn btn-default btn-sm" href="{php echo $this->createWeburl('Saleset', array('id' => $item['id'], 'opt' =>'post','op' => 'freight','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']))}" >编辑</a>
+		                <a class="btn btn-danger btn-sm" onclick="return confirm('此操作不可恢复，请谨慎删除！！！！'); return false;" href="{php echo $this->createWeburl('Saleset', array('id' => $item['id'], 'opt' => 'del','op' => 'freight','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']))}">删除</a>
+		            </td>
+		        </tr>
+		        {/loop}
+		    </table>
+		</form>
+		{/if}
+		{if $opt == 'post'}
+		<form class="form-horizontal" action="" method="post" onsubmit="return checksub()">
+		    <div class="panel panel-default">
+		        <div class="panel-heading">
+		            <h3 class="panel-title">运费模板编辑</h3>
+		        </div>
+		        <div class="panel-body">
+		            <div class="form-group">
+		                <label for="" class="control-label col-sm-2" style="margin-right:45px">模板名称<span style="color:red">*</span></label>
+		                <div class="form-controls col-sm-5">
+		                    <input type="text" name="name" value="{$item['name']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+		                </div>
+		                <div class="col-sm-1"></div>
+		                <div class="form-controls col-sm-3 help-block">请填写模板名称</div>
+		            </div>
+			        <div class="form-group">
+		                <label for="" class="control-label col-sm-2" style="margin-right:45px">运费模板</label>
+		                <div class="form-controls col-sm-5" style="margin-top: 5px;">
+		                	<div class="yunfei_info">
+							{loop $item['detail'] $k $v}
+							<div class='yunfei_gg{$k}' style='padding:10px;width:100%;box-sizing:border-box;border:1px solid #efefef;margin-bottom:10px'>
+								<div style='display:flex;'>
+									<div style='margin-bottom:10px;'>首件(个)：{$v['first']} 首费(元)：{$v['first_price']} 续件(个)：{$v['second']} 续费(元)：{$v['second_price']} 满额包邮：{$v['free_price']}</div>
+									<div style='flex:1;'></div>
+									<div style='color:#0275d8;cursor: pointer;' onclick='delgg({$k})'>[-删除条目]</div>
+								</div>
+								<div>省份：
+									{loop $v['province_list'] $ks $vs}
+										{$vs['name']}
+									{/loop}
+								</div>
+							</div>
+							{/loop}
+		                	</div>
+		                   	<span class="addgg" style="color:#0275d8;cursor:pointer;" onclick="shoscc()">[+新增条目]</span>
+		                </div>
+		            </div>
+		            <div class="form-group">
+		            	<label for="" class="control-label col-sm-2" style="margin-right:45px"></label>
+			            <input name="yunfei_gg_arr" type="hidden" value="" />
+			            <input name="token" type="hidden" value="{$_W['token']}" />
+			            <input type="submit" class="btn btn-primary" name="submit" value="提交"  />
+			            <div class="btn btn-gray" style="margin-left: 10px;" onclick="javascript:history.back(-1);">返回</div>
+				    </div>
+			    </div>
+		    </div>
+		</form>
+		<div class="loader" style="display: none;overflow:auto;opacity: inherit;background: rgba(0,0,0,0.3);">
+		<style>
+			.bbdd{
+			    z-index: 100001;
+			    background-color: #ffffff;
+			    width: 800px;
+			    min-height: 700px;
+			    padding: 10px;
+			    border-radius: 2px;
+			    margin:50px auto;
+			}
+			.bbdd .ddhh{
+				position: relative;
+				padding: 10px;
+				border-bottom: 1px solid #efefef;
+			}
+			.bbdd .ddhh span{
+				font-weight: bold;
+			}
+			.ddxx{
+			    position: absolute;
+			    right: 10px;
+			    top:10px;
+			    cursor:pointer;
+			    color:#0275d8;
+			}
+			.attribute{
+				padding:10px;
+			}
+			.attribute .attr_son{
+				width:370px;
+				display: inline-block;
+			}
+			.attribute .attr_son:nth-child(1){
+				margin-bottom: 10px;
+			}
+			.attribute .attr_son:nth-child(3){
+				margin-bottom: 10px;
+			}
+			.attribute .attr_son:nth-child(even){
+				margin-left: 15px;
+			}
+			.attribute input{
+				display: block;
+				width: 100%;
+	    		padding: .35rem .7rem;
+	    		border:1px solid rgba(0,0,0,.15);
+			}
+			.province_change{
+				padding:10px;
+			}
+			.data_border{
+				border:1px solid #efefef; 
+			}
+		</style>
+		<!--发货-->
+	    <div class="bbdd" id="bbdd" style="display:none">
+	        <div class="ddhh">
+	            <span>添加运费规则</span>
+	            <div class="ddxx" onclick="ycc()">[关闭]</div>
+	        </div>
+	        <div class="attribute">
+				<div class="attr_son">
+					<b>首件(个) <span style="color:red;">*</span>：</b>
+					<input type="number" min="0" name="first">
+				</div>
+				<div class="attr_son">
+					<b>运费(元)：</b>
+					<input type="number" min="0" name="first_price" placeholder="默认0">
+				</div>
+				<div class="attr_son">
+					<b>续件(个)：</b>
+					<input type="number" min="0" name="second" placeholder="默认0">
+				</div>
+				<div class="attr_son">
+					<b>续费(元)：</b>
+					<input type="number" min="0" name="second_price" placeholder="默认0">
+				</div>
+				<div class="attr_son">
+					<b>满额包邮(元)：</b>
+					<input type="number" min="0" name="free_price">
+				</div>
+	        </div>
+	        <div class="province_change">
+	        	<b style="margin-right: 30px;">省份</b> <input type="checkbox" name="changeall">全选<span style="color:#0275d8;font-weight:bold;float: right;"><span style="color: red;">*</span> 已选地级市无法再次设置运费规则</span>
+	        	<div style="clear:both;"></div>
+	        	<div class="province_list">
+
+	        	</div>
+	        </div>
+	        <div style="display: flex;padding:10px;border-top: 1px solid #efefef;">
+	        	<div style="flex: 1"></div>
+				<a class="btn btn-default" onclick="ycc()" style="margin-right:10px;">取消</a>
+				<a class="btn btn-primary" onclick="sub()">确定</a>
+	        </div>
+	    </div>
+	    </div>
+
+		{/if}
+		<script>
+			var yunfei_gg_arr = {$yunfei_gg_arr_count}>0?{$yunfei_gg}:[];
+            var pro_arr = new Array();
+            var city_arrs = new Array();
+			var city_arr = [];
+			var first = '';
+			var first_price = '';
+			var second = '';
+			var second_price = '';
+			var free_price = '';
+			var yunfei_gg = {$yunfei_gg_arr_count}>0?{$yunfei_gg_arr_count}:0;
+			var str1 = '';
+			var page_city = new Array();
+
+			$(document).on('click',"input[name='changeall']",function(){
+				var checkbox = $(this).prop('checked');
+				if(checkbox == false){
+					$(".province_ input").prop('checked',false);
+				}else{
+					$(".province_ input").prop('checked','checked');
+				}
+			})
+			$(document).on('click',".change_static input[type='checkbox']",function(){
+				var id = $(this).val();
+				$(this).attr('class', 'setindex');
+				$.ajax({
+					url:"{php echo $this->createWeburl('Saleset', array('id' => $item['id'], 'opt' =>'changeEnable','op' => 'freight','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']))}",
+					type:"post",
+					dataType:'json',
+					data:{
+						id:id
+					},
+					success:function(res){
+						if(res==2){
+							alert('设置默认运费规则失败！');
+							return false;
+						}else{
+							$(".change_static input[type='checkbox']").prop("checked","");
+							alert('设置默认运费规则成功！');
+							if(res == 1){
+								$(".setindex").prop('checked','checked');
+							}
+							return false;
+						}
+
+					}
+				})
+			})
+			pro_city_arrs = {$pro_city_arrs} == 1 ? new Array() : {$pro_city_arrs};
+
+			var pros_arr = new Array();
+			var citys_arr = new Array();
+			$(function(){
+		        $.getJSON("{MODULE_URL}static/json/province.json", function (datas){
+		        	var str = "";
+		        	for(var i = 0;i < datas.length; i++){
+		        		str+="<div class='province_' id='province"+datas[i]['ProID']+"' style='width:33%;display:inline-block;vertical-align: top;font-weight:500;margin-top:10px;'><input id='top"+datas[i]['ProID']+"' type='checkbox' name='province_arr' value="+datas[i]['ProID']+" pid='"+datas[i]['ProID']+"' cid='0'/>"+datas[i]['name']+"<b style='font-size:20px;color:#0275d8;cursor:pointer;' onclick='getcity("+datas[i]['ProID']+")' index='1'>+</b></div>";
+		        	}
+		        	$(".province_list").html(str);
+		        })
+			})
+			function getcity(id){ //省右侧+号点击
+				var index = $("#province"+id+' b').attr('index');
+				if(index == 1){
+			        $.getJSON("{MODULE_URL}static/json/city.json", function (datas){
+			            var str="";
+			            for(var i=0; i<datas.length; i++){
+			                if(datas[i]['ProID'] == id && pro_city_arrs.indexOf(datas[i]['name']) == -1 && $.inArray(datas[i]['CityID'],page_city) < 0){
+			                	str+="<div style='width:50%;display:inline-block;vertical-align: top; padding-top:10px;' id='son"+datas[i]['CityID']+"'><input type='checkbox' name='city_arr' value="+datas[i]['CityID']+" proid='"+id+"' pid='"+id+"' cid='"+datas[i]['CityID']+"' names='"+datas[i]['name']+"'/>"+datas[i]['name']+"</div>";
+			                }
+			            }
+						if(str.length>0){
+							str = "<div class='city_ data_border' style='width:95%;padding: 0 1% 10px;' id='city"+id+"'>"+str+"</div>";
+						}
+						else{
+							str = "<div class='city_' id='city"+id+"'>"+str+"</div>";
+							alert("该直辖市或省份下无未设置地级市！")
+							return false;
+						}
+			            $("#province"+id).append(str);
+			            var checkbox = $("#province"+id+" input[type='checkbox']").prop('checked');
+						if(checkbox == true){
+							$("#city"+id+" input[type='checkbox']").prop('checked','checked');
+						}
+			        })
+			        $("#province"+id+' b').attr('index',2);
+			        
+				}else{
+					$("#city"+id).remove();
+					$("#province"+id+' b').attr('index',1);
+					
+				}
+			}
+			$(document).on('click',".province_ input",function(){
+        		var pid = $(this).attr("pid");
+        		var cid = $(this).attr("cid");
+        		if(cid > 0){
+        			var checkbox = $(this).prop('checked');
+
+					if(checkbox == false){
+						$("#province"+pid+" > input[type='checkbox']").prop('checked',false);
+					}else{
+						var len = $("#city"+pid).find("input[type='checkbox']").not('input:checked').length;
+						if(len == 0){
+							$("#province"+pid+" > input[type='checkbox']").prop('checked','checked');
+						}
+					}
+        		}else{
+					var checkbox = $("#province"+pid+" > input[type='checkbox']").prop('checked');
+					if(checkbox == true){
+						$("#city"+pid+" input[type='checkbox']").prop('checked','checked');
+						pros_arr.push(parseInt(pid));
+					}else{
+						$("#city"+pid+" input[type='checkbox']").prop('checked','');
+						var index1 = pros_arr.indexOf(parseInt(pid)); 
+						if (index1 > -1) { 
+							pros_arr.splice(index1, 1); 
+						} 
+					}
+        		}
+			})
+			
+			function shoscc(){
+                $(".loader").show();
+                $(".la-ball-clip-rotate").hide();
+                $("#bbdd").show();
+                $(".city_").remove();
+            }
+            function ycc(){
+                $(".loader").hide();
+                $("#bbdd").hide();
+            }
+            
+
+            function sub(){
+            	first = $("input[name='first']").val();
+            	if(first==""){
+            		alert('请输入首件(个)数量！');
+            		return false;
+            	}
+            	first_price = $("input[name='first_price']").val();
+            	if(first_price==""){
+            		first_price = 0;
+            	}
+            	second = $("input[name='second']").val();
+            	if(second==""){
+            		second = 0;
+            	}
+            	second_price = $("input[name='second_price']").val();
+            	if(second_price==""){
+            		second_price = 0;
+            	}
+            	free_price = $("input[name='free_price']").val();
+  				
+
+            	$("input[name='province_arr']:checked").each(function(){
+				   pro_arr.push(parseInt($(this).val()));
+				});
+
+				$("input[name='city_arr']:checked").each(function(){
+					var thisid = parseInt($(this).val());
+					if($.inArray(thisid,page_city) < 0){
+						city_arrs.push(parseInt($(this).val()));
+					   	city_arr.push({'ProID':parseInt($(this).attr('proid')),'id':parseInt($(this).val()),'name':$(this).attr('names')});
+					}
+				   	page_city.push(thisid);
+				});
+				
+				$.getJSON("{MODULE_URL}static/json/city.json", function (datas){
+		        	str1 = "<div class='yunfei_gg"+yunfei_gg+"' style='padding:10px;width:100%;box-sizing:border-box;border:1px solid #efefef;margin-bottom:10px'><div style='display:flex;'><div style='margin-bottom:10px;'>首件(个)："+first+" 首费(元)："+first_price+" 续件(个)："+second+" 续费(元)："+second_price+" 满额包邮(元)："+free_price+"</div><div style='flex:1;'></div><div style='color:#0275d8;' onclick='delgg("+yunfei_gg+")'>[-删除条目]</div></div><div>省份：";
+
+		        	for(var i = 0;i < datas.length; i++){
+		        		$("#son"+datas[i]['CityID']).remove();
+		        		if($.inArray(datas[i]['ProID'],pro_arr) >= 0 && pro_city_arrs.indexOf(datas[i]['name']) == -1){
+		        			if($.inArray(datas[i]['CityID'],city_arrs) < 0 && $.inArray(datas[i]['CityID'],page_city) < 0){
+		        				city_arrs.push(parseInt(datas[i]['CityID']));
+		        				city_arr.push({'ProID':parseInt(datas[i]['ProID']),'id':parseInt(datas[i]['CityID']),'name':datas[i]['name']});
+		        				page_city.push(parseInt(datas[i]['CityID']));
+		        			}
+		        		}
+		        	}
+		        	if(city_arr.length == 0){
+		        		alert("请选择省市！");
+		        		return false;
+		        	}
+		        	yunfei_gg_arr.push({"first":parseInt(first),"first_price":parseInt(first_price),"second":parseInt(second),"second_price":parseInt(second_price),"free_price":free_price,"province_list":city_arr});
+
+		        	for(var i = 0; i < city_arr.length; i++){
+		        		str1 += city_arr[i]['name']+" ";
+		        	}
+
+		        	str1 += "</div></div>";
+
+		        	yunfei_gg += 1;
+
+		        	city_arr = [];
+
+		        	$(".yunfei_info").append(str1);
+
+		        	$("input[name='first']").val('');
+	            
+	            	$("input[name='first_price']").val('');
+	          
+	            	$("input[name='second']").val('');
+	           
+	            	$("input[name='second_price']").val('');
+	          
+	            	$("input[name='free_price']").val('');
+
+		        	$(".loader").hide();
+		        	
+                	$("#bbdd").hide();
+		        })
+            }
+            function delgg(id){
+            	yunfei_gg_arr.splice(id,1)
+            	$('.yunfei_gg'+id).remove();
+            	yunfei_gg -= 1;
+            }
+            function checksub(){
+				var name = $("input[name='name']").val();
+				if(name == ''){
+					alert("规则名称不能为空！");
+					return false;
+				}
+				if(yunfei_gg_arr.length == 0){
+					alert("请先添加条目！");
+					return false;
+				}
+				$("input[name='yunfei_gg_arr']").val(JSON.stringify(yunfei_gg_arr));
+			}
+		</script>
+	</div>
+</div>

@@ -1,0 +1,135 @@
+{template 'web/header'}
+{php tpl_fans_form($field, $value = '')}
+<div class="main">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                财务信息
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label"> 我 的 余 额：</label>
+                    {$user_info['cash']}元（提现中：<font color="#red">{$user_info['re_cash']}元）</font>
+                    {if empty($user_info['wximg'])}
+                    <a class="label label-danger" >请先在下方设置微信收款码</a>
+                    {elseif $user_info['cash'] < $setting['tixian'] }
+                    <a class="label label-default" >不能提现</a>
+                    <a class="label label-danger" >最低提现金额 {$setting['tixian']} 元</a>
+                    {else if $user_info['cash'] <= "0"}
+                    <a class="label label-default" >余额不足，不能提现</a>
+                    {else}
+                    <form style="display: inline" method="post" onsubmit="return tixiancheck()" >
+                        <input type="hidden" name="action" value="tixian">
+                        <button class="btn bg-success"data-toggle="modal" data-target="#tixian">申请提现</button>
+                    </form>
+                    {/if}
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">微信收款码：</label>
+                    {if $user_info['wximg']}
+                    <a class="label label-primary" data-toggle="modal" data-target="#images">预览收款码</a>
+                    <a class="label label-primary" data-toggle="modal" data-target="#wximg">修改 收款码</a>
+                    {else}
+                    <a class="label label-primary" data-toggle="modal" data-target="#wximg">开始上传</a>
+                    {/if}
+                </div>
+            </div>
+        </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            收支明细
+        </div>
+        <div class="panel-body">
+            <ul class="nav nav-tabs">
+                <li role="presentation" {if $_GPC['type']==0}class="active"{/if}><a href="{php echo $this->createWebUrl('cash',array('type'=>0))}">全部</a></li>
+                <li role="presentation" {if $_GPC['type']==1}class="active"{/if}><a href="{php echo $this->createWebUrl('cash',array('type'=>1))}">收入</a></li>
+                <li role="presentation" {if $_GPC['type']==2}class="active"{/if}><a href="{php echo $this->createWebUrl('cash',array('type'=>2))}">支出</a></li>
+            </ul>
+            <table class="table table-bordered">
+                <tbody>
+                <tr>
+
+                    <th>类型</th>
+                    <th>金额</th>
+                    <th>备注</th>
+                    <th>时间</th>
+                </tr>
+                {loop $user_log $row}
+                <tr>
+
+                    <td>
+                        {if $row['type']=='0'}
+                        <span class="label label-success">收入</span>
+                        {else}
+                        <span class="label label-default">支出</span>
+                        {/if}
+                    </td>
+                    <td>{$row['cash']} 元</td>
+                    <td>{$row['note']}</td>
+                    <td>{php echo date('Y-m-d H:i:s',$row['time'])}</td>
+                </tr>
+                {/loop}
+                </tbody>
+            </table>
+            {$pager}
+        </div>
+    </div>
+</div>
+<div class="modal" id="wximg" style="z-index: 1030">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                <h3 class="modal-title">提现收款码</h3>
+            </div>
+            <form method="post"  onsubmit="return wximgcheck()">
+                <input type="hidden" name="token" value="{$_W['token']}" />
+                <input type="hidden" name="action" value="wximg" />
+                <div class="modal-body we7-form">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">微信收款码</label>
+                        <div class="col-sm-10" id="img">
+                            {php echo tpl_form_field_image("data[img]",$user_info['wximg'],$user_info['wximg'])}
+                        </div>
+                        <p>此收款码用于提现，上传错误造成提现失败，概不负责</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input type="hidden" name="token" value="{$_W['token']}" />
+                    <input type="submit" name="submit" value="提交" class="btn btn-primary" />
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal" id="images" style="z-index: 1030">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                <h3 class="modal-title">提现收款码</h3>
+            </div>
+            <img width="100%" src="{php echo $_W[attachurl];}{$user_info['wximg']}"/>
+        </div>
+    </div>
+</div>
+<script>
+    function wximgcheck() {
+        var img =  $("#img input").val();
+        var msg ='';
+        if(img==''){
+            alert('请上传微信收款码');
+            msg = false ;
+        }else{
+            msg = true;
+        }
+        return msg;
+    }
+    function tixiancheck() {
+
+            msg = true;
+
+        return msg;
+    }
+</script>
+{template 'web/footer'}

@@ -1,0 +1,92 @@
+{include file="common/head"}
+
+<div class="sheet">
+    <ul class="list">
+
+        {volist name="data_list" id='v'}
+        <li>
+            <!--订单状态-->
+            <p>订单号：{$v['order_sn']}</p>
+            <span>金额：<var>￥{$v['price']}</var></span>
+            <span style="margin-left: 10px;">充值:{if condition="$v['buy_type'] eq 1"}金币{$v['buy_glod_num']}个{else/}{$v['buy_vip_info']['name']}{/if}</span>
+            <p>{:date('Y-m-d h:i:s',$v['add_time'])}
+                <span {if condition="$v['pay_channel'] eq 'aliPay'"}class="pay-btn btn fn-zhifubao" {elseif condition="$v['pay_channel'] eq 'wxPay'"}class="pay-btn btn fn-weixin" {elseif condition="$v['pay_channel'] eq 'qqPay'"}class="pay-btn btn fn-qq"{/if}></span></p><!---->
+            <i {if condition="$v['status'] eq 1"}class="yes-pay"{else/}class="not-pay"{/if}></i>
+        </li>
+        {/volist}
+    </ul>
+</div>
+
+</div>
+<script>
+    $(function () {
+        $(".show-box").on("click",function () {
+            $(this).siblings().stop(true).slideToggle();
+        });
+        $(".show-box").first().click();
+    });
+
+    var status = 1;
+    var page  = 0;
+    $(window).scroll(function(){
+        var srollPos = $(window).scrollTop();
+        var data = {
+            "page" : page,
+            "offset" : 20,
+        };
+        if(srollPos+$(window).height() > $(document).height() - 80){
+            if(status == 1) {
+                status = 0;
+                $.ajax({
+                    type: "POST",
+                    data: data,
+                    dataType: "JSON",
+                    url: "{:url('Api/record_pay')}",
+                    success: function (data) {
+                        if(data.resultCode == 0){
+                            var datas = data.data.list;
+                            if(datas){
+                                var html = '';
+                                datas.forEach(function(item) {
+
+                                    var add_time = item['add_time'];
+                                    var newDate = new Date(add_time * 1000);
+                                    html +='<li> <p>单号：'+item['order_sn']+'</p>' ;
+                                    html +='<span>充值金额：<var>￥'+item['price']+'</var></span>';
+
+                                    if(item['buy_type']==1){
+                                        html +=' <span>充值：金币'+item['buy_glod_num']+'个</span>';
+                                    }else {
+                                        html +=' <span>充值：'+item['buy_vip_info']['name']+'</span>';
+                                    }
+                                    html +=' <p>'+newDate.getFullYear()+'-'+(newDate.getMonth()+1)+'-'+newDate.getDay()+' '+newDate.getHours()+':'+newDate.getMinutes()+':'+newDate.getSeconds();
+                                    if(item['pay_channel']=='aliPay'){
+                                    html +='<span class="pay-btn btn fn-zhifubao"></span></p>';
+                                    }else if(item['pay_channel']=='wxPay'){
+                                        html +='<span class="pay-btn btn fn-weixin"></span></p>';
+                                    }else if(item['pay_channel']=='qqPay'){
+                                        html +='<span class="pay-btn btn fn-qq"></span></p>';
+                                    }
+                                    if(item['status']==1){
+                                        html +=' <i class="yes-pay"></i>';
+                                    }else {
+                                        html +=' <i class="not-pay"></i>';
+                                    }
+                                    html +='</li>';
+                                });
+                                $('.list').append(html);
+                                page++;
+                                status = 1;
+                            }else{
+                                console.log('没有更多数据了！');
+                            }
+                        }else{
+                            console.log('没有更多数据了！');
+                        }
+                    }
+                });
+            }
+        }
+    })
+</script>
+{include file="common/footer"}

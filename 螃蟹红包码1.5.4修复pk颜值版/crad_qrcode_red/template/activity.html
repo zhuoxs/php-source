@@ -1,0 +1,608 @@
+{template 'common/header'}
+<style>
+    .file-box{width:100%; margin-top: 30px; margin-bottom: 30px;}
+    .zhecai
+    {
+        width: 10%;
+        position:relative;
+        float: right;
+    }
+    .mingixan
+    {
+        font-family: "微软雅黑";
+        font-size: 14px;
+        color: #666;
+        margin-left: 20px;
+    }
+    .form-group
+    {
+        margin-bottom: 20px !important;
+    }
+    .we7-modal-dialog, .modal-dialog
+    {
+        top: 15% !important;
+    }
+    .txt{ height:35px; border:1px solid #EEEEEE; width:90%; padding-left:10px ; background: white;}
+    .btn_one{ background-color:#FFF; border:1px solid #EEEEEE;height:35px; width:100%; border-left:none ;}
+    .file{ position:absolute; top:0; left:0; height:35px; filter:alpha(opacity:0);opacity: 0;width:100%; }
+</style>
+<div class='container' style='padding: 0 5px 10px; margin: 0; width: 100%'>
+
+    <ul class="nav nav-tabs">
+        <li class="active"><a href="{php echo $this->createWebUrl('activity'); }">活动列表</a></li>
+        <li><a href="{php echo $this->createWebUrl('activity_add',array('op'=>'add'));}">添加活动</a></li>
+    </ul>
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="crad_qrcode_red" />
+                <input type="hidden" name="do" value="activity" />
+                <div class="form-group" >
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">模式</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <select  name="pattern" id="pattern">
+                        <option value="0" {if empty($pattern)}selected{/if}>所有
+                        <option value ="7" {if 7==$pattern}selected{/if}>普通模式</option>
+                        <option value ="1" {if 1==$pattern}selected{/if}>任务模式</option>
+                        <option value="2" {if 2==$pattern}selected{/if}>口令模式</option>
+                        <option value="3" {if 3==$pattern}selected{/if}>白名单直发(登记)</option>
+                        <option value="4" {if 4==$pattern}selected{/if}>白名单直发(导入)</option>
+                        <option value="5" {if 5==$pattern}selected{/if}>邀请模式</option>
+                        <option value ="6" {if 6==$pattern}selected{/if}>颜值PK模式</option>
+                        <option value ="8" {if 8==$pattern}selected{/if}>挑战10秒模式</option>
+                         <option value ="9" {if 9==$pattern}selected{/if}>兼容分享模式</option>
+                        <option value ="10" {if 10==$pattern}selected{/if}>分享倒计时模式</option>
+                        <option value ="11" {if 11==$pattern}selected{/if}>口红游戏模式</option>
+                        <option value ="12" {if 12==$pattern}selected{/if}>好友颜值PK模式</option>
+                    </select>
+                    <span class="help-block"></span>
+                </div>
+            </div>
+            <div class="form-group" >
+                <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">状态</label>
+                <div class="col-sm-9 col-xs-12">
+                    <select  name="status" id="status">
+                    <option value="0" {if empty($status)}selected{/if}>所有
+                    <option value ="1" {if 1==status}selected{/if}>运行中</option>
+                    <option value ="2" {if 2==status}selected{/if}>已关闭</option>
+                    <option value="3" {if 3==status}selected{/if}>已暂停</option>
+                    <option value="4" {if 4==status}selected{/if}>未审核</option>
+                    <option value="5" {if 5==status}selected{/if}>未通过</option>
+                    <option value="6" {if 6==status}selected{/if}>已结束</option>
+                </select>
+                <span class="help-block"></span>
+            </div>
+        </div>
+        <div class="form-group" >
+            <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">所属商家</label>
+            <div class="col-sm-9 col-xs-12">
+                <select  name="sid" id="sid">
+                    <option value="0" {if empty($sid)}selected{/if}>所有</option>
+                    {loop $shop_lists $shop_val}
+                    <option value="{$shop_val['id']}" {if $shop_val['id']==$sid}selected{/if}>{$shop_val['name']}</option>
+                    {/loop}
+                </select>
+                <span class="help-block"></span></div>
+        </div>
+        <div class="form-group">
+            <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">关键字</label>
+            <div class="col-sm-9 col-xs-12">
+                <input class="form-control" name="keyword" id="keyword" placeholder="输入活动名称或电话" type="text" value="{$_GPC['keyword']}">
+            </div>
+            <div class=" col-xs-12 col-sm-2 col-lg-2">
+                <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+            </div>
+        </div>
+    </form>
+
+</div>
+
+</div>
+<div class="main">
+    <div class="panel panel-default">
+        <div class="panel-heading">总数：{$total}</div>
+        <div class="panel-body table-responsive">
+            <form action="" method="post" id="form1" class="form-horizontal form" enctype="multipart/form-data">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th class='with-checkbox' style="width: 20px;"><input type="checkbox" class="check_all" /></th>
+                            <th style="width:50px;">ID</th>
+                            <th>活动名称</th>
+                            <th style="width:120px;">活动时间</th>
+                            <th style="width:120px;">二维码</th>
+                            <th style="width:30px;">状态</th>
+                            <th style="width:360px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loop $list $row}
+                        <tr>
+                            <td class="with-checkbox"><input type="checkbox" name="ids[]" value="{$row['id']}"></td>
+                            <td>{$row['id']}</td>
+                            <td>{$row['name']}</br>[{if $row['pattern']==1}任务模式{else if $row['pattern']==2}口令模式{else if $row['pattern']==3}白名单直发(登记){else if $row['pattern']==4}白名单直发(导入){else if $row['pattern']==5}邀请模式{else if $row['pattern']==6}颜值PK模式{else if $row['pattern']==8}挑战10秒模式{else if $row['pattern']==9}兼容分享模式{else if $row['pattern']==10}分享倒计时模式{else if $row['pattern']==11}口红游戏模式{else if $row['pattern']==12}好友颜值PK模式{else}普通模式{/if}]</br>{$row['shop_name']}</br>{if $row['share_show_times']>0}分享点击：{$row['share_show_times']}{/if}</td>
+                            <td>{php echo date("Y-m-d H",$row['begintime'])}</br>{php echo date("Y-m-d H",$row['endtime'])}</td>
+                            <td>总数：{$row['qrcode_num']}</br>生成：<span id="qrcode_count{$row['id']}">{$row['qrcode_count']}</span><br>已扫：{$row['qrcode_scan_count']}</br>金额：{$row['money_sum']}</td>
+                            <td> {if $row['endtime']&&$_W['timestamp']>$row['endtime']}
+                                <span class="label label-warning">已结束</span>
+                                {else if $row['status'] == 1 && $_W['timestamp']>=$row['begintime']}
+                                <span class="label label-success">运行中</span>
+                                {else if $row['status'] == 2}
+                                <span class="label label-danger">已暂停</span>
+                                {else if $row['status'] == 3}
+                                <span class="label label-danger">已关闭</span>
+                                {else if $row['status'] == 4}
+                                <span class="label label-warning">未审核</span>
+                                {else if $row['status'] == 5}
+                                <span class="label label-danger">未通过</span>
+                                {else}
+                                <span class="label label-danger">未开始</span>
+                                {/if}
+                            </td>
+                            <td>
+
+
+                                <div class="btn-group btn-group-sm">
+                                    <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false" href="javascript:;">二维码 <span class="caret"></span></a>
+                                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                        {if $row['qrcode_num']>$row['qrcode_count']}
+                                        <li>
+                                            <a class="btn btn-default create_qrcode" title="生成二维码"  data-id="{$row['id']}" data-sid="{$row['sid']}"  data-subscribe="{$row['subscribe']}">生成二维码</a>
+                                        </li>
+                                        {/if}
+                                         {if $row['unband']==1}
+                                        <li>
+                                          <a class="btn btn-default unband_qrcode" title="解绑未使用二维码"  data-id="{$row['id']}">解绑未使用二维码</a>
+                                        </li>
+                                        {/if}
+<!--                                        {if $row['unband']==1}
+                                        <li>
+                                          <a class="btn btn-default" title="解绑未使用二维码"  onclick="return confirm('确认要解绑未使用二维码? 解绑后未使用的预印码可被其他活动绑定'); return false;" 
+                                             href="{php echo $this->createWebUrl('activity_add',array('op'=>'unband','id'=>$row['id']))}">解绑未使用二维码</a>
+                                        </li>
+                                        {/if}-->
+                                        <li>
+                                            <a class="btn btn-default" title="二维码管理"  href="{php echo $this->createWebUrl('qrcode',array('aid'=>$row['id']))}">二维码管理</a>
+                                        </li>
+                                        <li>
+                                            <a class="btn btn-default download_qrcode_notuse" data-id="{$row['id']}" title="下载未使用二维码图片" >下载未使用二维码图片</a>
+                                        </li>
+                                        <li>
+                                            <a class="btn btn-default" title="下载未使用二维码地址excel" href="{php echo $this->createWebUrl('activity_add',array('op'=>'download_excel','id'=>$row['id']))}" >下载二维码地址excel</a>
+                                        </li>
+                                         <li>
+                                            <a class="btn btn-default" title="下载未使用二维码地址TXT" href="{php echo $this->createWebUrl('activity_add',array('op'=>'download_txt','id'=>$row['id']))}" >下载二维码地址TXT</a>
+                                        </li>
+                                        <li>
+                                            <a class="btn btn-default download_qrcode" data-id="{$row['id']}" title="下载所有二维码图片" >下载所有二维码图片</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                {if $row['qrcode_one'] == 1}
+                                <div class="btn-group btn-group-sm">
+                                    <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false" href="javascript:;">活码 <span class="caret"></span></a>
+                                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                        <li role="presentation">
+                                            <a href="javascript:;" onclick="displayUrl('{$row['a_url']}');"><i class="fa fa-link fa-fw"></i> 查看链接</a>
+                                        </li>
+                                        <li role="presentation">
+                                            <a href="javascript:;" onclick="displayQr('{php echo $this->createWebUrl('qr', array('raw' => base64_encode($row['qrcode_url'])))}');"><i class="fa fa-qrcode fa-fw"></i> 查看二维码</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                {/if}
+                                {if $row['pattern']== 3&&empty($row['white_check'])}
+                                <div class="btn-group btn-group-sm">
+                                    <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false" href="javascript:;">登记入口 <span class="caret"></span></a>
+                                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                        <li role="presentation">
+                                            <a href="javascript:;" onclick="displayUrl('{$row['register_url']}');"><i class="fa fa-link fa-fw"></i> 查看链接</a>
+                                        </li>
+                                        <li role="presentation">
+                                            <a href="javascript:;" onclick="displayQr('{php echo $this->createWebUrl('qr', array('raw' => base64_encode($row['register_url'])))}');"><i class="fa fa-qrcode fa-fw"></i> 查看二维码</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                {/if}
+                                <a class="btn btn-default" title="编辑" href="{php echo $this->createWebUrl('activity_add',array('op'=>'edit','id'=>$row['id']))}" ><i class="fa fa-edit"></i></a>
+                                <a class="btn btn-default" title="复制" href="{php echo $this->createWebUrl('activity_add',array('op'=>'edit','copy'=>'1','id'=>$row['id']))}" ><i class="fa fa-copy"></i></a>
+                                <a class="btn  btn-danger" href="{php echo $this->createWebUrl('activity_add', array('op' => 'del','id' => $row['id']))}"
+                                   onclick="return confirm('确认要删除? 删除活动前请先到红包列表校验红包数据，否则可能造成商家资金结算不准确，删除后不可恢复'); return false;"
+                                   class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="删除活动前请先到红包列表校验红包数据"><i class="fa fa-times"></i></a>
+                                {if $row['sid']&&$row['use_balance']==1&&$row['payment_type']!=3}
+                                <a class="btn  btn-danger" href="{php echo $this->createWebUrl('activity_add', array('op' => 'settlement','id' => $row['id']))}"
+                                   onclick="return confirm('确认要结算吗? 提前结算可能导致红包数据不准确，结算后该活动将变为已结束状态，不能再开启'); return false;"
+                                   class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="结算前需校验红包数据，可能需要一定时间"><i class="fa fa-rmb"></i></a> 
+                                {/if}
+                                {if $row['status']==4||$row['status']==5}
+                                <a href="{php echo $this->createWebUrl('activity_add', array('id' => $row['id'],'status' => 1, 'op' => 'examine'))}" onclick="return confirm('确定审核通过该条记录？'); return false;" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="通过审核">通过</a>
+                                {/if}
+                                {if $row['status']==4}
+                                <a href="{php echo $this->createWebUrl('activity_add', array('id' => $row['id'],'status' => 5, 'op' => 'examine'))}" onclick="return confirm('确定不通过该条记录？'); return false;" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="拒绝审核">拒绝</a>
+                                {/if}
+                                </br>
+                                <a class="btn btn-default" title="参与用户" href="{php echo $this->createWebUrl('user',array('aid'=>$row['id']))}" >参与用户</a>
+                                <a class="btn btn-default" title="红包记录" href="{php echo $this->createWebUrl('red',array('aid'=>$row['id']))}" >红包记录</a>
+                                {if $row['coupon_open']==1}
+                                <a class="btn btn-default" title="卡券记录" href="{php echo $this->createWebUrl('coupon',array('aid'=>$row['id']))}" >卡券记录</a>
+                                {/if}
+                                {if $row['pattern']==1}
+                                <a class="btn btn-default" title="任务列表" href="{php echo $this->createWebUrl('task',array('aid'=>$row['id']))}" >任务列表</a>
+                                {else if $row['pattern']==4}
+                                <a class="btn btn-default" title="导入记录" href="{php echo $this->createWebUrl('user',array('op'=>'delete_user','aid'=>$row['id']))}" >导入记录</a>
+                                {else if $row['pattern']==6||$row['pattern']==12}
+                                <a class="btn btn-default" title="颜值记录" href="{php echo $this->createWebUrl('cuteface',array('aid'=>$row['id']))}" >颜值记录</a>
+                                {else if $row['pattern']==11}
+                                <a class="btn btn-default" title="购买记录" href="{php echo $this->createWebUrl('order',array('aid'=>$row['id']))}" >购买记录</a>
+                                {/if}
+                            </td>
+                        </tr>
+                        {/loop}
+                    </tbody>
+                    <tr>
+                        <td colspan="8">
+                            <input name="op" id="op" type="hidden" value="" />
+                            <input name="token" type="hidden" value="{$_W['token']}" />
+                            <button type="button" class="btn btn-primary" name="btndeleteall" id="btndeleteall"/>批量删除(测试时候使用，请先手动校验红包数据)</button>&nbsp;&nbsp;&nbsp; &nbsp; 
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+    </div>
+    {$pager}
+</div>
+<div id="qrcode-message" class="modal" style="display:none" tabindex="-1" role="dialog" aria-hidden="true" style="display: block; padding-right: 17px;">
+    <div class="modal-dialog we7-modal-dialog">
+        <div class="modal-content"><div class="modal-header">
+                <h3>系统提示</h3>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <p id="message_text"></p>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="qrcode-add" style="display:none">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" onclick="$('#qrcode-add').hide();"><span aria-hidden="true">&times;</span></button>
+                <h3 class="modal-title">生成二维码</h3>
+            </div>
+            <div class="modal-body we7-form">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">生成方式</label>
+                    <div class="col-sm-10">
+                        <select name="create_type" id="create_type">
+                               <option value="2">生成新码</option>
+                               <option value="1">绑定预印码</option>
+                            </select>
+                    </div>
+                </div>
+                <div class="form-group type_beforehand" style="display:none">
+                    <label class="col-sm-2 control-label">预印码</label>
+                    <div class="col-sm-10">
+                         <select  name="bid" id="bid">
+                                {loop $beforehand_list $beforehand_item}
+                                <option value="{$beforehand_item['id']}">{$beforehand_item['name']}</option>
+                                {/loop}
+                            </select>
+                        <span class="help-block" id="not_band_str"></span>
+                    </div>
+                </div>
+                <div class="form-group type_beforehand" style="display:none">
+                    <label class="col-sm-2 control-label">起止编号</label>
+                    <div class="col-sm-10">
+                         <div class="input-group">
+                                <input type="text" class="form-control" placeholder="开始编号" name="start_code" id="start_code" value="">
+                                <div class="input-group-addon"></div>
+                                <input type="text" class="form-control" placeholder="结束编号" name="end_code" id="end_code" value="">
+                            </div>
+                        <span class="help-block">不填则从最小编号开始绑定</span>
+                    </div>
+                </div>
+                <div class="form-group type_beforehand" style="display:none">
+                    <label class="col-sm-2 control-label">绑定个数</label>
+                    <div class="col-sm-10">
+                        <input id="band_num" type="text" class="form-control" value="">
+                        <span class="help-block">不填绑定该活动所有二维码</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <input id="qrcode_aid" type="hidden" value=''>
+                <input id="qrcode_sid" type="hidden" value=''>
+                <button type="button" class="btn btn-primary" id="save_create_qrcode">确认</button>
+                <button type="button" class="btn btn-default" onclick="$('#qrcode-add').hide();">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+    
+    
+<div class="modal" id="qrcode-unband" style="display:none">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" onclick="$('#qrcode-unband').hide();"><span aria-hidden="true">&times;</span></button>
+                <h3 class="modal-title">解绑未使用二维码</h3>
+            </div>
+            <div class="modal-body we7-form">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">预印码</label>
+                    <div class="col-sm-10">
+                         <select name="bid_band" id="bid_band">
+                         </select>
+                        <span class="help-block" id="band_str"></span>
+                    </div>
+                </div>
+                <div class="form-group code_beforehand" style="display:none">
+                    <label class="col-sm-2 control-label">起止编号</label>
+                    <div class="col-sm-10">
+                         <div class="input-group">
+                                <input type="text" class="form-control" placeholder="开始编号" name="start_code_band" id="start_code_band" value="">
+                                <div class="input-group-addon"></div>
+                                <input type="text" class="form-control" placeholder="结束编号" name="end_code_band" id="end_code_band" value="">
+                            </div>
+                        <span class="help-block">不填则从最小编号开始解绑，编号和个数只填一个</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">解绑个数</label>
+                    <div class="col-sm-10">
+                        <input id="band_num_band" type="text" class="form-control" value="">
+                        <span class="help-block">不填解绑该活动所有二维码</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="save_unband_qrcode">确认</button>
+                <button type="button" class="btn btn-default" onclick="$('##qrcode-unband').hide();">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+    
+<script type="text/javascript">
+            require(["jquery", "util"], function ($, util) {
+            $(function () {
+            $(".check_all").click(function () {
+            var checked = $(this).get(0).checked;
+                    console.log(checked);
+                    $("input[type=checkbox]").prop("checked", checked);
+            });
+                    $("#btndeleteall").click(function () {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+                    if (check.length < 1) {
+            alert('请选择要删除的活动!');
+                    return false;
+            }
+            if (confirm("确认要删除选择的活动?删除活动前请先到红包列表点击校验红包数据，否则可能造成商家资金结算不准确，删除后不可恢复")) {
+            $('#op').val('deleteids');
+                    $('#form1').submit();
+            }
+            });
+                    $('#btn').click(function () {
+            $('#form2').submit();
+            });
+            
+             $("#create_type").change(function () {
+                if ($(this).val() ==1) {
+                    $('.type_beforehand').show();
+                } else {
+                    $('.type_beforehand').hide();
+                }
+            });
+             $("#bid").change(function () {
+                   
+                    var URL = "{php echo $this->createWebUrl('beforehand', array('op'=>'get_not_band'));}";
+                    $.get(URL + "&id=" + $(this).val()+ "&sid=" + $("#qrcode_sid").val(), function (ret) {
+                       $("#not_band_str").html(ret.not_band);
+                    }, 'json');
+ 
+            });
+            
+              $("#bid_band").change(function () {
+                  if($(this).val()>0){
+                    var URL = "{php echo $this->createWebUrl('beforehand', array('op'=>'get_band'));}";
+                    $.get(URL + "&id=" + $(this).val()+ "&aid=" + $("#qrcode_aid").val(), function (ret) {
+                       $("#band_str").html(ret.band);
+                    }, 'json');
+                    $(".code_beforehand").show();
+                }else{
+                    $("#band_str").html('');
+                    $(".code_beforehand").hide();
+                }
+ 
+            });
+            
+              $('.unband_qrcode').on('click', function () {
+                     var id = $(this).data("id");
+                    var URL = "{php echo $this->createWebUrl('beforehand', array('op'=>'get_band_beforehand'));}";
+                    $.get(URL + "&aid=" + id, function (json) {
+                        if(json.sta==1){
+                            var optionString = "<option value='0'>解绑所有</option>";
+                            for (var i = 0; i < json.data.length; i++) {
+                                optionString += "<option value='" + json.data[i].bid + "'";
+                                optionString += ">" + json.data[i].name + "</option>";
+                            }
+                            $("#bid_band").html(optionString);
+                     $('#qrcode-unband').show();
+                    $('#qrcode_aid').val(id); 
+                    $("#band_str").html('');
+                    $(".code_beforehand").hide();
+                        }else{
+                             util.message("无可解绑二维码");
+                        }
+                    }, 'json');
+                      
+            });
+            
+            
+                $('#save_unband_qrcode').on('click', function () {
+                    var url = "{php echo $this->createWebUrl('activity_add',array('op'=>'unband_qrcode'))}";
+                    var id = $('#qrcode_aid').val();
+                    $('#qrcode-unband').hide();
+                    var bid = $('#bid_band').val();
+                    var start_code = 0;
+                    var end_code = 0;
+                    if(bid>0){
+                   start_code = $('#start_code_band').val();
+                   end_code = $('#end_code_band').val();
+                }
+                    var band_num = $('#band_num_band').val();
+                         $.post(url, {id: id,start_code: start_code,bid: bid,end_code: end_code,band_num: band_num, token:"{$_W['token']}"}, function (ret) {
+                    if (ret.sta == 1) {
+                            util.message("成功解绑"+ret.count+"个二维码");
+                            setTimeout("window.location.reload()", 2000);
+                    } else {
+                            util.message(ret.error, "", "error");
+                    }
+
+                    }, "json");
+                   
+            });
+            
+            
+                    $('.create_qrcode').on('click', function () {
+                     var id = $(this).data("id");
+                     var sid = $(this).data("sid");
+                    var subscribe = $(this).data("subscribe");
+                    if (subscribe == '2'){
+                    var page = 1;
+                    var url = "{php echo $this->createWebUrl('activity_add',array('op'=>'create_qrcode'))}";
+                    data_post(url, id, page);
+            } else{
+                    $.get("{php echo $this->createWebUrl('beforehand', array('op'=>'get_not_band'));}" + "&id=" + $("#bid").val()+ "&sid=" + sid, function (ret) {
+                       $("#not_band_str").html(ret.not_band);
+                    }, 'json');
+            $('#qrcode-add').show();
+                    $('#qrcode_aid').val(id);
+                    $('#qrcode_sid').val(sid);
+            }
+            });
+                    $('#save_create_qrcode').on('click', function () {
+                    var page = 1;
+                    var url = "{php echo $this->createWebUrl('activity_add',array('op'=>'create_qrcode'))}";
+                    var id = $('#qrcode_aid').val();
+                    var create_type = $('#create_type').val();
+                   $('#qrcode-add').hide();
+                    if(create_type==1){
+                         var start_code = $('#start_code').val();
+                    var bid = $('#bid').val();
+                    var end_code = $('#end_code').val();
+                    var band_num = $('#band_num').val();
+                         $.post(url, {page: page, id: id,create_type: create_type,start_code: start_code,bid: bid,end_code: end_code,band_num: band_num, token:"{$_W['token']}"}, function (ret) {
+                    if (ret.sta == 1) {
+                            $('#qrcode_count' + id).html(ret.count);
+                            util.message("绑定完成");
+                            setTimeout("window.location.reload()", 2000);
+                    } else {
+                            util.message(ret.error, "", "error");
+                    }
+
+                    }, "json");
+                    }else{
+                    data_post(url, id, page);
+                }
+            });
+                    function data_post(url, id, page) {
+                    $.post(url, {page: page, id: id, token:"{$_W['token']}"}, function (ret) {
+                    if (ret.sta == 1) {
+                    $('#message_text').html("第" + page + "页生成完成，累计" + ret.count + "个</br>");
+                            $('#qrcode-message').show();
+                            page++;
+                            $('#qrcode_count' + id).html(ret.count);
+                            data_post(url, id, page);
+                    } else if (ret.sta == 2) {
+                    $('#qrcode-message').hide();
+                            $('#qrcode_count' + id).html(ret.count);
+                            util.message("生成完成");
+                            setTimeout("window.location.reload()", 2000);
+                    } else {
+                    $('#qrcode-message').hide();
+                            util.message(ret.error, "", "error");
+                    }
+
+                    }, "json");
+                    }
+
+
+            $('.download_qrcode').on('click', function () {
+            if (!confirm('二维码图片打包需要一定时间，中途请不要关闭网页，是否确认操作？'))return false;
+                    var page = 1;
+                    var url = "{php echo $this->createWebUrl('activity_add',array('op'=>'download_qrcode'))}";
+                    var id = $(this).data("id");
+                    data_post_download(url, id, page);
+            });
+                    $('.download_qrcode_notuse').on('click', function () {
+            if (!confirm('二维码图片打包需要一定时间，中途请不要关闭网页，是否确认操作？'))return false;
+                    var page = 1;
+                    var url = "{php echo $this->createWebUrl('activity_add',array('op'=>'download_qrcode_notuse'))}";
+                    var id = $(this).data("id");
+                    data_post_download(url, id, page);
+            });
+                    function data_post_download(url, id, page) {
+                    $.post(url, {page: page, id: id, token:"{$_W['token']}"}, function (ret) {
+                    if (ret.sta == 1) {
+                    $('#message_text').html("第" + page + "页数据打包完成，累计" + ret.count + "个</br>");
+                            $('#qrcode-message').show();
+                            page++;
+                            data_post_download(url, id, page);
+                    } else if (ret.sta == 2) {
+                    $('#qrcode-message').hide();
+                            window.location.href = "{php echo $this->createWebUrl('activity_add',array('op'=>'download_qrcode_zip'))}" + "&id=" + id;
+                    } else {
+                    $('#qrcode-message').hide();
+                            util.message(ret.error, "", "error");
+                    }
+
+                    }, "json");
+                    }
+
+
+
+
+            });
+            });
+            function displayUrl(lurl) {
+            require(['jquery', 'util'], function($, u) {
+            var content = '<p class="form-control-static" style="word-break:break-all">活动入口码链接: <br>' + lurl + '</p>';
+                    var footer = '';
+                    var diaobj = u.dialog('查看URL', content, footer);
+                    diaobj.find('.btn-default').click(function() {
+            diaobj.modal('hide');
+            });
+                    diaobj.on('shown.bs.modal', function(){
+                    u.clip(diaobj.find('.btn-primary')[0], lurl);
+                    });
+                    diaobj.modal('show');
+            });
+            }
+    function displayQr(url) {
+    require(['jquery', 'util'], function($, u) {
+    var content = '<div class="panel panel-default text-center"><img src="' + url + '" alt="活动地址二维码" class="img-rounded"></div>';
+            var footer =
+            '<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>';
+            var diaobj = u.dialog('查看URL二维码', content, footer);
+            diaobj.find('.btn-default').click(function() {
+    diaobj.modal('hide');
+    });
+            diaobj.modal('show');
+    });
+    }
+   setTimeout(function () { 
+                     $.get("{php echo $this->createWebUrl('activity',array('op'=>'settlement_activity'))}", function (ret) {}, 'json');
+    }, 2000);
+</script>
+
+{template 'common/footer'}

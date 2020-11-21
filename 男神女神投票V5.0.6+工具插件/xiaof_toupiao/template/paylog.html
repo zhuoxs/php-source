@@ -1,0 +1,130 @@
+{template 'common/header'}
+
+<ul class="nav nav-tabs">
+	<li class="active"><a href="{php echo $this->createWebUrl('paylog', array('version_id' => $_GPC['version_id'], 'sid' => $_GPC['sid'],'edition' => $_GPC['edition']));}">现金充值记录</a></li>
+    <li><a href="{php echo $this->createWebUrl('givinglog', array('version_id' => $_GPC['version_id'], 'sid' => $_GPC['sid'],'edition' => $_GPC['edition']));}">礼物道具记录</a></li>
+    <li><a href="{php echo $this->createWebUrl('drawlists', array('version_id' => $_GPC['version_id'], 'sid' => $_GPC['sid'],'edition' => $_GPC['edition']));}">积分抽奖记录</a></li>
+    <li><a href="{php echo $this->createWebUrl('redpack', array('version_id' => $_GPC['version_id'], 'sid' => $_GPC['sid'],'edition' => $_GPC['edition']));}">赠送红包记录</a></li>
+</ul>
+<div class="main">
+
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site">
+                <input type="hidden" name="a" value="entry">
+                <input type="hidden" name="m" value="xiaof_toupiao">
+                <input type="hidden" name="version_id" value="{$_GPC['version_id']}">
+                <input type="hidden" name="do" id="do" value="paylog">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">活动期数</label>
+                    <div class="col-xs-12 col-sm-8 col-lg-9">
+                        <select name="sid" class="form-control">
+                            <option {if $_GPC['sid'] == ''} selected{/if} value="">不限</option>
+                            {loop $settinglists $items}
+								<option {if $_GPC['sid'] === $items['id']} selected{/if} value="{$items['id']}">{$items['tit']}</option>
+							{/loop}
+                        </select>
+                    </div>       					
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">支付状态</label>
+                    <div class="col-xs-12 col-sm-8 col-lg-9">
+                        <select name="valid" class="form-control">
+                            <option {if $_GPC['valid'] == ''} selected{/if} value="">不限</option>
+							<option {if $_GPC['valid'] === '1'} selected{/if} value="1">已经支付</option>
+							<option {if $_GPC['valid'] === '0'} selected{/if} value="0">未支付</option>
+                        </select>
+                    </div>       					
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label" for="">创建时间段</label>
+                    <div class="col-sm-6">
+                        {php echo tpl_form_field_daterange('create_at',array('start' => $start,'end' => $end),true);}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">openid</label>
+                    <div class="col-xs-12 col-sm-6 col-lg-6">
+                        <input class="form-control" name="vopenid" id="" type="text" value="{$_GPC['vopenid']}">
+                    </div>
+                    <div class="col-xs-12 col-sm-1 col-lg-1">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                    <div class="col-xs-12 col-sm-1 col-lg-1">
+                        <button class="btn btn-primary" onclick="$('#do').val('exclepaylog');">导出数据</button>
+                    </div>
+                </div>			
+            </form>			
+        </div>
+    </div>
+
+    <iframe id="external-frame" src="{php echo $this->createWebUrl('payecharts', array('sid'=>$_GPC['sid'],'version_id' => $_GPC['version_id']));}" style="width:100%;border:0;height: 200px;"></iframe>
+
+    <form action="?{$_SERVER['QUERY_STRING']}" method="post" id="form1">
+        <table class="table table-hover"  style="width:100%;z-index:-10;" cellspacing="0" cellpadding="0">
+            <thead class="navbar-inner">
+            <tr>
+                <th style="width:2%;">ID</th>
+                <th style="width:3%;">微信头像</th>
+                <th style="width:3%;">充值目标</th>
+                <th style="width:10%;">昵称<br/>openid</th>
+                <th style="width:6%;">ip地区</th>
+                <th style="width:3%;">支付金额</th>
+                <th style="width:14%;">订单号信息</th>
+                <th style="width:12%;">时间</th>
+                <th style="width:5%;">状态</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $rows $item}
+            <tr {if $item['status'] == '0'}style="background:#e6e6e6"{/if}>
+            <td>{$item['id']}</td>
+            <td><img width="32" src="{$item['avatar']}"/></td>
+            <td>
+                <a href="{php echo $this->createWebUrl('lists', array('sid' => $item['sid'],'version_id' => $_GPC['version_id']));}">
+                {if $item['name']}
+                    {$item['name']}
+                {else}
+                    进入活动
+                {/if}
+                </a>
+            </td>
+            <td style="white-space: normal;  max-width: 135px; word-break: break-all">{$item['nickname']}<br/>{$item['openid']}</td>
+            <td title="{$item['dz']}">
+                {php echo long2ip($item['ip']);}<br>
+                {$item['dz']}
+            </td>
+            <td>
+                <p><span class="label label-primary">{$item['fee']}</span></p>
+                <!--<p><span class="label label-primary">积分：{$item['credit']}</span></p>-->
+            </td>
+            <td>
+                <p style="white-space: normal; max-width:180px;">订单：<span class="label label-primary" style="white-space: normal;">{$item['tid']}</span></p>
+                <p style="white-space: normal;  max-width:180px;">{if !empty($item['uniontid'])}商户：<span class="label label-success"  style="white-space: normal;  max-width:135px;">{$item['uniontid']}</span>{/if}</p>
+            </td>
+            <td>
+                <p>创建：<span class="label label-primary">{php echo date('y-m-d H:i:s', $item['create_at'])}</span></p>
+                <p>{if !empty($item['complete_at'])}支付：<span class="label label-success">{php echo date('y-m-d H:i:s', $item['complete_at'])}</span>{/if}</p>
+            </td>
+            <td>{if $item['status'] == '0'}<span class="label label-danger">未支付</span>{else}<span class="label label-success">已支付</span>{/if}</td>
+
+            </tr>
+            {/loop}
+            </tbody>
+        </table>
+        {$pager}
+    </form>
+</div>
+<script>
+    $('#form1').submit(function(){
+        if($(":checkbox[name='delete[]']:checked").size() > 0){
+            return confirm('删除后不可恢复，您确定删除吗？');
+        }
+        alert('没有选择粉丝');
+        return false;
+    });
+</script>
+{template 'edition'}
+{template 'common/footer'}

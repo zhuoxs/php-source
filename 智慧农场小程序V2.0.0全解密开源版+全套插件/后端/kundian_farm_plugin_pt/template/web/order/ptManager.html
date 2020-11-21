@@ -1,0 +1,333 @@
+{template 'web/common/common'}
+{template 'web/common/navbar'}
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/style.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/swal/dist/sweetalert2.min.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/layui.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/new-common.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/order_common.css" />
+<script src="../addons/kundian_farm/resource/layui.js" charset="utf-8"></script>
+<style>
+    #daochu_entry .layui-input-block{margin-left: 0;}
+</style>
+<blockquote class="layui-elem-quote layui-text">
+    拼团管理
+</blockquote>
+<div class="new-style">
+    <blockquote class="layui-elem-quote layui-quote-nm">
+        <form id="myform" class="layui-form" action="{url 'site/entry/admin',array('m'=>'kundian_farm_plugin_pt','op'=>'ptOrderList','is_all'=>1,'action'=>'order')}" method="POST">
+            <div class="layui-form-item">
+                <input type="text" style="width: 200px;float: left;margin-right: 20px;height: 34px;" name="order_number" lay-verify="title" value="{$data['order_number']}" autocomplete="off" placeholder="订单编号" class="layui-input">
+                <input type="text" style="width: 200px;float: left;margin-right: 20px;height: 34px;" name="name" lay-verify="title" value="{$data['name']}" autocomplete="off" placeholder="姓名" class="layui-input">
+                {php echo tpl_form_field_daterange('time', $data['old_time'], $time = false);}
+                <input type="hidden" name="flag" value="">
+                <input type="hidden" name="order_type" value="1">
+                <button type="button" lay-filter="formSubmit" lay-submit="" id="submitForm" class="layui-btn layui-btn-normal layui-btn-sm"><i class="layui-icon">&#xe615;</i>搜索</button>
+                <a class="layui-btn layui-btn-normal layui-btn-sm" id="outOrder" href="#"><i class="layui-icon">&#xe601;</i>批量导出</a>
+            </div>
+
+            <!-- 导出订单信息选择 -->
+            <div id="daochu_mask" class="zent-dialog-backdrop" style="display: none"></div>
+            <div id="daochu_entry" class="zent-dialog" style="display: none;left: 35%;">
+                <div class="zent-dialog-header">
+                    <div class="zent-dialog-title">选择需要导出的信息</div>
+                    <a id="daochu_cha" onclick="daochu_cross()" href="javascript:;" class="zent-dialog-close">×</a>
+                </div>
+                <div class="zent-dialog-body">
+                    <div class="layui-form-item" pane="">
+                        <div class="layui-input-block">
+                            <input type="checkbox" name="checkAll" id="checkAll" value="" lay-filter="checkAll" lay-skin="primary" title="全选">
+                        </div>
+                    </div>
+
+                    <div class="layui-form-item" pane="">
+                        <div class="layui-input-block">
+                            <input type="checkbox" name="field[]" class="field" value="order_number,订单号" lay-filter="check_one" lay-skin="primary" title="订单号">
+                            <input type="checkbox" name="field[]" class="field" value="total_price,总金额" lay-filter="check_one" lay-skin="primary" title="总金额">
+                            <input type="checkbox" name="field[]" class="field" value="create_time,下单时间" lay-filter="check_one" lay-skin="primary" title="下单时间">
+                            <input type="checkbox" name="field[]" class="field" value="status_txt,订单状态" lay-filter="check_one" lay-skin="primary" title="订单状态">
+                            <input type="checkbox" name="field[]" class="field" value="pay_method,支付方式" lay-filter="check_one" lay-skin="primary" title="支付方式">
+                            <input type="checkbox" name="field[]" class="field" value="name,收件人" lay-filter="check_one" lay-skin="primary" title="收件人">
+                            <input type="checkbox" name="field[]" class="field" value="phone,收件人手机号" lay-filter="check_one" lay-skin="primary" title="收件人手机号">
+                            <input type="checkbox" name="field[]" class="field" value="address,收货地址" lay-filter="check_one" lay-skin="primary" title="收货地址">
+                            <input type="checkbox" name="field[]" class="field" value="pra_price,实际付款" lay-filter="check_one" lay-skin="primary" title="实际付款">
+                            <input type="checkbox" name="field[]" class="field" value="send_time,发货时间" lay-filter="check_one" lay-skin="primary" title="发货时间">
+                            <input type="checkbox" name="field[]" class="field" value="confirm_time,收货时间" lay-filter="check_one" lay-skin="primary" title="收货时间">
+                            <input type="checkbox" name="field[]" class="field" value="express_no,快递单号" lay-filter="check_one" lay-skin="primary" title="快递单号">
+                            <input type="checkbox" name="field[]" class="field" value="goods_info,商品信息" lay-filter="check_one" lay-skin="primary" title="商品信息">
+                            <input type="checkbox" name="field[]" class="field" value="express,快递公司" lay-filter="check_one" lay-skin="primary" title="快递公司">
+                            <input type="checkbox" name="field[]" class="field" value="express_price,运费" lay-filter="check_one" lay-skin="primary" title="运费">
+                            <input type="checkbox" name="field[]" class="field" value="manager_remark,卖家备注" lay-filter="check_one" lay-skin="primary" title="卖家备注">
+                        </div>
+                    </div>
+                </div>
+                <div class="zent-dialog-footer">
+                    <button class="zent-btn zent-btn-primary js-save" type="button" id="outFiledOrder" lay-filter="outFiledOrder" lay-submit="">确认</button>
+                </div>
+            </div>
+        </form>
+    </blockquote>
+
+    <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief" style="top: 0;width: 98%;">
+        <ul class="layui-tab-title">
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm_plugin_pt','op'=>'ptManager','is_all'=>1,'action'=>'order')}" ><li class="{if $_GPC['is_all']==1}layui-this{/if}" >全部</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm_plugin_pt','op'=>'ptManager','status'=>1,'action'=>'order')}"><li class="{if $_GPC['status']==1}layui-this{/if}">拼团中</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm_plugin_pt','op'=>'ptManager','status'=>2,'action'=>'order')}"><li class="{if $_GPC['status']==2}layui-this{/if}">拼团成功</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm_plugin_pt','op'=>'ptManager','status'=>3,'action'=>'order')}"><li class="{if $_GPC['status']==3}layui-this{/if}">拼团失败</li></a>
+
+        </ul>
+    </div>
+    <div class="layui-form order">
+        <!--头部-->
+        <div class="list-header">
+            <div class="list-header-item goods-cell">商品信息</div>
+            <div class="list-header-item state-cell">订单状态</div>
+            <div class="list-header-item operate-cell">操作</div>
+        </div>
+
+        <!--开始订单列表-->
+        <div class="order-form" style="height: initial;">
+            {if $data['list']}
+            <div class="order-list">
+                {loop $data['list'] $key $item}
+                <div class="list-item list-item_{$item['id']}">
+                    <div class="list-item-header">
+                        <div class="list-item-header-row">
+                            <div>
+                                <p class="order-no">下单时间：{$item['create_time']}</p>
+                                <p class="order-no">订单号：{$item['order_number']}</p>
+                                <p class="commercial_tenant" style="color: gray;">用户名 (UID) ： {$item['nickname']}  ({$item['uid']})</p>
+                                {if $item['is_header']==1 }
+                                <span class="layui-badge" style="margin-left: 30px;background-color:#5fb878 ">团长</span>
+                                {/if}
+                            </div>
+                        </div>
+                    </div>
+                    <table class="list-item-body-table">
+                        <tbody class="list-item-body">
+                        <tr class="list-item-row">
+                            <td class="goods-item-cell-td">
+                                <div class="goods-item-cell">
+                                    <img class="goods-info__img" src="{$item['cover']}" alt="">
+                                    <div class="goods-info__info">
+                                        <div class="goods-title">
+                                            <a style="color: #363636;font-size:15px;" href="#" rel="noopener noreferrer" class="new-window" title="{$v['goods_name']}">{$item['goods_name']}</a>
+                                            {if $item['sku_name']!='[]' }
+                                            <p>规格：<span style="color: red;">{$item['sku_name']}</span></p>
+                                            {/if}
+                                        </div>
+                                        <div></div>
+                                    </div>
+                                    <div class="goods-info__price">
+                                        <div>￥{$item['price']}</div>
+                                        <div>({$item['num']}件)</div>
+                                    </div>
+                                </div>
+                            </td>
+
+
+                            <td rowspan="1" class="state-cell">
+                                <div class="td-cont">
+                                    <div class="order-state"><div>
+                                        <p>拼团状态 ：
+                                            {if $item['status']==1}
+                                            <span class="layui-badge layui-bg-gray" >拼团中</span>
+                                            {elseif $item['status']==2}
+                                            <span class="layui-badge" style="background: #5fb878">拼团成功</span>
+                                            {elseif $item['status']==3}
+                                            <span class="layui-badge">拼团失败</span>
+                                            {/if}
+                                        </p>
+                                        <p>总成团数 ：<span class="layui-badge layui-bg-orange" style="border-radius: 50%">{$item['ptnumber']}</span></p>
+                                        <p>当前人数 ：<span class="layui-badge layui-bg-orange" style="border-radius: 50%">{$item['currentPerson']}</span></p>
+                                    </div></div>
+                                </div>
+                            </td>
+                            <td class="recover-cell" rowspan="1">
+                                <a href="{url 'site/entry/admin',array('m'=>'kundian_farm_plugin_pt','op'=>'ptInfo','id'=>$item['id'],'action'=>'order')}">
+                                    <button class="layui-btn layui-btn-normal layui-btn-xs">团信息</button>
+                                </a>
+                            </td>
+                        </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+                {/loop}
+            </div>
+            {else}
+            <div style="text-align: center;width: 100%;">暂时还没有相关的订单</div>
+            {/if}
+        </div>
+
+        <div style="text-align: right;">{$data['pager']}</div>
+    </div>
+
+</div>
+
+<!--修改价格-->
+<input type="hidden" name="order_id" value="">
+<div id="mask" class="zent-dialog-backdrop" style="display: none"></div>
+<div id="entry" class="zent-dialog" style="display: none; top: 250px;">
+    <div class="zent-dialog-header">
+        <div class="zent-dialog-title">修改价格</div>
+        <a id="cha" onclick="cross()" href="javascript:;" class="zent-dialog-close">×</a>
+    </div>
+    <div class="zent-dialog-body">
+        <div class="layui-form-item">
+            <label class="layui-form-label">优惠价格</label>
+            <div class="layui-input-block">
+                <input type="text" name="discount_price" placeholder="请输入金额" class="layui-input">
+            </div>
+        </div>
+    </div>
+    <div style="font-size: 12px;" class="c-gray tishi">小提示：修改后的订单总价 = 当前订单总价 - 优惠价格</div>
+    <div class="zent-dialog-footer">
+        <a id="refer" class="zent-btn zent-btn-primary js-save changeOrderPrice" style="width: 120px;">提交</a>
+    </div>
+</div>
+
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form','layer'], function() {
+        var $ = layui.jquery, layer = layui.layer;
+        var form = layui.form;
+
+        /** 搜索查询 */
+        form.on('submit(formSubmit)',function (data) {
+            $("input[name='flag']").val('');
+            var formData = data.field;
+            let start=formData["time[start]"];
+            let end=formData["time[end]"];
+            let url = "{url 'site/entry/admin',array('m'=>'kundian_farm_plugin_pt','op'=>'ptOrderList','action'=>'order')}";
+            if(formData['order_number']){
+                url+="&order_number="+formData['order_number'];
+            }
+            if(formData['name']){
+                url+="&name="+formData['name'];
+            }
+            url+='&start='+start+'&end='+end;
+            window.location.href=url;
+        })
+
+        /** 导出订单 */
+        form.on('submit(outFiledOrder)',function (data) {
+            $("input[name='flag']").val(true);
+            var formData = data.field;
+            let start=formData["time[start]"];
+            let end=formData["time[end]"];
+            let url = "{url 'site/entry/admin',array('m'=>'kundian_farm_plugin_pt','op'=>'ptOrderList','action'=>'order')}";
+            if(formData['order_number']){
+                url+="&order_number="+formData['order_number'];
+            }
+            if(formData['name']){
+                url+="&name="+formData['name'];
+            }
+            url+='&start='+start+'&end='+end+"&flag=true";
+            $("#myform").attr("action",url);
+            $("#myform").submit();
+        })
+
+
+        /** 导出订单*/
+        $("#outOrder").click(function () {
+            $("#daochu_mask").show();
+            $("#daochu_entry").show();
+        })
+
+
+        //修改商品价格
+        $(".changeOrderPrice").click(function () {
+            var discount_price=$("input[name='discount_price']").val();
+            var order_id=$("input[name='order_id']").val();
+            let url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'ptChangeOrderPrice','action'=>'order')}";
+            updateData(url,{order_id: order_id,discount_price:discount_price},'确认修改订单价格吗？');
+        })
+
+        /** 将订单移入回收站或者移除回收站*/
+        $(".move_into_recycel").click(function(){
+            console.log('ceedddd');
+            var id=$(this).attr('data-id');
+            var type=$(this).attr('data-type');
+            var title="确定移出回收站吗?";
+            if(type==1){
+                title="确定移入回收站吗?";
+            }
+            let url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'ptRemoveOrderRecycle','action'=>'order')}";
+            updateData(url,{order_id:id,type:type},title);
+
+        });
+
+        /** 删除订单 */
+        $(".delete_order").click(function () {
+            var id=$(this).attr('data-id');
+            let url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'ptDeleteOrder','action'=>'order')}";
+            updateData(url,{order_id:id},'订单删除后将无法找回，确认删除该订单吗？');
+        })
+
+        //全选
+        form.on('checkbox(checkAll)', function(data){
+            var a = data.elem.checked;
+            if(a == true){
+                $(".field").prop("checked", true);
+                form.render('checkbox');
+            }else{
+                $(".field").prop("checked", false);
+                form.render('checkbox');
+            }
+        });
+
+        //其中一个不选，取消全选
+        form.on('checkbox(check_one)', function(data){
+            var item = $(".field");
+            for(var i=0;i<item.length;i++){
+                if(item[i].checked == false){
+                    $("#checkAll").prop("checked", false);
+                    form.render('checkbox');
+                }
+            }
+        });
+
+        /** 订单退款*/
+        $(".refundOrder").click(function () {
+            var id=$(this).attr('data-id');
+            let url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'ptRefundOrder','action'=>'order')}";
+            updateData(url,{order_id:id,order_type:1},'确认对该订单进行退款吗？');
+        })
+
+        $(".denyRefundOrder").click(function () {
+            var id=$(this).attr('data-id');
+            let url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'ptDenyRefundOrder','action'=>'order')}";
+            updateData(url,{order_id:id},'确认对该订单进行拒绝退款操作吗？');
+        })
+
+    })
+</script>
+
+<!--显示修改订单价格弹框-->
+<script type="text/javascript">
+    function disinput(order_id){
+        $("#mask").show();
+        $("#entry").show();
+        $("input[name='order_id']").val(order_id);
+        $(document.body).css({
+            "overflow-y": "hidden"
+        });
+    }
+
+    function cross(){
+        var cha = document.getElementById("cha");
+        mask.style.display = "none";
+        entry.style.display ="none";
+        $(document.body).css({
+            "overflow-y": "auto"
+        });
+    }
+
+    function daochu_cross(){
+        daochu_mask.style.display = "none";
+        daochu_entry.style.display ="none";
+        $(document.body).css({
+            "overflow-y": "auto"
+        });
+    }
+</script>

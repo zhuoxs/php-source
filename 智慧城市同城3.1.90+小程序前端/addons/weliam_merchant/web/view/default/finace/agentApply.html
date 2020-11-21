@@ -1,0 +1,143 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+	<li class="active"><a href="">提现申请</a></li>
+</ul>
+<div class="app-content">
+	<div class="app-form">
+	<form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+		<div class="panel panel-default">
+			<div class="panel-heading">提现申请</div>
+	 		<div class="panel-body">
+		 		<div class="form-group">
+		            <label class="col-sm-2 control-label">账户现有金额</label>
+		            <div class="col-sm-9">
+		                <div class="form-control-static" style="font-size: 25px;color: #06c1ae;padding: 0;">￥{$a['nowmoney']}</div>
+		                <span class="help-block">当前账户可提现余额</span>
+		            </div>
+		        </div>
+		 		<div class="form-group">
+		            <label class="col-sm-2 control-label" style="padding-top: 8px;">提现账户</label>
+		            <div class="col-sm-9">
+		                <div class="form-control-static" style="line-height: 38px;font-size: 14px;padding: 0;">
+		                	{if empty($user)}
+		                	<a href="{php echo web_url('finace/wlCash/account')}">添加提现账户</a>
+		                	{else}
+		                	<span style="width: 100px;display: inline-block;">微信账号：</span><img style="width: 38px;height: 38px;border-radius: 50%;" src="{php echo tomedia($user['avatar'])}"><br/><span style="width: 100px;display: inline-block;">真实姓名：</span><strong>{$user['realname']}</strong><br/><span style="width: 100px;display: inline-block;">昵称：</span><strong>{$user['nickname']}</strong>
+		                	<br/><a href="{php echo web_url('finace/wlCash/account')}">更改提现账户</a>
+		                	{/if}
+		                </div>
+		            </div>
+		        </div>
+                <div class="form-group">
+		            <label class="col-sm-2 control-label">总结算金额</label>
+		            <div class="col-sm-9">
+		                <div class="form-control-static">￥{$a['allmoney']}</div>
+		                <span class="help-block">历史总的已结算金额（只增不减）</span>
+		            </div>
+		        </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">提现方式</label>
+                    <div class="col-sm-9">
+                        <div class="form-control-static">
+                            <label class="label label-default label-primary">
+                                {if $a['payment_type'] == 1}
+                                    支付宝：{if $a['alipay']}{$a['alipay']}{else}<a href="{php echo web_url('finace/wlCash/account')}">填写支付宝账号信息</a>{/if}
+                                {elseif $a['payment_type'] == 2}
+                                    微信
+                                {elseif $a['payment_type'] == 3}
+                                    银行卡：{if $a['card_number']}{$a['card_number']}{else}<a href="{php echo web_url('finace/wlCash/account')}">填写银行卡账号信息</a>{/if}
+                                {else}
+                                    <a href="{php echo web_url('finace/wlCash/account')}">选择收款方式</a>
+                                {/if}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+		        <div class="form-group">
+		            <label class="col-sm-2 control-label">服务费比例</label>
+		            <div class="col-sm-9">
+		                <div class="form-control-static">{$agentpercent}%</div>
+		            </div>
+		        </div>
+		        <div class="form-group" id="percentMoney">
+		            <label class="col-sm-2 control-label">提现服务费</label>
+		            <div class="col-sm-9">
+		                <div class="form-control-static">￥0</div>
+		            </div>
+		        </div>
+		        <div class="form-group" id="money">
+		            <label class="col-sm-2 control-label">实得金额</label>
+		            <div class="col-sm-9">
+		                <div class="form-control-static" style="color: orangered;">￥0</div>
+		            </div>
+		        </div>
+		        <div class="form-group">
+		            <label class="col-sm-2 control-label">输入提现金额</label>
+		            <div class="col-sm-9">
+		                <input class="form-control" name="num" id="num" type="number" value="{$_GPC['num']}" placeholder="">
+		                <span class="help-block" id="tips" style="color: orangered;display: none;"></span>
+		            </div>
+		        </div>
+		        <div class="form-group">
+		            <label class="col-sm-2 control-label"></label>
+		            <div class="col-sm-9">
+	                    <input type="hidden" name="token" value="{$_W['token']}">
+	                    <input name="submit" type="button" value="确定申请" class="btn btn-primary min-width" id="submit">
+	            	</div>
+		        </div>
+	        </div>
+		</div>
+    </form>
+    </div>
+</div>
+<script type="text/javascript">
+var money = num = 0;
+var agentpercent = parseFloat("{$agentpercent}");
+var nowmoney = parseFloat("{$a['nowmoney']}");
+var lowmoney = parseFloat("{$cashsets['lowsetmoney']}");
+var reg = /^[1-9]\d*$/;
+
+$('#num').keyup(function(){
+	if(!reg.test($(this).val())){
+		$("#tips").text("提现金额请输入正整数");
+		$("#tips").show();
+		return false;
+	}
+	if($(this).val() > nowmoney){
+		$("#tips").text("申请金额大于账户现有金额");
+		$("#tips").show();
+		return false;
+	}
+	if($(this).val() < lowmoney){
+		$("#tips").text("申请金额小于最低结算金额");
+		$("#tips").show();
+		return false;
+	}
+	$("#tips").hide();
+	num = $(this).val();
+	money = (num*(100-agentpercent)/100).toFixed(2);
+	percentMoney = (num-money).toFixed(2);
+	$('#money').find('.form-control-static').html('￥'+money);
+    $('#percentMoney').find('.form-control-static').html('￥'+percentMoney);
+});
+
+ $('#submit').click(function(){
+  	if(money > 0 && num > 0){
+  		if(num > nowmoney){
+  			alert('申请金额大于账户现有金额');
+  		}else if(num < lowmoney){
+  			 alert('申请金额小于最低结算金额');
+  		}else{
+	  		if(confirm("申请结算："+num+"元，实得"+money+"元？")){
+	  			$.post("{php echo web_url('finace/wlCash/cashApplyAgent')}",{money:money,num:num},function(d){
+			        alert(d.message);
+			        location.href = "{php echo web_url('finace/wlCash/cashApplyAgentRecord')}";
+			    },"json");
+	  		}
+  		}
+  	}else{
+  		 alert('请输入正确的提现金额');
+  	}
+  });
+</script>
+{php include wl_template('common/footer');}

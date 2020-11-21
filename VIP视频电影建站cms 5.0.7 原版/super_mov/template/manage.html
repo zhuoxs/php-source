@@ -1,0 +1,765 @@
+{template 'common/header'}
+<ul class="nav nav-tabs">
+	<li {if $op == 'list'}class="active"{/if}><a href="{php echo $this->createWebUrl('manage', array('op'=>'list'));}">视频列表</a></li>	
+	<li {if $op == 'add'}class="active"{/if}><a href="{php echo $this->createWebUrl('manage', array('op'=>'add'));}">添加视频</a></li>	
+	<li {if $op == 'record'}class="active"{/if}><a href="{php echo $this->createWebUrl('manage', array('op'=>'record'));}">观看记录</a></li>	
+	<li {if $op == 'comment'}class="active"{/if}><a href="{php echo $this->createWebUrl('manage', array('op'=>'comment'));}">查看评论</a></li>	
+	<li {if $op == 'forum'}class="active"{/if}><a href="{php echo $this->createWebUrl('manage', array('op'=>'forum'));}">求片管理</a></li>	
+	<li><a href="{php echo $this->createWebUrl('manage', array('op'=>'clean'));}">一键清理观看记录</a></li>	
+</ul>
+<style>
+.table td span{display:inline-block;margin-top:4px;}
+.table td input{margin-bottom:0;}
+.account-stat{overflow:hidden; color:#666;}
+.account-stat .account-stat-btn{width:100%; overflow:hidden;}
+.account-stat .account-stat-btn > div{text-align:center; margin-bottom:5px;margin-right:2%; float:left;width:23%; height:80px; padding-top:10px;font-size:16px; border-left:1px #DDD solid;position: relative}
+.account-stat .account-stat-btn > div.col-3{width: 31%}
+.account-stat .account-stat-btn > div:first-child{border-left:0;}
+.account-stat .account-stat-btn > div span{display:block; font-size:30px; font-weight:bold}
+.account-stat .account-stat-btn > div.col-12{width: 12.2%;}
+.account-stat .account-stat-btn > div.col-6{width: 48%;}
+.account-stat .account-stat-btn > div a{font-size: 15px; position: absolute; right: 0; bottom: 10px}
+</style>
+
+{if $op == 'list'}
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        关键指标
+    </div>
+    <div class="account-stat">
+        <div class="account-stat-btn">
+            <div>总视频数<span>{$total}</span></div>                  
+        </div>
+    </div>
+</div>
+<div class="panel panel-info">
+	<div class="panel-heading">筛选</div>
+	<div class="panel-body">
+		<form action="./index.php" method="get" class="form-horizontal" role="form">
+			<input type="hidden" name="c" value="{$_GPC['c']}">
+			<input type="hidden" name="a" value="{$_GPC['a']}">
+			<input type="hidden" name="do" value="{$_GPC['do']}">
+			<input type="hidden" name="m" value="{$_GPC['m']}">
+			<input type="hidden" name="op" value="{$op}">
+			<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">视频名称</label> 
+			<div class="col-xs-3">
+				<input type="text" name="keyword" class="form-control" value="{$_GPC['keyword']}" placeholder="视频名称 " />
+			</div>
+			<!-- <input type="hidden" name="id" value="{$_GPC['id']}"> -->
+			<div class="form-group">				
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">添加时间</label>
+                <div class="col-xs-3" >
+                    {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d', $starttime),'endtime'=>date('Y-m-d', $endtime)));}
+                </div>
+			</div>
+			<div style="color: red !important;">&#25042;&#20154;&#28304;&#30721;&#119;&#119;&#119;&#46;&#108;&#97;&#110;&#114;&#101;&#110;&#122;&#104;&#105;&#106;&#105;&#97;&#46;&#99;&#111;&#109;&#32;&#20840;&#31449;&#36164;&#28304;&#50;&#48;&#22359;&#20219;&#24847;&#19979;&#36733;</div>
+			<div class="form-group">				
+				<div class="col-xs-12 col-sm-8 col-md-8 col-lg-8" >
+					<button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>					
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="main">
+
+	<div class="panel panel-default">
+		<div class="panel-heading">视频列表</div>
+		<div class="panel-body">
+			<div class="table-responsive panel-body">
+				<table class="table table-hover" style="min-width: 300px;">
+					<thead class="navbar-inner">
+						<tr>
+							<th class="col-sm-1">排序</th>							
+							<th class="col-sm-4">视频名称</th>
+							<th class="col-sm-2">分类</th>							
+							<th class="col-sm-2">显示/隐藏</th>	
+							<th class="col-sm-2">添加时间</th>	
+							<th class="col-sm-1 text-right">操作</th>
+						</tr>
+					</thead>
+					<tbody>
+						{loop $list $data}	
+						{php $member = member($data['openid'])}					
+						<tr>
+							<td>{$data['sort']}</td>  
+							<td>{$data['title']}</td>
+							<td>								
+								{$category[$data['cid']]['name']}-{$category[$data['pid']]['name']}
+							</td>
+							<td>{if !$data['display']}显示{else}隐藏{/if}</td>
+							<td>{php echo date('Y-m-d H:i:s',$data['time'])}</td>									
+							
+							<td class="text-right">		
+								<a href="{php echo $this->createWebUrl('manage', array('op'=>'add', 'id'=>$data['id']));}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="" data-original-title="删除">编辑</a>-						
+								<a onclick="if(!confirm('删除后将不可恢复,确定删除吗?')) return false;" href="{php echo $this->createWebUrl('manage', array('op'=>'delete', 'id'=>$data['id']));}" class="btn btn-default btn-danger" data-toggle="tooltip" data-placement="top" title="" data-original-title="删除">删除</a>
+							</td>
+						</tr>
+						{/loop}
+						{if empty($list)}
+						<tr>
+							<td colspan="8">
+								尚未添加
+							</td>
+						</tr>
+						{/if}
+					</tbody>
+				</table>
+				{$pager}
+			</div>
+		</div>
+	</div>
+</div>
+{elseif $op == 'add'}
+<div class="main">
+	<form action="" method="post" class="form-horizontal form" id="form">
+		<div class="panel panel-default">			
+			<div class="panel-body">
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">豆掰电影ID</label>
+					<div class="col-sm-8 col-xs-12">				
+					<div class="input-group">
+						<input type="text" value="" name="url" class="form-control" id="url" placeholder="30320057">
+						<span class="input-group-btn">
+							<button class="btn btn-default" type="button" id="huoqu" >一键获取</button>							
+						</span>
+					</div>	 
+					<div class="help-block">支持豆掰电影一键采集，这里的一键获取只是为了方便获取下边信息内容，不包含视频链接，视频链接自己手动获取<br>
+					<a href="https://movie.douban.com/" target="black">点击跳转搜索单个电影 复制ID进入即可</a></div>	
+					<div class="help-block">比如https://movie.douban.com/subject/30320057/  直接复制数字</div>		 		
+					</div>
+				</div>	
+				
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">视频名称</label>
+					<div class="col-xs-12 col-sm-8">
+						<input type="text" name="data[title]" class="form-control" value="{$item['title']}" id="title" /> 
+					</div>
+				</div>	
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">排序 越大越靠前</label>
+					<div class="col-xs-12 col-sm-8">
+						<input type="text" name="data[sort]" class="form-control" value="{$item['sort']}"/>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="" class="control-label col-sm-2">触发关键字</label>
+					<div class="col-xs-12 col-sm-8">
+						<input type="text" class="form-control ng-pristine ng-untouched ng-valid ng-empty" name="data[keyword]" value="{$item['keyword']}">
+						<span class="help-block">添加触发关键字以后,系统将生成一条图文规则,用户可以通过输入关键字，获取自定义密码 </span>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="" class="control-label col-sm-2">自定义密码</label>
+					<div class="col-xs-12 col-sm-8">
+					    <div class="input-group">					     
+						    <input type="text" class="form-control ng-pristine ng-untouched ng-valid ng-empty" id="password" name="data[password]" value="{$item['password']}">
+						    <span class="input-group-btn">
+						        <button class="btn btn-default" id="mima" type="button">生成密码</button>
+						    </span>
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">显示/隐藏</label>
+					<div class="col-xs-12 col-sm-8">
+						<label class="radio-inline"><input type="radio" value="0"  name="data[display]"  {if !$item['display']}checked{/if}>显示</label>
+             			<label class="radio-inline"><input type="radio" value="1" name="data[display]"  {if $item['display'] == 1}checked{/if}>隐藏</label>
+					</div>
+				</div>	
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">是否单独收费</label>
+					<div class="col-xs-12 col-sm-8">
+						<label class="radio-inline"><input type="radio" id="is_charge0" value="0"  name="data[is_charge]"  {if !$item['is_charge']}checked{/if}>否</label>
+             			<label class="radio-inline"><input type="radio" id="is_charge1" value="1" name="data[is_charge]"  {if $item['is_charge'] == 1}checked{/if}>是</label>
+					</div>
+				</div>
+				<div class="form-group" id="charge" {if $item['is_charge'] == 1}style="display:block"{else}style="display:none"{/if}>
+					<label for="" class="control-label col-sm-2">价格</label>
+					<div class="col-xs-12 col-sm-8">
+						<input type="text" class="form-control ng-pristine ng-untouched ng-valid ng-empty" name="data[charge]" value="{$item['charge']}">
+					</div>
+				</div>
+				<script type="text/javascript">
+					$('#is_charge1').click(function(){
+						$('#charge').show();
+					});
+					$('#is_charge0').click(function(){
+						$('#charge').hide();
+					});
+				</script>
+				<!-- <div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">是否试看</label>
+					<div class="col-xs-12 col-sm-8">
+						<label class="radio-inline"><input type="radio" id="is_proved0" value="0"  name="data[is_proved]"  {if !$item['is_proved']}checked{/if}>否</label>
+             			<label class="radio-inline"><input type="radio" id="is_proved1" value="1" name="data[is_proved]"  {if $item['is_proved'] == 1}checked{/if}>是</label>
+             			<span class="help-block">试看适用于m3u8或者mp4资源</span>
+					</div>
+				</div>
+				<div class="form-group" id="proved" {if $item['is_proved'] == 1}style="display:block"{else}style="display:none"{/if}>
+					<label for="" class="control-label col-sm-2">试看多少秒</label>
+					<div class="col-xs-12 col-sm-8">
+						<input type="text" class="form-control ng-pristine ng-untouched ng-valid ng-empty" name="data[proved]" value="{$item['proved']}">
+					</div>
+				</div>
+				<script type="text/javascript">
+					$('#is_proved1').click(function(){
+						$('#proved').show();
+					});
+					$('#is_proved0').click(function(){
+						$('#proved').hide();
+					});
+				</script>
+				<div class="form-group">
+					<label for="" class="control-label col-sm-2">模块内视频资源</label>
+					<div class="col-xs-12 col-sm-8">
+						<input type="text" class="form-control ng-pristine ng-untouched ng-valid ng-empty" name="data[resources]" value="{$item['resources']}">
+						<span class="help-block">如果使用模块内资源，系统会自动判断，请通过微信电脑版或者手机复制获取链接</span>
+					</div>
+				</div> -->
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">视频类别</label> 
+					<div class="col-sm-8 col-xs-12">
+						{php echo tpl_form_field_category_2level('category', $parent, $children, $pcate, $ccate)}
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">封面图</label>
+					<div class="col-xs-12 col-sm-8">
+						{php echo tpl_form_field_image('thumb', $item['thumb']);} 
+					</div>
+				</div>	
+					
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">年代</label>
+					<div class="col-xs-12 col-sm-8">
+						<input type="text" name="data[year]" class="form-control" value="{$item['year']}" id="year" />
+					</div>
+				</div>	
+				
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">评分</label>
+					<div class="col-xs-12 col-sm-8">
+						<input type="text" name="data[star]" class="form-control" value="{$item['star']}" id="star" />
+					</div>
+				</div>		
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">类型</label>
+					<div class="col-xs-12 col-sm-8">
+						<input type="text" name="data[type]" class="form-control" value="{$item['type']}" id="type" />
+					</div>
+				</div>		
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">演员</label>
+					<div class="col-xs-12 col-sm-8">
+						<input type="text" name="data[actor]" class="form-control" value="{$item['actor']}" id="actor" />
+					</div>
+				</div>						
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">自定义跳转外部链接</label>
+					<div class="col-xs-12 col-sm-8">
+						<input type="text" name="data[out_link]" class="form-control" value="{$item['out_link']}" placeholder="http://" />
+						<div class="help-block">这里填写后，前台点击后跳转对应链接，优先判断自定义链接</div>	 			
+					</div>
+				</div>
+				
+				{php $video_url = iunserializer($item['video_url'])}
+				{php $i = 1}
+				{loop $video_url $data}
+				<div class="form-group" id="tpl{$i}">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">视频标题/视频播放链接</label> 	
+					<div class="col-xs-4 col-sm-2"> 
+						<input type="text" name="title[]" class="form-control" value="{if $data['title']}{$data['title']}{else}{$i}{/if}" />
+					</div>				
+					<div class="col-xs-4 col-sm-6"> 
+						{php echo tpl_form_field_video('link[]',$data['link']);}
+						<!-- <input type="text" name="link[]" class="form-control" value="{$data['link']}" /> --> 
+					</div>
+					<div class="col-xs-2 col-sm-1">  
+						<a class="btn btn-default btn-danger" id="del{$i}">删除</a>
+					</div>
+				</div>	
+				<script type="text/javascript">
+					require(['util'], function(u){
+						$('#del{$i}').click(function(){
+							$('#tpl{$i}').empty();
+						});
+					});
+				</script>
+				{php $i++}
+				{/loop}
+				<div id="tpl">
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">视频标题/视频播放链接</label> 	
+					<div class="col-xs-6 col-sm-3">
+						<input type="text" name="title[]" class="form-control" value="" placeholder="&#x65B0;&#x777F;&#x793E;&#x533A;&#x63D0;&#x793A;:&#x586B;&#x5199;&#x6807;&#x9898;&#x53EF;&#x4EE5;&#x4E0D;&#x586B;"/>
+					</div>				
+					<div class="col-xs-6 col-sm-5">
+						{php echo tpl_form_field_video('link[]');}
+					</div>
+				</div>
+				</div>	
+
+				<div id="tpl-container"></div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 control-label"></label>
+					<div class="col-sm-9 col-xs-12" style="padding-top:7px">
+						<a href="javascipt:;" id="post-add"><i class="fa fa-plus-circle"></i> 单个添加</a>	
+						<a href="javascipt:;" data-toggle="modal" data-target="#myModal"><i class="fa fa-plus-circle"></i>批量添加</a> 					
+						<div class="help-block">支持优酷 乐视 搜狐 奇艺 腾讯 芒果 音悦台 哔哩哔哩动画 微视视频 乐视云计算 微客录 凤凰视频 优酷云 B站 土豆 酷6 秒拍 微博视频 pptv pptvyun 17173 美拍 CNTV 雅虎视频 M3U8 mp4直连，</div> 	 
+						<div class="help-block">乐视云添加方法：乐视值&type=leyun  土豆云：土豆值&type=tudouiid</div> 		
+					</div>					
+				</div>
+				<script type="text/javascript">
+					require(['util'], function(u){
+						$('#post-add').click(function(){
+							$('#tpl-container').append($('#tpl').html());  
+						});
+					});
+				</script>
+				<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+				  <div class="modal-dialog" role="document">
+				    <div class="modal-content">
+				      <div class="modal-header">
+				        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				        <h4 class="modal-title" id="myModalLabel">批量添加</h4>
+				      </div>
+				      <div class="modal-body">
+				         <textarea  class="form-control" name="piliang" rows="5" id="piliang"></textarea>
+				      </div>
+				      <div class="modal-footer">
+				        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+				        <button type="button" class="btn btn-primary" id="pl">确定</button>
+				      </div>
+				    </div>
+				  </div>
+				</div>		
+				<script type="text/javascript">
+					$("#pl").click(function(){
+				       $('#myModal').modal('hide');
+				        var piliang =  $("#piliang").val();
+                        var zyArray=piliang.split("\n");
+                        var i=0;
+                        var zyLine;
+                        var data;
+                        while (zyArray[i])
+                        {
+                            zyLine = zyArray[i].split("$");
+                            //alert("name:"+zyLine[0]+",url:"+zyLine[1]);
+                            data = '<div class="form-group"><label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">视频标题/链接</label> <div class="col-xs-6 col-sm-3">	<input type="text" name="title[]" class="form-control" value="'+zyLine[0]+'" placeholder="填写标题可以不填"/></div>	<div class="col-xs-6 col-sm-5">	<input type="text" name="link[]" class="form-control" value="'+zyLine[1]+'" placeholder="填写视频链接"/></div></div>';
+                            $('#tpl-container').append(data);
+                            i++;
+                        }
+				       	//$.get("{php echo $this->createWebUrl('manage', array('op'=>'piliang'));}&piliang="+piliang,function(data,status){
+				        //	$('#tpl-container').append(data);
+				        //});    
+				    }); 
+				</script>			
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">剧情简介</label>
+					<div class="col-xs-12 col-sm-8">
+						 <textarea  class="form-control" name="data[desc]" rows="5" id="desc">{$item['desc']}</textarea>
+					</div>
+				</div>
+				{if !empty($id)}
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">添加日期</label>
+					<div class="col-xs-12 col-sm-8">
+						<p class="form-control-static">{php echo date('Y-m-d', $item['time']);}</p>
+					</div>
+				</div>
+				{/if}				
+				</div> 
+				<div class="form-group">
+					<div class="col-xs-12 col-sm-9 col-md-10 col-lg-10 col-sm-offset-3 col-md-offset-2 col-lg-offset-2">						
+						<input name="submit" type="submit" value="提交" class="btn btn-primary" />
+						<input type="hidden" name="token" value="{$_W['token']}" />
+					</div>
+				</div>
+			</div>
+		</div>
+	</form>
+</div>
+<script type="text/javascript">
+					$("#mima").click(function(){
+						$("#password").val(randPassword());		
+					});
+					$("#huoqu").click(function(){ 
+						var url = $("#url").val();  												
+						$.get("{php echo $this->createWebUrl('manage', array('op'=>'huoqu'));}", {'url' : url}, function(data){
+							var data = $.parseJSON(data);
+							$("#title").val(data.title);
+							$("input[name='thumb']").val(data.thumb);
+							$(".img-thumbnail").attr("src",data.thumb);
+							$("#year").val(data.year);			
+							$("#star").val(data.star);			
+							$("#type").val(data.type);			
+							$("#actor").val(data.actor);			
+							$("#desc").val(data.desc); 			
+						}); 						 
+					});
+function ignoreSpaces(string) {
+	var temp = "";
+	string = '' + string;
+	splitstring = string.split(" ");
+	for(i = 0; i < splitstring.length; i++)
+	temp += splitstring[i];
+	return temp;
+}
+function randPassword(){ 
+	var text=['abcdefghijklmnopqrstuvwxyz','','1234567890','']; 
+	var rand = function(min, max){return Math.floor(Math.max(min, Math.random() * (max+1)));} 
+	var len = rand(8, 16); // 长度为8-16 
+	var pw = ''; 
+	for(i=0; i<len; ++i){ 
+		var strpos = rand(0, 3); 
+		pw += text[strpos].charAt(rand(0, text[strpos].length)); 
+	} 
+	return pw; 
+} 
+</script>
+{elseif $op == 'record'}	
+<div class="panel panel-default">
+    <div class="panel-heading">
+        关键指标
+    </div>
+    <div class="account-stat">
+        <div class="account-stat-btn">
+            <div>总视频数<span>{$total}</span></div>                  
+        </div>
+    </div>
+</div>
+<div class="panel panel-info">
+	<div class="panel-heading">筛选</div>
+	<div class="panel-body">
+		<form action="./index.php" method="get" class="form-horizontal" role="form">
+			<input type="hidden" name="c" value="{$_GPC['c']}">
+			<input type="hidden" name="a" value="{$_GPC['a']}">
+			<input type="hidden" name="do" value="{$_GPC['do']}">
+			<input type="hidden" name="m" value="{$_GPC['m']}">
+			<input type="hidden" name="op" value="{$op}">
+			
+			<!-- <input type="hidden" name="id" value="{$_GPC['id']}"> -->
+			<div class="form-group">				
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">添加时间</label>
+                <div class="col-xs-3" >
+                    {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d', $starttime),'endtime'=>date('Y-m-d', $endtime)));}
+                </div>
+			</div>
+			<div class="form-group">				
+				<div class="col-xs-12 col-sm-8 col-md-8 col-lg-8" >
+					<button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>					
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="main">
+<ul class="nav nav-tabs">
+	<li {if $op == 'record'}class="active"{/if}><a href="{php echo $this->createWebUrl('manage', array('op'=>'record'));}">合并历史</a></li>	
+	<li {if $op == 'single'}class="active"{/if}><a href="{php echo $this->createWebUrl('manage', array('op'=>'single'));}">单个历史</a></li>	
+	
+</ul>
+	<div class="panel panel-default">
+		<div class="panel-heading">视频列表</div>
+		<div class="panel-body">
+			<div class="table-responsive panel-body">
+				<table class="table table-hover" style="min-width: 300px;">
+					<thead class="navbar-inner">
+						<tr>
+							<th class="col-sm-4">视频名称</th> 							
+							<th class="col-sm-2">播放次数</th> 							
+							<th class="col-sm-2">添加时间</th>	
+							
+						</tr>
+					</thead>
+					<tbody>
+						{loop $list $data}	
+						{php $member = member($data['openid'])}					
+						<tr>
+							<td>{$data['title']}</td>							
+							<td>{$data['num']}</td>							
+							<td>{php echo date('Y-m-d H:i:s',$data['time'])}</td>									
+							
+							
+						</tr>
+						{/loop}
+						{if empty($list)}
+						<tr>
+							<td colspan="8">
+								尚未添加
+							</td>
+						</tr>
+						{/if}
+					</tbody>
+				</table>
+				{$pager}
+			</div>
+		</div>
+	</div>
+</div>
+{elseif $op == 'single'}	
+<div class="panel panel-default">
+    <div class="panel-heading">
+        关键指标
+    </div>
+    <div class="account-stat">
+        <div class="account-stat-btn">
+            <div>总视频数<span>{$total}</span></div>                  
+        </div>
+    </div>
+</div>
+<div class="panel panel-info">
+	<div class="panel-heading">筛选</div>
+	<div class="panel-body">
+		<form action="./index.php" method="get" class="form-horizontal" role="form">
+			<input type="hidden" name="c" value="{$_GPC['c']}">
+			<input type="hidden" name="a" value="{$_GPC['a']}">
+			<input type="hidden" name="do" value="{$_GPC['do']}">
+			<input type="hidden" name="m" value="{$_GPC['m']}">
+			<input type="hidden" name="op" value="{$op}">
+			
+			<!-- <input type="hidden" name="id" value="{$_GPC['id']}"> -->
+			<div class="form-group">				
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">添加时间</label>
+                <div class="col-xs-3" >
+                    {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d', $starttime),'endtime'=>date('Y-m-d', $endtime)));}
+                </div>
+			</div>
+			<div class="form-group">				
+				<div class="col-xs-12 col-sm-8 col-md-8 col-lg-8" >
+					<button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>					
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="main">
+<ul class="nav nav-tabs">
+	<li {if $op == 'record'}class="active"{/if}><a href="{php echo $this->createWebUrl('manage', array('op'=>'record'));}">合并历史</a></li>	
+	<li {if $op == 'single'}class="active"{/if}><a href="{php echo $this->createWebUrl('manage', array('op'=>'single'));}">单个历史</a></li>	
+	
+</ul>
+	<div class="panel panel-default">
+		<div class="panel-heading">视频列表</div>
+		<div class="panel-body">
+			<div class="table-responsive panel-body">
+				<table class="table table-hover" style="min-width: 300px;">
+					<thead class="navbar-inner">
+						<tr>
+							<th class="col-sm-4">视频名称</th> 							
+							<th class="col-sm-2">会员</th> 							
+							<th class="col-sm-2">添加时间</th>	
+							
+						</tr>
+					</thead>
+					<tbody>
+						{loop $list $data}	
+						{php $member = member($data['openid'])}					
+						<tr>
+							<td>{$data['title']}{if $data['share']}第{$data['share']}级{/if}</td>							
+							<td><a href="{php echo $this->createWebUrl('manage', array('op'=>'single','openid'=>$data['openid']));}">{if $member['nickname']}{$member['nickname']}{else}{$data['openid']}{/if}</a></td>							
+							<td>{php echo date('Y-m-d H:i:s',$data['time'])}</td>	 								
+							
+							
+						</tr>
+						{/loop}
+						{if empty($list)}
+						<tr>
+							<td colspan="8">
+								尚未添加
+							</td>
+						</tr>
+						{/if}
+					</tbody>
+				</table>
+				{$pager}
+			</div>
+		</div>
+	</div>
+</div>
+{elseif $op == 'comment'}	
+<div class="panel panel-default">
+    <div class="panel-heading">
+        关键指标
+    </div>
+    <div class="account-stat">
+        <div class="account-stat-btn">
+            <div>总评论数<span>{$total}</span></div>                  
+        </div>
+    </div>
+</div>
+<div class="panel panel-info">
+	<div class="panel-heading">筛选</div>
+	<div class="panel-body">
+		<form action="./index.php" method="get" class="form-horizontal" role="form">
+			<input type="hidden" name="c" value="{$_GPC['c']}">
+			<input type="hidden" name="a" value="{$_GPC['a']}">
+			<input type="hidden" name="do" value="{$_GPC['do']}">
+			<input type="hidden" name="m" value="{$_GPC['m']}">
+			<input type="hidden" name="op" value="{$op}">
+			
+			<!-- <input type="hidden" name="id" value="{$_GPC['id']}"> -->
+			<div class="form-group">				
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">添加时间</label>
+                <div class="col-xs-3" >
+                    {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d', $starttime),'endtime'=>date('Y-m-d', $endtime)));}
+                </div>
+			</div>
+			<div class="form-group">				
+				<div class="col-xs-12 col-sm-8 col-md-8 col-lg-8" >
+					<button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>					
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="main">
+	<div class="panel panel-default">
+		<div class="panel-heading">评论列表</div>
+		<div class="panel-body">
+			<div class="table-responsive panel-body">
+				<table class="table table-hover" style="min-width: 300px;">
+					<thead class="navbar-inner">
+						<tr>
+							<th class="col-sm-2">评论电影名称</th> 							
+							<th class="col-sm-4">评论内容</th> 							
+							<th class="col-sm-2">会员</th> 							
+							<th class="col-sm-2">添加时间</th>	
+							<th class="col-sm-4">操作</th>	
+							
+						</tr>
+					</thead>
+					<tbody>
+						{loop $list $data}	
+						{php $member = member($data['openid'])}					
+						<tr>
+							<td>{$data['old_id']}</td>	
+							<td>{$data['content']}</td>							
+							<td><a href="{php echo $this->createWebUrl('manage', array('op'=>'single','openid'=>$data['openid']));}">{$member['nickname']}</a></td>
+							<td>{php echo date('Y-m-d H:i:s',$data['time'])}</td>
+							<td>		
+								<a href="{php echo $this->createWebUrl('manage', array('op'=>'shenhe', 'id'=>$data['id']));}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="" data-original-title="删除">{if $data['status']==1}已审核{else}未审核{/if}</a>-
+								<a onclick="if(!confirm('删除后将不可恢复,确定删除吗?')) return false;" href="{php echo $this->createWebUrl('manage', array('op'=>'comment_del', 'id'=>$data['id']));}" class="btn btn-default btn-danger" data-toggle="tooltip" data-placement="top" title="" data-original-title="删除">删除</a>
+							</td>
+						</tr>
+						{/loop}
+						{if empty($list)}
+						<tr>
+							<td colspan="8">
+								尚未添加
+							</td>
+						</tr>
+						{/if}
+					</tbody>
+				</table>
+				{$pager}
+			</div>
+		</div>
+	</div>
+</div>
+{elseif $op == 'forum'}	
+<div class="panel panel-default">
+    <div class="panel-heading">
+        关键指标
+    </div>
+    <div class="account-stat">
+        <div class="account-stat-btn">
+            <div>总求片数<span>{$total}</span></div>                  
+        </div>
+    </div>
+</div>
+<div class="panel panel-info">
+	<div class="panel-heading">筛选</div>
+	<div class="panel-body">
+		<form action="./index.php" method="get" class="form-horizontal" role="form">
+			<input type="hidden" name="c" value="{$_GPC['c']}">
+			<input type="hidden" name="a" value="{$_GPC['a']}">
+			<input type="hidden" name="do" value="{$_GPC['do']}">
+			<input type="hidden" name="m" value="{$_GPC['m']}">
+			<input type="hidden" name="op" value="{$op}">
+			
+			<!-- <input type="hidden" name="id" value="{$_GPC['id']}"> -->
+			<div class="form-group">				
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">添加时间</label>
+                <div class="col-xs-3" >
+                    {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d', $starttime),'endtime'=>date('Y-m-d', $endtime)));}
+                </div>
+			</div>
+			<div class="form-group">				
+				<div class="col-xs-12 col-sm-8 col-md-8 col-lg-8" >
+					<button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>					
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="main">
+	<div class="panel panel-default">
+		<div class="panel-heading">评论列表</div>
+		<div class="panel-body">
+			<div class="table-responsive panel-body">
+				<table class="table table-hover" style="min-width: 300px;">
+					<thead class="navbar-inner">
+						<tr>
+							<th class="col-sm-2">电影名称</th> 							
+							<th class="col-sm-4">回复链接</th> 							
+							<th class="col-sm-2">会员</th> 							
+							<th class="col-sm-2">添加时间</th>	
+							<th class="col-sm-4">操作</th>	
+							
+						</tr>
+					</thead>
+					<tbody>
+						{loop $list $data}	
+						{php $member = member($data['openid'])}					
+						<tr>
+							<td>{$data['title']}</td>	
+							<td>{$data['video_url']}</td>							
+							<td><a href="{php echo $this->createWebUrl('manage', array('op'=>'single','openid'=>$data['openid']));}">{$member['nickname']}</a></td>
+							<td>{php echo date('Y-m-d H:i:s',$data['time'])}</td>
+							<td>		
+								<a href="{php echo $this->createWebUrl('manage', array('op'=>'forum_huifu', 'id'=>$data['id']));}" class="btn btn-default">回复</a>-
+								<a onclick="if(!confirm('删除后将不可恢复,确定删除吗?')) return false;" href="{php echo $this->createWebUrl('manage', array('op'=>'forum_del', 'id'=>$data['id']));}" class="btn btn-default btn-danger" data-toggle="tooltip" data-placement="top" title="" data-original-title="删除">删除</a> 
+							</td>
+						</tr>
+						{/loop}
+						{if empty($list)}
+						<tr>
+							<td colspan="8">
+								尚未添加
+							</td>
+						</tr>
+						{/if}
+					</tbody>
+				</table>
+				{$pager}
+			</div>
+		</div>
+	</div>
+</div>
+{elseif $op == 'forum_huifu'} 
+<div class="main">
+	<form action="" method="post" class="form-horizontal form" id="form">
+		<div class="panel panel-default">			
+			<div class="panel-body">
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">视频链接</label>
+					<div class="col-xs-12 col-sm-8">
+						<input  name="video_url" type="text"  class="form-control richtext-clone" placeholder="" value="{$forum['video_url']}">
+						<div class="help-block">请自行获取模块内添加好的视频链接，提交后会通过模版消息主动发送给求片的粉丝</div>	
+					</div>
+				</div>	
+			</div> 
+			<div class="form-group">
+				<div class="col-xs-12 col-sm-9 col-md-10 col-lg-10 col-sm-offset-3 col-md-offset-2 col-lg-offset-2">						
+					<input name="submit" type="submit" value="提交" class="btn btn-primary" />
+					<input type="hidden" name="token" value="{$_W['token']}" />
+				</div>
+			</div>
+		</div>
+	</form>
+</div>
+{/if}
+{template 'common/footer'}

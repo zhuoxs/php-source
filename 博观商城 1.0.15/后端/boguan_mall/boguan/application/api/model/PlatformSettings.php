@@ -1,0 +1,2 @@
+<?php
+ namespace app\api\model; class PlatformSettings extends BaseModel { protected $hidden = array("\141\x70\x70\x69\144", "\141\160\160\137\x73\145\x63\x72\145\x74", "\155\x63\150\137\x69\x64", "\x63\x65\162\164\x5f\x70\145\155", "\153\x65\171\137\160\145\x6d"); }

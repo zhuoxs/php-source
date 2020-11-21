@@ -1,0 +1,212 @@
+{php include wl_template('common/header');}
+<link rel="stylesheet" href="{URL_MODULE}/plugin/pocket/app/resource/css/index.css" />
+<div class="page-group" >
+	{php include wl_template('pocket/search');}
+    <div class="page page-current">
+    {php include wl_template('common/followbar');}
+    {php include wl_template('pocket/footerbar');}
+	<div class="content native-scroll newindex infinite-scroll-bottom infinite-scroll">
+        {if !$data['search'] || $data['search'] == 0}{php include wl_template('dashboard/search');}{/if}
+		<!--幻灯banner开始-->
+		{php $data['adv'] = $slide;}
+		{php include wl_template('dashboard/adv');}
+		<!--幻灯banner结束-->
+
+		<div class="tj-list-tit">
+			<div class="tj-list-tit-info">
+				<div class="dt_right"><span> 浏览：<i>{$look}</i> &nbsp; 发布：<i>{$fabu}</i> &nbsp; 分享：<i>{$share}</i> </span></div>
+			</div>
+		</div>
+
+		<!--图标导航开始-->
+		{php $navs = $type;}
+		{php include wl_template('dashboard/nav');}
+		<!--图标导航结束-->
+
+		<!--系统动态公告开始-->
+		<section class="join-in main mb10">
+			<div id="fengmian_notice">
+				<p class="ellipsis">
+					<span><i>最新</i><i>发布</i></span>
+				</p>
+				<div class="fengmian_notice_p">
+					<ul class="fengmian_notice_p_style" id="fontlist">
+						{loop $top $ti}
+						<li class="fengmian_notice_p_1">
+							<a href="{$ti['a']}">[{$ti['time']}]{$ti['nickname']}发布了{$ti['typename']}信息</a>
+						</li>
+						{/loop}
+					</ul>
+		   		</div>
+				<a href="{php echo app_url('pocket/pocket/category')}">
+					我要发布
+				</a>
+			</div>
+		</section>
+		<script type="text/javascript" src="{URL_APP_RESOURCE}components/jquery/jquery.rollGallery_yeso.js"></script>
+		<script type="text/javascript">
+			$(document).ready(function($) {
+				$("#fontlist").rollGallery({
+					direction: "top",
+					speed: 2000,
+					showNum: 1,
+					speedPx:20
+				});
+			});
+		</script>
+		<!--系统动态公告结束-->
+
+		<!--列表详情导航部分-->
+		<div class="FL_list">
+			<div class="FL_list01">
+				<ol class="FL_list011">
+					<li class="FL_listnow">热门推荐</li>
+					<div class="Fl_container">
+						<div class="swiper-wrapper">
+							{loop $categroy $item}
+							<li class="swiper-slide">
+								<a href="{php echo app_url('pocket/pocket/catepage',array('id'=>$item['id']))}">{$item['title']}</a>
+							</li>
+							{/loop}
+						</div>
+					</div>
+				</ol>
+			</div>
+		</div>
+		<script type="text/javascript">
+			$(function() {
+				var swiper = new Swiper('.Fl_container', {
+					scrollbarHide: true,
+					slidesPerView: 'auto',
+					loop: true,
+					grabCursor: true,
+					autoplay: 2000,
+					autoplayDisableOnInteraction: false,
+					paginationClickable: true
+				});
+			})
+		</script>
+		<input type="hidden" id="indexlist" />
+		<!--列表详情部分-->
+		<ol id="FL_detail">
+			<ul class="Tz_box" id="section-linemove" data-total-pages="0" data-page="0" data-s="0">
+
+			</ul>
+			<div class="infinite-scroll-preloader">
+				<div  class="weui-loadmore">
+			        <i class="weui-loading"></i>
+			        <span class="weui-loadmore__tips">正在加载</span>
+			    </div>
+			</div>
+		</ol>
+	</div>
+</div>
+</div>
+{php include wl_template('htmltpl/pocketlist');}
+
+<script>
+	var page = 1,
+	    pagesize = 8,
+	    endmark = 1,
+		latitude = '',
+		longitude = '',
+		addflag = 1;
+	    loading = 0;
+	if(sessionStorage.hisData){
+		var hisData = JSON.parse(sessionStorage.hisData);
+		hisData.forEach(function(item, index){
+			if(item.hisUrl == encodeURI(window.location.href+"&aid={$_W['aid']}")){
+				$('.Tz_box').html(item.data);
+				$('.infinite-scroll').scrollTop(item.scrollTop);
+				page = item.page;
+			}
+		});
+	}
+	common.Geolocation(function(data){
+		latitude = data.lat;
+		longitude = data.lng;
+		asd();
+	},function(data){
+		$.toast('获取地理位置失败，请刷新！');
+		asd();
+	});
+
+	setTimeout(function(){
+		if(addflag){asd();}
+	},3000);
+
+	function asd(){
+		addflag = 0;
+		$('.infinite-scroll-preloader').show();
+		console.log(latitude);
+		console.log(longitude);
+
+		$.post("{php echo app_url('pocket/pocket/gettops')}",{pageindex:page,pagesize:pagesize,lat:latitude,lng:longitude},function(d){
+			$('.infinite-scroll-preloader').hide();
+			addItems(d);
+		}, 'json');
+	}
+
+	function addItems(cont){
+		if(cont.length){
+			$('.infinite-scroll-preloader').hide();
+			var gettpl1 = document.getElementById('pocketlist_tpl').innerHTML;
+			laytpl(gettpl1).render(cont, function(html){
+				$(".Tz_box").append(html);
+			});
+			page++;loading = 1;
+		}else{
+			$('.infinite-scroll-preloader').hide();
+			if($(".Tz_box").next().attr('class') == 'loadmore-lms'){
+				$(".Tz_box").next().remove();
+			}
+			var nothing_html = "<li class='loadmore-lms' style='display:block;'><div style='padding-top:1px'>" +
+			'<div class="weui-loadmore weui-loadmore_line"><span style="background-color: #efeff4;" class="weui-loadmore__tips">暂无更多信息</span></div></div></li>';
+			$(".Tz_box").after(nothing_html);
+			endmark = 0;
+		}
+	}
+
+	$(document).on('infinite', '.infinite-scroll-bottom', function() {
+		if(endmark && loading){
+			loading = 0;
+			$('.infinite-scroll-preloader').show();
+			setTimeout(function() {
+				asd();
+			}, 800);
+		}
+	});
+
+	function dianzanlist(o,cid){
+		o.children("em").children("img").attr("src","{URL_MODULE}/plugin/pocket/app/resource/images/zan2.png");
+		o.css("color","#ed414a");
+		$.post("{php echo app_url('pocket/pocket/dianzan_ajax')}", {cid:cid}, function(result){
+			if(!result.errno) {
+				var zans=parseInt(o.children("i").text());
+				o.children("i").text(zans+1);
+				$.toast('点赞成功');
+			}else if(result.errno == 3){
+				location.href = "{php echo app_url('member/user/signin',array('backurl'=>urlencode(app_url('pocket/pocket/index'))));}";
+			}else {
+				$.toast(result.message);
+			}
+			return false;
+		}, 'json');
+	}
+	$('#searchBtn').click(function(){
+		var keyword = $('#keyword').val();
+		location.href = "{php echo app_url('pocket/pocket/catepage');}&keyword="+keyword;
+	});
+	$.init();
+
+	window.onunload = function(){
+		var hisDataItem = {};
+		hisDataItem.hisUrl = encodeURI(window.location.href+"&aid={$_W['aid']}");
+		hisDataItem.data = $('.Tz_box').html();
+		hisDataItem.scrollTop = $('.infinite-scroll').scrollTop();
+		hisDataItem.page = page;
+		hisDataItem.pocket = 1;
+		common.History_pag(hisDataItem);
+	}
+</script>
+{php include wl_template('common/footer');}

@@ -1,0 +1,189 @@
+{template '_header'}
+
+<div class="page-header">当前位置：<span class="text-primary">评价管理</span></div>
+
+<div class="page-content">
+    <form action="./merchant.php" method="get" class="form-horizontal form-search" role="form">
+        <input type="hidden" name="c" value="site" />
+        <input type="hidden" name="a" value="entry" />
+        <input type="hidden" name="m" value="ewei_shopv2" />
+        <input type="hidden" name="do" value="web" />
+        <input type="hidden" name="r"  value="shop.comment" />
+
+        <div class="page-toolbar">
+            <div class="col-sm-9 pull-right">
+                <div class='input-group input-group-sm'  style='float:left;'  >
+                    {php echo tpl_daterange('time', array('sm'=>true,'placeholder'=>'请选择评论时间'),true);}
+                </div>
+                <div class="input-group">
+                    <span class="input-group-select">
+                        <select name='replystatus' class='form-control'>
+                            <option value='' {if $_GPC['replystatus']==''}selected{/if}>状态</option>
+                            <option value='0' {if $_GPC['replystatus']=='0'}selected{/if}>需要首次回复</option>
+                            <option value='1' {if $_GPC['replystatus']=='1'}selected{/if} >需要追加回复</option>
+                        </select>
+                    </span>
+                    <span class="input-group-select">
+                        <select name='fade' class='form-control'>
+                            <option value='' {if $_GPC['fade']==''}selected{/if}>类型</option>
+                            <option value='0' {if $_GPC['fade']=='0'}selected{/if}>模拟评价</option>
+                            <option value='1' {if $_GPC['fade']=='1'}selected{/if} >真实评价</option>
+                        </select>
+                    </span>
+                    <input type="text" class="form-control" name='keyword' value="{$_GPC['keyword']}" placeholder="订单号/商品">
+                    <span class="input-group-btn">
+                        <button class="btn btn-primary" type="submit"> 搜索</button>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {if empty($list)}
+        <div class="panel panel-default">
+            <div class="panel-body empty-data">未查询到相关数据</div>
+        </div>
+    {else}
+        <div class="page-table-header">
+            <input type='checkbox' />
+            <div class="btn-group">
+                {ifp 'shop.comment.delete'}
+                <button class="btn btn-default btn-sm btn-operation" type="button" data-toggle='batch-remove' data-confirm="确认要删除?" data-href="{php echo webUrl('shop/comment/delete')}">
+                    <i class='icow icow-shanchu1'></i> 删除</button>
+                {/if}
+            </div>
+        </div>
+        <table class="table table-hover table-responsive">
+            <thead>
+                <tr>
+                    <th style="width:25px;"></th>
+                    <th style='width:50px;'>商品</th>
+                    <th style=''></th>
+                    <th style='width:100px;'>评价者</th>
+                    <th style='width:95px;'>评分等级</th>
+                    <th style='width:90px;'>评价状态</th>
+                    <th style='width:90px;'>回复状态</th>
+                    <th style='width:115px;'>审核状态</th>
+                    <th style='width:90px;'>评价时间</th>
+                    <th style='width:115px;'>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {loop $list $row}
+                    <tr>
+                        <td>
+                            <input type='checkbox'   value="{$row['id']}"/>
+                        </td>
+                        <td>
+                            <img src="{php echo tomedia($row['thumb'])}" style="width: 30px; height: 30px;border:1px solid #ccc;padding:1px;" onerror="this.src='../addons/ewei_shopv2/static/images/nopic.png'">
+                        </td>
+                        <td>
+                            {$row['title']}<br/><small>{if empty($row['openid'])}模拟评价{else}{$row['ordersn']}{/if}</small>
+                        </td>
+                        <td >
+                            <span data-toggle='tooltip' title='{$row['nickname']}'><img src="{php echo tomedia($row['headimgurl'])}" style="width: 30px; height: 30px;border:1px solid #ccc;padding:1px;">
+                            {$row['nickname']}</span>
+                        </td>
+                        <td style="color:#ff6600">
+                            {if $row['level']>=1}<i class='fa fa-star'></i>{else}<i class='fa fa-star-o'></i>{/if}
+                            {if $row['level']>=2}<i class='fa fa-star'></i>{else}<i class='fa fa-star-o'></i>{/if}
+                            {if $row['level']>=3}<i class='fa fa-star'></i>{else}<i class='fa fa-star-o'></i>{/if}
+                            {if $row['level']>=4}<i class='fa fa-star'></i>{else}<i class='fa fa-star-o'></i>{/if}
+                            {if $row['level']>=5}<i class='fa fa-star'></i>{else}<i class='fa fa-star-o'></i>{/if}
+                        </td>
+                        <td>
+                            {if !empty($row['append_content'])}
+                            <span class='text-warning'>追加了评价</span>
+                            {else}
+                            <span class='text-primary'>首次回复</span>
+                            {/if}
+                        </td>
+                        <td>
+                            {if empty($row['reply_content'])}
+                            <span class='text-danger'>未首次回复</span>
+                            {else}
+                            <span class='text-danger'>已首次回复</span>
+                            {/if}
+                            <br/>
+                            {if !empty($row['append_content'])}
+                                {if empty($row['append_reply_content'])}
+                                <span class='text-warning'>未追加回复</span>
+                                {/if}
+                            {/if}
+                        </td>
+                        <td style="overflow:visible;">
+                            <span class='{if $row['checked']==0}text-success{else if $row['checked']==1}text-warning{else if $row['checked']==2}text-danger{/if}'>
+                            {if $row['checked']==0}首次评价通过{else if $row['checked']==1}首次评价审核中{else if $row['checked']==2}首次评价不通过{/if}</span>
+                            {if !empty($row['append_content'])}
+                                <br>
+                                <span class='{if $row['replychecked']==0}text-success{else if $row['replychecked']==1}text-warning{else if $row['replychecked']==2}text-danger{/if}'>
+                                {if $row['replychecked']==0}追加评价通过{else if $row['replychecked']==1}追加评价审核中{else if $row['replychecked']==2}追加评价不通过{/if}</span>
+                            {/if}
+                        </td>
+                        <td >
+                            {php echo date('Y-m-d', $row['createtime'])}<br/>{php echo date('H:i:s', $row['createtime'])}
+                        </td>
+                        <td>
+                            <a class='btn btn-op btn-operation'  href="{php echo webUrl('shop/comment/post', array('id' => $row['id'], 'type' => 1))}">
+                                <span data-toggle="tooltip" data-placement="top" data-original-title="审核">
+                                    <i class='icow icow-icon19'></i>
+                                </span>
+                            </a>
+
+                            {if !empty($row['openid'])}
+                                {ifp 'shop.comment.post'}
+                                <a class='btn btn-op btn-operation'  href="{php echo webUrl('shop/comment/post', array('id' => $row['id']))}">
+                                    <span data-toggle="tooltip" data-placement="top" data-original-title="回复">
+                                        <i class='icow icow-huifu1'></i>
+                                    </span>
+                                </a>
+                                {/if}
+                            {else}
+                                {ifp 'shop.comment.edit'}
+                                <a class='btn btn-op btn-operation'  href="{php echo webUrl('shop/comment/edit', array( 'id' => $row['id']))}">
+                                    <span data-toggle="tooltip" data-placement="top" data-original-title="修改">
+                                                <i class='icow icow-bianji2'></i>
+                                            </span>
+                                </a>
+                                {/if}
+                            {/if}
+                            {ifp 'shop.comment.add'}
+                                <a class='btn btn-op btn-operation'  href="{php echo webUrl('shop/comment/add', array( 'goodsid' => $row['goodsid']))}">
+                                    <span data-toggle="tooltip" data-placement="top" data-original-title="添加此商品评价">
+                                    <i class='icow icow-tianjia'></i>
+                                </span>
+                                </a>
+                            {/if}
+                            {ifp 'shop.comment.delete'}
+                                <a class='btn btn-op btn-operation'  data-toggle='ajaxRemove'   href="{php echo webUrl('shop/comment/delete', array('id' => $row['id']))}" data-confirm="确认删除此评价吗？">
+                                    <span data-toggle="tooltip" data-placement="top" data-original-title="删除">
+                                        <i class='icow icow-shanchu1'></i>
+                                    </span>
+                                </a>
+                            {/if}
+                        </td>
+                    </tr>
+                {/loop}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td colspan="2">
+                        <div class="btn-group">
+                            {ifp 'shop.comment.delete'}
+                            <button class="btn btn-default btn-sm btn-operation" type="button" data-toggle='batch-remove' data-confirm="确认要删除?" data-href="{php echo webUrl('shop/comment/delete')}">
+                                <i class='icow icow-shanchu1'></i> 删除</button>
+                            {/if}
+                        </div>
+                    </td>
+                    <td colspan="7" style="text-align: right">
+                        {$pager}
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    {/if}
+</div>
+{template '_footer'}
+
+<!--4000097827-->

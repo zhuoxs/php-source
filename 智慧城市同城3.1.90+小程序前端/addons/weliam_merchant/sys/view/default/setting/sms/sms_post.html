@@ -1,0 +1,151 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+	<li class="active"><a href="{php echo web_url('setting/noticeset/smsadd')}">添加短信模板</a></li>
+</ul>
+<div class="app-content">
+	<div class="app-form">
+		<form action="" method="post" class="form-horizontal form" id="form">
+			<div class="panel panel-default">
+				<div class="panel-heading">添加短信模板</div>
+				<div class="panel-body">
+					<div class="form-group">
+						<label class="col-md-2 control-label">短信模板说明</label>
+						<div class="col-sm-9">
+							<div class="alert alert-warning">
+								<h5 style="text-indent: 18px;">系统公共变量：【系统名称】【版权信息】</h5>
+								<h5 style="text-indent: 18px;">身份验证变量：【验证码】</h5>
+							</div>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label must">模板名称</label>
+						<div class="col-sm-9">
+							<input type="text" name="name" class="form-control" value="{$item['name']}" placeholder="模版名称"></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label must">服务商</label>
+						<div class="col-sm-9">
+							<label class="radio-inline">
+								<input type="radio" class="sms-type valid" data-template="1" name="type" value="dayu" {if $item['type'] == '' || $item['type'] == 'dayu'}checked="checked"{/if}>阿里大于
+							</label>
+							<label class="radio-inline">
+								<input type="radio" class="sms-type valid" data-template="1" name="type" value="aliyun" {if $item['type'] == 'aliyun'}checked="checked"{/if}>阿里云
+							</label>
+						</div>
+					</div>
+					<div class="form-group sms-template-1">
+						<label class="col-sm-2 control-label must">模板ID</label>
+						<div class="col-sm-9">
+							<input type="text" name="smstplid" class="form-control" value="{$item['smstplid']}" placeholder="短信模板ID，例：SMS_13045962" >
+							<div class="help-block">阿里大于提供的模板ID</div></div>
+					</div>
+					<div id="datas" class="sms-template-1" style="display:block;">
+						{if empty($item['data'])}
+							{php include wl_template('setting/sms/sms_tpl');}
+						{else}
+							{loop $item['data'] $data}
+								{php include wl_template('setting/sms/sms_tpl');}
+							{/loop}
+						{/if}
+					</div>
+					<div class="form-group sms-template-1" style="display:block;">
+						<label class="col-sm-2 control-label"></label>
+						<div class="col-sm-9">
+							<a class="btn btn-default btn-add-type" href="javascript:;" onclick="addType();">
+								<i class="fa fa-plus" title=""></i>增加一条数据值</a>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label must">状态</label>
+						<div class="col-sm-9">
+							<label class="radio-inline">
+								<input type="radio" name="status" value="0" id="inlineRadio1" {if empty($item['status'])}checked{/if}>禁用
+							</label>
+							<label class="radio-inline">
+								<input type="radio" name="status" value="1" id="inlineRadio2" {if !empty($item['status'])}checked{/if}>启用
+							</label>
+							<div class="help-block">关闭后将不能调用</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label"></label>
+				<div class="col-sm-9">
+					<input type="submit" name="submit" value="提交" class="btn btn-primary min-width" />
+					<input type="hidden" name="token" value="{$_W['token']}" />
+					<input type="hidden" name="id" value="{$item['id']}" />
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<script language="javascript">
+$(function () {
+    $(document).on('click', '.data-item-delete', function () {
+        var len = $(".data-item").length;
+        if(len==1){
+            layer.msg('必须保留一条!');
+            return;
+        }
+        $(this).closest('.data-item').remove();
+    });
+});
+
+var kw = 1;
+function addType() {
+    $(".btn-add-type").button("loading");
+    $.ajax({
+        url: "{php echo web_url('setting/noticeset/tpl')}&kw="+kw,
+        cache: false
+    }).done(function (html) {
+        $(".btn-add-type").button("reset");
+        $("#datas").append(html);
+    });
+    kw++;
+}
+
+$('form').submit(function(){
+    var smstype = $("input[name='type']:checked").val();
+    if(!smstype){
+        layer.msg('请选择短信服务商!');
+        return false;
+    }
+    var type = $("input[name='type']:checked").data('template');
+    if(type){
+        if($('.data-item').length<=0){
+            layer.msg('请添加一条键!');
+            return false;
+        }
+        var checkkw = true;
+        $("#datas input").each(function(){
+            if ( $.trim( $(this).val() ) ==''){
+                checkkw = false;
+                layer.msg('变量不能为空!');
+                $(this).focus();
+                return false;
+            }
+        });
+        if( !checkkw){
+            return false;
+        }
+    }
+    $('form').removeAttr('stop');
+    
+    var data = $(this).serialize();
+ 	var url =  "{php echo web_url('setting/noticeset/smsadd')}";
+ 	 if($('input[name=id]').val()) url =  "{php echo web_url('setting/noticeset/smsedit')}";
+ 	 $.ajax({
+        type: "POST",
+        url:url,
+        data:data,
+        dataType:'json',
+        success: function(data) {
+        	layer.msg(data.message);
+        	location.href = "{php echo web_url('setting/noticeset/smslist')}";
+        }
+    });
+    return false;
+});
+</script>
+{php include wl_template('common/footer');}

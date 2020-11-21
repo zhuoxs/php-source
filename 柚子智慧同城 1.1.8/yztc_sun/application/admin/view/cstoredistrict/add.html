@@ -1,0 +1,79 @@
+{extend name="common/edit" /}
+{block name="content"}
+{if ($info.parent_id)}
+<div class="layui-form-item">
+    <label class="layui-form-label">上级分类</label>
+    <div class="layui-input-block">
+        <input type="text" name="parent_name" lay-verify="required" class="layui-input" readonly value="{$info.parent_name??''}">
+        <input type="hidden" name="parent_id" lay-verify="required" value="{$info.parent_id??''}">
+        <div class="layui-form-mid layui-word-aux">前端只显示到 3 级，3 级之后不显示，请不要添加超过 3 级</div>
+    </div>
+</div>
+{/if}
+<div class="layui-form-item">
+    <label class="layui-form-label">分类名称</label>
+    <div class="layui-input-block">
+        <input autocomplete="off" type="text" name="name" lay-verify="required" placeholder="请输入名称" class="layui-input" value="{$info.name??''}">
+    </div>
+</div>
+<div class="layui-form-item">
+    <label class="layui-form-label">排序</label>
+    <div class="layui-input-block">
+        <input autocomplete="off" type="text" name="index" placeholder="请输入排序" class="layui-input" value="{$info.index??''}">
+    </div>
+</div>
+{if !$_SESSION['admin']['store_id']}
+<div class="layui-form-item">
+    <label class="layui-form-label">图标</label>
+    <div class="layui-input-block">
+        {php}echo tpl_form_field_image('icon', isset($info['icon'])?$info['icon']:'','/web/resource/images/nopic.jpg');{/php}
+    </div>
+</div>
+{/if}
+<script>
+    require(['select2'], function () {
+        $('.select2').select2();
+        $.get("{:adminurl('select_root')}", function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: '', text: '请选择上级分类'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                if(obj.id == "{$info.parent_id??''}"){
+                    obj.selected = true;
+                }
+                return obj;
+            });
+            $('#parent_id').select2({
+                data: ret,
+            })
+        })
+    })
+</script>
+{/block}
+{block name="form_submit"}
+// 新增界面、保存、取消事件
+form.on('submit', function(data){
+if(!$(data.elem).is('button')){
+return false;
+}
+var data = data.field;
+console.log(data);
+var url = "{:adminurl('save')}";
+$.post(url,data,function(res){
+if (typeof res == 'string'){
+res = $.parseJSON(res);
+}
+if (res.code == 0) {
+var index=parent.layer.getFrameIndex(window.name);
+parent.layer.close(index);
+parent.layer.msg('保存成功',{icon: 6,anim: 6});
+parent.location.reload();
+}else{
+layer.msg(res.msg,{icon: 5,anim: 6});
+}
+});
+return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+});
+{/block}

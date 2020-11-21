@@ -1,0 +1,157 @@
+{php $no_left = true}
+{template '_header'}
+<style type='text/css'>
+	.trhead td {  background:#efefef;text-align: center}
+	.trbody td {  text-align: center; vertical-align:top;border-left:1px solid #f2f2f2;overflow: hidden; font-size:12px;}
+	.trorder { background:#f8f8f8;border:1px solid #f2f2f2;text-align:left;}
+	.ops { border-right:1px solid #f2f2f2; text-align: center;}
+	.panel-default .panel-heading {height: 34px; line-height: 34px; padding: 0 10px; color: #666;}
+	.panel-default {margin-bottom: 10px;}
+	.btn.btn-disabled,
+	.btn.btn-disabled:hover,
+	.btn.btn-disabled:focus {background: #ccc; color: #fff;}
+	.select-1 .input-group-sm .btn {padding: 4px 6px;}
+</style>
+<div class="page-heading">
+	<span class="pull-right">
+		<a class="btn btn-default btn-sm" data-toggle='refresh'><i class='fa fa-refresh'></i> 刷新</a>
+		<a href="{php echo webUrl('groups/exhelper')}" class="btn btn-default btn-sm"><i class="fa fa-reply"></i> 返回拼团打印</a>
+	</span>
+	<h2>单个打印</h2>
+</div>
+<div class="tabs-container">
+	<div class="tab-content ">
+		<div class="tab-pane active" id="tab_sender">
+			<div class="page-toolbar row m-b-sm m-t-sm">
+				<div class="col-sm-12 select-1">
+
+					<div class='input-group input-group-sm'>
+						<select name="paytype" class="form-control input-sm select-md" style="width:130px;padding:0 5px;">
+							<option value="" {if $_GPC['paytype']==''}selected{/if}>支付方式</option>
+							{loop $paytype $key $type}
+							<option value="{$key}">{$type['name']}</option>
+							{/loop}
+						</select>
+						<select name="status" class="form-control input-sm select-md" style="width:130px;padding:0 5px;">
+							<option value="">订单状态</option>
+							{loop $orderstatus $key $type}
+							<option value="{$key}" {if $key==1} selected="selected" {/if}>{$type['name']}</option>
+							{/loop}
+						</select>
+
+						<select name="printstate" class="form-control input-sm select-md" style="width:140px;padding:0 5px;">
+							<option value="">快递单打印状态</option>
+							<option value='0'>未打印</option>
+							<option value='1'>部分打印</option>
+							<option value='2'>打印完成</option>
+						</select>
+
+						<select name="printstate2" class="form-control input-sm select-md" style="width:140px;padding:0 5px;">
+							<option value="">发货单打印状态</option>
+							<option value='0'>未打印</option>
+							<option value='1'>部分打印</option>
+							<option value='2'>打印完成</option>
+						</select>
+
+						<select name='searchtime'  class='form-control  input-sm select-md'   style="width:130px;padding:0 5px;"  >
+							<option value=''>不按时间</option>
+							<option value='create'>下单时间</option>
+							<option value='pay'>付款时间</option>
+							<option value='send'>发货时间</option>
+						</select>
+
+						{php echo tpl_form_field_eweishop_daterange('time', array('starttime'=>date('Y-m-d H:i', $starttime),'endtime'=>date('Y-m-d H:i', $endtime)),true);}
+
+					</div>
+				</div>
+			</div>
+
+			<div class="page-toolbar row m-b-sm m-t-sm">
+				<div class="col-sm-12">
+					<div class='input-group input-group-sm'>
+
+						<select name='searchfield'  class='form-control  input-sm select-md'   style="width:130px;padding:0 5px;"  >
+							<option value='orderno'>订单号</option>
+							<option value='member'>会员信息</option>
+							<option value='address'>收件人信息</option>
+							<option value='expresssn'>快递单号</option>
+							<option value='goodstitle'>商品名称</option>
+							<option value='goodssn'>商品编码</option>
+						</select>
+
+						<input type="text" class="form-control input-sm"  name="keyword" value="{$_GPC['keyword']}" placeholder="请输入关键词" style="width: 750px;"/>
+						<span class="btn btn-sm btn-primary" style="border-radius: 0; width: 90px;" onclick="search()" id="search-btn"> 搜索</span>
+
+					</div>
+				</div>
+			</div>
+
+
+
+		<div id="result">
+			<p style="text-align: center; line-height: 100px;" id="result-tip">请先搜索您要打印的订单</p>
+		</div>
+
+		<script language='javascript' src="../addons/ewei_shopv2/plugin/groups/static/js/LodopFuncs.js"></script>
+		<script src='{$lodopUrl}'></script>
+
+
+		<script language="javascript">
+			$(function(){
+				window.isCLodop = true;
+				if(typeof getCLodop ==='undefined'){
+					window.isCLodop = false;
+					window.LodopTip = "打印控件错误：\r\n未开启打印控件或配置端口不正确！\r\n检查以上两项后刷新页面重试！";
+					alert(LodopTip);
+				}
+			});
+			// 执行搜索
+			function search(){
+				var data = {
+					paytype: $.trim($("select[name='paytype'] option:selected").val()),
+					status: $.trim($("select[name='status'] option:selected").val()),//
+					printstate: $.trim($("select[name='printstate'] option:selected").val()),
+					printstate2: $.trim($("select[name='printstate2'] option:selected").val()),//
+					searchtime: $.trim($("select[name='searchtime'] option:selected").val()),
+					starttime: $.trim($("input[name='time[start]']").val()),
+					endtime: $.trim($("input[name='time[end]']").val()),//
+					searchfield: $.trim($("select[name='searchfield'] option:selected").val()),
+					keyword: $.trim($("input[name='keyword']").val())
+				};
+
+				$('#search-btn').html("<i class='fa fa-spinner fa-spin'></i> 正在搜索");
+				$("#result-tip").html("<i class='fa fa-spinner fa-spin'></i> 正在搜索...");
+
+				$.ajax({
+					url: "{php echo webUrl('groups/exhelper/getdata')}",
+					data: data,
+					type: "post",
+					success:function(html){
+						$('#search-btn').html("<i class='fa fa-search'></i> 搜索")
+						$('#result').html(html);
+
+						$('.result-item').click(function(){
+							   $('#result-order').html("<p style='line-height: 100px; text-align: center;'><i class='fa fa-spinner fa-spin'></i> 正在加载...</p>")
+							$.ajax({
+								  url: "{php echo webUrl('groups/exhelper/getorder')}",
+								  data: {orderids: $(this).data('orderids')},
+								  type: "post",
+								  success:function(html){
+									  $('#result-order').html(html);
+									  require(['bootstrap'],function(){
+										$("[data-toggle='popover']").popover({'container':$(document.body)});
+									  })
+								  }
+							  });
+
+						  })
+
+					}
+				});
+			}
+		</script>
+
+		</div>
+	</div>
+</div>
+{template '_footer'}

@@ -1,0 +1,231 @@
+{template 'public/header'}
+
+<!--标题-->
+<div class="title">
+    <blockquote class="layui-elem-quote">会员列表</blockquote>
+</div>
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入关键字" autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="is_member" id="is_member" style="width: 200px;" class="select2 layui-form-select" lay-ignore>
+                <option value="0">全部访客</option>
+                <option value="1">会员</option>
+                <option value="2">访客</option>
+            </select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchUnbind" class="layui-btn layui-btn-primary layui-btn-sm">解绑</a>
+        <a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+    </div>
+</div>
+<!--数据表-->
+<div class="table-box">
+    <table class="layui-hide" id="laytable"></table>
+</div>
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnBind">绑定用户</a>
+    {{# if(d.admin_name){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnUnBind">解绑</a>
+    {{# } }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnRecharge">充值</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnRecharge1">扣值</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDelete">删除</a>
+</script>
+<script type="text/html" id="dataImg">
+    <img style="width:28px;" src="{{ d.img }}">
+</script>
+<script type="text/html" id="dataDate">
+    {{# if(d.time){ }}
+        {{# var date = new Date(d.time * 1000) }}
+        {{ date.getFullYear() }}-{{ date.getMonth()+1<10?'0'+(date.getMonth()+1):date.getMonth()+1 }}-{{ date.getDate()<10 ? '0' + date.getDate():date.getDate() }}
+    {{# } }}
+</script>
+<script type="text/html" id="dataDate2">
+    {{# if(d.end_time){ }}
+    {{# var date = new Date(d.end_time * 1000) }}
+    {{ date.getFullYear() }}-{{ date.getMonth()+1<10?'0'+(date.getMonth()+1):date.getMonth()+1 }}-{{ date.getDate()<10 ? '0' + date.getDate():date.getDate() }}
+    {{# } }}
+</script>
+
+<script type="text/javascript">
+    layui.use('table', function () {
+        var table = layui.table;
+//        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{php echo $this->createWebUrl('user2',array('op'=>query));}"
+            ,cols: [[
+                {type:'checkbox',fixed:'left'},
+                {field:'img', width:80, title: '头像',templet: '#dataImg',fixed:'left'},
+                {field:'name', width:180, title: '用户昵称',fixed:'left',sort:true},
+                {field:'admin_name', width:180, title: '后台用户',fixed:'left',sort:true},
+                {field:'tel', width:180, title: '联系电话',sort:true},
+                {field:'balance', width:100, title: '余额',sort:true},
+                {field:'integral', width:100, title: '积分',sort:true},
+                {field:'amount', width:100, title: '消费额',sort:true},
+                {field:'time', width:180, title: '访问时间',sort:true,templet: '#dataDate'},
+                {field:'end_time', width:180, title: '过期时间',sort:true,templet: '#dataDate2'},
+                {field:'openid', width:280, title: '用户openid'},
+                {field:'o',width:235,title:'操作',fixed:'right',templet: '#dataTool'},
+            ]]
+            ,page: true
+            // ,foot: true
+            ,height:'full-300'
+        });
+
+//        搜索
+        $('#btnSearch').unbind().click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    is_member:$('#is_member').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        is_member:$('#is_member').val(),
+                    }
+                });
+            }
+        })
+
+        $('#btnBatchUnbind').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                var url = "{php echo $this->createWebUrl('user2',array('op'=>batchunbind));}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    var data = $.parseJSON(data);
+                    if (data.code == 0) {
+                        layer.msg('解绑成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+
+        $(document).on('click','.btnUnBind',function(e){
+            var id = $(this).data('id')
+            var url = "{php echo $this->createWebUrl('user2',array('op'=>batchunbind));}";;
+            $.post(url, {ids:id}, function(data){
+                var data = $.parseJSON(data);
+                if (data.code == 0) {
+                    layer.msg('解绑成功',{icon: 6,anim: 6});
+                    table.reload('laytable',{});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        })
+
+        $(document).on('click','.btnBind',function () {
+            var id = $(this).data('id');
+            layer.open({
+                type: 2,
+                title: '选择用户',
+                shadeClose: true,
+                shade: false,
+                maxmin: true, //开启最大化最小化按钮
+                area: ['893px', '600px'],
+                content: "{php echo $this->createWebUrl('admin',array('op'=>choose));}&onlyone=1",
+                btn: ['确认', '取消'],
+                yes: function (index,layerObj) {
+                    var win = $(layerObj).find("iframe")[0].contentWindow;
+                    var checkData = win.layui.table.checkStatus('laytable');
+                    var admin_id = checkData.data[0]['id']
+
+                    var url = "{php echo $this->createWebUrl('user2',array('op'=>bind));}";
+                    $.post(url, {admin_id:admin_id,id:id}, function(data){
+                        var data = $.parseJSON(data);
+                        if (data.code == 0) {
+                            layer.close(index);
+                            layer.msg('绑定成功',{icon: 6,anim: 6});
+                            table.reload('laytable',{});
+                        }else{
+                            layer.msg(data.msg,{icon: 5,anim: 6});
+                        }
+                    });
+                }
+            });
+        })
+        $(document).on('click','.btnRecharge',function () {
+            var id = $(this).data('id');
+            layer.prompt({title:'充值金额'}, function(value, index, elem){
+                var patt = /^([1-9]\d*(\.\d*[1-9])?)|(0\.\d*[1-9])$/;
+                if (!patt.test(value)){
+                    layer.msg('请输入正确的金额');
+                    return ;
+                }
+                var url = "{php echo $this->createWebUrl('user2',array('op'=>recharge));}";
+                $.post(url, {id:id,recharge:value}, function(data){
+                    var data = $.parseJSON(data);
+                    if (data.code == 0) {
+                        layer.close(index);
+                        layer.msg('充值成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            });
+        })
+        $(document).on('click','.btnRecharge1',function () {
+            var id = $(this).data('id');
+            layer.prompt({title:'减少用户余额'}, function(value, index, elem){
+                var patt = /^([1-9]\d*(\.\d*[1-9])?)|(0\.\d*[1-9])$/;
+                if (!patt.test(value)){
+                    layer.msg('请输入正确的金额');
+                    return ;
+                }
+                
+                var url = "{php echo $this->createWebUrl('user2',array('op'=>recharge1));}";
+                $.post(url, {id:id,recharge:value}, function(data){
+                    var data = $.parseJSON(data);
+                    if (data.code == 0) {
+                        layer.close(index);
+                        layer.msg('操作成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            });
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+    });
+</script>
+
+{template 'public/footer'}

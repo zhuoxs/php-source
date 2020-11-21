@@ -1,0 +1,161 @@
+{template 'web/common/common'}
+{template 'web/distribution/navbar'}
+<div class="layui-card">
+    <form action="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'distribution_order','status'=>$_GPC['status'],'action'=>'distribution')}" method="post">
+        <div class="layui-form-item">
+            <input type="text" style="width: 200px;float: left;margin-right: 20px;height: 34px;" name="order_number" lay-verify="title" autocomplete="off" placeholder="订单编号" class="layui-input">
+            <button type="submit" class="layui-btn" style="height: 34px;line-height: 34px;">搜索</button>
+        </div>
+    </form>
+</div>
+<div class="layui-card">
+    <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief" style="top: 200px;">
+        <ul class="layui-tab-title">
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'distribution_order','order_type'=>1,'action'=>'distribution')}"><li class="{if $_GPC['order_type']==1}layui-this{/if}">商城订单</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'distribution_order','order_type'=>2,'action'=>'distribution')}"><li class="{if $_GPC['order_type']==2}layui-this{/if}">组团订单</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'distribution_order','order_type'=>3,'action'=>'distribution')}"><li class="{if $_GPC['order_type']==3}layui-this{/if}">认养订单</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'distribution_order','order_type'=>4,'action'=>'distribution')}"><li class="{if $_GPC['order_type']==4}layui-this{/if}">租赁订单</li></a>
+        </ul>
+    </div>
+    <div class="layui-form" style="margin-top: 60px;">
+        <table class="layui-table">
+            <colgroup>
+                <col width="100">
+                <col width="100">
+                <col width="150">
+                <col>
+            </colgroup>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>订单编号</th>
+                <th>用户信息</th>
+                <th>一级分销信息</th>
+                <th>二级分销信息</th>
+                <th>订单总价</th>
+                <th>时间</th>
+                <th>订单状态</th>
+                <th>商户订单号</th>
+                <th>订单</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $data['orderData'] $key $item}
+                <tr>
+                        <td><span>{$item['id']}</span></td>
+                        <td><span>{$item['order_number']}</span></td>
+                        <td><p>姓名：{$item['name']}</p><p>电话:{$item['phone']}</p></td>
+                        <td>
+                            <p>一级佣金：{$item['one_price']}元</p>
+                            <p>昵称：{$item['one_sale']['nickname']}</p>
+                            <p>UID：{$item['one_sale']['uid']}</p>
+                        </td>
+                        <td>
+                            {if $item['two_price']!=0}
+                            <p>二级佣金：{$item['two_price']}元</p>
+                            <p>昵称：{$item['two_sale']['nickname']}</p>
+                            <p>UID：{$item['two_sale']['uid']}</p>
+                            {else}
+                            --
+                            {/if}
+                        </td>
+                        <td><p>￥{$item['total_price']}（含运费：￥{$item['send_price']}）</p><p>实际支付：￥{$item['pra_price']}</p></td>
+                        <td><p>下单时间<?php echo date("Y-m-d H:i:s",$item['create_time']);?></p>
+                            <p>支付时间：
+                                {if $item['pay_time']==0}
+                                --：--
+                                {else}
+                                <?php echo date("Y-m-d H:i:s",$item['pay_time']);?>
+                                {/if}
+                            </p>
+                        </td>
+                        <td><span>
+                            {if $item['status']==0}
+                            <span class="layui-badge layui-bg-gray">未支付</span>
+                            {else if $item['status']==1}
+                            <span class="layui-badge layui-bg-green">已支付</span>
+                            {else if $item['status']==2}
+                            <span class="layui-badge layui-bg-green">待收货</span>
+                            {else if $item['status']==3}
+                            <span class="layui-badge layui-bg-green">已完成</span>
+                            {else if $item['status']==5}
+                            <span class="layui-badge layui-bg-gray">已取消</span>
+                            {else if $item['status']==4}
+                            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','id'=>$item['id'],'action'=>'refund')}">
+                                <button type="button" class="cancel-order layui-btn layui-btn-danger">确认取消订单</button></a>
+                            {/if}
+                        </span>
+                        </td>
+                    <td>{$item['uniontid']}</td>
+                    <td>
+                        <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','id'=>$item['id'],'order_type'=>$_GPC['order_type'],'op'=>'distribution_order_detail','action'=>'distribution')}">
+                            <button class="layui-btn layui-btn-xs">详情</button>
+                        </a>
+                    </td>
+
+                </tr>
+            {/loop}
+            </tbody>
+        </table>
+        <div style="text-align: right;float: right;">
+            {$data['pager']}
+        </div>
+    </div>
+</div>
+{template 'common/footer'}
+<script>
+    require(["../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.js"],function(){
+        $(function(){
+            //删除
+            $(".move_into_recycel").click(function(){
+                var that=$(this);
+                var id=$(this).attr('data-id');
+                var type=$(this).attr('data-type');
+                if(type==1){
+                    var title="确定移入回收站吗?";
+                }else{
+                    var title="确定移出回收站吗?";
+                }
+                swal({
+                    title: '提示',
+                    text: title,
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: '删除',
+                    cancelButtonText: '取消',
+                }).then(function(isConfirm) {
+                    if (isConfirm) {
+                        $.ajax({
+                            type:"post",
+                            url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'move_into_recycel','action'=>'distribution')}",
+                            data:{order_id:id,type:type},
+                            dataType:'json',
+                            success:function(res){
+                                if(res.status==1){
+                                    swal('操作成功!', '操作成功!', 'success');
+                                    that.parent().parent().remove();
+                                }else if(res.status==3){
+                                    swal("提示",'该订单未完成','error');
+                                }else{
+                                    swal('操作失败!', '操作失败!', 'error');
+                                }
+                            }
+                        })
+                    }
+                })
+            });
+        })
+
+        $("#submitForm").click(function () {
+            $("input[name='flag']").val('');
+            $("#myform").submit();    //提交ID为myform的表单
+        })
+
+        $("#outOrder").click(function () {
+            $("input[name='flag']").val('true');
+            $("#myform").submit();    //提交ID为myform的表单
+        })
+    })
+</script>

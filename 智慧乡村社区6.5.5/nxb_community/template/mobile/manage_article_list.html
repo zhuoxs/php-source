@@ -1,0 +1,300 @@
+{template 'manage_header'}
+<link rel="stylesheet" href="{MODULE_URL}myui/css/peng.css">
+<link rel="stylesheet" href="{MODULE_URL}myui/css/icons-extra.css">
+<link rel="stylesheet" href="{MODULE_URL}myui/css/iconmore.css">
+<link rel="stylesheet" href="{MODULE_URL}myui/css/new.css">
+
+<style>
+	.manuicon{width:50px;height:50px;border-radius:4px;}
+	.sctx{height:100px;}
+
+	#popover-div {
+		width: 0px;
+		height: 0px;
+		background: red;
+		position: fixed;
+		top: 50%;
+		left: 50%;
+	}
+	/*移除底部或顶部三角,需要在删除此代码*/
+	.mui-popover .mui-popover-arrow:after {
+		width: 0px;
+	}
+</style>
+
+<body>
+
+	<div class="mui-content c-hei3">
+
+		{template 'manage_top'}
+		<div class="mui-row">
+			{template 'manage_left'}
+
+			<div class="mui-col-xs-10 c-hei5 p20">
+				<div>
+					{template 'manage_article_menu'}
+				</div>
+
+				<div class="mui-row c-wh mb1" style="margin-top: 15px;">
+					<div class="mui-col-xs-12 pt1 pb1 pl15 t-gre fb">
+						{$classname}文章列表
+					</div>
+					<div class="mui-col-xs-12">
+						<table width="100%" class="mui-table">
+							<thead>
+								<tr>
+                                    <th style="width: 50px;">选择</th>
+									<th style="width: 40%;">标题</th>
+									<th>作者</th>
+									<th>分类</th>
+									<th>浏览量</th>
+									<th>属性</th>
+                                    <th>来源</th>
+									<th>时间</th>
+									<th style="width: 15%;">操作</th>
+								</tr>
+							</thead>
+                            <form id="article_list">
+							<tbody>
+								{loop $list $key $item}
+								<tr class="gradeX tx-c" id="menu{$item['aid']}">
+                                    <td><input type="checkbox" name="aid[]" value="{$item[aid]}"></td>
+									<td>{$item[title]}</td>
+									<td>{$item[author]}</td>
+									<td>{$item[classname]}</td>
+									<td>{$item[click]}</td>
+									<td>
+                                        {if $item[slide]}幻灯 {/if}
+                                        {if $item[recommend]}推荐 {/if}
+                                    </td>
+                                    <td>{$item[town_name]}</td>
+									<td>{$item[dateline_txt]}</td>
+									<td>
+										<div class="tpl-table-black-operation">
+											<a href="{php echo $this->createMobileUrl('manage_article',array('aid'=>$item['aid'],'act'=>'article_add'));}">
+												<i class="am-icon-pencil"> 编辑</i>
+											</a>
+											<a href="javascript:;" class="tpl-table-black-operation-del" onclick="menudel({$item['aid']});">
+												<i class="am-icon-trash"> 删除</i>
+											</a>
+										</div>
+									</td>
+								</tr>
+
+								{/loop}
+
+								<!-- more data -->
+							</tbody>
+                            </form>
+						</table>
+						<div style="height: 50px;">
+							<div class="mui-content-padded">
+                                <button type="button" class="mui-btn mui-btn-default" id="batch_delete">删除</button>
+                                <button type="button" class="mui-btn mui-btn-default" id="batch_move">移动</button>
+								<button type="button" class="mui-btn mui-btn-default" id="batch_slide">幻灯</button>
+								<button type="button" class="mui-btn mui-btn-default" id="batch_recommend">推荐</button>
+
+								<a href="{php echo $this->createMobileUrl('manage_article',array('nav'=>16,'act'=>'article_add','parent_id'=>$parent_id))}">
+									<button type="button" class="mui-btn mui-btn-default">发布文章</button>
+								</a>
+
+
+								<ul class="mui-pagination" style="float: right;">
+									<li class="mui-previous {if !$prevpageurl}mui-disabled{/if}">
+										<a href="{if $prevpageurl}{$prevpageurl}{else}javascript:;{/if}">
+											&laquo;
+										</a>
+									</li>
+									{loop $pages $p}
+									<li {if $p[active]}class="mui-active"{/if}>
+										<a href="{$p[url]}">
+											{$p[page]}
+										</a>
+									</li>
+									{/loop}
+									<li class="mui-next {if !$nextpageurl}mui-disabled{/if}">
+										<a href="{if $nextpageurl}{$nextpageurl}{else}javascript:;{/if}">
+											&raquo;
+										</a>
+									</li>
+								</ul>
+
+
+							</div>
+
+
+						</div>
+					</div>
+				</div>
+
+				<div>
+
+				</div>
+			</div>
+		</div>
+
+	</div>
+
+
+	<div id="popover-div"></div>
+	<div id="popover" class="mui-popover" style="height: 180px;">
+		<div class="mui-popover-arrow"></div>
+		<div style="line-height: 50px; padding: 0px 10px;">
+			选择栏目
+		</div>
+		<div style="padding: 20px;">
+			<select id="move_class_id" name="move_class_id">
+				{loop $class $value}
+				{if $value[parent_id] == 0}
+				<optgroup label="{$value[classname]}"></optgroup>
+				{else}
+				<option value="{$value[cid]}"{if $item[class_id] == $value[cid]}selected{/if}>{if $value[cengji] == 1} - {elseif $value[cengji] == 2}  ---  {/if}{$value[classname]}</option>
+				{/if}
+				{/loop}
+			</select>
+		</div>
+{template 'manage_footer'}</div></body></html>
+<script>
+	function menudel(id) {
+
+		var o = document.getElementById("menu" + id);
+		var btnArray = ['否', '是'];
+		mui.confirm('删除这条记录吗？', '', btnArray, function(e) {
+			if(e.index == 1) {
+
+				mui.ajax({
+					type: "get",
+					dataType: "json",
+					url: "{php echo $this->createMobileUrl('manage_article',array('act'=>'article_delete'));}" + "&aid=" + id,
+					data: {},
+					success: function(msg) {
+						console.log(JSON.stringify(msg));
+						if(msg.status == 1) {
+							mui.toast(msg.log);
+							$(o).remove();
+						}else{
+							mui.toast(msg.log);
+						}
+
+					}
+				});
+
+			}
+		})
+
+	}
+</script>
+
+<script>
+	$('#batch_delete').click(function () {
+        var btnArray = ['否', '是'];
+        mui.confirm('确定删除吗？', '', btnArray, function(e) {
+            if(e.index == 1) {
+                $.ajax({
+                    url: "{php echo $this->createMobileUrl('manage_article',array('act'=>'article_delete_batch'));}",
+                    type:"POST",
+                    data: $('#article_list').serialize(),
+                    dataType: 'json',
+                    success: function(json){
+                        console.log(json);
+                        if(json.status == 1){
+                            mui.toast(json.log);
+                            for(var i=0;i<json.aids.length;i++){
+                                var o = document.getElementById("menu" + json.aids[i]);
+                                $(o).remove();
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    $('#batch_move').click(function () {
+        mui("#popover").popover('toggle', document.getElementById("popover-div"));
+    });
+    $('#move_class_id').change(function () {
+		var cid = $(this).val();
+        $.ajax({
+            url: "{php echo $this->createMobileUrl('manage_article',array('act'=>'article_move_batch'));}&cid="+cid,
+            type:"POST",
+            data: $('#article_list').serialize(),
+            dataType: 'json',
+            success: function(json){
+                console.log(json);
+                if(json.status == 1){
+                    window.location.reload();
+                }
+            }
+        });
+    });
+
+    $('#batch_slide').click(function () {
+        var btnArray = ['取消', '设置'];
+        mui.confirm('设置为幻灯，还是取消？', '提示', btnArray, function(e) {
+            if (e.index == 1) {
+                $.ajax({
+                    url: "{php echo $this->createMobileUrl('manage_article',array('act'=>'article_slide_batch','slide'=>'yes'));}",
+                    type:"POST",
+                    data: $('#article_list').serialize(),
+                    dataType: 'json',
+                    success: function(json){
+                        console.log(json);
+                        if(json.status == 1){
+                            window.location.reload();
+                        }
+                    }
+                });
+            } else {
+                $.ajax({
+                    url: "{php echo $this->createMobileUrl('manage_article',array('act'=>'article_slide_batch','slide'=>'no'));}",
+                    type:"POST",
+                    data: $('#article_list').serialize(),
+                    dataType: 'json',
+                    success: function(json){
+                        console.log(json);
+                        if(json.status == 1){
+                            window.location.reload();
+                        }
+                    }
+                });
+            }
+        })
+	});
+    $('#batch_recommend').click(function () {
+        var btnArray = ['取消', '设置'];
+        mui.confirm('设置为推荐，还是取消？', '提示', btnArray, function(e) {
+            if (e.index == 1) {
+                $.ajax({
+                    url: "{php echo $this->createMobileUrl('manage_article',array('act'=>'article_recommend_batch','recommend'=>'yes'));}",
+                    type:"POST",
+                    data: $('#article_list').serialize(),
+                    dataType: 'json',
+                    success: function(json){
+                        console.log(json);
+                        if(json.status == 1){
+                            window.location.reload();
+                        }
+                    }
+                });
+            } else {
+                $.ajax({
+                    url: "{php echo $this->createMobileUrl('manage_article',array('act'=>'article_recommend_batch','recommend'=>'no'));}",
+                    type:"POST",
+                    data: $('#article_list').serialize(),
+                    dataType: 'json',
+                    success: function(json){
+                        console.log(json);
+                        if(json.status == 1){
+                            window.location.reload();
+                        }
+                    }
+                });
+            }
+        })
+    });
+
+	
+</script>
+
+{template 'manage_foot'}

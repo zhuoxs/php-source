@@ -1,0 +1,198 @@
+<import src="../common/common.wxml"></import>
+<view class="body">
+    <view class="navBlock flex-display flex-alignC" style="background-color:#fff;">
+        <block wx:for="{{tab}}" wx:key="*this">
+            <view bindtap="tabChange" class="navBox flex-flex1 {{index==tabCurr?'curr':''}}" id="{{index}}" style="color:{{index==tabCurr?theme.color:''}};border-bottom-color:{{index==tabCurr?theme.color:''}};" wx:if="{{index!=5||index==5&&config.pin_status!=-1}}">{{item}}</view>
+            <view class="border"></view>
+        </block>
+    </view>
+    <view class="orderCont">
+        <scroll-view scrollY bindscrolltolower="loadingFunc" class="listBlock" wx:if="{{list.length>0}}">
+            <block wx:for="{{list}}" wx:key="unique">
+                <view class="listBox" style="background-color:#fff" wx:if="{{item.type2==1||item.type2==4||item.type2==5}}">
+                    <view class="box0 flex-display flex-alignC">
+                        <view class="text flex-flex1">订单编号：{{item.out_trade_no}}</view>
+                        <view class="status" wx:if="{{item.status==-1}}">待付款</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==1}}">待发货</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==2}}">待收货</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==3&&config.pin_status!=-1}}">待评价</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==3&&config.pin_status==-1}}">已完成</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==4}}">已完成</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==5}}">退款中</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==6}}">已退款</view>
+                    </view>
+                    <navigator class="box1 flex-display flex-alignC" url="../order_detail/order_detail?&id={{item.id}}" wx:if="{{item.service&&!item.services}}">
+                        <view class="imgBlock">
+                            <image mode="aspectFill" src="{{item.simg}}"></image>
+                        </view>
+                        <view class="text flex-flex1">
+                            <view class="h1">{{item.service_name}}</view>
+                            <view class="h2">规格：
+                <text class="sp1" style="color:{{theme.color}};">{{item.format?item.format:'无'}}</text>
+                            </view>
+                            <view class="h2"></view>
+                            <view class="h2 flex-display flex-alignC">
+                                <view class="flex-flex1">数量：
+                  <text class="sp1" style="color:{{theme.color}};">{{item.member}}</text>
+                                </view>
+                                <view class="flex-flex1">应付金额：
+                  <text class="sp1" style="color:{{theme.color}};">{{item.amount}}元</text>
+                                </view>
+                            </view>
+                        </view>
+                    </navigator>
+                    <navigator class="box1 flex-display flex-alignC" url="../order_detail/order_detail?&id={{item.id}}" wx:if="{{item.services}}" wx:for="{{item.services}}" wx:for-index="index2" wx:for-item="item2">
+                        <view class="imgBlock">
+                            <image mode="aspectFill" src="{{item2.simg}}"></image>
+                        </view>
+                        <view class="text flex-flex1">
+                            <view class="h1">{{item2.name}}</view>
+                            <view class="h2">规格：
+                <text class="sp1" style="color:{{theme.color}};">{{item2.format?item2.format:'无'}}</text>
+                            </view>
+                            <view class="h2"></view>
+                            <view class="h2 flex-display flex-alignC">
+                                <view class="flex-flex1">数量：
+                  <text class="sp1" style="color:{{theme.color}};">{{item2.member}}</text>
+                                </view>
+                            </view>
+                        </view>
+                    </navigator>
+                    <view class="box2 flex-display flex-alignC">
+                        <view class="evas flex-flex1"></view>
+                        <view bindtap="qxFunc" class="btn btn2" data-index="{{index}}" wx:if="{{item.status==-1&&item.type2==1}}">取消订单</view>
+                        <view bindtap="tui" class="btn" data-index="{{index}}" wx:if="{{item.status==1&&(item.order_status==1||item.order_status==2)}}">申请退款</view>
+                        <view bindtap="code" class="btn btn2" data-index="{{index}}" wx:if="{{item.status==1}}">二维码</view>
+                        <form reportSubmit bindsubmit="submit" data-index="{{index}}">
+                            <button class="btn" formType="submit" style="background-color:{{theme.color}};border-color:{{theme.color}};" wx:if="{{item.status==-1&&item.type2==1}}">立即支付</button>
+                        </form>
+                        <view class="btn disable" wx:if="{{item.status==1&&item.order_status==1}}">确认收货</view>
+                        <view bindtap="shFunc" class="btn" data-index="{{index}}" style="background-color:{{theme.color}};border-color:{{theme.color}};" wx:if="{{item.status==1&&item.order_status==2}}">确认收货</view>
+                        <navigator class="btn" style="background-color:{{theme.color}};border-color:{{theme.color}};" url="../evaluate/evaluate?&id={{item.id}}" wx:if="{{item.status==1&&item.order_status==3&&config.pin_status!=-1}}">去评价</navigator>
+                        <view class="btn disable" wx:if="{{item.status==1&&item.order_status==3&&config.pin_status==-1}}">已完成</view>
+                        <view class="btn disable" wx:if="{{item.status==1&&item.order_status==4}}">已完成</view>
+                    </view>
+                </view>
+                <view class="listBox" style="background-color:#fff;" wx:if="{{item.type2==2}}">
+                    <view class="box0 flex-display flex-alignC">
+                        <view class="text flex-flex1">订单编号：{{item.out_trade_no}}</view>
+                        <view class="status" wx:if="{{item.group_status==-1}}">拼单中，差{{item.group_order.member-item.group_order.is_member}}人</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==1&&item.group_status==1}}">待发货</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==2&&item.group_status==1}}">待收货</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==3&&item.group_status==1&&config.pin_status!=-1}}">待评价</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==3&&item.group_status==1&&config.pin_status==-1}}">已完成</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==4&&item.group_status==1}}">已完成</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==5&&item.group_status==1}}">退款中</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==6&&item.group_status==1}}">已退款</view>
+                        <view class="status" wx:if="{{item.group_status==2}}">拼单失败，退款中</view>
+                        <view class="status" wx:if="{{item.group_status==3}}">拼单失败，已退款</view>
+                    </view>
+                    <navigator class="box1 flex-display flex-alignC" url="../order_detail/order_detail?&id={{item.id}}">
+                        <view class="imgBlock">
+                            <image mode="aspectFill" src="{{item.simg}}"></image>
+                            <view class="tag bg1">团</view>
+                        </view>
+                        <view class="text flex-flex1">
+                            <view class="h1">{{item.service_name}}</view>
+                            <view class="h2">规格：
+                <text class="sp1" style="color:{{theme.color}};">{{item.format?item.format:'无'}}</text>
+                            </view>
+                            <view class="h2"></view>
+                            <view class="h2 flex-display flex-alignC">
+                                <view class="flex-flex1">数量：
+                  <text class="sp1" style="color:{{theme.color}};">{{item.member}}</text>
+                                </view>
+                                <view class="flex-flex1">应付金额：
+                  <text class="sp1" style="color:{{theme.color}};">{{item.amount}}元</text>
+                                </view>
+                            </view>
+                        </view>
+                    </navigator>
+                    <view class="box2 flex-display flex-alignC">
+                        <view class="evas flex-flex1">
+                            <image mode="aspectFill" src="{{item2.avatar}}" wx:if="{{index2<5}}" wx:for="{{item.group_order.list}}" wx:for-index="index2" wx:for-item="item2" wx:key="index2"></image>
+                            <image mode="aspectFill" src="../../images/more.png" wx:if="{{index2>=5}}"></image>
+                        </view>
+                        <button class="btn" data-index="{{index}}" openType="share" style="background-color:{{theme.color}};border-color:{{theme.color}};" wx:if="{{item.group_status==-1}}">邀请好友拼单</button>
+                        <view bindtap="tui" class="btn" data-index="{{index}}" wx:if="{{item.status==1&&(item.order_status==1||item.order_status==2)&&item.group_status==1}}">申请退款</view>
+                        <view bindtap="code" class="btn btn2" data-index="{{index}}" wx:if="{{item.group_status>-1}}">二维码</view>
+                        <view class="btn" style="background-color:{{theme.color}};border-color:{{theme.color}};" wx:if="{{item.group_status==2}}">退款中</view>
+                        <view class="btn" style="background-color:{{theme.color}};border-color:{{theme.color}};" wx:if="{{item.group_status==3}}">已退款</view>
+                        <view class="btn disable" wx:if="{{item.status==1&&item.order_status==1&&item.group_status==1}}">确认收货</view>
+                        <view bindtap="shFunc" class="btn" data-index="{{index}}" style="background-color:{{theme.color}};border-color:{{theme.color}};" wx:if="{{item.status==1&&item.order_status==2&&item.group_status==1}}">确认收货</view>
+                        <navigator class="btn" style="background-color:{{theme.color}};border-color:{{theme.color}};" url="../evaluate/evaluate?&id={{item.id}}" wx:if="{{item.status==1&&item.order_status==3&&item.group_status==1&&config.pin_status!=-1}}">去评价</navigator>
+                        <view class="btn disable" wx:if="{{item.status==1&&item.order_status==3&&item.group_status==1&&config.pin_status==-1}}">已完成</view>
+                        <view class="btn disable" wx:if="{{item.status==1&&item.order_status==4&&item.group_status==1}}">已完成</view>
+                    </view>
+                </view>
+                <view class="listBox" style="background-color:#fff;" wx:if="{{item.type2==3}}">
+                    <view class="box0 flex-display flex-alignC">
+                        <view class="text flex-flex1">订单编号：{{item.out_trade_no}}</view>
+                        <view class="status" wx:if="{{item.status==-1}}">待付款</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==1}}">待发货</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==2}}">待收货</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==3&&config.pin_status!=-1}}">待评价</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==3&&config.pin_status==-1}}">已完成</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==4}}">已完成</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==5}}">退款中</view>
+                        <view class="status" wx:if="{{item.status==1&&item.order_status==6}}">已退款</view>
+                    </view>
+                    <navigator class="box1 flex-display flex-alignC" url="../order_detail/order_detail?&id={{item.id}}">
+                        <view class="imgBlock">
+                            <image mode="aspectFill" src="{{item.simg}}"></image>
+                        </view>
+                        <view class="text flex-flex1">
+                            <view class="h1">{{item.service_name}}</view>
+                            <view class="h2">规格：
+                <text class="sp1" style="color:{{theme.color}};">{{item.format?item.format:'无'}}</text>
+                            </view>
+                            <view class="h2"></view>
+                            <view class="h2 flex-display flex-alignC">
+                                <view class="flex-flex1">数量：
+                  <text class="sp1" style="color:{{theme.color}};">{{item.member}}</text>
+                                </view>
+                                <view class="flex-flex1">应付金额：
+                  <text class="sp1" style="color:{{theme.color}};">{{item.amount}}元</text>
+                                </view>
+                            </view>
+                        </view>
+                    </navigator>
+                    <view class="box3">
+                        <progress activeColor="{{theme.color}}" backgroundColor="#ccc" percent="{{item.cut_order.percent}}" strokeWidth="8"></progress>
+                        <text class="t1">原价：￥{{item.cut_order.o_price}}</text>
+                        <text class="t2">底价：￥{{item.cut_order.min_price}}</text>
+                        <text class="t3" style="left:{{item.cut_order.percent+12}}%;">现价：￥{{item.price}}</text>
+                    </view>
+                    <view class="box2 flex-display flex-alignC">
+                        <view class="evas flex-flex1"></view>
+                        <view bindtap="tui" class="btn" data-index="{{index}}" wx:if="{{item.status==1&&(item.order_status==1||item.order_status==2)}}">申请退款</view>
+                        <view bindtap="code" class="btn btn2" data-index="{{index}}" wx:if="{{item.status==1}}">二维码</view>
+                        <view class="btn disable" wx:if="{{item.status==1&&item.order_status==1}}">确认收货</view>
+                        <view bindtap="shFunc" class="btn" data-index="{{index}}" style="background-color:{{theme.color}};border-color:{{theme.color}};" wx:if="{{item.status==1&&item.order_status==2}}">确认收货</view>
+                        <navigator class="btn" style="background-color:{{theme.color}};border-color:{{theme.color}};" url="../evaluate/evaluate?&id={{item.id}}" wx:if="{{item.status==1&&item.order_status==3&&config.pin_status!=-1}}">去评价</navigator>
+                        <view class="btn disable" wx:if="{{item.status==1&&item.order_status==3&&config.pin_status==-1}}">已完成</view>
+                        <view class="btn disable" wx:if="{{item.status==1&&item.order_status==4}}">已完成</view>
+                    </view>
+                </view>
+            </block>
+        </scroll-view>
+    </view>
+    <view bindtap="canshow" class="canshow" wx:if="{{canshow}}"></view>
+    <view class="menu" wx:if="{{menu}}">
+        <image class="menu_back" src="../../images/back02.png"></image>
+        <view class="menux">
+            <view class="title"></view>
+            <canvas canvasId="mycanvas" class="quanma"></canvas>
+        </view>
+    </view>
+    <view class="menu2" wx:if="{{menu2}}">
+        <icon bindtap="menu_close" class="menu_close" color="#aaa" size="23" type="cancel"></icon>
+        <view class="menu_item">
+            <view>退款原因：</view>
+            <textarea bindinput="input" fixed="true" value="{{content}}"></textarea>
+        </view>
+        <view bindtap="menu_btn" class="menu_btn" style="background:{{theme.color}}">确定</view>
+    </view>
+    <template is="footer" data="{{footer:footer,footerCurr:footerCurr,theme:theme}}"></template>
+    <template is="getuserinfo" data="{{shadow:shadow,get_userinfo:get_userinfo,app_step1:app_step1,app_step2:app_step2,config:config}}"></template>
+</view>

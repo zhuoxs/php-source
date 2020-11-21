@@ -1,0 +1,309 @@
+<view class="container" wx:if="{{completed}}">
+    <view class="post-info" wx:if="{{first}}">
+        <block wx:if="{{notice_switch}}">
+            <view class="zan-font-18 text-center margin-bottom">发布须知</view>
+            <view class="zan-font-14" wx:if="{{notice}}">
+                <rich-text nodes="{{notice}}"></rich-text>
+            </view>
+        </block>
+        <view class="post-category" wx:if="{{books_on}}">
+            <view bindtap="showScanItems" class="cate-item">
+                <view class="iconfont icon-book"></view>
+                <view class="item-name">发布图书</view>
+            </view>
+            <view bindtap="showPostPage" class="cate-item">
+                <view class="iconfont icon-other"></view>
+                <view class="item-name">发布其他</view>
+            </view>
+        </view>
+        <view class="book-btnarea" wx:if="{{!books_on}}">
+            <form bindsubmit="goNext" reportSubmit="true">
+                <button class="weui-btn" formType="submit" type="primary">下一步</button>
+            </form>
+        </view>
+    </view>
+    <view class="post-panel" wx:if="{{!first}}">
+        <form bindsubmit="formSubmit" reportSubmit="true">
+            <view class="weui-cells__title">物品标题</view>
+            <view class="weui-cells weui-cells_after-title">
+                <view class="weui-cell weui-cell_input">
+                    <view class="weui-cell__bd">
+                        <input class="weui-input" name="title" placeholder="起一个吸引人的标题吧" value="{{detail.title}}"></input>
+                    </view>
+                </view>
+            </view>
+            <block wx:if="{{detail.isbn||bookCode||manual}}">
+                <view class="weui-cells__title">图书简介</view>
+                <view class="weui-cells weui-cells_after-title">
+                    <view class="weui-cell">
+                        <view class="weui-cell__bd">
+                            <textarea class="weui-textarea" name="summary" placeholder="请输入简介" showConfirmBar="{{showConfirm}}" style="height: 5.3em" value="{{detail.summary}}"></textarea>
+                        </view>
+                    </view>
+                </view>
+            </block>
+            <block wx:else>
+                <view class="weui-cells__title">物品描述</view>
+                <view class="weui-cells weui-cells_after-title">
+                    <view class="weui-cell">
+                        <view class="weui-cell__bd">
+                            <textarea class="weui-textarea" maxlength="-1" name="description" placeholder="请输入物品详细描述" showConfirmBar="{{showConfirm}}" style="height: 5.3em" value="{{detail.description}}"></textarea>
+                        </view>
+                    </view>
+                </view>
+            </block>
+            <view class="margin-big bg-white border-top">
+                <view class="weui-cell">
+                    <view class="weui-cell__bd">
+                        <view class="weui-uploader">
+                            <view class="weui-uploader__bd">
+                                <view class="weui-uploader__files clearfix" id="uploaderFiles">
+                                    <view class="weui-uploader__file" wx:for="{{album}}" wx:key="*this">
+                                        <image class="weui-uploader__img" mode="aspectFill" src="{{item}}"></image>
+                                        <view bindtap="deleteImg" class="delete-img" data-index="{{index}}">
+                                            <text class="iconfont icon-del"></text>
+                                        </view>
+                                    </view>
+                                    <view class="weui-uploader__file" wx:for="{{video}}" wx:key="*this">
+                                        <video class="weui-uploader__img" objectFit="fill" showCenterPlayBtn="{{play}}" src="{{item}}">
+                                            <cover-view bindtap="deleteVideo" class="cover-del" data-index="{{index}}">
+                                                <cover-image class="cover-img" src="../../libs/images/del.png"></cover-image>
+                                            </cover-view>
+                                        </video>
+                                    </view>
+                                </view>
+                                <view class="weui-uploader__input-box">
+                                    <view bindtap="chooseImage" class="weui-uploader__input">
+                                        <view class="iconfont icon-jia"></view>
+                                        <view>图片</view>
+                                    </view>
+                                </view>
+                                <view class="weui-uploader__input-box" wx:if="{{video_switch==1}}">
+                                    <view bindtap="chooseVideo" class="weui-uploader__input">
+                                        <view class="iconfont icon-jia"></view>
+                                        <view>视频</view>
+                                    </view>
+                                </view>
+                            </view>
+                        </view>
+                    </view>
+                </view>
+            </view>
+            <view class="weui-cells weui-cells_after-title">
+                <view class="weui-cell weui-cell_select">
+                    <view class="weui-cell__hd weui-cell__hd_in-select-after">
+                        <view class="weui-label">物品分类</view>
+                    </view>
+                    <view class="weui-cell__bd">
+                        <picker bindchange="showCategory" range="{{category}}" rangeKey="title" value="{{cateIndex}}">
+                            <view class="weui-select weui-select_in-select-after">
+                                <text>{{cateIndex!=undefined?category[cateIndex].title:'请选择分类'}}</text>
+                            </view>
+                        </picker>
+                    </view>
+                </view>
+            </view>
+            <view class="weui-cells weui-cells_after-title">
+                <view class="weui-cell weui-cell_select">
+                    <view class="weui-cell__hd weui-cell__hd_in-select-after">
+                        <view class="weui-label">物品标签</view>
+                    </view>
+                    <view class="weui-cell__bd">
+                        <form bindsubmit="addTags">
+                            <input class="weui-input tag-input" name="tags" placeholder="输入完成后点击添加" value="{{curTag}}"></input>
+                            <button class="cu-btn bg-orange shadow" formType="submit">添加</button>
+                        </form>
+                    </view>
+                </view>
+            </view>
+            <view class="cu-form-group" wx:if="{{tagList.length>0}}">
+                <view class="tag-list">
+                    <view class="cu-tag" wx:for="{{tagList}}" wx:key="*this">{{item}}</view>
+                </view>
+            </view>
+            <view class="weui-cells weui-cells_after-title">
+                <view class="weui-cell weui-cell_input">
+                    <view class="weui-cell__hd">
+                        <view class="weui-label">库存数量</view>
+                    </view>
+                    <view class="weui-cell__bd">
+                        <input class="weui-input" name="stock" placeholder="不填则默认为1" type="number" value="{{detail.stock}}"></input>
+                    </view>
+                </view>
+                <view class="weui-cell weui-cell_select">
+                    <view class="weui-cell__hd weui-cell__hd_in-select-after">
+                        <view class="weui-label">价格</view>
+                    </view>
+                    <view class="weui-cell__bd">
+                        <view class="inline input-middle">
+                            <input class="weui-input" name="price" placeholder="请输入物品价格" type="digit" value="{{price}}"></input>
+                        </view>
+                        <view class="inline select-last">
+                            <picker bindchange="changeUnit" range="{{unitList}}" rangeKey="title" value="{{unitIndex}}">
+                                <view class="weui-select text-center">{{unitList[unitIndex].title}}</view>
+                            </picker>
+                        </view>
+                    </view>
+                </view>
+                <view class="weui-cell weui-cell_switch" wx:if="{{open_wechat}}">
+                    <view class="weui-cell__bd zan-font-14">是否启用在线交易</view>
+                    <view class="weui-cell__ft">
+                        <switch bindchange="setOnlinePay" checked="{{onlinePay}}"></switch>
+                    </view>
+                </view>
+                <view class="weui-cells weui-cells_after-title" wx:if="{{showTrade}}">
+                    <view class="weui-cell weui-cell_select">
+                        <view class="weui-cell__hd weui-cell__hd_in-select-after">
+                            <view class="weui-label">配送方式</view>
+                        </view>
+                        <view class="weui-cell__bd">
+                            <picker bindchange="showDelivery" range="{{delivery}}" value="{{deliveryIndex}}">
+                                <view class="weui-select weui-select_in-select-after">
+                                    <text>{{deliveryIndex!=null?delivery[deliveryIndex]:'请选择配送方式'}}</text>
+                                </view>
+                            </picker>
+                        </view>
+                    </view>
+                </view>
+                <view class="weui-cell weui-cell_input" wx:if="{{deliveryIndex==1}}">
+                    <view class="weui-cell__hd">
+                        <view class="weui-label">自提地址</view>
+                    </view>
+                    <view class="weui-cell__bd">
+                        <input class="weui-input" name="fetch_address" placeholder="不填则默认与所在位置相同" value="{{detail.fetch_address}}"></input>
+                    </view>
+                </view>
+            </view>
+            <block wx:if="{{form_field.length>0}}" wx:for="{{form_field}}" wx:key="title">
+                <view class="weui-cells weui-cells_after-title" wx:if="{{item.type=='text'}}">
+                    <view class="weui-cell weui-cell_input">
+                        <view class="weui-cell__hd">
+                            <view class="weui-label">{{item.title}}</view>
+                        </view>
+                        <view class="weui-cell__bd">
+                            <input bindblur="setInput" class="weui-input" data-index="{{index}}" name="{{item.title}}" placeholder="{{item.extra.placeholder}}" value="{{item.value}}"></input>
+                        </view>
+                    </view>
+                </view>
+                <block wx:elif="{{item.type=='textarea'}}">
+                    <view class="weui-cells__title">{{item.title}}</view>
+                    <view class="weui-cells weui-cells_after-title">
+                        <view class="weui-cell">
+                            <view class="weui-cell__bd">
+                                <textarea bindblur="setInput" class="weui-textarea zan-font-14" data-index="{{index}}" name="{{item.title}}" placeholder="{{item.extra.placeholder}}" style="height: 3.3em" value="{{item.value}}"></textarea>
+                            </view>
+                        </view>
+                    </view>
+                </block>
+                <view wx:elif="{{item.type=='radio'}}">
+                    <view class="weui-cells__title">{{item.title}}</view>
+                    <view class="weui-cells weui-cells_after-title">
+                        <radio-group bindchange="radioChange" data-index="{{index}}" name="{{item.title}}">
+                            <label class="weui-cell weui-check__label zan-font-14" wx:for="{{item.extra.option}}" wx:for-index="idx" wx:for-item="op" wx:key="value">
+                                <radio checked="{{op.checked}}" class="weui-check" value="{{op.value}}"></radio>
+                                <view class="weui-cell__bd">{{op.value}}</view>
+                                <view class="weui-cell__ft weui-cell__ft_in-radio" wx:if="{{op.checked}}">
+                                    <icon class="weui-icon-radio" size="16" type="success_no_circle"></icon>
+                                </view>
+                            </label>
+                        </radio-group>
+                    </view>
+                </view>
+                <view wx:elif="{{item.type=='checkbox'}}">
+                    <view class="weui-cells__title">{{item.title}}</view>
+                    <view class="weui-cells weui-cells_after-title">
+                        <checkbox-group bindchange="checkboxChange" data-index="{{index}}" name="{{item.title}}">
+                            <label class="weui-cell weui-check__label zan-font-14" wx:for="{{item.extra.option}}" wx:for-index="cdx" wx:for-item="cb" wx:key="value">
+                                <checkbox checked="{{cb.checked}}" class="weui-check" value="{{cb.value}}"></checkbox>
+                                <view class="weui-cell__hd weui-check__hd_in-checkbox">
+                                    <icon class="weui-icon-checkbox_circle" size="20" type="circle" wx:if="{{!cb.checked}}"></icon>
+                                    <icon class="weui-icon-checkbox_success" size="20" type="success" wx:if="{{cb.checked}}"></icon>
+                                </view>
+                                <view class="weui-cell__bd">{{cb.value}}</view>
+                            </label>
+                        </checkbox-group>
+                    </view>
+                </view>
+                <view class="bg-white" wx:else>
+                    <view class="weui-cells weui-cells_after-title">
+                        <view class="weui-cell weui-cell_select zan-font-14">
+                            <view class="weui-cell__hd weui-cell__hd_in-select-after">
+                                <view class="weui-label">{{item.title}}</view>
+                            </view>
+                            <view class="weui-cell__bd">
+                                <picker bindchange="bindPickChange" data-index="{{index}}" name="{{item.title}}" range="{{item.extra.option}}" value="{{item.value}}">
+                                    <view class="weui-select weui-select_in-select-after">{{item.extra.option[item.value]}}</view>
+                                </picker>
+                            </view>
+                        </view>
+                    </view>
+                </view>
+            </block>
+            <view class="weui-cells weui-cells_after-title" wx:if="{{!item_id&&canSetTop&&set_top}}">
+                <view class="weui-cell weui-cell_switch">
+                    <view class="weui-cell__bd zan-font-14">是否付费置顶</view>
+                    <view class="weui-cell__ft">
+                        <switch bindchange="setItemTop" checked="{{isSetTop}}"></switch>
+                    </view>
+                </view>
+            </view>
+            <checkbox-group bindchange="bindAgreeChange">
+                <label class="weui-agree" for="weuiAgree">
+                    <view class="weui-agree__text">
+                        <checkbox checked="{{isAgree}}" class="weui-agree__checkbox" id="weuiAgree" value="agree"></checkbox>
+                        <view class="weui-agree__checkbox-icon">
+                            <icon class="weui-agree__checkbox-icon-check" size="9" type="success_no_circle" wx:if="{{isAgree}}"></icon>
+                        </view>
+                            阅读并同意<view bindtap="showPopup" class="inline weui-agree__link">《物品发布公约》</view>
+                    </view>
+                </label>
+            </checkbox-group>
+            <view class="weui-btn-area">
+                <button class="cu-btn bg-orange lg" formType="submit">确定</button>
+            </view>
+        </form>
+    </view>
+</view>
+<view class="container-loading" wx:else>
+    <image mode="widthFix" src="{{loadingImg}}"></image>
+</view>
+<zan-toast id="zan-toast"></zan-toast>
+<zan-toptips content="{{content}}" id="zan-toptips"></zan-toptips>
+<zan-actionsheet actions="{{actions}}" bind:actionclick="clickAction" bind:cancel="closeActionSheet" cancelWithMask="{{cancelWithMask}}" maskClass="tiny" show="{{showAction}}"></zan-actionsheet>
+<zan-popup bindclose="toggleBottomPopup" show="{{showBottomPopup}}" type="top">
+    <view class="item-pop">
+        <view catchtap="toggleBottomPopup" class="pop-close">
+            <text class="iconfont icon-close"></text>
+        </view>
+        <view class="text-center zan-font-16 zan-ellipsis margin-big">物品发布公约</view>
+        <view class="zan-font-14 zan-c-gray-dark" wx:if="{{rule}}">
+            <rich-text nodes="{{rule}}"></rich-text>
+        </view>
+    </view>
+</zan-popup>
+<block wx:if="{{showAuth}}">
+    <view class="mask"></view>
+    <view class="modal">
+        <view class="modal-title">系统提示</view>
+        <view class="modal-content">
+            <view>您未允许本小程序获取您的地理位置</view>
+            <view class="margin-small">请确认授权否则将无法自动获取您的定位</view>
+        </view>
+        <view class="modal-footer">
+            <button bindtap="closeAuth" class="modal-btn confirm-btn" openType="openSetting">确定</button>
+        </view>
+    </view>
+</block>
+<block wx:if="{{showNumberAuth}}">
+    <view class="mask"></view>
+    <view class="modal">
+        <view class="modal-title">系统提示</view>
+        <view class="modal-content">
+            <view>根据网络安全管理法要求必须填写手机号</view>
+            <view class="margin-small">请允许本程序获取您的手机号</view>
+        </view>
+        <view class="modal-footer">
+            <button bindgetphonenumber="saveNumber" class="modal-btn confirm-btn" openType="getPhoneNumber">确定</button>
+        </view>
+    </view>
+</block>

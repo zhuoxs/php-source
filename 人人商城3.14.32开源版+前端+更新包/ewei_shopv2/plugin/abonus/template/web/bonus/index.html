@@ -1,0 +1,180 @@
+{template '_header'}
+
+<div class="page-heading">
+    <span class='pull-right'>
+        {ifp 'abonus.bonus.build'}
+        	<a class='btn btn-primary btn-sm' href="{php echo webUrl('abonus/bonus/build')}"><i class='fa fa-plus'></i> 创建结算单</a>
+        {/if}
+    </span>
+    <h2>
+        {if empty($status)}待确认{elseif $status==1}待结算{elseif $status==2}已结算{/if}结算单 <small>总数: <span class="text text-danger">{$total}</span>
+
+        分红总额: <span class="text text-danger">{php echo $totalmoneys['b1'] +$totalmoneys['b2'] + $totalmoneys['b3']}</span>
+        省级: <span class="text text-danger">{$totalmoneys['b1']}</span>
+        市级: <span class="text text-danger">{$totalmoneys['b2']}</span>
+        区级: <span class="text text-danger">{$totalmoneys['b3']}</span>
+
+
+    </small></h2>
+</div>
+<form action="./index.php" method="get" class="form-horizontal" role="form" id="form1">
+    <input type="hidden" name="c" value="site" />
+    <input type="hidden" name="a" value="entry" />
+    <input type="hidden" name="m" value="ewei_shopv2" />
+    <input type="hidden" name="do" value="web" />
+    <input type="hidden" name="r" value="abonus.bonus.status{$status}" />
+
+    <div class="page-toolbar row m-b-sm m-t-sm">
+        <div class="col-sm-5">
+
+            <div class="input-group-btn">
+                <button class="btn btn-default btn-sm"  type="button" data-toggle='refresh' style="float:left;"><i class='fa fa-refresh'></i></button>
+
+                <select name="year" class='form-control input-sm select-sm' style="float:left;">
+                    <option value=''>年份</option>
+                    {loop $years $y}
+                    <option value="{$y}" {if $y==$_GPC['year']}selected="selected"{/if}>{$y}年</option>
+                    {/loop}
+                </select>
+                <select name="month" class='form-control input-sm select-sm'  style="float:left;">
+                    <option value=''>月份</option>
+                    {loop $months $m}
+                    <option value="{$m}" {if $m==$_GPC['month']}selected="selected"{/if}>{$m}月</option>
+                    {/loop}
+                </select>
+                {if $set['paytype']==2}
+
+                <select name="week" class='form-control input-sm select-sm'  style="float:left;">
+                    <option value="1" {if $_GPC['year']==1}selected="selected"{/if}>第1周</option>
+                    <option value="2" {if $_GPC['year']==2}selected="selected"{/if}>第2周</option>
+                    <option value="3" {if $_GPC['year']==3}selected="selected"{/if}>第3周</option>
+                    <option value="4" {if $_GPC['year']==4}selected="selected"{/if}>第4周</option>
+                </select>
+                {/if}
+            </div>
+        </div>
+
+
+        <div class="col-sm-6 pull-right">
+
+            <div class="input-group">
+                <input type="text" class="form-control input-sm"  name="keyword" value="{$_GPC['keyword']}" placeholder="结算单号"/>
+				 <span class="input-group-btn">
+                                
+                                        <button class="btn btn-sm btn-primary" type="submit"> 搜索</button>
+                                                                            	    {ifp 'abonus.bonus.export'}
+                        <button type="submit" name="export" value="1" class="btn btn-success btn-sm">导出</button>
+                        {/if}
+				</span>
+            </div>
+
+        </div>
+    </div>
+
+ 
+</form>
+{if count($list)>0}
+
+<table class="table table-hover  table-responsive ">
+    <thead class="navbar-inner">
+    <tr>
+        <th style='width:200px;'>结算单号</th>
+        <th style='width:130px;'>订单</th>
+        <th style='width:100px;'>代理商</th>
+        <th style='width:200px;'>预计/最红分红</th>
+        <th style='width:70px;'>状态</th>
+        <th>操作</th>
+    </tr>
+    </thead>
+    <tbody>
+    {loop $list $row}
+    <tr>
+        <td>
+            {if $row['paytype']==2}<label class="label label-warning inline">按周结算</label>{else}<label class="label label-primary inline">按月结算</label>{/if}
+            {$row['year']}年{$row['month']}月
+            {if $row['paytype']==2}
+            第{$row['week']}周
+            {/if}
+            <br />
+            {$row['billno']}</td>
+        <td>数量：<label class="label label-success inline">{$row['ordercount']}</label><br/>金额：<label class="label label-danger">{$row['ordermoney']}</label></td>
+        <td>
+            <span class="label label-default">总数：{php echo $row['aagentcount1'] + $row['aagentcount2'] + $row['aagentcount3']} 个</span><br/>
+            <span class="label label-primary">省级：{$row['aagentcount1']} 个</span><br/>
+            <span class="label label-success">市级：{$row['aagentcount2']} 个</span><br/>
+            <span class="label label-warning">区级：{$row['aagentcount3']} 个</span>
+        </td>
+
+        <td>
+         <span class="label label-default">总额：{php echo $row['bonusmoney1'] + $row['bonusmoney2'] +$row['bonusmoney3']} 元</span><br/>
+         <span class="label label-primary">省级：{$row['bonusmoney1']} / {$row['bonusmoney_send1']} 元  </span><br/>
+         <span class="label label-success">市级：{$row['bonusmoney2']} / {$row['bonusmoney_send2']} 元</span><br/>
+         <span class="label label-warning">区级：{$row['bonusmoney3']} / {$row['bonusmoney_send3']} 元</span>
+
+
+        </td>
+<td>
+    {if empty($row['status'])}<label class="label label-default">待确认</label>
+    {elseif $row['status']==1}<label class="label label-primary">待结算</label>
+    {else}<label class="label label-danger">已结算</label>
+    {/if}
+</td>
+        <td>
+            {ifp 'abonus.bonus.detail'}
+            <a class='btn btn-default btn-sm' href="{php echo webUrl('abonus/bonus/detail',array('id' => $row['id']))}">详情</a>
+            {/if}
+            {if empty($row['status'])}
+                {ifp 'abonus.bonus.delete'}
+            <a data-toggle='ajaxRemove' href="{php echo webUrl('abonus/bonus/delete', array('id' => $row['id']))}"class="btn btn-default btn-sm" data-confirm='确认要删除此结账单?'>删除</a>
+                {/if}
+            {/if}
+
+        </td>
+    </tr>
+    {/loop}
+    </tbody>
+</table>
+{$pager}
+
+{else}
+<div class='panel panel-default'>
+    <div class='panel-body' style='text-align: center;padding:30px;'>
+        暂时没有任何分红明细!
+    </div>
+</div>
+{/if}
+<script language="javascript">
+
+
+
+    require(['bootstrap'],function(){
+        $("[rel=pop]").popover({
+            trigger:'manual',
+            placement : 'left',
+            title : $(this).data('title'),
+            html: 'true',
+            content : $(this).data('content'),
+            animation: false
+        }).on("mouseenter", function () {
+            var _this = this;
+            $(this).popover("show");
+            $(this).siblings(".popover").on("mouseleave", function () {
+                $(_this).popover('hide');
+            });
+        }).on("mouseleave", function () {
+            var _this = this;
+            setTimeout(function () {
+                if (!$(".popover:hover").length) {
+                    $(_this).popover("hide")
+                }
+            }, 100);
+        });
+
+
+    });
+
+
+</script>
+
+{template '_footer'}
+<!--OTEzNzAyMDIzNTAzMjQyOTE0-->

@@ -1,0 +1,2 @@
+<?php
+ goto ZLSsZ; Y7mfF: dobJ7: goto kEC2_; ZLSsZ: global $_W, $_GPC, $xcmodule, $xcurl; goto KyQic; KyQic: $op = strlen($_GPC["\x6f\160"]) > 1 ? $_GPC["\157\x70"] : "\151\156\144\145\170"; goto k92Z_; Lso9T: Ynx0I: goto Y7mfF; k92Z_: $do = $_GPC["\144\x6f"]; goto gjXDK; gjXDK: switch ($op) { case "\x69\x6e\144\x65\170": include $this->template("\155\x79\155\141\x6e\x61\x67\145\57" . strtolower($_GPC["\x64\x6f"]) . "\x2f" . $op); exit; } goto Lso9T; kEC2_: exit;

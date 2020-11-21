@@ -1,0 +1,449 @@
+{php $newUI = true;}
+{template 'common/header'}
+<style>
+	.panel .btn-group{width:100%}
+	.panel-image .btn-group .btn{width:33.333%}
+	.panel-voice .btn-group .btn{width:33.333%}
+	.panel-video .btn-group .btn{width:25%}
+	.panel-news .btn-group .btn{width:33.333%}
+
+	.panel .panel-body .content{position: relative; margin-bottom: 10px}
+	.panel .panel-body .content span{overflow:hidden; display:block; width:100%; padding-right:10px; position:absolute; bottom:0; left:0; line-height:25px; background:rgba(0,0,0,0.5); color:#fff; text-align:right;}
+
+	.panel .panel-body .audio-msg{position:relative; padding-left:65px; height:70px;}
+	.panel .panel-body .audio-msg .icon span{position:absolute; left:0; top:0; background:#ccc; width:60px; height:60px; line-height:60px; vertical-align:middle; display:inline-block; cursor:pointer; font-size: 25px; text-align: center;}
+	.panel .panel-body .audio-msg .audio-content .audio-title{ width:100%; margin-bottom:10px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;}
+
+	.panel .panel-body .video-content{margin-bottom:10px;}
+	.panel .panel-body .video-content .title,.panel .panel-body .video-content .abstract{white-space:nowrap; word-break:break-all; overflow:hidden; text-overflow:ellipsis;}
+	.panel .panel-body .video-content img{max-width:100%; height:140px;}
+	.panel .panel-body .video-content .video{position:relative; margin:10px 0;}
+	.panel .panel-body .video-content .video .video-length{display:block; width:100%; padding-right:10px; position:absolute; bottom:0; left:0; line-height:25px; background:rgba(0,0,0,0.5); color:#fff; text-align:right;}
+</style>
+
+<ul class="nav nav-tabs">
+	<li {if $type == 'image'}class="active"{/if}><a href="{php echo url('material/display/list', array('type' => 'image'));}">图片</a></li>
+	<li {if $type == 'voice'}class="active"{/if}><a href="{php echo url('material/display/list', array('type' => 'voice'));}">语音</a></li>
+	<li {if $type == 'video'}class="active"{/if}><a href="{php echo url('material/display/list', array('type' => 'video'));}">视频</a></li>
+	<li {if $type == 'news' || $action == 'post'}class="active"{/if}><a href="{php echo url('material/display/list', array('type' => 'news'));}">图文</a></li>
+</ul>
+{if $do == 'list'}
+	<div ng-controller="download" style="margin-bottom: 15px">
+		<div class="panel panel-default download" style="display: none;" ng-show="flag == 1">
+			<div class="panel-heading">同步微信素材</div>
+			<div class="panel-body">
+				<div class="progress">
+					<div class="progress-bar progress-bar-danger" ng-style="style">
+						{{pragress}}
+					</div>
+				</div>
+				<span class="help-block">正在同步中，请勿关闭浏览器</span>
+				<div class="alert alert-danger" ng-show="fails.length > 0">
+					<i class="fa fa-info-circle"></i> 有{{fails.length}}个文件同步失败,您可以选择重新同步
+				</div>
+				<table class="table table-hover table-bordered" ng-show="fails.length > 0">
+					<thead>
+					<tr>
+						<th>media_id</th>
+						<th>原因</th>
+					</tr>
+					</thead>
+					<tr ng-repeat="file in fails">
+						<td>{{file.media_id}}</td>
+						<td>{{file.message}}</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+		<a href="javascript:;" class="btn btn-primary" ng-click="sync()" ng-bind="disable == 1 ? '同步中' : '同步微信素材'" ng-disabled="disable == 1"></a>
+		<a href="javascript:;" class="btn btn-danger init-hide" style="display: none" ng-click="flag = 0" ng-show="fails.length > 0 && flag == 1">收起</a>
+		{if $type == 'news'}
+		<a href="{php echo url('material/post/news');}" class="btn btn-primary">新增图文素材</a>
+		{/if}
+	</div>
+	{if $type == 'image'}
+	<div class="panel panel-default clearfix">
+		<div class="panel-heading">
+			<a href="javascript:;" data-type="image" class="btn-upload btn btn-success">新增永久图片</a>
+		</div>
+		<div class="panel-body">
+		{loop $lists $list}
+			<div class="col-md-3">
+				<div class="panel panel-default panel-image">
+					<div class="panel-body">
+						<div class="content">
+							<img src="{php echo tomedia($list['attachment'], true);}" width="100%" height="160" alt="{$list['filename']}">
+							<span>{$list['filename']}</span>
+						</div>
+						<div class="btn-group">
+							<a href="javascript:;" class="btn btn-default btn-sm btn-send" data-id="{$list['id']}" data-type="{$list['type']}">群发</a>
+							<a href="javascript:;" class="btn btn-default btn-sm btn-view" data-media-id="{$list['media_id']}" data-type="{$list['type']}">预览</a>
+							<a href="javascript:;" class="btn btn-default btn-sm btn-del" data-id="{$list['id']}" data-type="{$list['type']}">删除</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		{/loop}
+		</div>
+	</div>
+	{elseif $type == 'voice'}
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<a href="javascript:;" data-type="voice" class="btn-upload btn btn-success">新增永久语音</a>
+		</div>
+		<div class="panel-body">
+			{loop $lists $list}
+			<div class="col-md-3">
+				<div class="panel panel-default panel-voice">
+					<div class="panel-body">
+						<div class="audio-msg">
+							<div class="icon audio-player-play" data-attach="{php echo tomedia($list['attachment'], true);}"><span><i class="fa fa-play"></i></span></div>
+							<div class="audio-content">
+								<div class="audio-title">{$list['filename']}dklaklakla看见了的角度看都看绝对空间都看得见看得见看到绝对看得见肯定健康的健康的就</div>
+								<div class="audio-date text-muted">创建于：{php echo date('m月d日', $list['createtime'])}</div>
+							</div>
+						</div>
+						<div class="btn-group">
+							<a href="javascript:;" class="btn btn-default btn-sm btn-send" data-id="{$list['id']}" data-type="{$list['type']}">群发</a>
+							<a href="javascript:;" class="btn btn-default btn-sm btn-view" data-media-id="{$list['media_id']}" data-type="{$list['type']}">预览</a>
+							<a href="javascript:;" class="btn btn-default btn-sm btn-del" data-id="{$list['id']}" data-type="{$list['type']}">删除</a>
+						</div>
+					</div>
+				</div>
+			</div>
+			{/loop}
+		</div>
+	</div>
+	{elseif $type == 'video'}
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<a href="javascript:;" data-type="video" class="btn-upload btn btn-success">新增永久视频</a>
+		</div>
+		<div class="panel-body">
+			{loop $lists $list}
+			<div class="col-md-3">
+				<div class="panel panel-default panel-video">
+					<div class="panel-body">
+						<div class="video-content">
+							<h4 class="title text-muted">{$list['tag']['title']}</h4>
+							<div class="date text-muted">{php echo date('m月d日 H:i', $list['createtime']);}</div>
+							<div class="video">
+								<img src="../web/resource/images/banner-bg.png" alt="" />
+							</div>
+							<div class="abstract text-muted" style="overflow:hidden">{$list['tag']['description']}</div>
+						</div>
+						<div class="btn-group">
+							<a href="{$list['tag']['down_url']}" target="_blank" class="btn btn-default btn-sm">下载</a>
+							<a href="javascript:;" class="btn btn-default btn-sm btn-send" data-id="{$list['id']}" data-type="{$list['type']}">群发</a>
+							<a href="javascript:;" class="btn btn-default btn-sm btn-view" data-media-id="{$list['media_id']}" data-type="{$list['type']}">预览</a>
+							<a href="javascript:;" class="btn btn-default btn-sm btn-del" data-id="{$list['id']}" data-type="{$list['type']}">删除</a>
+						</div>
+					</div>
+				</div>
+			</div>
+			{/loop}
+		</div>
+	</div>
+	{elseif $type == 'news'}
+	<div class="alert alert-info">
+		<i class="fa fa-info-circle"></i> 因图文素材的封面使用的是图片素材,因此查看图文素材时请确保已经成功同步过图片素材<br>
+		<i class="fa fa-info-circle"></i> 系统不支持直接添加微信图文素材,您可以在微信公众平台添加后同步到本系统<br>
+	</div>
+
+	<div class="panel panel-default panel-news">
+		<div class="panel-heading">图文素材</div>
+		<div class="panel-body">
+			<div class="reply" id="mpnews" style="position: relative">
+			{loop $lists $list}
+				<div class="col-xs-12 col-sm-12 col-md-6 col-lg-3 water">
+					<div class="panel-group">
+						{loop $list['items'] $key $item}
+						{if !$key}
+						<div class="panel panel-default">
+							<div class="panel-body">
+								<div class="img">
+									<i class="default"></i>
+									<a href="{php echo $item['url']}" target="_blank"><img src="{php echo tomedia($item['thumb_url'], true);}"></a>
+									<span class="text-left">{$item['title']}</span>
+								</div>
+							</div>
+						</div>
+						{else}
+						<div class="panel panel-default">
+							<div class="panel-body">
+								<a href="{php echo $item['url']}" target="_blank">
+									<div class="text">
+										<h4>{$item['title']}</h4>
+									</div>
+									<div class="img">
+										<img src="{php echo tomedia($item['thumb_url'], true);}">
+										<i class="default">缩略图</i>
+									</div>
+								</a>
+							</div>
+						</div>
+						{/if}
+						{/loop}
+						<div class="panel panel-default">
+							<div class="panel-body" style="height:20px; padding-bottom:40px; padding-top:7px">
+								<div class="btn-group">
+									<a href="javascript:;" class="btn btn-default btn-sm btn-send" data-id="{$list['id']}" data-type="{$list['type']}">群发</a>
+									<a href="javascript:;" class="btn btn-default btn-sm btn-view" data-media-id="{$list['media_id']}" data-type="{$list['type']}">预览</a>
+									<a href="javascript:;" class="btn btn-default btn-sm btn-del" data-id="{$list['id']}"  data-type="{$list['type']}">删除</a>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			{/loop}
+			</div>
+		</div>
+	</div>
+	{/if}
+	{$pager}
+{/if}
+
+<!-- 群发预览 -->
+<div class="modal fade" id="modal-view" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+	<form action="">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title">请输入接受人的微信号</h4>
+				</div>
+				<div class="modal-body">
+					<div class="form-group">
+						<label for="wxname">微信号</label>
+						<input type="text" class="form-control" id="wxname" name="wxname">
+						<span class="help-block">微信号不能为空</span>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+					<button type="button" class="btn btn-primary btn-view">发送</button>
+				</div>
+			</div>
+		</div>
+	</form>
+</div>
+
+<div class="modal fade" id="modal-send" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+	<form action="" class="form form-horizontal">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content modal-lg">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title">设置群发</h4>
+				</div>
+				<div class="modal-body">
+					<div class="form-group">
+						<label class="col-xs-12 col-sm-3 col-md-2 control-label">选择粉丝分组</label>
+						<div class="col-sm-9 col-xs-12">
+							<select name="group" id="group" class="form-control">
+								<option value="-1" selected>所有粉丝</option>
+								{if !empty($groups)}
+									{loop $groups $group}
+									<option value="{$group['id']}">{$group['name']}【{$group['count']}人】</option>
+									{/loop}
+								{/if}
+							</select>
+							<span class="help-block">如果您需要定时群发,请<a href="{php echo url('material/mass/');}"> 点击链接</a></span>
+						</div>
+					</div>
+
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+					<button type="button" class="btn btn-primary btn-send">发送</button>
+				</div>
+			</div>
+		</div>
+	</form>
+</div>
+
+<script>
+	require(['fileUploader', 'jquery.jplayer', 'jquery.wookmark'], function(uploader){
+		$('.init_hide').show();
+
+		$('.btn-upload').click(function(){
+			var type = $(this).data('type');
+			var options = {type: type, direct: true, multiple: false, isWechat: true};
+			uploader.init(function(){location.reload();}, options);
+		});
+
+		$('.btn-send').click(function(){
+			var id = $(this).data('id');
+			var type = $(this).data('type');
+			$('#modal-send').modal('show');
+
+			$('#modal-send .btn-send').unbind().click(function(){
+				var group = $.trim($('#modal-send #group').val());
+				$('#modal-send').modal('hide');
+				$.post("{php echo url('material/display/send/');}", {id:id, group:group, type:type}, function(data){
+					if(data != 'success') {
+						util.message(data, '', 'error');
+					} else {
+						util.message('发送成功', '', 'success');
+					}
+				});
+				return false;
+			});
+		});
+
+		$('#mpnews .water').wookmark({
+			align: 'center',
+			autoResize: false,
+			container: $('#mpnews'),
+			autoResize :true
+		});
+		//语音播放
+		$(".audio-player-play").click(function(){
+			var src = $(this).data("attach");
+			if(!src) {
+				return;
+			}
+			if ($("#player")[0]) {
+				var player = $("#player");
+			} else {
+				var player = $('<div id="player"></div>');
+				$(document.body).append(player);
+			}
+			player.data('control', $(this));
+			player.jPlayer({
+				playing: function() {
+					$(this).data('control').find("i").removeClass("fa-play").addClass("fa-stop");
+				},
+				pause: function (event) {
+					$(this).data('control').find("i").removeClass("fa-stop").addClass("fa-play");
+				},
+				swfPath: "resource/components/jplayer",
+				supplied: "mp3,wma,wav,amr",
+				solution: "html, flash"
+			});
+			player.jPlayer("setMedia", {mp3: $(this).data("attach")}).jPlayer("play");
+			if($(this).find("i").hasClass("fa-stop")) {
+				player.jPlayer("stop");
+			} else {
+				$('.audio-msg').find('.fa-stop').removeClass("fa-stop").addClass("fa-play");
+				player.jPlayer("setMedia", {mp3: $(this).data("attach")}).jPlayer("play");
+			}
+		});
+
+		//群发预览
+		$('.btn-view').click(function(){
+			var media_id = $(this).data('media-id');
+			var type = $(this).data('type');
+			$('#modal-view').modal('show');
+
+			$('#modal-view .btn-view').unbind().click(function(){
+				var wxname = $.trim($('#modal-view #wxname').val());
+				if(!wxname) {
+					util.message('微信号不能为空', '', 'error');
+					return false;
+				}
+				$('#modal-view').modal('hide');
+				$.post("{php echo url('material/display/purview/');}", {media_id: media_id, wxname:wxname, type:type}, function(data){
+					if(data != 'success') {
+						util.message(data, '', 'error');
+					} else {
+						util.message('发送成功', '', 'success');
+					}
+				});
+				return false;
+			});
+		});
+
+		//删除微信素材
+		$('.btn-del').click(function(){
+			if(!confirm('删除将不可恢复，确定删除吗？')) {
+				return false;
+			}
+			var id = $(this).data('id');
+			$.post("{php echo url('material/display/del/');}", {id:id}, function(data){
+				if(data != 'success') {
+					util.message(data, '', 'error');
+				} else {
+					location.reload();
+				}
+			});
+			return false;
+		});
+
+		//同步微信素材
+		var running = false;
+		window.onbeforeunload = function(e) {
+			if(running) {
+				return (e || window.event).returnValue = '正在进行微信素材数据同步，确定离开页面吗.';
+			}
+		}
+
+		angular.module('app', []).controller('download', function($scope, $http){
+			$('.download').show();
+			$scope.sync = function(){
+				running = true;
+				$scope.flag = 1;
+				$scope.disable = 1;
+
+				$scope.fails = [];
+				var i = 0;
+				var total = 1;
+				var num = 0;
+				var type = "{$type}";
+				var proc = function(page) {
+					if(page == 1) {
+						$scope.pragress = "3%";
+						$scope.style = {'width': '3%'};
+					} else {
+						$scope.pragress = (i/total).toFixed(2)*100 + "%";
+						$scope.style = {'width':(i/total).toFixed(2)*100+"%"};
+					}
+					$http.post("{php echo url('material/display/down');}", {page:page, type:type}).success(function(dat){
+						if(dat.message.errno > 0) {
+							page++;
+							i += dat.message.message.item_count;
+							total = dat.message.errno;
+							if(dat.message.message.fail) {
+								angular.forEach(dat.message.message.fail, function(v){
+									$scope.fails.push(v);
+								});
+							}
+						} else if(dat.message.errno == -2) {
+							running = false;
+							if($scope.fails.length > 0) {
+								$scope.flag = 1;
+							} else {
+								$scope.flag = 0;
+							}
+							$scope.disable = 0;
+							$scope.pragress = "100%";
+							$scope.style = {'width':'100%'};
+							var url = location.href.replace('sync=1', '');
+							util.message('同步素材完成', url, 'success');
+							return false;
+						} else if(dat.message.errno == -1) {
+							if(num < 3) {
+								page = page;
+							} else {
+								util.message(dat.message.message, '', 'error');
+								return false;
+							}
+							num++;
+						}
+						proc(page);
+					}).error(function(){
+						util.message('访问出错', '', 'error');
+						return false;
+					});
+				}
+				proc(1);
+			};
+
+			{if $_GPC['sync'] == 1}
+				$scope.sync();
+			{/if}
+		});
+		angular.bootstrap(document, ['app']);
+	});
+</script>
+{template 'common/footer'}

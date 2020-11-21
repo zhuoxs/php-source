@@ -1,0 +1,105 @@
+{php include wl_template('common/header');}
+<div class="page-group" >
+    <div class="page page-current" id="page-index">
+    	{php include wl_template('common/footerbar');}
+	    <div class="buttons-tab">
+			<a href="{php echo app_url('rush/home/myOrder',array('status'=>1))}" class="button {if $status == 1}active{/if}">待消费</a>
+			<a href="{php echo app_url('rush/home/myOrder',array('status'=>2))}" class="button {if $status == 2}active{/if}">已消费</a>
+			<a href="{php echo app_url('rush/home/myOrder',array('status'=>5))}" class="button {if $status == 5}active{/if}">已取消</a>
+			<a href="javascript:;" class="button {if $status == 6 || $status == 7}active{/if} open-popover" data-popover=".popover-order-status">{if $status == 6}待退款{elseif $status == 7 }已退款{else}更多{/if} <i class="iconfont icon-unfold"></i></a>
+		</div>
+		<div class="content infinite-scroll" style="margin-top: 2.2rem;">
+			<div class="allorder">
+				<!--全部订单表-->
+			</div>
+			<div class="weui-loadmore loading_more" style="display: none;">
+	            <i class="weui-loading"></i>
+	            <span class="weui-loadmore__tips">正在加载</span>
+	        </div>
+	        <div class="weui-loadmore weui-loadmore_line" style="display: none;">
+	            <span class="weui-loadmore__tips" style="background-color: #EFEFF4;">暂无更多数据</span>
+	        </div>
+		</div>
+	</div>
+</div>
+<div class="popover popover-manage popover-order-status">
+	<div class="popover-angle"></div>
+	<div class="popover-inner">
+		<div class="list-block">
+			<ul>
+				<li><a href="{php echo app_url('rush/home/myOrder',array('status'=>6))}" class="list-button item-link">待退款</a></li>
+				<li><a href="{php echo app_url('rush/home/myOrder',array('status'=>7))}" class="list-button item-link">已退款</a></li>
+				<li><a href="javascript:;" class="list-button item-link close-popover">关闭</a></li>
+			</ul>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="orderlist">
+{{# for(var i = 0, len = d.data.length; i < len; i++){ }}
+<div class="field">
+	<div class="field-head">
+		<span class="field-head-name"><i class="icon iconfont icon-shop"></i> {{ d.data[i].storename }}</span>
+  		<span class="field-head-status field-head-status-light">{{# if(d.data[i].status == 1){ }}待消费{{# } else if(d.data[i].status == 2){ }}已消费{{# } else if(d.data[i].status == 5){ }}已取消{{# } else if(d.data[i].status == 6){ }}待退款{{# } else if(d.data[i].status == 7){ }}已退款{{# } else if(d.data[i].status == 0){ }}待付款{{# } }}</span>
+    </div>
+    <a class="field-item" href="{{ d.data[i].a }}">
+     	<div class="avatar">
+      		<img src="{{ d.data[i].goodsimg }}" class="avatar-img">
+        </div>
+        <div class="contentt">
+	        <p class="delivery_tip">{{ d.data[i].goodsname }}</p>
+	        <p class="order-time">{{ d.data[i].createtime }}</p>
+        	<p class="price">￥{{ d.data[i].price }}</p>
+        </div>
+        <i class="field-arrow icon-arrow-right"></i>
+    </a>
+    {{# if(d.data[i].status == 1){ }}
+        <div class="field-console-btns">
+        	<a class="order-option-btn order-option-s2" href="{{ d.data[i].xiaofei }}">订单详情</a>
+        </div>
+    {{# } }}
+    {{# if(d.data[i].status == 2){ }}
+        <div class="field-console-btns">
+        	<a class="order-option-btn order-option-s2" href="{{ d.data[i].comment }}">去评价</a>
+        </div>
+    {{# } }}
+</div>
+{{# } }}
+</script>
+<script>
+	$(function() {
+		$(document).on("pageInit", "#page-index", function(e, id, page) {
+			var loading = false;
+			var pindex = 1;
+			function addItems(pindex) {
+				$.post("{php echo app_url('rush/home/getOrder',array('status'=>$status))}",{pindex:pindex},function(d){
+					if (d.data.length > 0) {
+						var gettpl1 = document.getElementById('orderlist').innerHTML;
+						laytpl(gettpl1).render(d, function(html){
+						   $(".allorder").append(html);
+						});
+					}else if(pindex == 1){
+						$(".allorder").html('<div class="common-no-con"><img src="{URL_APP_IMAGE}order_no_con.png" alt=""><p>您还没有订单，赶紧去看看</p></div>');
+					}else{
+						$(".loading_more").remove();
+						$(".weui-loadmore_line").show();
+					}
+				}, 'json');
+			}
+			addItems(pindex);
+			$(page).on('infinite', function() {
+				if (loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+					loading = false;
+					pindex++;
+					addItems(pindex);
+					$(".loading_more").hide();
+					$.refreshScroller();
+				}, 1000);
+			});
+		});
+		$.init();
+	});
+</script>
+{php include wl_template('common/footer');}

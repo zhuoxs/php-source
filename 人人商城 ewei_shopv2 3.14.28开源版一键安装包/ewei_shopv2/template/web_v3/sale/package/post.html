@@ -1,0 +1,253 @@
+{template '_header'}
+<div class="page-header">
+    当前位置：<span class="text-primary">{if !empty($item['id'])}编辑{else}添加{/if}套餐 <small>{if !empty($item['id'])}修改【{$item['title']}】{/if}</small></span>
+</div>
+
+
+<div class="page-content">
+    <div class="page-sub-toolbar">
+        <span class=''>
+            {ifp 'sale.package.add'}
+                <a class='btn btn-primary btn-sm' href="{php echo webUrl('sale/package/add',array('type'=>$type))}"><i class='fa fa-plus'></i> 添加套餐</a>
+            {/if}
+        </span>
+    </div>
+    <form {ife 'sale.package' $item}action="" method="post"{/if} class="form-horizontal form-validate" enctype="multipart/form-data">
+    <input type="hidden" name="id" value="{$item['id']}" />
+    <div class="tab-content ">
+        <div class="tab-pane active">
+            <div class="panel-body">
+
+                <div class="form-group">
+                    <label class="col-lg control-label">排序</label>
+                    <div class="col-sm-9 col-xs-12">
+                        {ife 'sale.package' $item}
+                        <input type='text' class='form-control' name='displayorder' value="{$item['displayorder']}" />
+                        <span class="help-block">数字越大，排名越靠前,如果为空，默认排序方式为创建时间</span>
+                        {else}
+                        <div class='form-control-static'>{$item['displayorder']}</div>
+                        {/if}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-lg control-label must">套餐标题</label>
+                    <div class="col-sm-9 col-xs-12 ">
+                        {ife 'sale.package' $item}
+                        <input type="text" id='title' name="title" class="form-control" value="{$item['title']}" data-rule-required="true"/>
+                        {else}
+                        <div class='form-control-static'>{$item['title']}</div>
+                        {/if}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-lg control-label">套餐缩略图</label>
+                    <div class="col-sm-9 col-xs-12">
+                        {ife 'sale.package' $item}
+                        {php echo tpl_form_field_image2('thumb', $item['thumb']);}
+                        <span class="help-block image-block" style="display: block;">建议为正方型图片，尺寸建议宽度为640，如果不上传默认为第一件商品缩略图。</span>
+                        {else}
+                        <input type="hidden" name="thumb" value="{$item['thumb']}" />
+                        <div class='form-control-static'>{$item['thumb']}</div>
+                        {/if}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-lg control-label">选择商品</label>
+                    <div class="col-sm-9 col-xs-12">
+                        {ife 'sale.package' $item}
+                        <div>
+                            <?php echo tpl_selector_new('goodsid',array('preview'=>true,
+                            'readonly'=>true,
+                            'multi'=>1,
+                            'type'=>'product',
+                            'value'=>$package_goods['title'],
+                            'url'=>webUrl('sale/package/query'),
+                            'optionurl'=>'sale.package.hasoption',
+                            'items'=>$package_goods,
+                            'nokeywords'=>1,
+                            'autosearch'=>1,
+                            'buttontext'=>'选择商品',
+                            'placeholder'=>'请选择商品')
+                            )
+                            ?>
+
+                        </div>
+                        {else}
+                        {if !empty($package_goods)}
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th style='width:80px;'>商品名称</th>
+                                <th style='width:220px;'></th>
+                                <th>价格/分销佣金</th>
+                            </tr>
+                            </thead>
+                            <tbody id="param-items" class="ui-sortable">
+                            {loop $package_goods $index $item}
+                            <tr class="multi-product-item" data-id="{$item['goodsid']}">
+                                <input type="hidden" class="form-control img-textname" readonly="" value="{$item['title']}">
+                                <input type="hidden" value="{$item['goodsid']}" name="goodsid[]">
+                                <td style="width:80px;">
+                                    <img src="{php echo tomedia($item['thumb'])}" style="width:70px;border:1px solid #ccc;padding:1px">
+                                </td>
+                                <td style="width:220px;">{$item['title']}</td>
+                                <td><a class="btn btn-default btn-sm" data-toggle="ajaxModal"
+                                       href="{php echo webUrl('sale/package/hasoption',array('goodsid'=>$item['goodsid'],'pid'=>$item['pid']))}" id="optiontitle{$item['goodsid']}">&yen;{$item['packageprice']}</a>
+                                    <input type="hidden" id="packagegoods{$item['goodsid']}" value="" name="packagegoods[{$item['goodsid']}]">
+                                    <input type="hidden" value="{$item['packageprice']},{$item['commission1']},{$item['commission2']},{$item['commission3']}" name="packgoods{$item['goodsid']}">
+                                </td>
+                            </tr>
+                            {/loop}
+                            </tbody>
+                        </table>
+                        {else}
+                        暂无商品
+                        {/if}
+                        {/if}
+                    </div>
+                </div>
+
+                <div class="form-group cgt cgt-0">
+                    <label class="col-lg control-label must">套餐价格</label>
+                    <div class="col-sm-9 col-xs-12">
+                        {ife 'sale.package' $item}
+                        <div class="input-group fixsingle-input-group">
+                            <input type='text' class='form-control' name='price' value="{$item['price']}" data-price="" data-rule-required="true"/>
+                            <span class="input-group-addon">元</span>
+                        </div>
+                        <span class="help-block image-block" style="display: block;">套餐价格为前台显示价格，具体按照套餐商品价格结算。</span>
+                        {else}
+                        <div class='form-control-static'>{$item['price']}</div>
+                        {/if}
+                    </div>
+                </div>
+                <div class="form-group dispatch_info" >
+                <label class="col-lg control-label">运费设置</label>
+                <div class="col-sm-5 col-xs-5">
+                    {ife 'sale.package' $item}
+                    <div class="input-group">
+                        <span class='input-group-addon' style='border:none'><label class="radio-inline" style='margin-top:-7px;' ><input type="radio" name="dispatchtype" value="1" {if !empty($item['dispatchtype'])}checked="true"{/if}   /> 运费模板</label></span>
+                        <span class='input-group-addon' style='border:none'><label class="radio-inline" style='margin-top:-7px;' ><input type="radio" name="dispatchtype" value="0" {if empty($item['dispatchtype'])}checked="true"{/if}   /> 统一运费</label></span>
+                        <input type="text" class="form-control" name="freight" value="{$item['freight']}"/>
+                        <span class="input-group-addon">元</span>
+                    </div>
+                    <span class="help-block text-danger">如果所选商品中包含多商户商品，那么必须选择运费模板（多商户商品运费按照商品本身设置的运费计费）</span>
+                    <span class="help-block image-block" style="display: block;">运费为固定邮费统一设置，设置为0，则免邮费。</span>
+                    {else}
+                    <div class='form-control-static'>{if empty($item['dispatchtype'])}运费模板 {if $item['dispatchid'] == 0}默认模板{else}{loop $dispatch_data $dispatch_item}{if $item['dispatchid'] == $dispatch_item['id']}{$dispatch_item['dispatchname']}{/if}{/loop}{/if}{else}统一邮费{/if}</div>
+                    {/if}
+                </div>
+            </div>
+
+                <div class="form-group">
+                    <label class=" col-lg control-label">货到付款</label>
+                    <div class="col-xs-12 col-sm-8">
+                        <div class="input-group">
+                            {ife 'sale.package' $item}
+                            <label class="radio radio-inline">
+                                <input type="radio" name="cash" value="0" {if intval($item['cash']) ==0}checked="checked"{/if}> 不支持
+                            </label>
+                            <label class="radio radio-inline">
+                                <input type="radio" name="cash" value="1" {if intval($item['cash']) ==1 }checked="checked"{/if}> 支持
+                            </label>
+                            {else}
+                            <div class='form-control-static'>{if intval($item['cash']) ==1 }支持{else}不支持{/if}</div>
+                            {/if}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-lg control-label">限时设置</label>
+                    <div class="col-sm-9 col-xs-12">
+                        {ife 'sale.package' $item}
+                        <div class="input-group">
+                            <span class="input-group-addon">开始时间</span>
+                            {php echo tpl_form_field_date('starttime', !empty($item['starttime']) ? date('Y-m-d H:i',$item['starttime']) :date('Y-m-d H:i'), 1)}
+                            <span class="input-group-addon">结束时间</span>
+                            {php echo tpl_form_field_date('endtime', !empty($item['endtime']) ? date('Y-m-d H:i',$item['endtime']) :date('Y-m-d H:i'), 1)}
+                        </div>
+                        {else}
+                        <div class='form-control-static'>{php echo date('Y-m-d H:i',$item['starttime'])} - {php echo date('Y-m-d H:i',$item['endtime'])}</div>
+                        {/if}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-lg control-label">分享标题</label>
+                    <div class="col-sm-9 col-xs-12">
+                        {ife 'sale.package' $item}
+                        <input type="text" name="share_title" id="share_title" class="form-control" value="{$item['share_title']}" />
+                        <span class='help-block'>如果不填写，默认为套餐名称</span>
+                        {else}
+                        <div class='form-control-static'>{$item['share_title']}</div>
+                        {/if}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-lg control-label">分享图标</label>
+                    <div class="col-sm-9 col-xs-12">
+                        {ife 'sale.package' $item}
+                        {php echo tpl_form_field_image2('share_icon', $item['share_icon'])}
+                        <span class='help-block'>如果不选择，默认为套餐缩略图片</span>
+                        {else}
+                        {if !empty($item['share_icon'])}
+                        <a href='{php echo tomedia($item['share_icon'])}' target='_blank'>
+                        <img src="{php echo tomedia($item['share_icon'])}" style='width:100px;border:1px solid #ccc;padding:1px' />
+                        </a>
+                        {/if}
+                        {/if}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-lg control-label">分享描述</label>
+                    <div class="col-sm-9 col-xs-12">
+                        {ife 'sale.package' $item}
+                        <textarea name="share_desc" class="form-control" rows="5">{$item['share_desc']}</textarea>
+                        <span class='help-block'>如果不填写，则使用店铺名称</span>
+                        {else}
+                        <div class='form-control-static'>{$item['share_desc']}</div>
+                        {/if}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-lg control-label">状态</label>
+                    <div class="col-xs-12 col-sm-8">
+                        <div class="input-group">
+                            {ife 'sale.package' $item}
+                            <label class="radio radio-inline">
+                                <input type="radio" name="status" value="1" {if intval($item['status']) ==1 }checked="checked"{/if}> 开启
+                            </label>
+                            <label class="radio radio-inline">
+                                <input type="radio" name="status" value="0" {if intval($item['status']) ==0}checked="checked"{/if}> 关闭
+                            </label>
+                            {else}
+                            <div class='form-control-static'>{if intval($item['status']) ==1 }开启{else}关闭{/if}</div>
+                            {/if}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    {ife 'sale.package' $item}
+    <div class="form-group">
+        <label class="col-lg control-label"></label>
+        <div class="col-sm-9 col-xs-12">
+            <input type="submit"  value="提交" class="btn btn-primary" />
+            <a class="btn btn-default" href="{php echo webUrl('sale/package',array('type'=>$type))}">返回列表</a>
+        </div>
+    </div>
+    {/if}
+
+    </form>
+
+</div>
+{template '_footer'}

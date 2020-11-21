@@ -1,0 +1,2 @@
+<?php
+ namespace Qiniu\Tests; use Qiniu; class Crc32Test extends \PHPUnit_Framework_TestCase { public function testData() { goto mCjVq; SjNal: $b = \Qiniu\crc32_data($a); goto ZcKcj; ZcKcj: $this->assertEquals("\x31\63\65\62\x38\64\61\x32\70\61", $b); goto An_vt; mCjVq: $a = "\344\275\240\345\xa5\xbd"; goto SjNal; An_vt: } public function testFile() { goto KjH9H; s505n: $c = \Qiniu\crc32_file(__FILE__); goto D8n_n; KjH9H: $b = \Qiniu\crc32_file(__FILE__); goto s505n; D8n_n: $this->assertEquals($c, $b); goto e17hu; e17hu: } }

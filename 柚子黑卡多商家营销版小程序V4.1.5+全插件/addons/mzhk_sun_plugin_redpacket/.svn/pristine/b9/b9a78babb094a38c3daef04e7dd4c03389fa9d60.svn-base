@@ -1,0 +1,1535 @@
+<?php
+
+/**
+
+ * 柚子黑卡小程序分销插件
+
+ *
+
+ * @author 厦门梵挚慧
+
+ * @url
+
+ */
+
+defined('IN_IA') or exit('Access Denied');
+global $_W;
+include IA_ROOT."/addons/".$_W['current_module']['name']."/func/func.php";
+
+class mzhk_sun_plugin_redpacketModuleWxapp extends WeModuleWxapp {
+  
+  //获取红包配置
+  public function doPageRedPacketSet(){
+	global $_W, $_GPC;
+	$res = pdo_get('mzhk_sun_redpacket_set',array('uniacid'=>$_W['uniacid']));
+
+	if($res){
+		echo json_encode($res);	
+	}else{
+		echo 2;
+	}
+  }
+
+  //获取当前适用拉新红包
+  public function doPageGetredpacket1(){
+		global $_W, $_GPC;
+		$type = $_GPC['type'];//1每日红包 其他拉新红包
+				
+		if($type==1){
+			$res = pdo_get('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'rec'=>1,'type'=>2));
+		}else{
+			$res = pdo_get('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'rec'=>1,'type'=>1));
+		}
+
+		//开始时间
+		$sy = date('Y',time());
+		$sm = date('m',time());
+		$sd = date('d',time());
+		$stime = $sy.'.'.$sm.'.'.$sd;
+
+		//结束时间
+		if($res['state']==1){//多少天内有效
+			$etimes   = strtotime("+".$res['rday']." days", time());
+			$ey = date('Y',$etimes);
+			$em = date('m',$etimes);
+			$ed = date('d',$etimes);
+			$etime = $ey.'.'.$em.'.'.$ed;
+		}else{//当日有效
+			$etimes   = strtotime(date("Y-m-d")." 23:59:59");
+			$ey = date('Y',$etimes);
+			$em = date('m',$etimes);
+			$ed = date('d',$etimes);
+			$etime = $ey.'.'.$em.'.'.$ed;
+		}
+
+		//关联商品
+		if($res['application']==1){//通用
+			//获取关联商品类型
+			$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>1,'rid'=>$res['id']));
+			$goodsarr = [];
+			foreach($relation as $k=>$v){
+				if($v['gid']==4){
+					$lid = 5;
+				}elseif($v['gid']==5){
+					$lid = 12;
+				}else{
+					$lid = $v['gid'];
+				}
+
+				$pagesize = 5;
+				$pageindex = intval($_GPC['page'])*$pagesize;
+
+				$nowtime = date("Y-m-d H:i:s");
+
+				//判断是否有次卡插件
+				$system=pdo_get('mzhk_sun_subcard_set',array('uniacid'=>$_W['uniacid']));
+				if($system['opensubcard']==1){//安装次卡
+					$sql1 = "select ptshopprice,lid,gid,gname,pic,shopprice,vipprice,kjprice,ptprice,qgprice from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and lid=".$lid." and status=2 and antime>='".$nowtime."' and astime<='".$nowtime."' ";
+					$sql2 = "select originalprice as ptshopprice,lid,id as gid,gname,pic,subcardprice as shopprice,vipprice,subcardprice as kjprice,subcardprice as ptprice,subcardprice as qgprice from ".tablename('mzhk_sun_subcard_goods')." where uniacid=".$_W['uniacid']." and lid=".$lid." and status=1 and antime>='".time()."' and astime<='".time()."' ";
+					
+					$sql = "select * from (".$sql1." union all ".$sql2." ) as a ";
+					$select_sql =$sql." LIMIT " .$pageindex.",".$pagesize;
+					$goodsarr[] = pdo_fetchall($select_sql);
+				}else{ //未安装次卡
+					$sql = "select ptshopprice,lid,gid,gname,pic,shopprice,vipprice,kjprice,ptprice,qgprice from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and lid=".$lid." and status=2 and antime>='".$nowtime."' and astime<='".$nowtime."' order by sort desc,gid asc limit ".$pageindex.",".$pagesize;
+					$goodsarr[] = pdo_fetchall($sql);
+				}
+
+			}
+		}elseif($res['application']==2){//部分商品
+			//获取关联商品
+			$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>2,'rid'=>$res['id']));
+			$goods = [];
+			foreach($relation as $k=>$v){
+				if($_GPC['page']>=1){
+					$goods = [];
+				}else{
+					if($v['lid']==12){
+						$sql = "select originalprice as ptshopprice,lid,id as gid,gname,pic,subcardprice as shopprice,vipprice,subcardprice as kjprice,subcardprice as ptprice,subcardprice as qgprice from ".tablename('mzhk_sun_subcard_goods')." where uniacid=".$_W['uniacid']." and id=".$v['gid']." and status=1";
+					}else{
+						$sql = "select ptshopprice,lid,gid,gname,pic,shopprice,vipprice,kjprice,ptprice,qgprice from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and gid=".$v['gid']." and status=2";
+					}
+					$goods[] = pdo_fetch($sql);
+				}
+			}
+		}elseif($res['application']==3){//部分商家
+			//获取关联商家
+			$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>3,'rid'=>$res['id']));
+			$goodsarr = [];
+			foreach($relation as $k=>$v){
+
+				$pagesize = 5;
+				$pageindex = intval($_GPC['page'])*$pagesize;
+
+				$nowtime = date("Y-m-d H:i:s");
+
+				//判断是否有次卡插件
+				$system=pdo_get('mzhk_sun_subcard_set',array('uniacid'=>$_W['uniacid']));
+				if($system['opensubcard']==1){//安装次卡
+					$sql1 = "select ptshopprice,lid,gid,gname,pic,shopprice,vipprice,kjprice,ptprice,qgprice from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and bid=".$v['gid']." and (lid=1 or lid=2 or lid=3 or lid=5) and status=2 and antime>='".$nowtime."' and astime<='".$nowtime."' ";
+					
+					$sql2 = "select originalprice as ptshopprice,lid,id as gid,gname,pic,subcardprice as shopprice,vipprice,subcardprice as kjprice,subcardprice as ptprice,subcardprice as qgprice from ".tablename('mzhk_sun_subcard_goods')." where uniacid=".$_W['uniacid']." and bid=".$v['gid']." and lid=12 and status=1 and antime>='".time()."' and astime<='".time()."' ";
+					
+					$sql = "select * from (".$sql1." union all ".$sql2." ) as a ";
+					$select_sql =$sql." LIMIT " .$pageindex.",".$pagesize;
+					$goodsarr[] = pdo_fetchall($select_sql);
+				}else{ //未安装次卡
+					$sql = "select ptshopprice,lid,gid,gname,pic,shopprice,vipprice,kjprice,ptprice,qgprice from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and bid=".$v['gid']." and (lid=1 or lid=2 or lid=3 or lid=5) and status=2 and antime>='".$nowtime."' and astime<='".$nowtime."' order by sort desc,gid asc limit ".$pageindex.",".$pagesize;
+					$goodsarr[] = pdo_fetchall($sql);
+				}
+			}
+		}
+
+		//三维转二维
+		if($goodsarr){
+			$goods = [];
+			foreach($goodsarr as $k=>$v){
+				foreach($v as $k2=>$v2){
+					$goods[] = $v2;
+				}
+			}
+		}
+
+		//整理产生数据
+		if($goods){
+			foreach($goods as $k=>$v){
+				//图片路劲
+				$goods[$k]['img_url'] = $_W["attachurl"].$v['pic'];
+				
+				//销量
+				if($v['lid']==1){//普通
+					//优惠多少元
+					if($v['ptshopprice']>$v['shopprice']){
+						$discountmoney = $v['ptshopprice'] - $v['shopprice'];
+					}else{
+						$discountmoney = 0.00;
+					}
+					$nums = pdo_fetchcolumn("select count(oid) as num from ".tablename('mzhk_sun_order')." where gid='".$v['gid']."' and uniacid='".$_W['uniacid']."' and status>2 and isrefund=0 ");
+				}
+				if($v['lid']==2){//砍价
+					//优惠多少元
+					$discountmoney = $v['shopprice'] - $v['kjprice'];
+					$nums = pdo_fetchcolumn("select count(oid) as num from ".tablename('mzhk_sun_kjorder')." where gid='".$v['gid']."' and uniacid='".$_W['uniacid']."' and status>2 and isrefund=0 ");
+				}
+				if($v['lid']==3){//拼团
+					//优惠多少元
+					$discountmoney = $v['shopprice'] - $v['ptprice'];
+					$nums = pdo_fetchcolumn("select count(id) as num from ".tablename('mzhk_sun_ptgroups')." where gid='".$v['gid']."' and uniacid='".$_W['uniacid']."' and status>2 and isrefund=0 ");
+				}
+				if($v['lid']==5){//抢购
+					//优惠多少元
+					$discountmoney = $v['shopprice'] - $v['qgprice'];
+					$nums = pdo_fetchcolumn("select count(oid) as num from ".tablename('mzhk_sun_qgorder')." where gid='".$v['gid']."' and uniacid='".$_W['uniacid']."' and status>2 and isrefund=0 ");
+				}
+				if($v['lid']==12){//次卡
+					//优惠多少元
+					if($v['ptshopprice']>$v['shopprice']){
+						$discountmoney = $v['ptshopprice'] - $v['shopprice'];
+					}else{
+						$discountmoney = 0.00;
+					}
+					$nums = pdo_fetchcolumn("select count(id) as num from ".tablename('mzhk_sun_subcard_order')." where gid='".$v['gid']."' and uniacid='".$_W['uniacid']."' and status>2 and isrefund=0 ");
+				}
+
+				if($nums){
+					$goods[$k]['num'] = $nums;
+				}else{
+					$goods[$k]['num'] = 0;
+				}
+
+				if($discountmoney){
+					$discountmoney = sprintf("%.2f",$discountmoney);
+					$goods[$k]['discountmoney'] = $discountmoney;
+				}else{
+					$goods[$k]['discountmoney'] = 0.00;
+				}
+
+			}
+		}
+
+		//整合数据
+		$res['stime'] = $stime;
+		$res['etime'] = $etime;
+		$res['goods'] = $goods;
+        
+		if($res){
+			echo json_encode($res);	
+		}else{
+			echo 2;
+		}
+    }
+
+	//插入拉新红包
+	public function doPageInsertRedPacket(){
+		global $_W, $_GPC;
+		$rid = $_GPC['rid'];//红包id
+		$uid = $_GPC['uid'];//分享人id
+		$openid = $_GPC['openid'];//用户openidid
+		
+		//判断是否开启活动
+		$redset = pdo_get('mzhk_sun_redpacket_set',array('uniacid'=>$_W['uniacid']));
+		if($redset['open_redpacket']==0 || $redset['open_redpacket1']==0){
+			echo 222;
+			exit;
+		}
+		
+		//获取红包数据
+		$res = pdo_get('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'id'=>$rid));
+
+		//判断是否自己领取
+		$user = pdo_get('mzhk_sun_user',array('uniacid'=>$_W['uniacid'],'openid'=>$openid));
+		if($user['id']==$uid){
+			echo 222;
+			exit;
+		}
+
+		
+		//获取邀请人数
+		if($res['gnum']==1){//每日可领取
+			$day_start = strtotime(date("Y-m-d")." 00:00:00");
+			$day_end   = strtotime(date("Y-m-d")." 23:59:59");
+
+			//判断是否已经点击过
+			//$click = pdo_get('mzhk_sun_redpacket_urelation',array('uniacid'=>$_W['uniacid'],'openid'=>$openid,'uid'=>$uid,'rid'=>$rid,'gnum'=>1,'addtime>='=>$day_start,'addtime<='=>$day_end));
+
+			$sql ="select id from ".tablename('mzhk_sun_redpacket_urelation')." where uniacid=".$_W['uniacid']." and openid='".$openid."' and uid=".$uid." and rid=".$rid." and gnum=1 and addtime>=".$day_start." and addtime<=".$day_end." ";
+			$click = pdo_fetch($sql);
+			
+			
+			if($click){
+				echo 222;
+				exit;
+			}
+
+			$num = pdo_fetchcolumn("select count(id) as num from ".tablename('mzhk_sun_redpacket_urelation')." where uid='".$uid."' and uniacid='".$_W['uniacid']."' and rid='".$rid."' and addtime>=".$day_start." and addtime<=".$day_end." ");
+		}else{//只能领取一次
+
+			//判断是否已经点击过
+			$click = pdo_get('mzhk_sun_redpacket_urelation',array('uniacid'=>$_W['uniacid'],'openid'=>$openid,'uid'=>$uid,'rid'=>$rid,'gnum'=>0));
+			if($click){
+				echo 222;
+				exit;
+			}
+
+			$num = pdo_fetchcolumn("select count(id) as num from ".tablename('mzhk_sun_redpacket_urelation')." where uid='".$uid."' and uniacid='".$_W['uniacid']."' and rid='".$rid."' ");
+		}
+		
+		if(!$num || $num==null){
+			$num = 0;
+		}
+
+		if($num<$res['snum']){
+			$data = array(
+				'uniacid' => $_W['uniacid'],
+				'rid' => $rid,
+				'openid' => $openid,
+				'uid' => $uid,
+				'gnum' => $res['gnum'],
+				'addtime' => time(),
+			);
+
+			pdo_insert('mzhk_sun_redpacket_urelation',$data);
+			$nums = $num+1;
+			
+			if($res['state']==1){//多少天内有效
+				$etimes   = strtotime("+".$res['rday']." days", time());
+			}else{//当日有效
+				$etimes   = strtotime(date("Y-m-d")." 23:59:59");
+			}
+
+			if($nums==$res['snum']){
+				$data2 = array(
+					'uniacid' => $_W['uniacid'],
+					'rname' => $res['rname'],
+					'rmoney' => $res['rmoney'],
+					'addtime' => time(),
+					'overtime' => $etimes,
+					'allowmoney' => $res['allowmoney'],
+					'gnum' => $res['gnum'],
+					'rid' => $rid,
+					'type' => $res['type'],
+					'uid' => $uid
+				);
+				pdo_insert('mzhk_sun_redpacket_user',$data2);
+			}
+		}
+	}
+
+	//判断是否领取
+	public function doPageIsGive(){
+		global $_W, $_GPC;
+		$rid = $_GPC['rid'];//红包id
+		$openid = $_GPC['openid'];//分享人id
+
+		$day_start = strtotime(date("Y-m-d")." 00:00:00");
+		$day_end   = strtotime(date("Y-m-d")." 23:59:59");
+
+		//获取用户数据
+		$user = pdo_get('mzhk_sun_user',array('uniacid'=>$_W['uniacid'],'openid'=>$openid));
+
+		//获取红包数据
+		$redpacket = pdo_get('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'id'=>$rid));
+
+		//判断是否获取红包
+		if($redpacket['gnum']==1){//每日可领取
+			$nums = pdo_fetchcolumn("select count(id) as num from ".tablename('mzhk_sun_redpacket_user')." where uid='".$user['id']."' and uniacid='".$_W['uniacid']."' and rid='".$rid."' and type=1 and addtime>=".$day_start." and addtime<=".$day_end." and gnum=1");
+
+			//获取好友数据
+			$sql = "select u.img from ".tablename('mzhk_sun_redpacket_urelation')." as ur left join ".tablename('mzhk_sun_user')." as u on u.openid=ur.openid where ur.rid=".$rid." and ur.uniacid='".$_W['uniacid']."' and ur.uid=".$user['id']." and ur.addtime>=".$day_start." and ur.addtime<=".$day_end." and ur.gnum=1 order by ur.id asc";
+			$friends = pdo_fetchall($sql);
+			if($friends){
+				$res['friends'] = $friends;
+			}else{
+				$res['friends'] = [];
+			}
+
+			if($nums>0){
+
+				$res['isgive'] = 1; //已领取
+				
+				echo json_encode($res);
+			}else{
+				$res['isgive'] = 0; //未领取
+				echo json_encode($res);
+			}
+		}else{//只能领取一次
+			$nums = pdo_fetchcolumn("select count(id) as num from ".tablename('mzhk_sun_redpacket_user')." where uid='".$user['id']."' and uniacid='".$_W['uniacid']."' and rid='".$rid."' and type=1 and gnum=0");
+
+			//获取好友数据
+			$sql = "select u.img from ".tablename('mzhk_sun_redpacket_urelation')." as ur left join ".tablename('mzhk_sun_user')." as u on u.openid=ur.openid where ur.rid=".$rid." and ur.uniacid='".$_W['uniacid']."' and ur.uid=".$user['id']." and ur.gnum=0 order by ur.id asc";
+			$friends = pdo_fetchall($sql);
+			if($friends){
+				$res['friends'] = $friends;
+			}else{
+				$res['friends'] = [];
+			}
+			
+			if($nums>0){
+
+				$res['isgive'] = 1; //已领取
+
+				echo json_encode($res);
+			}else{
+				$res['isgive'] = 0; //未领取
+				echo json_encode($res);
+			}
+		}
+		
+	}
+
+	//获取用户红包
+	public function doPagegetUserRedpacket(){
+		global $_W, $_GPC;
+
+		$openid = $_GPC['openid'];//用户openid
+		$type = $_GPC['type'];//0可使用 1不可使用
+
+		$user = pdo_get('mzhk_sun_user',array('uniacid'=>$_W['uniacid'],'openid'=>$openid));
+		
+		$now = time();
+
+		$pagesize = 10;
+		$pageindex = intval($_GPC['page'])*$pagesize;
+
+		if($type==1){//不可使用
+			$sql = "select * from ".tablename('mzhk_sun_redpacket_user')." where uid=".$user['id']." and uniacid='".$_W['uniacid']."' and (isuse=1 or overtime<".$now.") order by id desc limit ".$pageindex.",".$pagesize;
+		}else{//可使用
+			$sql = "select * from ".tablename('mzhk_sun_redpacket_user')." where uid=".$user['id']." and uniacid='".$_W['uniacid']."' and isuse=0 and overtime>=".$now." order by id desc limit ".$pageindex.",".$pagesize;
+		}
+
+		$res = pdo_fetchall($sql);
+
+
+		//获取可使用和不可使用红包数
+		$usenums = pdo_fetchcolumn("select count(id) as num from ".tablename('mzhk_sun_redpacket_user')." where uid=".$user['id']." and uniacid='".$_W['uniacid']."' and isuse=0 and overtime>=".$now." ");
+		
+		$nousenums = pdo_fetchcolumn("select count(id) as num from ".tablename('mzhk_sun_redpacket_user')." where uid=".$user['id']." and uniacid='".$_W['uniacid']."' and (isuse=1 or overtime<".$now.") ");
+
+
+		if($res){
+			foreach($res as $k=>$v){
+				$sy = date('Y',$v['addtime']);
+				$sm = date('m',$v['addtime']);
+				$sd = date('d',$v['addtime']);
+				$res[$k]['stime'] = $sy.'.'.$sm.'.'.$sd;
+
+				$ey = date('Y',$v['overtime']);
+				$em = date('m',$v['overtime']);
+				$ed = date('d',$v['overtime']);
+				$res[$k]['etime'] = $ey.'.'.$em.'.'.$ed;
+
+				$res[$k]['diff'] = floor($this->diffBetweenTwoDays($now, $v['overtime']));
+
+				//使用类型
+				$application = pdo_get('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'id'=>$v['rid']),array('application'));
+				$res[$k]['application'] = $application['application'];
+				
+				$res[$k]['usenums'] = $usenums;
+				$res[$k]['nousenums'] = $nousenums;
+				$res[$k]['isok'] = 1;
+			}
+
+			echo json_encode($res);
+		}else{
+			$ress= [];
+			$ress[0]['usenums'] = $usenums;
+			$ress[0]['nousenums'] = $nousenums;
+			$ress[0]['isok'] = 2;
+			echo json_encode($ress);
+		}
+	}
+
+	//获取红包详情
+    public function doPagegetDetail(){
+	    global $_W, $_GPC;
+
+		$id = $_GPC['id'];//已有红包id
+				
+		$res = pdo_get('mzhk_sun_redpacket_user',array('uniacid'=>$_W['uniacid'],'id'=>$id));
+
+		//开始时间
+		$sy = date('Y',$res['addtime']);
+		$sm = date('m',$res['addtime']);
+		$sd = date('d',$res['addtime']);
+		$stime = $sy.'.'.$sm.'.'.$sd;
+
+		//结束时间
+		$ey = date('Y',$res['overtime']);
+		$em = date('m',$res['overtime']);
+		$ed = date('d',$res['overtime']);
+		$etime = $ey.'.'.$em.'.'.$ed;
+
+
+		//红包详情
+		$ress = pdo_get('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'id'=>$res['rid']));
+
+		//关联商品
+		if($ress['application']==1 && $ress['type']!=4){//通用
+			//获取关联商品类型
+			$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>1,'rid'=>$ress['id']),array('gid'));
+			
+			$goodsarr = [];
+			foreach($relation as $k=>$v){
+				if($v['gid']==4){
+					$lid = 5;
+				}elseif($v['gid']==5){
+					$lid = 12;
+				}else{
+					$lid = $v['gid'];
+				}
+				
+
+				$pagesize = 5;
+				$pageindex = intval($_GPC['page'])*$pagesize;
+
+				$nowtime = date("Y-m-d H:i:s");
+
+				if($v['gid']==5){
+					$sql = "select originalprice as ptshopprice,lid,id as gid,gname,pic,subcardprice as shopprice,vipprice from ".tablename('mzhk_sun_subcard_goods')." where uniacid=".$_W['uniacid']." and lid=".$lid." and status=1 and antime>='".time()."' and astime<='".time()."' order by sort desc,id asc limit ".$pageindex.",".$pagesize;
+				}else{
+					$sql = "select ptshopprice,lid,gid,gname,pic,shopprice,vipprice,kjprice,ptprice,qgprice from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and lid=".$lid." and status=2 and antime>='".$nowtime."' and astime<='".$nowtime."' order by sort desc,gid asc limit ".$pageindex.",".$pagesize;
+				}
+
+				
+
+				$goodsarr[] = pdo_fetchall($sql);
+			}
+		}elseif($ress['application']==2 || ($ress['application']==4 && $ress['type']==4)){//部分商品
+			//获取关联商品
+			if($ress['application']==4 && $ress['type']==4){
+				$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>4,'rid'=>$ress['id']),array('gid','lid'));
+			}else{
+				$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>2,'rid'=>$ress['id']),array('gid','lid'));
+			}
+			
+			$goods = [];
+			foreach($relation as $k=>$v){
+
+				if($_GPC['page']>=1){
+					$goods = [];
+				}else{
+					if($v['lid']==12){
+						$sql = "select originalprice as ptshopprice,lid,id as gid,gname,pic,subcardprice as shopprice,vipprice from ".tablename('mzhk_sun_subcard_goods')." where uniacid=".$_W['uniacid']." and id=".$v['gid']." and status=1";
+					}else{
+						$sql = "select ptshopprice,lid,gid,gname,pic,shopprice,vipprice,kjprice,ptprice,qgprice from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and gid=".$v['gid']." and status=2";
+					}
+					
+					$goods[] = pdo_fetch($sql);
+				}				
+			}
+		}elseif($ress['application']==3 || ($ress['application']==1 && $ress['type']==4)){//部分商家
+			//获取关联商家
+			if($ress['application']==1 && $ress['type']==4){
+				$relation = [];
+				$relation[0]['gid'] = $ress['bid'];
+			}else{
+				$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>3,'rid'=>$ress['id']),array('gid','lid'));
+			}
+			
+			$goodsarr = [];
+			foreach($relation as $k=>$v){
+
+				$pagesize = 5;
+				$pageindex = intval($_GPC['page'])*$pagesize;
+
+				$nowtime = date("Y-m-d H:i:s");
+
+				//判断是否有次卡插件
+				$system=pdo_get('mzhk_sun_subcard_set',array('uniacid'=>$_W['uniacid']));
+				if($system['opensubcard']==1){//安装次卡
+					$sql1 = "select ptshopprice,lid,gid,gname,pic,shopprice,vipprice,kjprice,ptprice,qgprice from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and bid=".$v['gid']." and (lid=1 or lid=2 or lid=3 or lid=5) and status=2 and antime>='".$nowtime."' and astime<='".$nowtime."' ";
+					
+					$sql2 = "select originalprice as ptshopprice,lid,id as gid,gname,pic,subcardprice as shopprice,vipprice,subcardprice as kjprice,subcardprice as ptprice,subcardprice as qgprice from ".tablename('mzhk_sun_subcard_goods')." where uniacid=".$_W['uniacid']." and bid=".$v['gid']." and lid=12 and status=1 and antime>='".time()."' and astime<='".time()."' ";
+					
+					$sql = "select * from (".$sql1." union all ".$sql2." ) as a ";
+					$select_sql =$sql." LIMIT " .$pageindex.",".$pagesize;
+					$goodsarr[] = pdo_fetchall($select_sql);
+				}else{ //未安装次卡
+					$sql = "select ptshopprice,lid,gid,gname,pic,shopprice,vipprice,kjprice,ptprice,qgprice from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and bid=".$v['gid']." and (lid=1 or lid=2 or lid=3 or lid=5) and status=2 and antime>='".$nowtime."' and astime<='".$nowtime."' order by sort desc,gid asc limit ".$pageindex.",".$pagesize;
+					$goodsarr[] = pdo_fetchall($sql);
+				}
+				
+			}
+		}
+
+		//三维转二维
+		if($goodsarr){
+			$goods = [];
+			foreach($goodsarr as $k=>$v){
+				foreach($v as $k2=>$v2){
+					$goods[] = $v2;
+				}
+			}
+		}
+
+
+		//整理产生数据
+		if($goods){
+			foreach($goods as $k=>$v){
+				//图片路劲
+				$goods[$k]['img_url'] = $_W["attachurl"].$v['pic'];
+				
+				//销量
+				if($v['lid']==1){//普通
+					//优惠多少元
+					if($v['ptshopprice']>$v['shopprice']){
+						$discountmoney = $v['ptshopprice'] - $v['shopprice'];
+					}else{
+						$discountmoney = 0.00;
+					}
+					$nums = pdo_fetchcolumn("select count(oid) as num from ".tablename('mzhk_sun_order')." where gid='".$v['gid']."' and uniacid='".$_W['uniacid']."' and status>2 and isrefund=0 ");
+				}
+				if($v['lid']==2){//砍价
+					//优惠多少元
+					$discountmoney = $v['shopprice'] - $v['kjprice'];
+					$nums = pdo_fetchcolumn("select count(oid) as num from ".tablename('mzhk_sun_kjorder')." where gid='".$v['gid']."' and uniacid='".$_W['uniacid']."' and status>2 and isrefund=0 ");
+				}
+				if($v['lid']==3){//拼团
+					//优惠多少元
+					$discountmoney = $v['shopprice'] - $v['ptprice'];
+					$nums = pdo_fetchcolumn("select count(id) as num from ".tablename('mzhk_sun_ptgroups')." where gid='".$v['gid']."' and uniacid='".$_W['uniacid']."' and status>2 and isrefund=0 ");
+				}
+				if($v['lid']==5){//抢购
+					//优惠多少元
+					$discountmoney = $v['shopprice'] - $v['qgprice'];
+					$nums = pdo_fetchcolumn("select count(oid) as num from ".tablename('mzhk_sun_qgorder')." where gid='".$v['gid']."' and uniacid='".$_W['uniacid']."' and status>2 and isrefund=0 ");
+				}
+
+				if($v['lid']==12){//次卡
+					//优惠多少元
+					if($v['ptshopprice']>$v['shopprice']){
+						$discountmoney = $v['ptshopprice'] - $v['shopprice'];
+					}else{
+						$discountmoney = 0.00;
+					}
+					$nums = pdo_fetchcolumn("select count(id) as num from ".tablename('mzhk_sun_subcard_order')." where gid='".$v['gid']."' and uniacid='".$_W['uniacid']."' and status>2 and isrefund=0 ");
+				}
+
+				if($nums){
+					$goods[$k]['num'] = $nums;
+				}else{
+					$goods[$k]['num'] = 0;
+				}
+
+				if($discountmoney){
+					$discountmoney = sprintf("%.2f",$discountmoney);
+					$goods[$k]['discountmoney'] = $discountmoney;
+				}else{
+					$goods[$k]['discountmoney'] = 0.00;
+				}
+
+			}
+		}
+
+		//说明
+		$explain = pdo_get('mzhk_sun_redpacket_set',array('uniacid'=>$_W['uniacid']),array('explain'));
+
+		//整合数据
+		$res['stime'] = $stime;
+		$res['etime'] = $etime;
+		$res['goods'] = $goods;
+		$res['application'] = $ress['application'];
+		$res['explain'] = $explain['explain'];
+		
+		if($res){
+			
+			//获取商家名称
+			$bname = pdo_get('mzhk_sun_brand',array('uniacid'=>$_W['uniacid'],'bid'=>$res['bid']),array('bname'));
+			$res['bname'] = $bname['bname'];
+
+			echo json_encode($res);	
+		}else{
+			echo 2;
+		}
+	}
+
+	//判断商品是否与红包挂钩
+    public function doPageGoodsRedpacket(){
+	    global $_W, $_GPC;
+
+		$id = $_GPC['id'];//商品id
+		$openid = $_GPC['openid'];//用户openid
+		$lidtype = $_GPC['lid'];//商品类型，用于次卡判断
+
+		//判断是否开启活动
+		$redset = pdo_get('mzhk_sun_redpacket_set',array('uniacid'=>$_W['uniacid']));
+		if($redset['open_redpacket']==0 || $redset['open_redpacket1']==0){
+			echo 3;
+			exit;
+		}
+
+		//判断商品是否关联红包
+		//获取当前拉新红包
+		$res = pdo_get('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'rec'=>1,'type'=>1));
+
+		if($res){
+			//开始时间
+			$sy = date('Y',time());
+			$sm = date('m',time());
+			$sd = date('d',time());
+			$stime = $sy.'.'.$sm.'.'.$sd;
+
+			//结束时间
+			if($res['state']==1){//多少天内有效
+				$etimes   = strtotime("+".$res['rday']." days", time());
+				$ey = date('Y',$etimes);
+				$em = date('m',$etimes);
+				$ed = date('d',$etimes);
+				$etime = $ey.'.'.$em.'.'.$ed;
+			}else{//当日有效
+				$etimes   = strtotime(date("Y-m-d")." 23:59:59");
+				$ey = date('Y',$etimes);
+				$em = date('m',$etimes);
+				$ed = date('d',$etimes);
+				$etime = $ey.'.'.$em.'.'.$ed;
+			}
+
+			$res['stime'] = $stime;
+			$res['etime'] = $etime;
+		}
+		
+
+		//关联商品
+		if($res['application']==1){//通用
+			//获取关联商品类型
+			$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>1,'rid'=>$res['id']),array('gid','lid'));
+			$goodsarr = [];
+			foreach($relation as $k=>$v){
+				if($v['gid']==4){
+					$lid = 5;
+				}elseif($v['gid']==5){
+					$lid = 12;
+				}else{
+					$lid = $v['gid'];
+				}
+
+				$nowtime = date("Y-m-d H:i:s");
+
+				if($v['lid']==12){
+					$sql = "select id as gid from ".tablename('mzhk_sun_subcard_goods')." where uniacid=".$_W['uniacid']." and lid=".$lid." and status=1 and antime>='".time()."' and astime<='".time()."' order by sort desc,id asc";
+				}else{
+					$sql = "select gid from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and lid=".$lid." and status=2 and antime>='".$nowtime."' and astime<='".$nowtime."' order by sort desc,gid asc";
+				}
+				
+
+				$goodsarr[] = pdo_fetchall($sql);
+			}
+		}elseif($res['application']==2){//部分商品
+			//获取关联商品
+			$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>2,'rid'=>$res['id']),array('gid','lid'));
+			$goods2 = [];
+			foreach($relation as $k=>$v){
+				if($v['lid']==12){
+					$sql = "select id as gid from ".tablename('mzhk_sun_subcard_goods')." where uniacid=".$_W['uniacid']." and id=".$v['gid']." and status=1";
+				}else{
+					$sql = "select gid from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and gid=".$v['gid']." and status=2";
+				}
+				
+
+				$goods2[] = pdo_fetch($sql);
+			}
+		}elseif($res['application']==3){//部分商家
+			//获取关联商家
+			$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>3,'rid'=>$res['id']),array('gid'));
+			$goodsarr = [];
+			foreach($relation as $k=>$v){
+
+				$nowtime = date("Y-m-d H:i:s");
+
+				if($lidtype==12){
+					$sql = "select id as gid from ".tablename('mzhk_sun_subcard_goods')." where uniacid=".$_W['uniacid']." and bid=".$v['gid']." and lid=12 and status=1 and antime>='".time()."' and astime<='".time()."' order by sort desc,id asc";
+				}else{
+					$sql = "select gid from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and bid=".$v['gid']." and (lid=1 or lid=2 or lid=3 or lid=5) and status=2 and antime>='".$nowtime."' and astime<='".$nowtime."' order by sort desc,gid asc";
+				}
+				
+
+				$goodsarr[] = pdo_fetchall($sql);
+			}
+		}
+
+		//三维转一维
+		if($goodsarr){
+			$goods = [];
+			foreach($goodsarr as $k=>$v){
+				foreach($v as $k2=>$v2){
+					foreach($v2 as $k3=>$v3){
+						$goods[] = $v3;
+					}
+				}
+			}
+		}
+
+		//二维转一维
+		if($goods2){
+			$goods = [];
+			foreach($goods2 as $k=>$v){
+				foreach($v as $k2=>$v2){
+					$goods[] = $v2;
+				}
+			}
+		}
+
+		//判断是否再数组内
+		if(in_array($id,$goods)){
+			//判断是否已经领取
+			$day_start = strtotime(date("Y-m-d")." 00:00:00");
+			$day_end   = strtotime(date("Y-m-d")." 23:59:59");
+
+			//获取用户数据
+			$user = pdo_get('mzhk_sun_user',array('uniacid'=>$_W['uniacid'],'openid'=>$openid));
+
+			//判断是否获取红包
+			if($res['gnum']==1){//每日可领取
+				$nums = pdo_fetchcolumn("select count(id) as num from ".tablename('mzhk_sun_redpacket_user')." where uid='".$user['id']."' and uniacid='".$_W['uniacid']."' and rid='".$res['id']."' and type=1 and addtime>=".$day_start." and addtime<=".$day_end." and gnum=1");
+
+				if($nums>0){
+					$res['isgive'] = 1; //已领取
+					echo json_encode($res);
+				}else{
+					$res['isgive'] = 2; //未领取
+					echo json_encode($res);
+				}
+			}else{//只能领取一次
+				$nums = pdo_fetchcolumn("select count(id) as num from ".tablename('mzhk_sun_redpacket_user')." where uid='".$user['id']."' and uniacid='".$_W['uniacid']."' and rid='".$res['id']."' and type=1 and gnum=0");
+
+				if($nums>0){
+					$res['isgive'] = 1; //已领取
+					echo json_encode($res);
+				}else{
+					$res['isgive'] = 2; //未领取
+					echo json_encode($res);
+				}
+			}
+
+		}else{
+			echo 3; //商品没有关联红包
+			exit;
+		}
+
+	}
+
+	//获取用户红包列表
+	public function doPageGetredpacketList(){
+		global $_W, $_GPC;
+
+		$openid = $_GPC['openid'];//用户openid
+		$id = $_GPC['id'];//商品id
+
+		//获取用户所有红包
+		$user = pdo_get('mzhk_sun_user',array('uniacid'=>$_W['uniacid'],'openid'=>$openid));
+		$res = pdo_getall('mzhk_sun_redpacket_user',array('uniacid'=>$_W['uniacid'],'uid'=>$user['id']));
+
+		//判断红包是否可用
+		foreach($res as $k=>$v){
+			//判断商品是否关联红包
+			$redpacket = pdo_get('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'id'=>$v['rid']));
+			
+			if($redpacket['application']==1 && $redpacket['type']!=4){//通用
+				//获取关联商品类型
+				$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>1,'rid'=>$redpacket['id']),array('gid','lid'));
+				$goodsarr = [];
+				
+				foreach($relation as $k1=>$v1){
+					if($v1['gid']==4){
+						$lid = 5;
+					}elseif($v1['gid']==5){
+						$lid = 12;
+					}else{
+						$lid = $v1['gid'];
+					}
+
+					$nowtime = date("Y-m-d H:i:s");
+
+					if($v1['gid']==5){
+						$sql = "select id as gid from ".tablename('mzhk_sun_subcard_goods')." where uniacid=".$_W['uniacid']." and lid=".$lid." and status=1 and antime>='".time()."' and astime<='".time()."' order by sort desc,id asc";
+					}else{
+						$sql = "select gid from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and lid=".$lid." and status=2 and antime>='".$nowtime."' and astime<='".$nowtime."' order by sort desc,gid asc";
+					}
+					
+
+					$goodsarr[] = pdo_fetchall($sql);
+				}
+
+				//三维转一维
+				if($goodsarr){
+					$goods = [];
+					foreach($goodsarr as $k4=>$v4){
+						foreach($v4 as $k5=>$v6){
+							foreach($v6 as $k7=>$v7){
+								$goods[] = $v7;
+							}
+						}
+					}
+				}
+
+			}elseif($redpacket['application']==2 || $redpacket['application']==4){//部分商品
+				//获取关联商品
+				if($redpacket['application']==2){
+					$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>2,'rid'=>$redpacket['id']),array('gid','lid'));
+				}else{
+					$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>4,'rid'=>$redpacket['id']),array('gid','lid'));
+				}
+				//$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>2,'rid'=>$redpacket['id']),array('gid'));
+				
+				$goods2 = [];
+				foreach($relation as $k2=>$v2){
+					if($v2['lid']==12){
+						$sql = "select id as gid from ".tablename('mzhk_sun_subcard_goods')." where uniacid=".$_W['uniacid']." and id=".$v2['gid']." and status=1";
+					}else{
+						$sql = "select gid from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and gid=".$v2['gid']." and status=2";
+					}
+					
+
+					$goods2[] = pdo_fetch($sql);
+				}
+
+				//二维转一维
+				if($goods2){
+					$goods = [];
+					foreach($goods2 as $k8=>$v8){
+						foreach($v8 as $k9=>$v9){
+							$goods[] = $v9;
+						}
+					}
+				}
+
+			}elseif($redpacket['application']==3 || ($redpacket['application']==1 && $redpacket['type']==4)){//部分商家
+				//获取关联商家
+				if($redpacket['application']==3){
+					$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>3,'rid'=>$redpacket['id']),array('gid','lid'));
+				}else{
+					$relation = [];
+					$relation[0]['gid'] = $redpacket['bid'];
+				}
+				//$relation = pdo_getall('mzhk_sun_redpacket_relation',array('uniacid'=>$_W['uniacid'],'application'=>3,'rid'=>$redpacket['id']),array('gid'));
+				
+				$goodsarr = [];
+				foreach($relation as $k3=>$v3){
+
+					$nowtime = date("Y-m-d H:i:s");
+
+					//判断是否有次卡插件
+					$system=pdo_get('mzhk_sun_subcard_set',array('uniacid'=>$_W['uniacid']));
+					if($system['opensubcard']==1){//安装次卡
+						$sql1 = "select gid from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and bid=".$v3['gid']." and (lid=1 or lid=2 or lid=3 or lid=5) and status=2 and antime>='".$nowtime."' and astime<='".$nowtime."' ";
+						$sql2 = "select id as gid from ".tablename('mzhk_sun_subcard_goods')." where uniacid=".$_W['uniacid']." and bid=".$v3['gid']." and lid=12 and status=1 and antime>='".time()."' and astime<='".time()."' ";
+
+						$sql = "select * from (".$sql1." union all ".$sql2." ) as a ";
+						$select_sql =$sql." ";
+						$goodsarr[] = pdo_fetchall($select_sql);
+					}else{ //未安装次卡
+						$sql = "select gid from ".tablename('mzhk_sun_goods')." where uniacid=".$_W['uniacid']." and bid=".$v3['gid']." and (lid=1 or lid=2 or lid=3 or lid=5) and status=2 and antime>='".$nowtime."' and astime<='".$nowtime."' order by sort desc,gid asc";
+						$goodsarr[] = pdo_fetchall($sql);
+					}
+					
+					
+				}
+
+				//三维转一维
+				if($goodsarr){
+					$goods = [];
+					foreach($goodsarr as $k4=>$v4){
+						foreach($v4 as $k5=>$v6){
+							foreach($v6 as $k7=>$v7){
+								$goods[] = $v7;
+							}
+						}
+					}
+				}
+			}
+
+			 //load()->func('logging');
+			 //logging_run("红包数据");
+			 //logging_run($goods);
+
+
+			//判断是否再数组内
+			if(in_array($id,$goods)){
+				$res[$k]['isrelation'] = 1; //商品关联红包
+			}else{
+				$res[$k]['isrelation'] = 2; //商品没有关联红包
+			}
+
+			//判断时间
+			if($v['overtime']>=time()){
+				$res[$k]['isover'] = 1; // 未过期
+			}else{
+				$res[$k]['isover'] = 2; // 已过期
+			}
+
+			//使用类型
+			$application = pdo_get('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'id'=>$v['rid']),array('application'));
+			$res[$k]['application'] = $application['application'];
+
+			//整合时间
+			//开始时间
+			$sy = date('Y',$v['addtime']);
+			$sm = date('m',$v['addtime']);
+			$sd = date('d',$v['addtime']);
+			$stime = $sy.'.'.$sm.'.'.$sd;
+
+			//结束时间
+			$ey = date('Y',$v['overtime']);
+			$em = date('m',$v['overtime']);
+			$ed = date('d',$v['overtime']);
+			$etime = $ey.'.'.$em.'.'.$ed;
+
+			$res[$k]['stime'] = $stime;
+			$res[$k]['etime'] = $etime;
+		}
+
+
+		$result = [];
+		if($res){
+			foreach($res as $k10=>$v10){
+				
+				if($v10['isrelation']==1 && $v10['isover']==1 && $v10['isuse']==0 && $v10['status']==0){//可使用红包
+					$result['use'][] = $v10;
+				}else{//不可使用红包
+					$result['nouse'][] = $v10;
+				}
+				
+			}
+		}
+
+
+		//获取说明
+		$explain = pdo_get('mzhk_sun_redpacket_set',array('uniacid'=>$_W['uniacid']),array('explain'));
+		$result['explain'] = $explain['explain'];
+		
+
+		if($result){
+			echo json_encode($result);
+		}else{
+			echo 2;
+		}
+	}
+
+	//插入每日红包
+	public function doPageInsertRedPacket2(){
+		global $_W, $_GPC;
+		$rid = $_GPC['rid'];//红包id
+		$openid = $_GPC['openid'];//分享人id
+		
+		//判断是否开启活动
+		$redset = pdo_get('mzhk_sun_redpacket_set',array('uniacid'=>$_W['uniacid']));
+		if($redset['open_redpacket']==0 || $redset['open_redpacket2']==0){
+			echo 222;
+			exit;
+		}
+
+		//获取红包数据
+		$res = pdo_get('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'id'=>$rid));
+
+		//获取用户数据
+		$user = pdo_get('mzhk_sun_user',array('uniacid'=>$_W['uniacid'],'openid'=>$openid));
+
+		//判断是否已经领取过
+		$day_start = strtotime(date("Y-m-d")." 00:00:00");
+		$day_end   = strtotime(date("Y-m-d")." 23:59:59");
+
+		$sql ="select id from ".tablename('mzhk_sun_redpacket_user')." where uniacid=".$_W['uniacid']." and uid=".$user['id']." and rid=".$rid." and addtime>=".$day_start." and addtime<=".$day_end." ";
+		$num = pdo_fetch($sql);
+		
+		if($num){
+			echo 222;
+			exit;
+		}
+
+		
+		if($res['state']==1){//多少天内有效
+			$etimes   = strtotime("+".$res['rday']." days", time());
+		}else{//当日有效
+			$etimes   = strtotime(date("Y-m-d")." 23:59:59");
+		}
+
+		$data = array(
+			'uniacid' => $_W['uniacid'],
+			'rname' => $res['rname'],
+			'rmoney' => $res['rmoney'],
+			'addtime' => time(),
+			'overtime' => $etimes,
+			'allowmoney' => $res['allowmoney'],
+			'gnum' => 1,
+			'rid' => $rid,
+			'type' => $res['type'],
+			'uid' => $user['id']
+		);
+		pdo_insert('mzhk_sun_redpacket_user',$data);
+	}
+
+	/*********************************************/
+	//获取当前适用返利红包
+	public function doPageGetredpacket3(){
+		global $_W, $_GPC;
+		$gid = $_GPC['gid'];//商品id
+				
+		//判断是否开启活动
+		$redset = pdo_get('mzhk_sun_redpacket_set',array('uniacid'=>$_W['uniacid']));
+		if($redset['open_redpacket']==0 || $redset['open_redpacket3']==0){
+			echo 2;
+			exit;
+		}
+
+		$res = pdo_get('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'rec'=>1,'type'=>3));
+
+		//判断商品是否参与裂变
+		if($res['goodsapplication']==1){
+			//获取参与裂变商品
+			$goods = pdo_getall('mzhk_sun_redpacket_relation2',array('uniacid'=>$_W['uniacid'],'rid'=>$res['id']),array('gid'));
+			$goodsarr = [];
+			foreach($goods as $k=>$v){
+				$goodsarr[] = $v['gid'];
+			}
+
+			if(!in_array($gid,$goodsarr)){
+				echo 2;
+				exit;
+			}
+		}
+
+
+		//开始时间
+		$sy = date('Y',time());
+		$sm = date('m',time());
+		$sd = date('d',time());
+		$stime = $sy.'.'.$sm.'.'.$sd;
+
+		//结束时间
+		if($res['state']==1){//多少天内有效
+			$etimes   = strtotime("+".$res['rday']." days", time());
+			$ey = date('Y',$etimes);
+			$em = date('m',$etimes);
+			$ed = date('d',$etimes);
+			$etime = $ey.'.'.$em.'.'.$ed;
+		}else{//当日有效
+			$etimes   = strtotime(date("Y-m-d")." 23:59:59");
+			$ey = date('Y',$etimes);
+			$em = date('m',$etimes);
+			$ed = date('d',$etimes);
+			$etime = $ey.'.'.$em.'.'.$ed;
+		}
+
+		//整合数据
+		$res['stime'] = $stime;
+		$res['etime'] = $etime;
+		
+		if($res){
+			echo json_encode($res);	
+		}else{
+			echo 2;
+		}
+	}
+
+	/*******************/
+	//插入返利红包
+	public function doPageInsertRedPacket3(){
+		global $_W, $_GPC;
+		$rid = $_GPC['rid'];//红包id
+		$uid = $_GPC['uid'];//分享人id
+		$oid = $_GPC['oid'];//订单id
+		$openid = $_GPC['openid'];//用户openid
+		
+		//判断是否开启活动
+		$redset = pdo_get('mzhk_sun_redpacket_set',array('uniacid'=>$_W['uniacid']));
+		if($redset['open_redpacket']==0 || $redset['open_redpacket3']==0){
+			echo 222;
+			exit;
+		}
+
+		//获取红包数据
+		$res = pdo_get('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'id'=>$rid));
+
+		
+		//判断是否自己领取
+		$user = pdo_get('mzhk_sun_user',array('uniacid'=>$_W['uniacid'],'openid'=>$openid));
+		if($user['id']==$uid){
+			echo 222;
+			exit;
+		}
+
+		//判断是否已经点击过
+		$click = pdo_get('mzhk_sun_redpacket_urelation',array('uniacid'=>$_W['uniacid'],'openid'=>$openid,'uid'=>$uid,'rid'=>$rid,'oid'=>$oid));
+		if($click){
+			echo 222;
+			exit;
+		}
+
+		//获取点击人数
+		$num = pdo_fetchcolumn("select count(id) as num from ".tablename('mzhk_sun_redpacket_urelation')." where uid='".$uid."' and uniacid='".$_W['uniacid']."' and rid='".$rid."' and oid='".$oid."' ");
+		
+		if(!$num || $num==null){
+			$num = 0;
+		}
+
+		if($num<$res['sharenum']){
+			$data = array(
+				'uniacid' => $_W['uniacid'],
+				'rid' => $rid,
+				'openid' => $openid,
+				'uid' => $uid,
+				'gnum' => 1,
+				'addtime' => time(),
+				'oid' => $oid,
+			);
+
+			pdo_insert('mzhk_sun_redpacket_urelation',$data);
+			
+			if($res['state']==1){//多少天内有效
+				$etimes   = strtotime("+".$res['rday']." days", time());
+			}else{//当日有效
+				$etimes   = strtotime(date("Y-m-d")." 23:59:59");
+			}
+
+			//判断推荐人是否已有相关红包
+			$recnum = pdo_get('mzhk_sun_redpacket_user',array('uniacid'=>$_W['uniacid'],'uid'=>$uid,'rid'=>$rid,'oid'=>$oid));
+
+			if(!$recnum && $recnum==null){
+				$data2 = array(
+					'uniacid' => $_W['uniacid'],
+					'rname' => $res['rname'],
+					'rmoney' => $res['rmoney'],
+					'addtime' => time(),
+					'overtime' => $etimes,
+					'allowmoney' => $res['allowmoney'],
+					'gnum' => 1,
+					'rid' => $rid,
+					'type' => $res['type'],
+					'uid' => $uid,
+					'oid' => $oid,
+				);
+				pdo_insert('mzhk_sun_redpacket_user',$data2);
+			}
+
+			$data3 = array(
+				'uniacid' => $_W['uniacid'],
+				'rname' => $res['rname'],
+				'rmoney' => $res['rmoney'],
+				'addtime' => time(),
+				'overtime' => $etimes,
+				'allowmoney' => $res['allowmoney'],
+				'gnum' => 1,
+				'rid' => $rid,
+				'type' => $res['type'],
+				'uid' => $user['id'],
+				'oid' => $oid,
+			);
+			pdo_insert('mzhk_sun_redpacket_user',$data3);
+
+			//开始时间
+			$sy = date('Y',time());
+			$sm = date('m',time());
+			$sd = date('d',time());
+			$stime = $sy.'.'.$sm.'.'.$sd;
+
+			//结束时间
+			if($res['state']==1){//多少天内有效
+				$etimes   = strtotime("+".$res['rday']." days", time());
+				$ey = date('Y',$etimes);
+				$em = date('m',$etimes);
+				$ed = date('d',$etimes);
+				$etime = $ey.'.'.$em.'.'.$ed;
+			}else{//当日有效
+				$etimes   = strtotime(date("Y-m-d")." 23:59:59");
+				$ey = date('Y',$etimes);
+				$em = date('m',$etimes);
+				$ed = date('d',$etimes);
+				$etime = $ey.'.'.$em.'.'.$ed;
+			}
+
+			//整合数据
+			$res['stime'] = $stime;
+			$res['etime'] = $etime;
+			echo json_encode($res);
+		}else{
+			echo 222;
+			exit;
+		}
+	}
+
+	//获取当前联盟红包
+	public function doPageGetredpacket4(){
+		global $_W, $_GPC;
+		$gid = $_GPC['gid'];//
+		$openid = $_GPC['openid'];//商品id
+		$lidtype = $_GPC['lid'];//用于次卡判断
+
+		$user = pdo_get('mzhk_sun_user',array('uniacid'=>$_W['uniacid'],'openid'=>$openid));
+				
+		//判断是否开启活动
+		$redset = pdo_get('mzhk_sun_redpacket_set',array('uniacid'=>$_W['uniacid']));
+		if($redset['open_redpacket']==0 || $redset['open_redpacket4']==0){
+			echo 2;
+			exit;
+		}
+
+		//获取参与联盟商家
+		$now = date("Y-m-d H:i:s",time());
+		$sql ="select r.bid from ".tablename('mzhk_sun_brand')." as b left join ".tablename('mzhk_sun_redpacket_relation3')." as r on r.bid=b.bid left join ".tablename('mzhk_sun_redpacket_union')." as u on u.id=r.uid where r.uniacid=".$_W['uniacid']." and u.status=1 and  u.ustime<='".$now."' and u.uetime>='".$now."' ";
+
+		$res = pdo_fetchall($sql);
+
+		//判断商品是否参与联盟红包
+		if($lidtype==12){
+			$goods = pdo_get('mzhk_sun_subcard_goods',array('uniacid'=>$_W['uniacid'],'id'=>$gid),array('bid'));
+		}else{
+			$goods = pdo_get('mzhk_sun_goods',array('uniacid'=>$_W['uniacid'],'gid'=>$gid),array('bid'));
+		}
+		
+		//联盟商家二维转一维
+		if($res){
+			$arr = [];
+			foreach($res as $k=>$v){
+				$arr[] = $v['bid']; 
+			}
+
+			if(in_array($goods['bid'],$arr)){
+				//存在，获取联盟红包
+				//$uid = pdo_get('mzhk_sun_redpacket_relation3',array('uniacid'=>$_W['uniacid'],'bid'=>$goods['bid']),array('uid'));
+
+				$sql3="select r.uid from ".tablename("mzhk_sun_redpacket_relation3")." as r left join ".tablename("mzhk_sun_redpacket_union")." as u on r.uid=u.id where r.uniacid=".$_W['uniacid']." and r.bid=".$goods['bid']." and u.uetime>='".$now."' and u.ustime<='".$now."'";
+				$uid = pdo_fetch($sql3);
+				
+				$sql2 ="select g.*,u.uname,u.id as unid from ".tablename('mzhk_sun_redpacket_goods')." as g left join ".tablename('mzhk_sun_redpacket_relation3')." as r on r.rid=g.id left join ".tablename('mzhk_sun_redpacket_union')." as u on u.id=r.uid where g.uniacid=".$_W['uniacid']." and u.status=1 and  u.ustime<='".$now."' and u.uetime>='".$now."' and r.uid=".$uid['uid']." ";
+				
+				$res2 = pdo_fetchall($sql2);
+
+				if($res2){
+					foreach($res2 as $k2=>$v2){
+						
+						//商家名称
+						$bname = pdo_get('mzhk_sun_brand',array('uniacid'=>$_W['uniacid'],'bid'=>$v2['bid']),array('bname'));
+						if($bname){
+							$res2[$k2]['bname'] = $bname['bname'];
+						}
+						
+						//开始时间
+						$sy = date('Y',time());
+						$sm = date('m',time());
+						$sd = date('d',time());
+						$res2[$k2]['stime'] = $sy.'.'.$sm.'.'.$sd;
+
+						//结束时间
+						if($v2['state']==1){//多少天内有效
+							$etimes   = strtotime("+".$v2['rday']." days", time());
+							$ey = date('Y',$etimes);
+							$em = date('m',$etimes);
+							$ed = date('d',$etimes);
+							$res2[$k2]['etime'] = $ey.'.'.$em.'.'.$ed;
+						}else{//当日有效
+							$etimes   = strtotime(date("Y-m-d")." 23:59:59");
+							$ey = date('Y',$etimes);
+							$em = date('m',$etimes);
+							$ed = date('d',$etimes);
+							$res2[$k2]['etime'] = $ey.'.'.$em.'.'.$ed;
+						}
+
+						//判断是否已领取
+						$uredpacket = pdo_get('mzhk_sun_redpacket_user',array('uniacid'=>$_W['uniacid'],'bid'=>$v2['bid'],'type'=>4,'uid'=>$user['id'],'unid'=>$uid['uid']));
+						if($uredpacket){
+							$res2[$k2]['isgive'] = 1; //已领取
+						}else{
+							$res2[$k2]['isgive'] = 0; //未领取
+						}
+					}
+
+					$res3 = [];
+					foreach($res2 as $k3=>$v3){
+						if($v3['isgive']==0){
+							$res3[] = $v3;
+						}
+					}
+
+					echo json_encode($res3);
+				}else{
+					echo 2;
+					exit;
+				}
+			}else{
+				echo 2;
+				exit;
+			}
+		}else{
+			echo 2;
+			exit;
+		}
+	}
+
+	//插入联盟红包
+	public function doPagegetUredpacket(){
+		global $_W, $_GPC;
+		$rid = $_GPC['rid'];//红包id
+		$bid = $_GPC['bid'];//商家id
+		$gid = $_GPC['gid'];//商家id
+		$unid = $_GPC['unid'];//联盟id
+		$openid = $_GPC['openid'];//用户openid
+		$lidtype = $_GPC['lid'];//用于次卡判断
+		
+		//用户信息
+		$user = pdo_get('mzhk_sun_user',array('uniacid'=>$_W['uniacid'],'openid'=>$openid));
+		//商家信息
+		$brand = pdo_get('mzhk_sun_brand',array('uniacid'=>$_W['uniacid'],'bid'=>$bid));
+		//联盟红包来源
+		if($lidtype==12){
+			$goods = pdo_get('mzhk_sun_subcard_goods',array('uniacid'=>$_W['uniacid'],'id'=>$gid));
+		}else{
+			$goods = pdo_get('mzhk_sun_goods',array('uniacid'=>$_W['uniacid'],'gid'=>$gid));
+		}
+		
+		
+		//判断是否开启活动
+		$redset = pdo_get('mzhk_sun_redpacket_set',array('uniacid'=>$_W['uniacid']));
+		if($redset['open_redpacket']==0 || $redset['open_redpacket4']==0){
+			echo 2;
+			exit;
+		}
+
+		//判断是否已经领取过过
+		$isgive = pdo_get('mzhk_sun_redpacket_user',array('uniacid'=>$_W['uniacid'],'uid'=>$user['id'],'rid'=>$rid,'bid'=>$bid,'unid'=>$unid));
+		if($isgive){
+			echo 2;
+			exit;
+		}
+
+		//获取红包数据
+		$redpacket = pdo_get('mzhk_sun_redpacket_goods',array('uniacid'=>$_W['uniacid'],'id'=>$rid));
+
+		if($redpacket['state']==1){//多少天内有效
+			$etimes   = strtotime("+".$redpacket['rday']." days", time());
+		}else{//当日有效
+			$etimes   = strtotime(date("Y-m-d")." 23:59:59");
+		}
+
+		
+		$data = array(
+			'uniacid' => $_W['uniacid'],
+			'rname' => $redpacket['rname'],
+			'rmoney' => $redpacket['rmoney'],
+			'addtime' => time(),
+			'overtime' => $etimes,
+			'allowmoney' => $redpacket['allowmoney'],
+			'rid' => $rid,
+			'type' => $redpacket['type'],
+			'uid' => $user['id'],
+			'bid' => $bid,
+			'fbid' => $goods['bid'],
+			'umoneytype' => $redpacket['umoneytype'],
+			'unionmoney' => $redpacket['unionmoney'],
+			'unid' => $unid,
+		);
+		$res = pdo_insert('mzhk_sun_redpacket_user',$data);
+
+		if($res){
+			echo json_encode($res);	
+		}else{
+			echo 2;
+		}
+		
+	}
+
+	//一键插入联盟红包
+	public function doPagegetAll(){
+		global $_W, $_GPC;
+		$gid = $_GPC['gid'];//商家id
+		$openid = $_GPC['openid'];//用户openid
+		$lidtype = $_GPC['lidtype'];//用于次卡判断
+		
+		//判断是否开启活动
+		$redset = pdo_get('mzhk_sun_redpacket_set',array('uniacid'=>$_W['uniacid']));
+		if($redset['open_redpacket']==0 || $redset['open_redpacket4']==0){
+			echo 2;
+			exit;
+		}
+		
+		//用户信息
+		$user = pdo_get('mzhk_sun_user',array('uniacid'=>$_W['uniacid'],'openid'=>$openid));
+		
+		//联盟红包来源
+		if($lidtype==12){
+			$goods = pdo_get('mzhk_sun_subcard_goods',array('uniacid'=>$_W['uniacid'],'id'=>$gid),array('bid'));
+		}else{
+			$goods = pdo_get('mzhk_sun_goods',array('uniacid'=>$_W['uniacid'],'gid'=>$gid),array('bid'));
+		}
+		
+
+
+		//$uid = pdo_get('mzhk_sun_redpacket_relation3',array('uniacid'=>$_W['uniacid'],'bid'=>$goods['bid']),array('uid'));
+
+		$now = date("Y-m-d H:i:s",time());
+
+		$sql3="select r.uid from ".tablename("mzhk_sun_redpacket_relation3")." as r left join ".tablename("mzhk_sun_redpacket_union")." as u on r.uid=u.id where r.uniacid=".$_W['uniacid']." and r.bid=".$goods['bid']." and u.uetime>='".$now."' and u.ustime<='".$now."'";
+		$uid = pdo_fetch($sql3);
+		
+		$sql ="select g.*,u.uname from ".tablename('mzhk_sun_redpacket_goods')." as g left join ".tablename('mzhk_sun_redpacket_relation3')." as r on r.rid=g.id left join ".tablename('mzhk_sun_redpacket_union')." as u on u.id=r.uid where g.uniacid=".$_W['uniacid']." and u.status=1 and  u.ustime<='".$now."' and u.uetime>='".$now."' and r.uid=".$uid['uid']." ";
+		
+		$res = pdo_fetchall($sql);
+
+		if($res){
+			foreach($res as $k=>$v){
+				$uredpacket = pdo_get('mzhk_sun_redpacket_user',array('uniacid'=>$_W['uniacid'],'bid'=>$v['bid'],'type'=>4,'uid'=>$user['id'],'unid'=>$uid['uid']));
+				if(!$uredpacket){
+					if($v['state']==1){//多少天内有效
+						$etimes   = strtotime("+".$v['rday']." days", time());
+					}else{//当日有效
+						$etimes   = strtotime(date("Y-m-d")." 23:59:59");
+					}
+					$data = array(
+						'uniacid' => $_W['uniacid'],
+						'rname' => $v['rname'],
+						'rmoney' => $v['rmoney'],
+						'addtime' => time(),
+						'overtime' => $etimes,
+						'allowmoney' => $v['allowmoney'],
+						'rid' => $v['id'],
+						'type' => $v['type'],
+						'uid' => $user['id'],
+						'bid' => $v['bid'],
+						'fbid' => $goods['bid'],
+						'umoneytype' => $v['umoneytype'],
+						'unionmoney' => $v['unionmoney'],
+						'unid' => $uid['uid'],
+					);
+					$res = pdo_insert('mzhk_sun_redpacket_user',$data);
+					if(!$res){
+						echo 2;
+						exit;
+					}
+				}
+			}
+		}else{
+			echo 2;
+			exit;
+		}
+	}
+	
+	//判断红包是否已使用
+	public function doPageRedPacketUse(){
+		global $_W, $_GPC;
+		$rid = $_GPC['rid'];//红包id
+
+		$res = pdo_get('mzhk_sun_redpacket_user',array('uniacid'=>$_W['uniacid'],'id'=>$rid));
+		if($res['isuse']==1){
+			echo 111;
+		}else{
+			echo 222;
+		}
+
+
+	}
+	
+	//两个日期相差天数
+	function diffBetweenTwoDays ($day1, $day2)
+	{
+	  $second1 = $day1;
+	  $second2 = $day2;
+		
+	  if ($second1 < $second2) {
+		$tmp = $second2;
+		$second2 = $second1;
+		$second1 = $tmp;
+	  }
+	  return ($second1 - $second2) / 86400;
+	}
+
+
+}

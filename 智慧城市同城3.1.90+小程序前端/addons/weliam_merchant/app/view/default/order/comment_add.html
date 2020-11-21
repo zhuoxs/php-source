@@ -1,0 +1,147 @@
+{php include wl_template('common/header');}
+<style type="text/css">
+.weui-uploader__file img{height:100%;width: 100%;}
+.star-comment{margin-left:.5rem;}
+.star-comment,.star-comment span{display:inline-block;*display:block;zoom:1;}
+.star-comment{vertical-align:middle; position:relative; top:2px;}
+.star-comment span{width: 1rem; height:1rem;}
+.star-comment .star-outline span{background:url({URL_APP_IMAGE}star_comment_empty.png) no-repeat center center;background-size: contain;}
+.star-comment .star-checked span{background:url({URL_APP_IMAGE}star_comment_fill.png) no-repeat center center;background-size:contain; position:absolute; top:0;}
+.star-comment input[type=radio]{display:none;}
+.star-comment input[type=radio]:checked + span{background:url({URL_APP_IMAGE}star_comment_fill.png) no-repeat center center;background-size:contain;}
+</style>
+<div class="page-group" >
+    <div class="page page-current">
+    	<header class="bar bar-nav">
+		    <a class="button button-link button-nav pull-left back" href="javascript:history.back(-1);"><span class="icon icon-left"></span>返回</a>
+		    <h1 class="title">添加评论</h1>
+		</header>
+		<div class="content native-scroll" style="top: 2.2rem;">
+		    <div class="weui-cells__title">基本信息</div>
+		    <div class="list-block">
+		        <ul>
+		        	<li>
+			          <div class="item-content">
+			            <div class="item-inner">
+			              <div class="item-title label">商家评分</div>
+			              <div class="item-input">
+			                <div class="star-comment">
+								<div class="star-outline" data-name="delivery_service">
+									<label>
+										<input type="radio" class="radio" value="1">
+										<span></span>
+									</label>
+									<label>
+										<input type="radio" class="radio" value="2">
+										<span></span>
+									</label>
+									<label>
+										<input type="radio" class="radio" value="3">
+										<span></span>
+									</label>
+									<label>
+										<input type="radio" class="radio" value="4">
+										<span></span>
+									</label>
+									<label>
+										<input type="radio" class="radio" value="5">
+										<span></span>
+									</label>
+								</div>
+							</div>
+			              </div>
+			            </div>
+			          </div>
+			        </li>
+			        <li class="align-top">
+			          <div class="item-content">
+			            <div class="item-inner">
+			              <div class="item-title label">评价内容</div>
+			              <div class="item-input">
+			                <textarea placeholder="请输入您对商家的评价吧~~~" id="commenttext"></textarea>
+			              </div>
+			            </div>
+			          </div>
+			        </li>
+		        </ul>
+		    </div>
+		    <div class="weui-cells__title">有图有真相</div>
+		    <div class="list-block">
+		        <ul>
+		            <li>
+		            	<div class="weui-cell">
+			                <div class="weui-cell__bd">
+			                    <div class="weui-uploader">
+			                        <div class="weui-uploader__bd">
+			                            <ul class="weui-uploader__files upload_images_views uploadImg_createImgView" style="margin-left: -45px;">
+			                            </ul>
+                                        <span class="uploadImg_maxNumber" maxlength="8" name="images[]"><!--图片上传数量限制 预览图片建立class:uploadImg_createImgView--></span>
+                                        {php include wl_template('common/img_upload');}
+			                        </div>
+			                    </div>
+			                </div>
+			            </div>
+		            </li>
+		        </ul>
+		    </div>
+		    <div class="weui-btn-area">
+	            <a class="weui-btn weui-btn_primary external submit-com" href="javascript:;" id="showTooltips">提交评论</a>
+	        </div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+common.uploadImageByWxJs(9);
+common.deleteImagesInWxJs();
+
+$(document).on('click', '.star-outline label', function(){
+	$(this).parent().find('.radio').removeClass('checked').prop('checked', false);
+	$(this).prevAll().find('.radio').prop('checked', true);
+	$(this).find('.radio').addClass('checked').prop('checked', true);
+});
+
+$(document).on('click', '.submit-com', function(){
+	var $this = $(this);
+	if($this.hasClass('disabled')) {
+		$.toast('请勿重复提交,重试请刷新');
+		return false;
+	}
+	$this.addClass('disabled');
+
+	var thumbs = new Array();
+	var commenttext = $('#commenttext').val();
+	var star = $('.radio.checked').val();
+	$('.upload_images_views input').each(function(){
+		var value = $(this).val();
+		if(value) {
+			thumbs.push(value);
+		}
+	});
+	if(!star) {
+		$this.removeClass('disabled')
+		$.toast('请评价商家评分');
+		return false;
+	}
+	if(!commenttext) {
+		$this.removeClass('disabled')
+		$.toast('请输入评价内容');
+		return false;
+	}
+	$.post("{php echo app_url('order/comment/add_ajax',array('id'=>$id,'plugin'=>$_GPC['plugin']))}", {thumbs:thumbs,commenttext:commenttext,star:star}, function(result){
+		if(result.errno != 0) {
+			$this.removeClass('disabled')
+			$.toast(result.message);
+		} else {
+			$.alert('评价成功', function () {
+				if("{$_GPC['plugin']}" == 'noorder'){
+	          	  location.href="{php echo app_url('store/merchant/detail',array('id'=>$id))}";
+				}else{
+	          	  location.href="{php echo app_url('order/userorder/orderlist',array('status'=>'all'))}";
+				}
+	        });
+		}
+		return false;
+	}, 'json');
+});
+</script>
+{php include wl_template('common/footer');}

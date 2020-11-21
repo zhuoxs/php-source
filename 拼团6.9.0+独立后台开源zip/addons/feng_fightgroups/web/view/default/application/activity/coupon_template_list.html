@@ -1,0 +1,161 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+	<li {if $do == 'list' && $opp == 'all'} class="active"{/if}><a href="{php echo web_url('application/activity/list',array('opp' => 'all'));}">所有优惠券</a></li>
+	<li {if $do == 'list' && $opp == 'future'} class="active"{/if}><a href="{php echo web_url('application/activity/list', array('opp' => 'future'));}">未开始</a></li>
+	<li {if $do == 'list' && $opp == 'on'} class="active"{/if}><a href="{php echo web_url('application/activity/list', array('opp' => 'on'));}">进行中</a></li>
+	<li {if $do == 'list' && $opp == 'end'} class="active"{/if}><a href="{php echo web_url('application/activity/list', array('opp' => 'end'));}">己结束</a></li>
+</ul>
+<div class="clearfix coupon-list-top">
+	<div class="search pull-right">
+		<form class="form-inline" action='./index.php' method='get'>
+			<input type="hidden" name="c" value="site" />
+            <input type="hidden" name="a" value="entry" />
+            <input type="hidden" name="m" value="feng_fightgroups" />
+            <input type="hidden" name="do" value="application" />
+            <input type="hidden" name="ac" value="activity" />
+            <input type="hidden" name="op" value="list"/>
+			<div class="form-group">
+				<div class="input-group">
+					<div class="input-group-addon"><i class="fa fa-search"></i></div>
+					<input type="text" class="form-control" placeholder="搜索" name="keyword">
+				</div>
+			</div>
+		</form>
+	</div>
+	<div><a href="{php echo web_url('application/activity/create');}" class="btn btn-success">新建优惠券</a></div>
+</div>
+<style>
+table thead tr th, table tbody tr td {text-align: center; width: 10%;}
+table thead tr th:last-child, table tbody tr td:last-child {text-align: right;}
+</style>
+<div class="panel panel-default">
+	<div class="panel-body table-responsive">
+		<table class="table table-hover">
+			<thead>
+			<tr>
+				<th>优惠券名称</th>
+				<th>价值(元)</th>
+				<th>最低消费</th>
+				<th>领取限制</th>
+				<th>库存</th>
+				<th>领取人 / 次</th>
+				<th>已使用</th>
+				<th style="width:180px;">有效期</th>
+				<th style="width:220px;">操作</th>
+			</tr>
+			</thead>
+			<tbody>
+			{loop $tg_coupon_templates $coupon_template}
+			<tr>
+				<td >{$coupon_template['name']}</td>
+				<td>
+					{if $coupon_template['is_random'] == 2} {$coupon_template['value']} <br/>~<br/> {$coupon_template['value_to']} {else} {$coupon_template['value']} {/if} 
+				</td>
+				<td>
+					{if !empty($coupon_template['at_least']) && $coupon_template['at_least'] != 0.00}
+						￥{$coupon_template['at_least']}
+					{else}
+						不限制
+					{/if}
+				</td>
+				<td>
+					{if empty($coupon_template['quota'])}
+						不限张数
+					{else}
+						一人{$coupon_template['quota']} 张
+					{/if}
+				</td>
+				<td>{$coupon_template['stock']} </td>
+				<td>
+						{if $coupon_template['count_receive_person']}
+							{$coupon_template['count_receive_person']} 
+						{else}
+							0
+						{/if}
+						/
+						{if $coupon_template['count_receive_num']} 
+							{$coupon_template['count_receive_num']} 
+						{else}
+							0
+						{/if}
+				</td>
+				<td>{$coupon_template['quantity_issue']}</td>
+				<td>
+					{php echo date('Y-m-d H:i:s', $coupon_template['start_time']);} <br/>
+					至<br/>
+					{php echo date('Y-m-d H:i:s', $coupon_template['end_time']);}
+				</td>
+				<td style="position:relative;">
+					<a href="javascript:;" data-id="{$coupon_template['id']}"  data-url="{php echo app_url('member/coupon/get',array('id'=>$coupon_template['id']))}" id="js-copy{$coupon_template['id']}" class="js-copy">复制链接</a>-
+					{if $coupon_template['enable'] != 1}
+					<a href="{php echo web_url('application/activity/edit', array('id' => $coupon_template['id']))}" >查看</a>
+					 - 
+					已失效
+					{else}
+					<a href="{php echo web_url('application/activity/edit', array('id' => $coupon_template['id']))}">编辑</a>
+					 - 
+					<a href="javascript:;" class="js-disable" data-coupon-template-id="{$coupon_template['id']}">使失效</a>
+					
+					{/if}
+					- 
+					<a href="javascript:;" class="js-delete" data-coupon-template-id="{$coupon_template['id']}">删除</a>
+				</td>
+			</tr>
+			{/loop}
+			</tbody>
+		</table>
+	</div>
+</div>
+{$pager}
+<!--<style>
+.inner__content {background: #eee none repeat scroll 0 0;border-top: 1px solid #dcdcdc;box-sizing: border-box;color: #666;margin-top: 10px;margin-bottom:10px;min-width: 100%;padding: 10px 5px;width: auto;text-align:center;}
+</style>-->
+<script>
+$(function(){
+	require(['jquery', 'util'], function($, util){
+		$('.js-copy').each(function(){
+			var id=$(this).attr('data-id');
+			util.clip("#js-copy"+id, $(this).attr('data-url'));
+		});
+	});
+	$('.fa-search').click(function() {
+		$('.coupon-list-top').find('form').submit();
+	});
+	$('.js-disable').click(function(e) {
+		e.stopPropagation();
+		var $this = $(this);
+		var op = "{$_GPC['op']}";
+		var coupon_template_id = $this.data('coupon-template-id');
+		var url = "{php echo web_url('application/activity/edit')}&id=" + coupon_template_id;
+		var html = '<a href="'+ url +'">查看</a> - 已失效';
+		util.nailConfirm(this, function(state) {
+			if (!state) return;
+			$.post("{php echo web_url('application/activity/disable')}", {id : coupon_template_id}, function(data) {
+				
+				if(!data.errno){
+					if (op == 'on' || op == 'future') {
+						$this.parent().parent().remove();
+					};
+					$this.parent().html(html);
+				};
+				util.tips(data.message);
+			}, 'json');
+		}, {html:'<div class="inner__content"><span style="color:red;font-size:12px;">失效后将导致该优惠券无法被领取和编辑</span></div>确定让这组优惠券失效?', placement:'left'});
+	});
+	$('.js-delete').click(function(e) {
+		e.stopPropagation();
+		var $this = $(this);
+		var coupon_template_id = $this.data('coupon-template-id');
+		util.nailConfirm(this, function(state) {
+			if (!state) return;
+			$.post("{php echo web_url('application/activity/delete')}", {id : coupon_template_id}, function(data) {
+				if(!data.errno){
+					$this.parent().parent().remove();
+				}
+				util.tips(data.message);
+			}, 'json');
+		}, {html:"确定删除？"});
+	});
+});
+</script>
+{php include wl_template('common/footer');}

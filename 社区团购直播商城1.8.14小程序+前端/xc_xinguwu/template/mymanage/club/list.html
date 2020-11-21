@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {template 'common/listhead'}
+    <script type="text/javascript" src="../addons/{$_GPC['m']}/resource/address/city-picker.js"></script>
+    <script type="text/javascript" src="./resource/js/require.js?v=20170915"></script>
+
+    <style type="text/css">
+        .xc_mask {
+            position: fixed;
+            background-color: rgba(0,0,0,0.1);
+            width: 100vw;
+            height: 100vh;
+            z-index: 2000;
+            display: none;
+        }
+        .xc_mask    .control-label{
+            text-align: right;
+        }
+        .xc_mask .xc_modal_plane{
+            margin-left: auto;
+            margin-right: auto;
+            width: 80%;
+            margin-top: 5vh;
+        }
+        .xc_mask .xc_modal_plane .row{
+            margin-bottom: 10px;
+        }
+        .xc_mask .xc_modal_plane .control-label{
+            height:35px;
+            line-height: 35px;
+        }
+        .xc_cityaddress select{
+
+            width: 33%;
+            float: left;
+        }
+
+    </style>
+</head>
+<body class="nav-md">
+
+<div class="xc_mask">
+
+    <div class="xc_modal_plane">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span></button>
+                <h4 class="modal-title" id="myModalLabel">修改信息</h4>
+            </div>
+            <div class="modal-body">
+
+                <div class="row">
+                    <div class="form-group">
+                        <label  class="col-sm-1 control-label">团名称</label>
+                        <div class="col-sm-11">
+                            <input type="text" class="form-control" name="title" id="title" value="">
+                        </div>
+
+
+                    </div>
+                </div>
+
+
+                <div class="row">
+                    <div class="form-group">
+                        <label  class="col-sm-1 control-label">姓名</label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" name="name" id="name" value="">
+                        </div>
+
+                        <label  class="col-sm-1 control-label">联系方式</label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" name="phone" id="phone" value="">
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="row">
+
+                    <div class="xc_cityaddress">
+                        <label  class="col-sm-1 control-label">省市县</label>
+                        <div class="col-sm-11">
+                            <select class="form-control" data-field="province"></select>
+                            <select class="form-control" data-field="city" >
+                                <option value="">请选择市</option>
+                            </select>
+                            <select class="form-control" data-field="county" >
+                                <option value="">请选择县</option>
+                            </select>
+                        </div>
+                    </div>
+
+                </div>
+
+
+
+                <div class="row">
+                    <div class="form-group">
+                        <label  class="col-sm-1 control-label">地址</label>
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" name="address" id="address" value="">
+                        </div>
+                        <div class="col-sm-4">
+                            <button type="button" class="btn btn-default search" style="margin-right:5px;">查询</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label  class="col-sm-1 control-label">坐标</label>
+                        <label  class="col-sm-2 control-label" style="width: auto;padding-left: 15px;">经度</label>
+                        <div class="col-sm-3">
+                            <input type="text" class="form-control" name="longitude" value="121.32998">
+                        </div>
+                        <label  class="col-sm-2 control-label" style="width: auto;">纬度</label>
+                        <div class="col-sm-3">
+                            <input type="text" class="form-control" name="latitude" value="28.57787">
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <div class="row">
+                    <div class="form-group">
+                        <label class="col-sm-1 control-label" >经度</label>
+                        <div class="col-sm-11">
+
+
+                            <div id="container" style="width: 100%;height: 350px"></div>
+
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="btnclose">关闭</button>
+                <button type="button" class="btn btn-primary" id="btnsavedatax">确认</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="contai ner body">
+    <div class="main_container" style="overflow-x: hidden;min-height: 100vh;background-color: white">
+        <div class="">
+            <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">筛选</div>
+                    <div class="panel-body">
+                        <form action=" " method="get" class="form-horizontal" role="form" id="searchform"
+                              onsubmit="return false">
+
+
+
+                            <div class="col-xs-12 col-sm-3 col-md-3col-lg-3">
+                                <div class="input-group">
+                                    <span class="input-group-addon">团名称或姓名</span>
+                                    <input class="form-control" name="seachkey">
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-4 col-md-3 col-lg-3">
+                                <button class="btn btn-default" type="reset"><i class="fa fa-repeat"></i>
+                                    重置
+                                </button>
+                                <button class="btn btn-default" type="submit" id="btnseach"><i class="fa fa-search"></i>
+                                    搜索
+                                </button>
+                                <!--<a class="btn btn-default"-->
+                                <!--href="{php echo $this->createWebUrl($_GPC['do'], array('op'=>'edit','xtitleb'=>urlencode($xtitleb),'xtitlea'=>urlencode($xtitlea)));}">-->
+                                <!--增加</a>-->
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="x_panel">
+                    <div class="x_title">
+                        <h2> {$xtitleb} > {$xtitlea}列表</h2>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                        <div class="ibox-content" id="pfrom">
+                            <!--data-detail-view="true"   data-detail-formatter="detailFormatter"-->
+                            <table id="table" class="dotable" data-toggle="table"
+                                   data-url="{php echo $this->createWebUrl($_GPC['do'], array('op'=>'getseachjson'))}"
+                                   data-sort-name="id" data-sort-order="desc" data-query-params="queryparams"
+                                   data-page-number="1" data-page-size="15" data-mobile-responsive="true"
+                                   data-show-refresh="true">
+                                <thead>
+                                <tr>
+                                    <th data-checkbox="true"></th>
+                                    <th data-field="id" data-sortable="true">ID</th>
+                                    <th data-field="title" data-sortable="true">社团</th>
+                                    <th data-field="" data-sortable="true" data-formatter="format_info"
+                                        data-align="left">团长信息
+                                    </th>
+                                    <th data-field="brokerage" data-sortable="true">佣金</th>
+                                    <th data-field="totalbrokerage" data-sortable="true">总佣金</th>
+                                    <th data-field="status" data-sortable="true" data-formatter="formatstatus"
+                                        data-events="operatestatus">状态
+                                    </th>
+                                    <th data-events="operateEvents" data-formatter="operateFormatter" data-width="26%"
+                                        data-title="操作" data-align="center">操作
+                                    </th>
+                                </tr>
+                                </thead>
+                            </table>
+                            <button type="button" class="btn btn-danger " style="margin-right:5px;" id="delselct">删除选中
+                            </button>
+                            <br>
+                            <br>
+                            说明：
+                            <a class="btn btn btn-default btn-xs"> <i class="fa fa-square-o fa-lg"></i></a>禁用 <a
+                                class="btn btn-primary  btn-xs"> <i class="fa fa-check-square-o fa-lg"></i></a> 开启
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{template 'common/listfoot'}
+<script>
+    function format_info(value, row) {
+        return '<div>姓名:' + row.name + '</div>' +
+            '<div>联系方式:' + row.phone + '</div>' +
+            '<div>地址信息:' + row.region + row.detail + '</div>';
+    }
+</script>
+
+<select>
+    <option></option>
+</select>
+
+
+<script charset="utf-8" src="https://map.qq.com/api/js?v=2.exp&key=SOABZ-AWG3R-FE4WT-WWLDC-RPUVZ-W6FXV"></script>
+<script>
+    var markers=[];
+    var id=0;
+
+
+
+
+    var   longitude="";
+    var  latitude="";
+    if(longitude!="" && latitude!=""){
+        var center = new qq.maps.LatLng(latitude, longitude);
+    }else{
+        var center=new qq.maps.LatLng(39.916527,116.397128);
+    }
+    var map = new qq.maps.Map(document.getElementById('container'),{
+        center: center,
+        zoom: 16
+    });
+    var marker = new qq.maps.Marker({
+        map:map,
+        position: center
+    });
+    markers.push(marker);
+    //调用地址解析类
+    geocoder = new qq.maps.Geocoder({
+        complete : function(result){
+            if(result.detail.location!=""){
+                map.setCenter(result.detail.location);
+                console.log(result.detail.location);
+                $("input[name='longitude']").val(result.detail.location.lng);
+                $("input[name='latitude']").val(result.detail.location.lat);
+                clearOverlays(markers);
+                var marker = new qq.maps.Marker({
+                    map:map,
+                    position: result.detail.location
+                });
+                markers.push(marker);
+            }
+            if(result.detail.address!=""){
+                $("input[name='address']").val(result.detail.address);
+            }
+        }
+    });
+    if($("input[name='address']").val()==""){
+        geocoder.getAddress(center);
+    }
+
+    qq.maps.event.addListener(
+        map,
+        'click',
+        function(event) {
+            $("input[name='longitude']").val(event.latLng.getLng());
+            $("input[name='latitude']").val(event.latLng.getLat());
+            var center = new qq.maps.LatLng(event.latLng.getLat(), event.latLng.getLng());
+            clearOverlays(markers);
+            var marker = new qq.maps.Marker({
+                map:map,
+                position: center
+            });
+            markers.push(marker);
+            geocoder.getAddress(center);
+        }
+    );
+
+    $(function(){
+
+        //   console.log($.rawCitiesData);
+
+        var rawprovinceData= $.rawCitiesData;
+
+
+        $(".xc_cityaddress").each(function () {
+
+            var  $province= $(this).find("[data-field='province']");
+            var $city   = $(this).find("[data-field='city']");
+            var $county  = $(this).find("[data-field='county']");
+            var provincehtml=[];
+            provincehtml.push($('<option value="">请选择省</option>'));
+            for(var a in rawprovinceData)
+            {
+                var $option=   $('<option value="'+rawprovinceData[a]["name"]+'">'+rawprovinceData[a]["name"]+'</option>');
+                $option.data("sub",rawprovinceData[a]["sub"])
+                provincehtml.push($option);
+            }
+            $province.append(provincehtml);
+            $province.change(function () {
+                $city.empty();
+                var cityhtml=[];
+                cityhtml.push($('<option value="">请选择市</option>'));
+                $selectvalue=$(this).val();
+                if($selectvalue!="")
+                {
+                    var  $CitiesData = $(this).find("[value='"+$selectvalue+"']").data("sub");
+
+
+                    for(var a in $CitiesData)
+                    {
+                        var $option=   $('<option value="'+$CitiesData[a]["name"]+'">'+$CitiesData[a]["name"]+'</option>');
+
+
+                        $option.data("sub",$CitiesData[a]["sub"])
+                        cityhtml.push($option);
+                    }
+
+                    $county.html('<option value="">请选择县</option>')
+                }
+                $city.append(cityhtml);
+
+            })
+
+
+            $city.change(function () {
+                $county.empty();
+                $countyhtml=[];
+
+                $countyhtml.push('<option value="">请选择县</option>');
+                $selectvalue=$(this).val();
+                if($selectvalue!="")
+                {
+                    var  $countyData = $(this).find("[value='"+$selectvalue+"']").data("sub");
+
+
+                    for(var a in $countyData)
+                    {
+                        var $option=   ('<option value="'+$countyData[a]["name"]+'">'+$countyData[a]["name"]+'</option>');
+                        $countyhtml.push($option);
+                    }
+
+
+                }
+                $county.append($countyhtml.join(""));
+            })
+
+
+
+
+
+            $("#btnclose,.xc_mask .close").click(function () {
+                $(".xc_mask").hide();
+
+            })
+
+        })
+
+
+
+
+
+
+        $(".search").click(function(){
+            var content=$("input[name='address']").val();
+            if(content!=""){
+                geocoder.getLocation(content);
+            }
+        });
+    })
+
+    function  setvalue($actaddress,provincename,cityname,countyname) {
+
+        var $province= $actaddress.find("[data-field='province']");
+
+
+        if(provincename)
+        {
+            $province.val(provincename);
+            $province.change();
+        }
+        var $city   = $actaddress.find("[data-field='city']");
+        if(cityname){
+
+
+            $city.val(cityname);
+            $city.change();
+
+        }
+        var $county  = $actaddress.find("[data-field='county']");
+        if(countyname){
+
+            $county.val(countyname);
+
+
+        }
+    }
+    function clearOverlays(overlays) {
+        var overlay;
+        if(overlays.length>0){
+            while (overlay = overlays.pop() ) {
+                overlay.setMap(null);
+            }
+        }
+
+    }
+</script>
+
+
+<script type="text/javascript">
+    var htojb = {};
+    $saechparas = null;
+    $(function () {
+        $("#btnseach").click(function () {
+            setseach();
+            $("#table").bootstrapTable('refresh');
+        });
+        $(".js-select2").select2({theme: "bootstrap"});
+        var htpid = {};
+        $('[name="pid"]').find("option").each(function () {
+            htpid[$(this).attr("value")] = $(this).text();
+        });
+        htojb["pid"] = htpid;
+    });
+    function setseach() {
+        $saechparas = {};
+        $saechparas = $("#searchform").serializeArray();
+
+    }
+    function queryparams(params) {
+        if ($saechparas == null) {
+            setseach()
+        }
+        $.each($saechparas, function (i, field) {
+            if (field.name.indexOf("[]") > 0) {
+
+                var kname = field.name.replace("[]", "");
+                if (typeof(params[kname]) === "undefined") {
+                    params[kname] = [];
+                }
+                params[kname].push(field.value)
+            }
+            else {
+                params[field.name] = field.value;
+            }
+        });
+        return params;
+    }
+    $(function () {
+        $("#delselct").click(function () {
+            $pdadta = $("#table").bootstrapTable('getSelections');
+            if ($pdadta.length < 1) {
+                swal({
+                    title: "错误",
+                    text: "选选择删除内容",
+                    type: "error",
+                    timer: 2000
+                });
+            }
+            else {
+                swal({
+                    title: '确认删除吗',
+                    text: "确认删除吗" + $pdadta.length + "记录",
+                    showCancelButton: true,
+                    closeOnConfirm: false,
+                    showLoaderOnConfirm: true,
+                    confirmButtonText: "确认",
+                    cancelButtonText: "取消",
+                    preConfirm: function () {
+                        return new Promise(function (resolve) {
+                            var _postdata = {};
+                            var ids = [];
+                            $.each($pdadta, function (i, field) {
+                                ids.push(field["id"]);
+                            });
+                            _postdata["ids"] = ids.join(",");
+                            $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'delete'));}", {
+                                method: 'POST',
+                                data: _postdata,
+                                dataType: 'json'
+                            }).done(function (response) {
+                                if (parseInt(response["status"]) === 1) {
+                                    xc_edit_message({
+                                        title: "提示",
+                                        text: "删除成功",
+                                        type: "success",
+                                        timer: 1500
+                                    });
+
+                                    $("#table").bootstrapTable('refresh');
+                                }
+                                else {
+                                    xc_edit_message({
+                                        title: "错误",
+                                        text: "删除失败",
+                                        type: "error",
+                                        timer: 2000
+                                    });
+                                }
+                            });
+
+
+                        });
+                    },
+                    allowOutsideClick: false
+                })
+
+            }
+
+        })
+
+    });
+    $saechparas = null;
+
+    $.extend($.fn.bootstrapTable.defaults, {
+        method: 'post',
+        pagination: true,
+        sidePagination: 'server',
+        contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+
+        onClickCell: function (field, value, row, $element) {
+
+
+        },
+        onLoadSuccess: function () {
+
+        }
+    });
+    $.extend($.fn.bootstrapTable.columnDefaults, {
+        align: 'center',
+        valign: 'middle'
+    });
+
+    function operateFormatter(value, row, index) {
+        var myhtml = [];
+        if (row.status == 2) {
+            myhtml.push(
+                '<a class="btn btn-info btn-xs changeStatus" href="javascript:void(0)"  data-value="1">',
+                '通过审核',
+                '</a>'
+            )
+        }
+        if (row.status == 1) {
+            myhtml.push(
+                '<a class="btn btn-info btn-xs changeStatus" href="javascript:void(0)"  data-value="-1">',
+                '关闭',
+                '</a>'
+            )
+        }
+        if (row.status == -1) {
+            myhtml.push(
+                '<a class="btn btn-info btn-xs changeStatus" href="javascript:void(0)"  data-value="1">',
+                '开启',
+                '</a>'
+            )
+        }
+        myhtml.push(
+            '<a class="btn btn-danger btn-xs delete" href="javascript:void(0)"  >',
+            '<i class="fa fa-close" aria-hidden="true" title="删除"></i>',
+            '</a>'
+        );
+
+        myhtml.push(
+            '<a class="btn btn-primary   btn-xs btnedit" href="javascript:void(0)"  >',
+            '修改',
+            '</a>'
+        );
+        return myhtml.join('');
+    }
+    $actindex=0;
+    var operateEvents = {
+        "click a.delete": function (e, value, row, index) {
+            var _postdata = {};
+            _postdata["ids"] = row["id"];
+            swal({
+                title: '确认删除吗',
+                showCancelButton: true,
+                closeOnConfirm: false,
+                showLoaderOnConfirm: true,
+                confirmButtonText: "确认",
+                cancelButtonText: "取消",
+                preConfirm: function () {
+                    return new Promise(function (resolve) {
+                        $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'delete'));}", {
+                            method: 'POST',
+                            data: _postdata,
+                            dataType: 'json'
+                        }).done(function (response) {
+                            if (parseInt(response["status"]) === 1) {
+                                xc_edit_message({
+                                    title: "提示",
+                                    text: "删除成功",
+                                    type: "success",
+                                    timer: 1500
+                                });
+
+                                $("#table").bootstrapTable('refresh');
+                            }
+                            else {
+                                xc_edit_message({
+                                    title: "错误",
+                                    text: "删除失败",
+                                    type: "error",
+                                    timer: 2000
+                                });
+
+                            }
+                        });
+
+                    });
+                },
+
+            })
+        },
+        "click a.changeStatus": function (e, value, row, index) {
+            var _postdata = {};
+            _postdata["id"] = row["id"];
+            _postdata['status'] = e.currentTarget.dataset.value;
+            _postdata['oldstatus'] = row["status"];
+
+
+
+            $actindex = index;
+            $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'midstatus'));}", {
+                method: 'POST',
+                data: _postdata,
+                dataType: 'json'
+            }).done(function (response) {
+                if (parseInt(response["status"]) === 1) {
+                    xc_list_message({
+                        title: "提示",
+                        text: "操作成功",
+                        type: "success",
+                        timer: 1500
+                    });
+                    $("#table").bootstrapTable('updateRow', {
+                        index: $actindex,
+                        row: {
+                            status: _postdata["status"]
+                        }
+                    });
+                }
+                else {
+                    xc_list_message({
+                        title: "错误",
+                        text: "操作失败",
+                        type: "error",
+                        timer: 2000
+                    });
+
+                }
+            });
+
+        },
+        "click a.btnedit": function (e, value, row, index) {
+            id=row["id"]
+            $actindex=index;
+            var  $region=  row["region"].split(" ")
+            setvalue($(".xc_cityaddress"),$region[0],$region[1],$region[2]);
+
+            $(".xc_mask").show();
+
+            $("#address").val(row["detail"]);
+            $("#name").val(row["name"]);
+            $("#title").val(row["title"]);
+            $("#phone").val(row["phone"]);
+            $("[name='latitude']").val(row["latitude"]);
+            $("[name='longitude']").val(row["longitude"]);
+
+
+
+
+            var center = new qq.maps.LatLng(row["latitude"], row["longitude"]);
+            clearOverlays(markers);
+            var marker = new qq.maps.Marker({
+                map:map,
+                position: center
+            });
+            markers.push(marker);
+            geocoder.getAddress(center);
+
+
+
+
+
+        },
+
+    }
+
+
+    $("#btnsavedatax").click(function () {
+
+
+
+        var savemodel={};
+        savemodel["id"]=id;
+        savemodel["detail"]= $("#address").val();
+        savemodel["name"]= $("#name").val();
+        savemodel["phone"]= $("#phone").val();
+        savemodel["title"]= $("#title").val();
+
+        savemodel["latitude"]= $("[name='latitude']").val();
+        savemodel["longitude"]= $("[name='longitude']").val();
+        savemodel["region"] =$("[data-field='province']").val() +" "+$("[data-field='city']").val()+" "+$("[data-field='county']").val();
+
+
+
+        $.ajax("{php echo $this->createWebUrl($_GPC['do'], array('op'=>'midsclubinfo'));}", {
+            method: 'POST',
+            data: {xc:savemodel},
+            dataType: 'json'
+        }).done(function (response) {
+
+            $(".xc_mask").hide();
+            if (parseInt(response["status"]) === 1) {
+                xc_list_message({
+                    title: "提示",
+                    text: "操作成功",
+                    type: "success",
+                    timer: 1500
+                });
+                $("#table").bootstrapTable('updateRow', {
+                    index: $actindex,
+                    row: {
+                        detail: savemodel["detail"],
+                        name: savemodel["name"],
+                        phone: savemodel["phone"],
+                        region: savemodel["region"],
+                        latitude: savemodel["latitude"],
+                        longitude: savemodel["longitude"],
+                        title: savemodel["title"],
+                    }
+                });
+            }
+            else {
+                xc_list_message({
+                    title: "错误",
+                    text: "操作失败",
+                    type: "error",
+                    timer: 2000
+                });
+
+            }
+        });
+
+
+    })
+
+
+    function formatstatus(value, row, index) {
+        if (value == -1) {
+            return '<div class="btn btn-danger">关闭</div>';
+        }
+        else if (value == 1) {
+            return '<div class="btn btn-success">正常</div>';
+        } else if (value == 2) {
+            return '<div class="btn btn-warning">审核中</div>';
+        }
+    }
+
+    function formatsorts(value, row, index) {
+        return ' <input type="number" class="sorts" value="' + value + '">';
+    }
+
+
+</script>
+
+
+</body>
+</html>
+

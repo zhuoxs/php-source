@@ -1,0 +1,194 @@
+{template 'web/common/common'}
+{template 'web/user/navbar'}
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/css_1.9.0/public.css"/>
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/css_1.9.0/common.css"/>
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/css_1.9.0/user.css"/>
+
+<style>
+    .col-sm-8 span{position: relative;top:8px;}
+    .user-list .user-item {
+        text-align: center;
+        width: 80px;
+        border: 1px solid #e3e3e3;
+        padding: 10px 0;
+        cursor: pointer;
+        display: inline-block;
+        vertical-align: top;
+        margin: 0 1rem 1rem 0;
+        border-radius: .15rem;
+    }
+
+    .user-list .user-item:hover {
+        background: rgba(238, 238, 238, 0.54);
+    }
+
+    .user-list .user-item img {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 999px;
+        /*margin-bottom: 1rem;*/
+    }
+
+    .user-list .user-item.active {
+        background: rgba(2, 117, 216, 0.69);
+        color: #fff;
+    }
+
+</style>
+<blockquote class="layui-elem-quote layui-text">
+    用户管理
+</blockquote>
+
+<div class="layui-card">
+    <div class="layui-card-header">添加员工</div>
+    <form id="myform" method="post">
+        <div class="form-group" style="margin-top: 10px;">
+            <div class="col-lg-4">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="nickname" placeholder="微信昵称">
+                    <span class="input-group-btn">
+                        <button class="btn btn-default" type="button" id="searchUser">查找</button>
+                        <button class="layui-btn layui-btn-sm addEmployee" type="button" style="margin-left: 20px;"> <i class="layui-icon">&#xe608;</i> 添加</button>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-8">
+                <div class="user-list">
+                    <div id="userList">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </form>
+</div>
+<div class="layui-card">
+    <div class="user">
+        <!--详情栏-->
+        <div class="row">
+            <div class="col-md-12">
+                <table class="table table-responsive">
+                    <thead>
+                    <tr>
+                        <th style="width: 60px;">UID</th>
+                        <th style="width: 80px;">头像</th>
+                        <th style="">昵称</th>
+                        <th style="">添加时间</th>
+                        <th style="width: 125px;text-align: center;">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {loop $data['list'] $index $item}
+                    <tr>
+                        <td>{$item['uid']}</td>
+                        <td style="overflow: visible;">
+                            <img class="img-40" src="{$item['user']['avatarurl']}" style="border-radius:50%;border:1px solid #efefef;" onerror="">
+                        </td>
+                        <td>
+                            <span class="nickname">{$item['user']['nickname']}</span>
+                        </td>
+                        <td>{php echo date("Y-m-d H:i:s",$item['create_time'])}</td>
+                        <td style="overflow: visible; text-align: center;">
+                            <div class="btn-group">
+                                <a class="btn btn-op btn-operation delete" data-toggle="ajaxRemove" href="#" data-id="{$item['id']}">
+	                                        <span data-toggle="tooltip" data-placement="top" title="删除员工" data-original-title="删除员工">
+	                                            <i class="iconfont icon-el-icon-dev-delete"></i>删除
+	                                        </span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {/loop}
+
+
+                    </tbody>
+                </table>
+                <div style="text-align: right;">
+                    {$data['pager']}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{template 'common/footer'}
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form,layer = layui.layer;
+        $(".delete").click(function(){
+            var id=$(this).attr('data-id');
+            var url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'delete_employee','action'=>'user')}";
+            updateData(url,{id:id},'确认删除吗？');
+        });
+        $("#searchUser").click(function () {
+            var nickname=$("input[name='nickname']").val();
+            if(nickname==''){
+                layer.msg('请输入微信昵称');
+                return false;
+            }
+            $.ajax({
+                type:"post",
+                url:"{url 'site/entry/admin',array('m'=>$_GPC['m'],'op'=>'searchUser','action'=>'coupon')}",
+                data:{nickname:nickname},
+                dataType:'json',
+                success:function(res){
+                    if(res.userData){
+                        var userData=res.userData;
+                        var str='';
+                        for (var i=0;i<userData.length;i++){
+                            str+='<label class="user-item" >';
+                            str+='<img src="'+userData[i].avatarurl+'">';
+                            str+='<input type="checkbox" name="user_id_list[]" value="'+userData[i]['uid']+'" style="display: none">';
+                            str+='<div style="white-space: nowrap;text-overflow: ellipsis;overflow: hidden">';
+                            str+=userData[i]['nickname'];
+                            str+='</div>';
+                            str+='</label>';
+                        }
+                        $("#userList").html(str);
+
+                    }
+                }
+            })
+        })
+        $(document).on("change", "input[name='user_id_list[]']", function () {
+            if ($(this).prop("checked")) {
+                $(this).parents("label").addClass("active");
+            } else {
+                $(this).parents("label").removeClass("active");
+            }
+        });
+
+        $(".addEmployee").click(function () {
+            var uid_arr=new Array();
+            $("input[name='user_id_list[]").each(function (index,item) {
+                if ($(this).prop("checked")) {
+                    uid_arr.push($(this).val());
+                }
+            })
+            if(uid_arr.length <=0){
+                layer.msg('请选择用户');
+                return false;
+            }
+            var load=layer.load();
+            $.ajax({
+                url:"{url 'site/entry/admin',array('m'=>$_GPC['m'],'op'=>'addEmployee','action'=>'user')}",
+                data:{uid_arr:JSON.stringify(uid_arr)},
+                method:'post',
+                dataType:"json",
+                success:function (res) {
+                    console.log(res);
+                    layer.close(load);
+                    layer.msg(res.msg,{time:1000},function () {
+                        window.location.reload();
+                    })
+                }
+            })
+
+        })
+
+    });
+</script>

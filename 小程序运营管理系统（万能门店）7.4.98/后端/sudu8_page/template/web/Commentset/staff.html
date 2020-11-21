@@ -1,0 +1,1365 @@
+{template 'web/common/header'}
+<style>
+
+#sonscatas select{margin-bottom: 15px}
+
+.delbtn{border-color: #e7e7eb;float: left;background: #eee;width: 40px;text-align: center;padding: 3px 6px;font-size: 12px;}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{
+        -webkit-appearance:textfield;
+    }   
+input[type="number"]{
+    -moz-appearance:textfield;
+}
+</style>
+
+<div class="page">
+
+<div class="page_content">
+
+{if $opt == 'display'}
+<div style="height:55px">
+
+    <h3 style="float: left;margin-top: 0;">员工列表</h3>
+
+    <div class="pull-right">
+
+        <a href="{php echo $this->createWebUrl('Commentset', array('op' => 'staff', 'opt' => 'post', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']))}"  class="btn btn-primary we7-padding-horizontal" style="margin-bottom: 20px">添加员工</a>
+
+    </div>
+
+</div>
+
+<form class="form-horizontal" action="" method="post">
+
+<div style="margin-bottom:10px">
+
+    <div style="display: inline-block;">
+
+        搜索:
+
+    </div>
+
+       
+
+    <div style="display: inline-block;">
+
+        <input type="text" name="skey" id="skey" value="{$skey}" class="form-control ng-pristine ng-untouched ng-valid ng-empty" style="border-radius: 0px"  placeholder="搜索姓名关键字" autocomplete="off">
+
+    </div> 
+
+    <div style="display: inline-block;">
+
+        <input name="token" type="hidden" value="{$_W['token']}" />
+
+        <input type="hidden" name="first" value="1">
+
+        <input type="submit" class="btn" style="border-radius: 0px; background-color: #428bca; border: 1px solid #428bca; color:#ffffff" name="submit" value="提交" />
+
+    </div> 
+
+</div>
+
+</form>
+
+    <table class="table we7-table table-hover article-list vertical-middle">
+
+        <tr>
+
+            <td>排序</td>
+
+            <td>ID</td>
+
+            <td>姓名</td>
+
+            <td>年龄</td>
+
+            <td>照片</td>
+
+            <td>头衔</td>
+
+            <td>职务</td>
+
+            <td>手机</td>
+
+            <td>地址</td>
+
+            <td>签约状态</td>
+
+            <td>认证状态</td>
+
+            <td>评分</td>
+
+            <td class="text-right">操作</td>
+            <td >
+                <input type="checkbox" id="all" />全选&nbsp;&nbsp;
+                <a class="btn btn-default btn-sm" onclick="delall()">批量删除</a>
+            </td>
+
+
+        </tr>
+
+       {loop $staffs $item}
+
+        <tr>
+
+           <td>{$item['num']}</td>
+
+           <td>{$item['id']}</td>
+
+            <td>{$item['realname']}</td>
+            <td>{if $item['age'] == 0}保密{else}{$item['age']}{/if}</td>
+
+            <td>
+
+                {if $item['pic']}
+
+                    <img src="{media $item['pic']}" width="100px" alt="">
+
+                {else}
+
+                    <img src="resource/images/nopic-107.png" width="100px" alt="">
+
+                {/if}
+
+
+
+            </td>
+
+            <td>{$item['title']}</td>
+
+            <td>{$item['job']}</td>
+
+            <td>{$item['mobile']}</td>
+
+            <td>{$item['province']}-{$item['city']}-{$item['area']}</td>
+
+            <td>
+
+                {if $item['contract'] == 0}
+
+                    <div class="label label-warning">未签约</div>
+
+                {else}
+
+                    <div class="label label-success">已签约</div>
+
+                {/if}
+
+            </td>
+
+            <td>
+
+                {if $item['auth'] == 0}
+
+                    <div class="label label-warning">未认证</div>
+
+                {else}
+
+                    <div class="label label-success">已认证</div>
+
+                {/if}
+
+            </td>
+
+            <td>{$item['score']}</td>
+
+            <td class="text-right">
+
+                <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('Commentset', array('op' => 'staff', 'opt' => 'post', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}" >编辑</a>
+
+                <a class="btn btn-default btn-sm" onclick="return confirm('此操作不可恢复，确认吗？'); return false;" href="{php echo $this->createWebUrl('Commentset', array('op' => 'staff', 'opt' => 'delete', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}">删除</a>
+
+                <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('Commentset', array('op' => 'staff', 'opt' => 'qrcode', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}" >生成二维码</a>
+
+            </td>
+            <td>
+                <input type="checkbox" name="csb"  value="{$item['id']}"/>
+            </td>
+
+        </tr>
+
+       {/loop}
+
+
+
+    </table>
+
+    {$pager}
+
+<script>
+$('#all').on('click',function(){
+    if (this.checked) {
+        $("input[name='csb']").prop("checked", true);
+    } else {
+        $("input[name='csb']").removeAttr("checked");
+    }
+});
+function delall(){
+    var id_arr = new Array();
+    $.each($("input[name='csb']"),function(){
+        if(this.checked){
+            id_arr.push($(this).val());
+        }
+    });
+   if(id_arr.length>0){
+    $.ajax({
+
+            url : "{php echo $this->createWebUrl('Commentset',['op' => 'batchdel'])}",
+
+            type:'post',
+
+            dataType:'json',
+
+            data:{
+                id_arr:id_arr,
+                type:'staff'
+            },
+            success:function (res) {
+
+                alert(res.message);
+       
+                if(res.code == 1){
+
+                    window.location.href="{php echo $this->createWebUrl('Commentset',['op' => 'staff','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']])}";
+
+                }
+
+            }
+
+        });
+
+
+
+   }else{
+       alert("您未选择删除对象");
+       return false;
+   }
+}
+$(document).ready(function(){
+
+	$('.pagination a').each(function(){
+
+        
+
+	    if(!$(this).parent().hasClass('active')){
+
+	        var href = $(this).attr('href');
+
+            console.log(href);
+
+	        if(href.indexOf('&sid')>=0){
+
+	            href = href.substring(0, href.indexOf('&sid'));
+
+	        }
+
+	    
+
+	        $(this).attr('href', href + "&sid=" + $('#sid').val() + "&skey=" + $("#skey").val());
+
+	     
+
+	    }
+
+	})		
+
+})
+
+
+
+
+
+$('.js-clip').each(function(){
+
+    util.clip(this, $(this).data('id'));
+
+});
+
+</script>
+
+{/if}
+
+{if $opt == 'post'}
+
+<style type="text/css">
+
+.guige_box {
+
+    padding: 10px;
+
+    margin-bottom: 20px;
+
+    border: 1px solid #eee;
+
+    background: #FBFBFB;
+
+    width: 630px;
+
+}
+
+
+
+</style>
+
+
+
+<form id='my_upload' action="" method='post' enctype='multipart/form-data'>
+
+    <input type="file" id="uploadvoice" name="uploadvoice"  style="display:none" />
+
+</form>
+
+
+
+<form class="form-horizontal" action="" method="post" onsubmit="return checkinfo();">
+
+    <div class="panel panel-default">
+
+        <div class="panel-heading">
+
+            <h3 class="panel-title">
+
+            {if $id}
+
+                编辑员工
+
+            {else}
+
+                添加员工
+
+            {/if}
+
+            </h3>
+
+        </div>
+
+        <div class="panel-body">
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">排序</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="number" min='0' name="num" id="num" value="{$item['num']}" style="width: 300px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">小程序显示顺序从大到小显示</div>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">姓名</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="text" name="realname" id="realname" value="{$item['realname']}" style="width: 300px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">员工真实姓名, 必填</div>
+
+            </div>
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">年龄</label>
+
+                <div class="form-controls col-sm-5">
+                    <input type="number" min="0" name="age" id="age" value="{$item['age']}" style="width: 300px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off" required onKeyUp="gcInsert()" onmousewheel='scrollFunc()' onDOMMouseScroll='scrollFunc()'>
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">员工真实年龄, 不填默认为0（保密）</div>
+
+            </div>
+
+
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">手机号码</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="text" name="mobile" id="mobile" value="{$item['mobile']}" style="width: 300px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">员工手机号码, 必填</div>
+
+            </div>
+
+
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">微信</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="text" name="wxnumber" id="wxnumber" value="{$item['wxnumber']}" style="width: 300px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">员工微信号码, 不填则名片中默认显示手机号码</div>
+
+            </div>
+
+
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">邮箱</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="text" name="email" value="{$item['email']}" style="width: 500px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">员工邮箱</div>
+
+            </div>
+
+
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">公司名称</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="text" name="company" id="company" value="{$item['company']}" style="width: 500px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">员工所属公司名称</div>
+
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">所属门店</label>
+                <div class="form-controls col-sm-5">
+                    <select name="storeid" class="form-control">
+                        <option value="0">请选择</option>
+                         {loop $stores $vi}
+                            <option value="{$vi['id']}" {if $vi['id']==$item['store']}selected="selected"{/if}>{$vi['title']}</option>
+                        {/loop}
+                    </select>
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">选择所属栏目，不选为顶级</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">核销密码</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="number" name="hxmm" id="hxmm" min="0" maxlength="11" value="{$item['hxmm']}" style="width: 500px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off"  required onKeyUp="gcInsert()" onmousewheel='scrollFunc()' onDOMMouseScroll='scrollFunc()'>
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">员工核销密码，最小6位，最大11位，数字组合</div>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">地区</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="hidden" name="pro" id="pro" >
+
+                    <input type="hidden" name="cit" id="cit" >
+
+                    <input type="hidden" name="are" id="are" >
+
+                    <div class="controls fleft" style="display: inline-block;" >
+
+                        <select class="small m-wrap" name="province" id="province" onchange="city_get()">
+
+                            <option value="0">==省==</option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="controls fleft" style="display: inline-block;">
+
+                        <select class="small m-wrap" name="city" id="city" onchange="area_get()" >
+
+                            <option value="0">==市==</option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="controls fleft" style="display: inline-block;">
+
+                        <select class="small m-wrap" name="area" id="area" onchange="setarea()" >
+
+                            <option value="0">==区/市/县==</option>
+
+                        </select>
+
+                    </div>
+
+
+
+                </div>
+
+            </div>
+
+
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">详细地址</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="text" name="address" value="{$item['address']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">员工详细地址</div>
+
+            </div>
+
+
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">头衔</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="text" name="title" value="{$item['title']}" style="width: 300px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">员工头衔, 可自行填写</div>
+
+            </div>
+
+
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">职务</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="text" name="job" id="job" value="{$item['job']}" style="width: 300px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">员工职务</div>
+
+            </div>
+
+
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">照片</label>
+
+                <div class="form-controls col-sm-5">
+
+                    {php echo tpl_form_field_image('thumb', $item['pic'])}
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">最宽750px，高度随意</div>
+
+            </div>
+
+
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">签约状态</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <label style="margin-right: 20px">
+
+                        <input type="radio" name="contract" value="0"  {if $item['contract'] == '0'} checked{/if} />
+
+                        未签约
+
+                    </label>
+
+                    <label style="margin-right: 20px">
+
+                        <input type="radio" name="contract" value="1" {if $item['contract'] == '1'} checked{/if}  />
+
+                        已签约
+
+                    </label>
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">签约状态</div>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">认证状态</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <label style="margin-right: 20px">
+
+                        <input type="radio" name="auth" value="0" {if $item['auth'] == '0'} checked{/if} />
+
+                        未认证
+
+                    </label>
+
+                    <label style="margin-right: 20px">
+
+                        <input type="radio" name="auth" value="1" {if $item['auth'] == '1'} checked{/if} />
+
+                        已认证
+
+                    </label>
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">认证状态</div>
+
+            </div>
+
+
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">评分</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="number" min='0' name="score" id="score" value="{$item['score']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">默认为0,分值为0-5分</div>
+
+            </div>
+
+
+
+
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">访问量</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="number" min='0' name="visit" id="visit" value="{$item['visit']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off" required onKeyUp="gcInsert()" onmousewheel='scrollFunc()' onDOMMouseScroll='scrollFunc()'>
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">默认为0</div>
+
+            </div>
+
+
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">点赞量</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="number" min='0' name="zan" id="zan" value="{$item['zan']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off"  required onKeyUp="gcInsert()" onmousewheel='scrollFunc()' onDOMMouseScroll='scrollFunc()'>
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">默认为0</div>
+
+            </div>
+
+            
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">转发量</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="number" name="forward" id="forward" value="{$item['forward']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off" required onKeyUp="gcInsert()" onmousewheel='scrollFunc()' onDOMMouseScroll='scrollFunc()'>
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">默认为0</div>
+
+            </div>
+
+
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">工时费</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <input type="number" min='0' name="price" id="price" value="{$item['price']}" style="width: 100px" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off" required onKeyUp="gcInsert()" onmousewheel='scrollFunc()' onDOMMouseScroll='scrollFunc()'>
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">默认为0</div>
+
+            </div>
+
+
+
+            <div class="form-group" id="specificate_content" {if $item['tableis'] == '1'}style="display: none"{/if}>
+
+                <input type="hidden" id="duogg" name="duogg">
+
+                <input type="hidden" name="id" value="{$item['id']}">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">拓展内容</label>
+
+                <div class="form-controls col-sm-8">
+
+                    <div class="form-controls col-sm-12" id="tbod">
+
+                    {if $item['expand']}
+
+                           <?php
+
+                                $rows = count($item['expand'])/2;
+
+                                $cols = 2;
+
+                                $n = 0;
+
+
+
+                                for($i=1;$i<=$rows;$i++){
+
+                                    $k1 = $item['expand'][$i*2-2];
+
+                                    $k2 = $item['expand'][$i*2-1];
+
+                                    echo "<div class='guige_box' style='margin-top:5px;'> <div class='form-group' style='margin-bottom: 5px'>
+
+                                    <div class='col-sm-6'><div class='input-group'><span class='input-group-addon'>标题</span><input type='text' class='form-control' style='width: 200px;' value='".$k1."'></div></div>
+
+                                </div><div class='form-group' style='margin-bottom:0'>
+
+                                    <div class='col-sm-12'>
+
+                                        <div class='input-group'><span class='input-group-addon'>内容</span><input type='text' class='form-control' style='width: 500px;' value='".$k2."'><span class='input-group-btn' style='float:left;'><button class='btn btn-default' type='button' onclick='deltr_k(this)'>删除</button></span></div>
+
+                                    </div>
+
+                                </div></div>";
+
+                                    
+
+                                }
+
+                            ?>
+
+                        {else}
+
+                            <div class='guige_box' style='margin-top:5px;'>
+
+                                <div class='form-group' style='margin-bottom: 5px'>
+
+                                    <div class='col-sm-6'><div class='input-group'><span class='input-group-addon'>标题</span><input type='text' class='form-control' style='width: 200px;'></div></div>
+
+                                </div>
+
+                                <div class='form-group' style='margin-bottom:0'>
+
+                                    <div class='col-sm-12'>
+
+                                        <div class='input-group'><span class='input-group-addon'>内容</span><input type='text' class='form-control' style='width: 500px;'><span class='input-group-btn' style='float:left;'><button class='btn btn-default' type='button' onclick='deltr_k(this)'>删除</button></span></div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        {/if}
+
+                    </div>
+
+                    <div class="form-group" id="jiaf" style="margin: 0">
+
+                        <button type="button" class="btn btn-info" onclick="jia()">新增</button>
+
+                    </div>
+
+                </div>
+
+                
+
+            </div>
+
+
+
+            
+
+            
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">文本简介</label>
+
+                <div class="form-controls col-sm-4">
+
+                    {php echo tpl_ueditor('text', $item['descp']);}
+
+                    <div class="help-block">请输入详细介绍</div>
+
+                </div>
+
+            </div>
+
+
+
+             <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">语音简介</label>
+
+                <div class="form-controls col-sm-5">
+
+                    {php echo tpl_form_field_audio('voice', $item['voice']);}
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">选择语音简介文件, 或者输入远程文件地址</div>
+
+            </div>
+
+
+
+             <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">自动播放语音</label>
+
+                <div class="form-controls col-sm-5">
+
+                    <label style="margin-right: 20px">
+
+                        <input type="radio" name="autovoice" value="0" {if $item['autovoice'] == '0'} checked{/if} />
+
+                        否
+
+                    </label>
+
+                    <label style="margin-right: 20px">
+
+                        <input type="radio" name="autovoice" value="1" {if $item['autovoice'] == '1'} checked{/if} />
+
+                        是
+
+                    </label>
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">是否自动播放语音简介, 默认为否</div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    
+
+    <div class="form-group">
+
+        <div class="col-sm-12">
+
+            <input name="token" type="hidden" value="{$_W['token']}" />
+
+            <input type="submit" class="btn btn-primary col-lg-1" name="submit" value="提交" />
+
+        </div>
+
+    </div>
+
+</form>
+
+<script>
+    function scrollFunc(evt) {  
+      evt = evt || window.event;  
+        if(evt.preventDefault) {  
+        // Firefox  
+          evt.preventDefault();  
+          evt.stopPropagation();  
+        } else {  
+          // IE  
+          evt.cancelBubble=true;  
+          evt.returnValue = false;  
+      }  
+      return false;  
+    }  
+
+
+
+    $(function(){
+
+        get_province();
+
+    })
+
+
+
+
+
+    function get_province(){
+
+        var province = "{$item['proid']}";
+
+        var city = "{$item['cityid']}";
+
+        var area = "{$item['areaid']}"
+
+        $.getJSON("{MODULE_URL}static/json/province.json", function (datas){
+
+            var str="";
+
+            for(var i=0; i<datas.length; i++){
+
+                if(datas[i]['ProID'] == province){
+
+                    str+="<option value="+datas[i]['ProID']+" selected>"+datas[i]['name']+"</option>";
+
+                }else{
+
+                    str+="<option value="+datas[i]['ProID']+">"+datas[i]['name']+"</option>";
+
+                }
+
+            }
+
+            $("#province").append(str);
+
+        })
+
+        if(province!=0){
+
+            $.getJSON("{MODULE_URL}static/json/city.json", function (citydatas){
+
+                var strcity="";
+
+                for(var i=0; i<citydatas.length; i++){
+
+                    if(citydatas[i]['ProID'] == province){
+
+                        if(citydatas[i]['CityID'] == city){
+
+                            strcity+="<option value="+citydatas[i]['CityID']+" selected>"+citydatas[i]['name']+"</option>";
+
+                        }else{
+
+                            strcity+="<option value="+citydatas[i]['CityID']+">"+citydatas[i]['name']+"</option>";
+
+                        }
+
+                    }
+
+                }
+
+                $("#city").append(strcity);
+
+            })
+
+        }
+
+        if(area!=0){
+
+            $.getJSON("{MODULE_URL}static/json/area.json", function (areadatas){
+
+                var strarea="";
+
+                for(var i=0; i<areadatas.length; i++){
+
+                    if(areadatas[i]['CityID'] == city){
+
+                        if(areadatas[i]['Id'] == area){
+
+                            strarea+="<option value="+areadatas[i]['Id']+" selected>"+areadatas[i]['DisName']+"</option>";
+
+                        }else{
+
+                            strarea+="<option value="+areadatas[i]['Id']+">"+areadatas[i]['DisName']+"</option>";
+
+                        }
+
+                    }
+
+                }
+
+                $("#area").append(strarea);
+
+            })
+
+        }
+
+        city_get();
+
+    }
+
+
+
+    function city_get(){
+
+        $("#city").html("<option value='0'>==市==</option>");
+
+        var pid = $("#province").val();
+
+        $.getJSON("{MODULE_URL}static/json/city.json", function (datas){
+            var str="";
+            for(var i=0; i<datas.length; i++){
+                if(datas[i]['ProID'] == pid){
+                    str+="<option value="+datas[i]['CityID']+">"+datas[i]['name']+"</option>";
+                }
+            }
+            $("#city").append(str);
+
+        })
+
+        area_get();
+
+    }
+
+
+
+    function area_get(){
+
+         $("#area").html("<option value='0'>==区/市/县==</option>");
+
+        var pid = $("#city").val();
+
+        $.getJSON("{MODULE_URL}static/json/area.json", function (datas){
+
+            var str="";
+
+            for(var i=0; i<datas.length; i++){
+
+                if(datas[i]['CityID'] == pid){
+
+                    str+="<option value="+datas[i]['Id']+">"+datas[i]['DisName']+"</option>";
+
+                }
+
+            }
+
+            $("#area").append(str);
+
+        })
+
+    }
+
+
+
+    function setarea(){
+
+        var pro = $("#province option:selected").text();
+
+        var cit = $("#city option:selected").text();
+
+        var are = $("#area option:selected").text();
+
+        $("#pro").val(pro);
+
+        $("#cit").val(cit);
+
+        $("#are").val(are);
+
+    } 
+
+    function checkinfo(){
+
+        var realname = $("#realname").val();
+
+        var mobile = $("#mobile").val();
+
+        var score = $("#score").val();
+
+        var visit = $("#visit").val();
+
+        var zan = $("#zan").val();
+
+        var forward = $("#forward").val();
+
+        var price = $("#price").val();
+
+        if(!realname){
+
+            alert('请输入员工真实姓名!');
+
+            return false;
+
+        }
+
+        if(!mobile){
+
+            alert("请输入员工手机号码！");
+
+            return false;
+
+        }else{
+
+            var re = /^1[3456789]{1}\d{9}$/;
+
+            if (!re.test(mobile)) {
+
+                alert("手机号格式错误！");
+
+                return false
+
+            }
+
+        }
+
+        str=$("#hxmm").val();
+        if(str.length > 0 && str.length<6){
+         alert('核销密码不能小于6位！');
+         return false;
+        }
+
+        if(isNaN(score)){
+
+            alert('评分为数值,请输入数字');
+
+            return false
+
+        }else{
+
+            if(score < 0 || score > 5){
+
+                alert('评分数值为0-5分,请输入正确的数字');
+
+                return false
+
+            }
+
+        }
+
+        if(visit < 0){
+            alert('访问量数值不可小于0!');
+
+            return false
+        }
+
+        if(zan < 0){
+            alert('点赞量数值不可小于0!');
+
+            return false
+        }
+
+        if(forward < 0){
+            alert('转发量数值不可小于0!');
+
+            return false
+        }
+
+        if(price < 0){
+            alert('工时费数值不可小于0!');
+
+            return false
+        }
+
+        var obj = "";
+
+        $("#tbod").each(function(){
+
+    
+
+            var val = $(this).find("input[type='text']");
+
+            for(var i=0; i<val.length; i++){
+
+                obj+=$(val[i]).val()+",";
+
+            }
+
+        });
+
+
+
+        //alert(obj);
+
+        //return false;
+
+
+
+        $("#duogg").val(obj);
+
+    }
+
+    var i=1;
+    function jia(){
+
+        i++;
+
+        var str =   "<div class='guige_box' ><div class='form-group' style='margin-bottom: 5px'><div class='col-sm-6'><div class='input-group'><span class='input-group-addon'>标题</span><input type='text' class='form-control' style='width: 200px;'></div></div></div><div class='form-group' style='margin-bottom:0'><div class='col-sm-12'><div class='input-group'><span class='input-group-addon'>内容</span><input type='text' class='form-control' style='width: 500px;'><span class='input-group-btn' style='float:left;'><button class='btn btn-default' type='button' onclick='deltr_k(this)'>删除</button></span></div></div></div></div>";
+
+        $("#tbod").append(str);
+
+    }
+
+    function deltr_k(me){
+
+        var trs = $(me).parent().parent().parent().parent().parent();
+
+        $(trs).remove();
+
+    }
+
+
+
+    $("#uploadvoice").change(function(){
+
+        $.ajax({
+
+            url : "{php echo $this->createWebUrl('Commentset', array('op' => 'staff', 'opt' => 'voice'))}",
+
+            dataType:  'json',
+
+            type: 'post',
+
+            data: $("#my_upload").serialize(),
+
+            success:function(res) {
+
+                $("#voice").val(res);
+
+            }
+
+        })
+
+    });
+
+
+
+</script>
+
+
+
+{/if}
+
+
+
+{if $opt == 'qrcode'}
+
+
+
+<div class="panel panel-default">
+
+        <div class="panel-heading">
+
+            <h3 class="panel-title">
+
+            员工二维码  
+
+            </h3>
+
+        
+
+
+
+        </div>
+
+
+
+    <label  class="control-label col-sm-2" style="margin-right:45px; margin-top: 15px;">姓名: {$item['realname']}</label>
+
+    
+
+    <div style="text-align:center; margin: 50px;">
+
+        
+
+        {if $item['bqrcode']}
+
+            <img src="{media $item['bqrcode']}" width="200px" alt="">
+
+        {else}
+
+            <img src="resource/images/nopic-107.png" width="200px" alt="">
+
+        {/if}
+
+    </div>
+
+    <div style="text-align:center; margin: 20px;">
+
+        <a class="btn btn-default btn-sm" style="font-size: 20px" onclick="return confirm('如已生成二维码，该操作会覆盖原有二维码，请谨慎操作！'); return false;" href="{php echo $this->createWebUrl('Commentset', array('op' => 'staff', 'opt' => 'do_qrcode', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}" >生成二维码</a>
+
+    </div>
+
+</div>
+{/if}
+
+
+
+
+
+    </div>
+
+
+
+</div>
+
+
+

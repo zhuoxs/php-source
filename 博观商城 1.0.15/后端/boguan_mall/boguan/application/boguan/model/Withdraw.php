@@ -1,0 +1,2 @@
+<?php
+ namespace app\boguan\model; class Withdraw extends BaseModel { public function user() { return $this->hasOne("\x55\163\x65\x72", "\x69\x64", "\165\163\x65\x72\x5f\x69\x64")->field("\151\x64\54\x6e\151\143\x6b\x6e\x61\155\x65\54\141\x76\141\164\141\x72"); } public static function sumWaitCheckWithdraw() { $withdraw = self::where(["\x75\156\151\x61\143\x69\144" => session("\165\156\x69\x61\x63\x69\144"), "\163\x74\141\164\x75\x73" => 0])->sum("\x61\155\x6f\x75\x6e\164"); return $withdraw; } }

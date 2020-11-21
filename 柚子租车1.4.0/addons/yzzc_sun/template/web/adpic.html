@@ -1,0 +1,132 @@
+{template 'public/header'}
+{template 'public/comhead'}
+<link rel="stylesheet" type="text/css" href="../addons/yzzc_sun/template/public/ygcss.css">
+<style type="text/css">
+    #goodsinput{font-size: 14px;height: 33px;border-radius: 4px;border:1px solid #e7e7eb;padding-left: 10px;}
+    .searchname{font-size: 14px;color: #666;width: 220px;}
+    .searchname>a>p{color: #666;}
+</style>
+<ul class="nav nav-tabs">
+    <span class="ygxian"></span>
+    <div class="ygdangq">当前位置:</div>
+    <li class="active"><a>添加首页弹窗</a></li>
+    <li><a href="{php echo $this->createWebUrl('adpic_list');}"><i class="fa fa-refresh"></i>返回首页弹窗列表</a></li>
+</ul>
+<div class="main">
+    <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+        <div class="panel panel-default ygdefault">
+            <div class="panel-heading wyheader">
+                添加首页弹窗
+            </div>
+            <div class="panel-body">
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">弹窗标题</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="title" class="form-control" value="{$info[title]}" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">弹窗链接类型</label>
+                    <div class="col-sm-9">
+                        <select id="urltype" name="link_type" style="margin-bottom: 10px;">
+                            <option value="0" {if $info[link_type]==0}selected{/if}>不需要链接</option>
+                            <option value="1" {if $info[link_type]==1}selected{/if}>车型</option>
+                            <option value="2" {if $info[link_type]==2}selected{/if}>门店</option>
+                            <option value="3" {if $info[link_type]==3}selected{/if}>活动</option>
+
+                        </select>
+                        <div id="urltxt" style="{if $info[pop_urltype]<=5}display: none;{/if}">
+                            <input type="text" style="width: 200px;display: inline-block;" placeholder="请输入相应id" id="pop_urltxt" name="link_typeid" class="form-control" value="{$info[link_typeid]}" />
+                            <span class="btn btn-sm storeblue" data-toggle="modal" data-target="#myModal1" style="margin-left: 30px;">查找</span>
+                        </div>
+                        <div class="modal fade" id="myModal1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                        <h4 class="modal-title" id="myModalLabel" style="font-size: 20px;">提示</h4>
+                                    </div>
+                                    <div class="modal-body ygsearch" style="font-size: 20px;padding: 15px 30px;">
+                                        <input type="text" id="goodsinput" placeholder="请输入名称">
+                                        <span class="btn btn-sm ygbtn storeblue" id="searchgoods">查找</span>
+                                        <div class="searchname" style="margin-top: 8px;"></div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">弹窗图</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_image('ad_pic', $info[ad_pic]);}
+                        <span class="help-block">*建议比例 530*640</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">排序</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="sort" class="form-control" value="{$info[sort]}" />
+                        <span>*越小越前，最好 0-255 之间</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="form-group">
+            <input type="submit" name="submit" value="提交" class="btn col-lg-3" style="color: white;background-color: #444444;margin-left: 450px;"/>
+            <input type="hidden" name="token" value="{$_W['token']}" />
+            <input type="hidden" name="id" value="{$info['id']}" />
+            <input type="hidden" name="op" value="save" />
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    $(function(){
+        $("#frame-12").show();
+        $("#yframe-12").addClass("wyactive");
+        $("#urltype").on("click",function(){
+            var a = $(this).val();
+            if(a>0){
+                $("#urltxt").css("display","");
+            }else{
+                $("#urltxt").css("display","none");
+            }
+        })
+        $("#searchgoods").on('click',function(){
+            var a = $("#urltype").val();
+            var name = $("#goodsinput").val();
+
+            $.ajax({
+                type:"post",
+                url:"{php echo $this->createWebUrl('adpic',array('op'=>'search'))}",
+                dataType:"json",
+                data:{name:name,tid:a},
+                success:function(data){
+                    //var data = eval('(' + data + ')')
+                    console.log(data);
+                    $(".searchname").show();
+                    $(".shnbox").remove();
+                    for(var i=0;i<data.length;i++){
+                        $(".searchname").append('<div class="shnbox" data-dismiss="modal" id="'+data[i].id+'"><a href="javascript:void(0);"><p>'+data[i].name+'</p></a></div>')
+                    }
+                    $(".shnbox").each(function(){
+                        $(this).click(function(){
+                            // console.log($(this).attr("id"));
+                            // $("#username").val($(this).html())
+                            // alert( $(this).attr("id"));
+                            var thid = $(this).attr("id");
+                            $('#pop_urltxt').val(thid);
+                        })
+
+                    })
+                }
+            })
+        });
+    })
+</script>

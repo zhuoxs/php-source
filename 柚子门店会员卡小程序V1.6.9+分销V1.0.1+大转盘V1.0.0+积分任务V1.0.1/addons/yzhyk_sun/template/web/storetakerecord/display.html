@@ -1,0 +1,179 @@
+{template 'public/header'}
+
+<!--标题-->
+<div class="title">
+    <blockquote class="layui-elem-quote">提现列表</blockquote>
+</div>
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入关键字" autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="state" id="state" style="width: 200px;" class="select2 layui-form-select" lay-ignore>
+                <option value="0">全部状态</option>
+                <option value="1">待审核</option>
+                <option value="2">待打款</option>
+                <option value="3">已完成</option>
+                <option value="-2">已拒绝</option>
+                <option value="-3">已失败</option>
+            </select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+<!--工具栏-->
+<!--<div class="tool-box">-->
+    <!--<div class="layui-btn-group">-->
+        <!--<a href="javascript:;" id="btnBatchUnbind" class="layui-btn layui-btn-primary layui-btn-sm">解绑</a>-->
+        <!--<a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>-->
+    <!--</div>-->
+<!--</div>-->
+<!--数据表-->
+<div class="table-box">
+    <table class="layui-hide" id="laytable"></table>
+</div>
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    {{# if(d.state == 2){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnTake">打款</a>
+    {{# } }}
+    {{# if(d.state == 1){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnCheck">通过</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnUnCheck">拒绝</a>
+    {{# } }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDelete">删除</a>
+</script>
+<script type="text/html" id="dataImg">
+    <img style="width:28px;" src="{{ d.img }}">
+</script>
+<script type="text/html" id="dataDate">
+    {{# if(d.time){ }}
+        {{# var date = new Date(d.time * 1000) }}
+        {{ date.getFullYear() }}-{{ date.getMonth()+1<10?'0'+(date.getMonth()+1):date.getMonth()+1 }}-{{ date.getDate()<10 ? '0' + date.getDate():date.getDate() }}
+    {{# } }}
+</script>
+<script type="text/html" id="dataState">
+    {{# if(d.state == 1){ }}
+    待审核
+    {{# } }}
+    {{# if(d.state == 2){ }}
+    待打款
+    {{# } }}
+    {{# if(d.state == -2){ }}
+    已拒绝
+    {{# } }}
+    {{# if(d.state == 3){ }}
+    已完成
+    {{# } }}
+    {{# if(d.state == -3){ }}
+    已失败
+    {{# } }}
+</script>
+
+<script type="text/javascript">
+    layui.use('table', function () {
+        var table = layui.table;
+//        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{php echo $this->createWebUrl('storetakerecord',array('op'=>query));}"
+            ,cols: [[
+                {type:'checkbox',fixed:'left'},
+                {field:'user_name', width:180, title: '申请人',fixed:'left',sort:true},
+                {field:'store_name', width:180, title: '门店',fixed:'left',sort:true},
+                {field:'balance', width:100, title: '提现金额',sort:true},
+                {field:'paycommission', width:100, title: '平台佣金',sort:true},
+                {field:'ratesmoney', width:100, title: '手续费',sort:true},
+                {field:'time', width:180, title: '申请时间',sort:true,templet: '#dataDate'},
+                {field:'state', width:100, title: '状态',sort:true,templet:'#dataState'},
+                {field:'fail_reason', width:100, title: '拒绝原因',sort:true},
+                {field:'o',width:235,title:'操作',fixed:'right',templet: '#dataTool'},
+            ]]
+            ,page: true
+            // ,foot: true
+            ,height:'full-300'
+        });
+
+//        搜索
+        $('#btnSearch').unbind().click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    state:$('#state').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        state:$('#state').val(),
+                    }
+                });
+            }
+        })
+
+        $(document).on('click','.btnCheck',function(e){
+            var id = $(this).data('id')
+            var url = "{php echo $this->createWebUrl('storetakerecord',array('op'=>check));}";;
+            $.post(url, {id:id}, function(data){
+                var data = $.parseJSON(data);
+                if (data.code == 0) {
+                    layer.msg('审核成功',{icon: 6,anim: 6});
+                    table.reload('laytable',{});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        })
+
+        $(document).on('click','.btnUnCheck',function () {
+            var id = $(this).data('id');
+            layer.prompt({title:'拒绝原因',formType:2}, function(value, index, elem){
+                var url = "{php echo $this->createWebUrl('storetakerecord',array('op'=>uncheck));}";
+                $.post(url, {id:id,reason:value}, function(data){
+                    var data = $.parseJSON(data);
+                    if (data.code == 0) {
+                        layer.close(index);
+                        layer.msg('拒绝成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            });
+        })
+
+        $(document).on('click','.btnTake',function(e){
+            var id = $(this).data('id')
+            var url = "{php echo $this->createWebUrl('storetakerecord',array('op'=>take));}";;
+            $.post(url, {id:id}, function(data){
+                var data = $.parseJSON(data);
+                if (data.code == 0) {
+                    layer.msg('打款成功',{icon: 6,anim: 6});
+                    table.reload('laytable',{});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+    });
+</script>
+
+{template 'public/footer'}

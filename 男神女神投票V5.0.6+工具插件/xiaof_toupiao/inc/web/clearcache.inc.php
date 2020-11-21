@@ -1,0 +1,2 @@
+<?php
+ goto oXzqs; C29b6: cache_clean("\x69\x70\141\144\144\x72"); goto RsAAI; oXzqs: defined("\x49\116\137\111\x41") or exit("\x41\143\x63\x65\x73\x73\40\104\145\156\151\x65\x64"); goto lMiMP; lMiMP: cache_clean("\x69\x70\154\x6f\156\147\x72\145\x67\151\x6f\x6e"); goto C29b6; RsAAI: $this->cacheClean(); goto wNeUw; wNeUw: message("\346\xb8\205\347\x90\x86\345\xae\214\346\210\220");

@@ -1,0 +1,140 @@
+{php include wl_template('common/header');}
+<style>
+	.search-header{color: #fff;position: absolute;top: 0;left: 0;z-index: 998;width: 100%;padding: 6px 0;margin-bottom: 5px;}
+	.search-header .our-input{margin: 2px auto;width: 100%;height: 30px;line-height: 30px;border: none;border-radius: 20px;background-color: #fff;}
+	.search-header .our-input span{color: #999999;font-size: 13px;word-break:keep-all;}
+	.search-header .our-input .icon-search{color: #333;font-size: 14px;margin-left: 8px;}
+	.search-header .search-btn{width: 100%;padding-left:5px;padding-right:5px;}
+	.search-tips li{margin: .2rem .4rem;list-style-type: none;float: left;}
+</style>
+<div class="page-group">
+    <div class="page page-current" id="page-index">
+    	<header class="bar bar-nav">
+		    <a class="button button-link button-nav pull-left back" href="{php echo app_url('distribution/disappbase/index')}">
+		      <span class="icon icon-left"></span>返回
+		    </a>
+		    <h1 class="title">我的{$xxtext}</h1>
+		</header>
+		<div class="content native-scroll infinite-scroll">
+			<div class="row no-gutter fansdis">
+		        <div class="col-50">
+		        	<div class="fansnum">
+		        		<span>{php echo intval($todaynum);}</span>人
+		        	</div>
+		        	<div class="fansnum-text">
+		        		今日新增{$xxtext}
+		        	</div>
+		        </div>
+		        <div class="col-50">
+		        	<div class="fansnum">
+		        		<span>{php echo intval($num);}</span>人
+		        	</div>
+		        	<div class="fansnum-text">
+		        		总{$xxtext}(含{$fxstext}{$fxsnum}人)
+		        	</div>
+		        </div>
+		    </div>
+			<div class="searchbar search-header" style="position:relative;">
+				<div class="search-input search-btn">
+					<div class="our-input">
+						<span class="icon iconfont icon-search"></span>
+						<input type="text"  id="sear" style="margin-left: 40px;border: 0;width: 80%;"  placeholder="请输入下级昵称"  />
+					</div>
+				</div>
+			</div>
+		    <div class="allorder">
+				<!--全部用户表-->
+			</div>
+			<div class="weui-loadmore loading_more" style="display: block;">
+	            <i class="weui-loading"></i>
+	            <span class="weui-loadmore__tips">正在加载</span>
+	        </div>
+	        <div class="weui-loadmore weui-loadmore_line" style="display: none;">
+	            <span class="weui-loadmore__tips" style="background-color: #EFEFF4;">暂无更多数据</span>
+	        </div>
+			<!--<div style="text-align: center;"><img style="position: relative;top: 2rem;width: 5rem;" src="../addons/weliam_merchant/app/resource/image/dashboard/notice.png" alt=""><p style="position: relative;top: 2.5rem;font-size: .8rem;color: #666;">暂无{$xxtext}，快去邀请吧~</p></div>-->
+		</div>
+	</div>
+</div>
+
+<script type="text/html" id="orderlist">
+{{# for(var i = 0, len = d.length; i < len; i++){ }}
+<div class="list-block media-list">
+    <ul>
+        <li class="item-content">
+          	<div class="item-media">
+            	<img src="{{d[i].avatar}}" width="40" style="border-radius: 100%;height: 2.5rem;width: 2.5rem;">
+          	</div>
+          	<div class="item-inner">
+          		<div class="item-title-row">
+	              	<div class="item-title">{{d[i].nickname}}&nbsp;&nbsp;
+					{{# if(d[i].lockflag > 0){ }}
+						<span style="color: orangered;font-size: 14px;">(未锁定)</span>
+					{{# } }}
+	              	{{# if(d[i].disflag > 0){ }}
+	              	<img style="height: 15px;height: 15px;" src="../addons/weliam_merchant/app/resource/image/star_comment_fill.png" >
+	              	{{# } }}
+	              	</div>
+	            	<div class="item-after">{{d[i].mobile}}</div>
+            	</div>
+            	<div class="item-subtitle">
+          			<span style="font-size: 14px;">总佣金:<span style="color: orangered;">￥{{d[i].dismoney}}</span></span>
+          		</div>
+          	</div>
+        </li>
+    </ul>
+</div>
+{{# } }}
+</script>
+
+<script>
+	$(function() {
+		$(document).on("pageInit", "#page-index", function(e, id, page) {
+			var loading = false;
+			var pagenum = 1,
+			    endmark = 0;
+			function addItems(pagenum){
+				var sear = $('#sear').val();
+				$.post("{php echo app_url('distribution/disappbase/getlowpeople')}",{pindex:pagenum,sear:sear},function(d){
+					if (d.length > 0) {
+						var gettpl1 = document.getElementById('orderlist').innerHTML;
+						laytpl(gettpl1).render(d, function(html){
+						   $(".allorder").append(html);
+						});
+						$('.loading_more').hide();
+						loading = false;
+					}else{
+						$('.loading_more').hide();
+						$('.weui-loadmore_line').show();
+						endmark = 1;
+					}
+				}, 'json');
+			}
+			addItems(pagenum);
+			
+			$(page).on('infinite', function() {
+				if (endmark || loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+				pagenum++;
+				addItems(pagenum);
+				}, 500);
+			});
+
+			$('#sear').change(function (){
+				loading = false;
+				pagenum = 1;
+				endmark = 0;
+				$(".allorder").html('');
+				$('.loading_more').show();
+				$('.weui-loadmore_line').hide();
+				addItems(1);
+			});
+
+		});
+		$.init();
+	});
+</script>
+
+{php include wl_template('common/footer');}

@@ -1,0 +1,117 @@
+{template 'header'}
+<div style="padding-bottom:5px"></div>
+{if $operation == 'addressManager'} 
+{loop $addresses $row}
+<div class="panel {if $row['isdefault']==1}panel-primary{else}panel-default{/if}" style="margin-bottom:10px">
+    <div class="panel-body">
+        <span>{$row['province']} {$row['city']} {$row['district']} {$row['address']} <br/> {$row['username']} - {$row['mobile']},邮编{$row['zipcode']}</span>
+        <br/>
+        <span>
+            <!-- <a class="btn btn-primary btn-xs" href="{php echo $this->createMobileUrl('address',array('op'=>'addressAdd','id'=>$row['id']))}"><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>编辑</a>
+            <a onclick="return confirm('此操作不可恢复，确认吗？'); return false;" href="{php echo $this->createMobileUrl('address',array('op'=>'addressDel','id'=>$row['id']))}" class="btn btn-primary btn-xs"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span> 删除</a> -->
+            {if $row['isdefault'] == 0}
+            <a href="{php echo $this->createMobileUrl('address',array('id'=>$row['id'],'op'=>'addressDefault'))}" class="btn btn-warning btn-xs">设为默认</a>
+            {else}
+            <button class="btn btn-success btn-xs">默认地址</button>
+            {/if}
+        </span>
+    </div>
+</div>
+{/loop} 
+<a href="{php echo $this->createMobileUrl('address',array('op'=>'addressAdd'))}" class="btn btn-primary">添加地址</a>
+<a href="{$_COOKIE['returnurl']}" class="btn btn-primary">返回订单</a>
+{elseif $operation == 'addressAdd'}
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">添加收货地址</h3>
+    </div>
+    <div class="panel-body">
+        <form id="address-form" action="" method="post">
+            <div class="form-group">
+                <label>收货人：</label>
+                <input type="text" class="form-control" name="address[username]" placeholder="收货人真实姓名" value="{$address['username']}">
+            </div>
+            <div class="form-group">
+                <label>联系电话：</label>
+                <input type="text" class="form-control" name="address[mobile]" placeholder="收货人联系电话" value="{$address['mobile']}" maxlength="11">
+            </div>
+            <div class="form-group">
+                <label>邮编:</label>
+                <input type="text" name="address[zipcode]" class="form-control" value="{$address['zipcode']}" />
+            </div>
+            <div class="form-group">
+                <label>所在地区：</label>
+                {php echo tpl_app_form_field_district('address', array('province' => $address['province'], 'city' => $address['city'], 'district' => $address['district']))}
+            </div>
+            <div class="form-group">
+                <label>详细地址：</label>
+                <input type="text" class="form-control" name="address[address]" placeholder="详细地址" value="{$address['address']}">
+            </div>
+            <input type="submit" class="btn btn-primary" name="addressAdd" value="提交" />
+            <input type="hidden" name="token" value="{$_W['token']}" />
+        </form>
+    </div>
+</div>
+<script type="text/javascript">
+require(['jquery', 'util'], function($, util) {
+    $(function() {
+        $('#address-form').submit(function() {
+            var result = true;
+            if ($('input[name="address[username]"]').val() == '') {
+                result = false;
+                util.message('请输入您的真实姓名！');
+            }
+            if ($('input[name="address[mobile]"]').val() == '') {
+                result = false;
+                util.message('请输入您的手机号码！');
+            }
+            if ($('select[name="address[province]"]').val() == '') {
+                result = false;
+                util.message('请选择省');
+            }
+            if ($('select[name="address[city]"]').val() == '') {
+                result = false;
+                util.message('请选择市');
+            }
+
+            return result;
+        });
+        function getaddrinfo() {
+            WeixinJSBridge.invoke('editAddress', <?php echo $addressSignInfo;?>, function(res) {
+                if (res.err_msg == 'edit_address:ok') {
+                    //省
+                    $("input[name='address[province]']").val(res.proviceFirstStageName);
+                    //市
+                    $("input[name='address[city]']").val(res.addressCitySecondStageName);
+                    //区
+                    $("input[name='address[district]']").val(res.addressCountiesThirdStageName);
+                    //全称
+                    $('.mui-district-picker-address').val(res.proviceFirstStageName+'-'+res.addressCitySecondStageName+'-'+res.addressCountiesThirdStageName);
+
+
+                   //详细地址
+                   $("input[name='address[address]']").val(res.addressDetailInfo);
+                   //收货人
+                   $("input[name='address[username]']").val(res.userName);
+                   //联系电话
+                   $("input[name='address[mobile]']").val(res.telNumber);
+                   //邮编
+                    $("input[name='address[zipcode]']").val(res.addressPostalCode);
+                }
+            });
+        }
+        if (typeof WeixinJSBridge == "undefined") {
+            if (document.addEventListener) {
+                document.addEventListener('WeixinJSBridgeReady', getaddrinfo, false);
+            } else if (document.attachEvent) {
+                document.attachEvent('WeixinJSBridgeReady', getaddrinfo);
+                document.attachEvent('onWeixinJSBridgeReady', getaddrinfo);
+            }
+        } else {
+            getaddrinfo();
+        }
+    });
+});
+</script>
+{/if}
+{template 'footer'}

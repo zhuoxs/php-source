@@ -1,0 +1,160 @@
+{template 'common/header'}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="mail-toolbar m-b-lg">
+            <div class="btn-group" role="group">
+                <a href="{php echo $this->createWebUrl('codelog');}" class="btn btn-default">车码管理</a>
+                <a href="{php echo $this->createWebUrl('codelog',['op'=>'mulmake']);}" class="btn btn-default">批量生成</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="widget liuer-widget">
+    <header class="widget-header">
+        <h4 class="widget-title liuer-widget-title">筛选</h4>
+    </header>
+    <hr class="widget-separator">
+    <div class="widget-body">
+        <form action="" method="get" class="form-horizontal">
+            <input type="hidden" name="c" value="site">
+            <input type="hidden" name="a" value="entry">
+            <input type="hidden" name="m" value="liuer_mcar">
+            <input type="hidden" name="do" value="codelog">
+            <input type="hidden" name="op" value="view">
+            <input type="hidden" name="log_id" value="{$_GPC['log_id']}">
+
+            <div class="form-group">
+                <label class="col-sm-2 control-label">所属代理商</label>
+                <div class="col-sm-3">
+                    <?php $agentArr = Table::fetchSectionAgent($_GPC['log_id']); ?>
+                    <select name="agent_id" class="form-control">
+                        <option value="" selected="selected">不限</option>
+                        <?php foreach($agentArr as $agent): ?>
+                        <?php if(isset($_GPC['agent_id']) && $_GPC['agent_id']!== '' && $_GPC['agent_id'] == $agent['id']): ?>
+                        <option value="<?php echo $agent['id'] ?>" selected><?php echo $agent['name'] ?></option>
+                        <?php else: ?>
+                        <option value="<?php echo $agent['id'] ?>"><?php echo $agent['name'] ?></option>
+                        <?php endif; ?>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="" class="col-sm-2 control-label">车牌号</label>
+                <div class="col-sm-3">
+                    <input type="text" class="form-control" name="chepaihao" placeholder="输入车牌号" value="{$_GPC['chepaihao']}">
+                </div>
+            </div>
+            <!--<div class="form-group">-->
+                <!--<label for="" class="col-sm-2 control-label">车码编号</label>-->
+                <!--<div class="col-sm-3">-->
+                    <!--<input type="text" class="form-control" name="no" placeholder="输入编号" value="{$_GPC['no']}">-->
+                <!--</div>-->
+            <!--</div>-->
+            <div class="form-group">
+                <label for="" class="col-sm-2 control-label">挪车码ID</label>
+                <div class="col-sm-3">
+                    <input type="text" class="form-control" name="id" placeholder="输入ID" value="{$_GPC['id']}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">状态</label>
+                <div class="col-sm-3">
+                    <select name="status" class="form-control">
+                        <option value="" selected="selected">不限</option>
+                        <option value="10" {if $_GPC['status'] == '10'} selected{/if}>已绑定</option>
+                        <option value="9" {if $_GPC['status'] == '9'} selected{/if}>未绑定</option>
+                        <option value="2" {if $_GPC['status'] == '2'} selected{/if}>已删除</option>
+                    </select>
+                </div>
+                <div class="col-sm-5">
+                    <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="widget">
+    <div class="widget-body">
+        <table class="table table-hover liuer-table">
+            <thead>
+            <tr>
+                <th nowrap="nowrap">#</th>
+                <!--<th>编码</th>-->
+                <th>挪车码ID</th>
+                <th>车码</th>
+                <th>所属代理商</th>
+                <th>状态</th>
+                <th>绑定车牌</th>
+                <th>生成时间</th>
+                <th style="text-align: right">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {if $data}
+            {loop $data $no $v}
+            <tr>
+                <td>{php echo getNo($no)}</td>
+                <!--<td>{$v['no']}</td>-->
+                <td>{$v['id']}</td>
+                <td>{$v['code']}</td>
+                <td>
+                    <?php if($v['agent_id'] == 0): ?>
+                    <span class="label label-default">{php echo Table::fetchAllAgent($v['agent_id'])}</span>
+                    <?php else: ?>
+                    <span class="label label-success">{php echo Table::fetchAllAgent($v['agent_id'])}</span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <?php if($v['status'] == 10): ?>
+                    <span class="label label-success">已绑定</span>
+                    <?php elseif($v['status'] == 9): ?>
+                    <span class="label label-default">未绑定</span>
+                    <?php elseif($v['status'] == 2): ?>
+                    <span class="label label-danger">已删除</span>
+                    <?php endif; ?>
+                </td>
+                <td>{php echo fetchUserByCode($v['id'])}</td>
+                <td>{php echo date("Y/m/d H:i",$v['created_at']);}</td>
+                <td style="text-align: right;">
+                    <?php if($v['status'] == 2): ?>
+                    <a href="{php echo $this->createWebUrl('codelog',['id'=>$v['id'],'op'=>'reset'])}" class="btn btn-sm btn-primary">重置</a>
+                    <?php endif; ?>
+                    <a class="btn btn-info btn-sm qr" data-url="{php echo $this->createWebUrl('qr', ['id'=>$v['id']])}" title="二维码"><i class="fa fa-qrcode"></i></a>
+                    <a href="<?php echo $this->createWebUrl('codelog',['op'=>'remove','id'=>$v['id']]) ?>" class="btn btn-sm btn-danger liuer-delete"><i class="fa fa-trash"></i></a>
+                </td>
+            </tr>
+            {/loop}
+            {else}
+            <tr>
+                <td colspan="8" style="text-align: center;">暂无记录</td>
+            </tr>
+            {/if}
+            </tbody>
+        </table>
+    </div>
+
+    <footer class="widget-footer">
+        {if $total}
+        <div id="liuer_footer" class="panel-footer">
+            <div class="pull-left">
+                <div class="summary">共<b>{$total}</b>条数据</div>
+            </div>
+            <div class="pull-right">{$pager}</div>
+        </div>
+        {/if}
+    </footer>
+</div>
+
+<script>
+    require(['util','jquery'],function(util,$){
+        $('.qr').click(function(){
+            var url = $(this).data('url');
+            util.ajaxshow(url,'二维码预览');
+        })
+    });
+</script>
+{template 'common/footer'}

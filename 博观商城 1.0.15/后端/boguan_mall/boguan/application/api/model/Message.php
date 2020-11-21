@@ -1,0 +1,2 @@
+<?php
+ namespace app\api\model; class Message extends BaseModel { public function saveMessage($data) { goto O71iH; n8AdG: if ($result !== false) { goto ET7Ii; } goto dkAqI; Mlc0C: ET7Ii: goto ZyUgI; yQ80b: cc73t: goto ouW_U; dkAqI: return false; goto XALyH; XALyH: goto cc73t; goto Mlc0C; O71iH: $result = self::create($data); goto n8AdG; ZyUgI: return true; goto yQ80b; ouW_U: } }

@@ -1,0 +1,332 @@
+{template '_header'}
+<style>
+    .fui-footer .btn{
+        border-radius: 1rem;
+        margin-top: .6rem;
+        min-width: 4.1rem;
+    }
+    .fui-footer{
+        padding-right: .6rem;
+    }
+    .fui-footer .btn.btn-default-o {
+        border-color: #666;
+        color: #666;
+    }
+    .fui-title.r-group{
+        background: #f3f3f3;
+        margin: 0;
+        padding: .5rem .6rem;
+    }
+    .fui-cell-group .fui-cell.noborder:before{
+        border:0;
+    }
+    .refuse_reason{
+        padding: 0.5rem;
+        background: #626674;
+        color: #FFF;
+        font-size: 0.65rem;
+        line-height: 1rem
+    }
+</style>
+<div class='fui-page {if empty($order['refundstate'])}fui-page-current{/if}' id='page-refund-edit' >
+<div class="fui-header">
+    <div class="fui-header-left">
+        <a class="back" onclick='history.back()'></a>
+    </div>
+    <div class="title">{if $order['status']==1}退款{else}售后{/if}申请</div>
+    <div class="fui-header-right">&nbsp;</div>
+</div>
+<div class='fui-content  navbar'>
+
+    {if  strlen($trade['refundcontent']) >0}
+    <div class="refuse_reason">
+        退款须知：<br/>{$trade['refundcontent']}
+    </div>
+    {/if}
+
+    <div class="fui-cell-group">
+        <div class="fui-cell">
+            <div class="fui-cell-label">处理方式</div>
+            <div class="fui-cell-info">
+
+                <select id="rtype">
+                    {if $order['status']==2 || $order['status']==3}
+                    <option value="1" {if $refund['rtype']=='1'}selected{/if}>退货退款</option>
+                    <option value="2" {if $refund['rtype']=='2'}selected{/if}>换货</option>
+                    {/if}
+                    <option value="0" {if $refund['rtype']=='0'}selected{/if}>退款(仅退款不退货)</option>
+                </select>
+            </div>
+            <div class="fui-cell-remark"></div>
+
+        </div>
+        <div class="fui-cell">
+            <div class="fui-cell-label"><span class="re-g">{if $refund['rtype']=='2'}换货{else}退款{/if}</span>原因</div>
+            <div class="fui-cell-info">
+
+                <select id="reason">
+                    <option value="不想要了" {if $refund['reason']=='不想要了'}selected{/if}>不想要了</option>
+                    <option value="卖家缺货" {if $refund['reason']=='卖家缺货'}selected{/if}>卖家缺货</option>
+                    <option value="拍错了/订单信息错误" {if $refund['reason']=='拍错了/订单信息错误'}selected{/if}>拍错了/订单信息错误</option>
+                    <option value="其它" {if $refund['reason']=='其它'}selected{/if}>其它</option>
+                </select>
+            </div>
+            <div class="fui-cell-remark"></div>
+        </div>
+
+        <div class="fui-cell">
+            <div class="fui-cell-label"><span class="re-g">{if $refund['rtype']=='2'}换货{else}退款{/if}</span>说明</div>
+            <div class="fui-cell-info c000" >
+                <input type="text" id="content" class='fui-input' placeholder="选填" value="{$refund['content']}"/>
+            </div>
+        </div>
+
+        <div class="fui-cell r-group" {if $refund['rtype']=='2'}style="display:none;"{/if}>
+        <div class="fui-cell-label">退款金额</div>
+        <div class="fui-cell-info c000" style="    display: -webkit-box;display: -webkit-flex;display: -ms-flexbox;display: flex;-webkit-box-align: center;-webkit-align-items: center;-ms-flex-align: center;align-items: center;">
+            ￥<input type="number" id="price" class='fui-input' placeholder="请输入需要退的金额" value="{php echo number_format($order['refundprice'],2)}" />
+            <!--value="{if !empty($refund['id'])}{php echo $show_price}{/if}"-->
+        </div>
+
+
+    </div>
+    <div class="fui-cell">
+        <div class="fui-cell-label">上传凭证</div>
+        <div class="fui-cell-info">
+
+            <ul class="fui-images fui-images-sm" id="images">
+
+                {loop $refund['imgs'] $k $v}
+                <input type="hidden" name="images[]" value="{$v}" />
+                <li style="background-image:url({php echo tomedia($v)})" class="image image-sm" data-filename="{$v}">
+                    <span class="image-remove"><i class="icon icon-close"></i></span>
+                    <img src="{php echo tomedia($v)}" alt="" style="opacity: 0;width:100%;height:100%;">
+                </li>
+                {/loop}
+
+
+            </ul>
+            <div class="fui-uploader fui-uploader-sm refund-container-uploader" {if count($refund['imgs'])==5}style='display:none'{/if}
+            data-name="images[]"
+            data-max="5"
+            data-count="{php echo count($refund['imgs'])}">
+            <input type="file" name='imgFile0' id='imgFile0'>
+        </div>
+
+    </div>
+</div>
+
+<div class='fui-title r-group'  {if $refund['rtype']=='2'}style="display:none;"{/if}>
+<span class='text-danger'>*提示:您可退款的最大金额为￥{php echo number_format($order['refundprice'],2)}</span>
+</div>
+
+</div>
+
+
+</div>
+<div class='fui-footer text-right'>
+    <a class='btn btn-sm btn-danger-o btn-submit'>提交申请</a>
+    <a class="btn btn-sm btn-default-o back">取消</a>
+</div>
+</div>
+
+<div class='fui-page  {if !empty($order['refundstate'])}fui-page-current{/if}' id='page-refund-info'>
+<div class="fui-header">
+    <div class="fui-header-left">
+        <a class="back" onclick='history.back()'></a>
+    </div>
+    <div class="title">{if $order['status']==1}退款{else}售后{/if}申请</div>
+    <div class="fui-header-right">&nbsp;</div>
+</div>
+<div class='fui-content  navbar'>
+    <div class='fui-cell-group'>
+        <div class='fui-cell noborder' style="padding-bottom: 0">
+            <!--<i class='icon icon-info'></i>-->
+            <span class="text">{if $refund['status']==0}等待商家处理{if $order['status']==1}退款{else}售后{/if}申请{/if}
+						{if $refund['status']>=3}商家已经通过{if $order['status']==1}退款{else}售后{/if}申请{/if}
+					</span>
+        </div>
+        <div class='fui-cell'  style="color: #999;font-size: .65rem;line-height: 1.2rem">
+            {if $refund['rtype']==0}
+            {if $refund['status']==0}
+            退款申请流程： <br>1、发起退款申请<br>2、商家确认后退款到您的账户
+            如果商家未处理：请及时与商家联系
+            {/if}
+            {elseif $refund['rtype']==1}
+            退款退货申请流程：<br>1、发起退款退货申请<br>2、退货需将退货商品邮寄至商家指定地址，并在系统内输入快递单号<br>3、商家收货后确认无误<br>4、退款到您的账户
+            {elseif $refund['rtype']==2}
+            换货申请流程：<br>1、发起换货申请，并把快递单号录入系统<br>2、将需要换货的商品邮寄至商家指定地址，并在系统内输入快递单号<br>3、商家确认后货后重新发出商品<br>4、签收确认商品
+            {/if}
+        </div>
+    </div>
+    {if $refund['status']>=3}
+
+    {if !empty($refund['refundaddress'])}
+    <div class="fui-list-group" style='margin-top:5px;'>
+        <div class="fui-list-group-title"><i class='icon icon-location'></i> 退货地址</div>
+        <div class="fui-list">
+            <div class="fui-list-media"></div>
+            <div class="fui-list-inner">
+                <div class='text'>{$refund['refundaddress']['province']}{$refund['refundaddress']['city']}{$refund['refundaddress']['area']} {$refund['refundaddress']['address']}</div>
+                <div class='subtitle'>{$refund['refundaddress']['name']} {$refund['refundaddress']['mobile']} {$refund['refundaddress']['tel']}</div>
+            </div>
+        </div>
+        {if !empty($refund['message'])}
+        <div class="fui-list-group-title"><i class='icon icon-message'></i> 卖家留言</div>
+        <div class="fui-list">
+            <div class="fui-list-media"></div>
+            <div class="fui-list-inner">
+                <div class='text'><span class='text-danger'>{$refund['message']}</span></div>
+
+            </div>
+        </div>
+        {/if}
+
+
+
+    </div>
+    {/if}
+
+    {if $refund['rtype']==1 || $refund['rtype']==2}
+
+    <div class="fui-cell-group">
+
+        <a class="fui-cell {if $refund['status']==3}fui-cell-click{/if}" {if $refund['status']==3}href='#page-refund-express'{/if}>
+        <div class="fui-cell-label">{if $refund['rtype']==1}退货{else}换货{/if}状态</div>
+        <div class='fui-cell-info'></div>
+        <div class='fui-cell-remark  {if $refund['status']!=3}noremark{/if}'>
+        {if $refund['status']==3}
+        需填写快递单号
+        {elseif $refund['status']==4}
+        等待商家确认
+        {elseif $refund['status']==5}
+        商家已经发货
+        {/if}</div>
+    </a>
+
+    {if !empty($refund['rexpresssn'])}
+    <div class="fui-cell">
+        <div class="fui-cell-label">{if $refund['rtype']==1}退货{else}换货{/if}快递公司</div>
+        <div class='fui-cell-info'>{$refund['rexpresscom']}</div>
+    </div>
+    <div class="fui-cell">
+        <div class="fui-cell-label">{if $refund['rtype']==1}退货{else}换货{/if}快递单号</div>
+        <div class='fui-cell-info'>{$refund['rexpresssn']}</div>
+    </div>
+    {/if}
+</div>
+{/if}
+
+{/if}
+
+<div class='fui-title'>协商详情</div>
+<div class="fui-cell-group">
+    <div class="fui-cell">
+        <div class="fui-cell-label">处理方式</div>
+        <div class="fui-cell-info">
+
+        </div>
+        <div class="fui-cell-remark noremark">
+            {if $refund['rtype']==0}
+            退款
+            {elseif $refund['rtype']==1}
+            退货退款
+            {else}
+            换货{/if}
+        </div>
+    </div>
+    <div class="fui-cell">
+        <div class="fui-cell-label">{if $refund['rtype']=='2'}换货{else}退款{/if}原因</div>
+        <div class="fui-cell-info "></div>
+        <div class="fui-cell-remark noremark">
+            {$refund['reason']}
+        </div>
+    </div>
+    <div class="fui-cell">
+        <div class="fui-cell-label">{if $refund['rtype']=='2'}换货{else}退款{/if}说明</div>
+        <div class="fui-cell-info "></div>
+        <div class="fui-cell-remark noremark">{if empty($refund['content'])}无{else}{$refund['content']} {/if}</div>
+    </div>
+    {if $refund['applyprice']>0 && $refund['rtype']!=2}
+    <div class="fui-cell">
+        <div class="fui-cell-label">退款金额</div>
+        <div class="fui-cell-info"></div>
+        <div class="fui-cell-remark noremark">￥{php echo number_format($refund['applyprice'],2)} </div>
+    </div>
+    {/if}
+
+    <div class="fui-cell">
+        <div class="fui-cell-label">申请时间</div>
+        <div class="fui-cell-info"></div>
+        <div class="fui-cell-remark noremark">{php echo date('Y-m-d H:i',$refund['createtime'])} </div>
+    </div>
+
+</div>
+
+</div>
+<div class='fui-footer text-right'>
+    {if $refund['rtype']==2 && $refund['status']==5}
+    <div class="btn btn-sm btn-danger-o btn-receive">确认收到换货物品</div>
+    <a external data-nocache="true" href="{php echo mobileUrl('order/refund/refundexpress',array('id'=>$order['id'], 'express'=>$refund['rexpress'], 'expresscom'=>$refund['expresscom'],'expresssn'=>$refund['rexpresssn']))}"><div class="btn btn-sm  btn-default-o">查看换货物流</div></a>
+    {/if}
+
+    {if $refund['status']==3 || $refund['status']==4}
+    <a data-nocache="true" class="btn btn-sm btn-danger-o" href='#page-refund-express'>{if empty($refund['express'])}填写{else}修改{/if}快递单号</a>
+    {/if}
+
+    {if $refund['status']==0}
+    <a data-nocache="true" class='btn btn-sm btn-danger-o btn-edit' href='#page-refund-edit'>修改申请</a>
+    {/if}
+
+    {if $refund['status']!=5}
+    <a class='btn btn-sm btn-default-o btn-cancel'>取消申请</a>
+    {/if}
+</div>
+</div>
+
+<div class='fui-page' id='page-refund-express'>
+    <div class="fui-header">
+        <div class="fui-header-left">
+            <a class="back" onclick='history.back()'></a>
+        </div>
+        <div class="title">{if $order['status']==1}退款{else}售后{/if}申请</div>
+        <div class="fui-header-right">&nbsp;</div>
+    </div>
+    <div class='fui-content margin'>
+        <input type='hidden' id='express_old' value="{$refund['express']}"/>
+        <input type="hidden" name="expresscom" id="expresscom" value="{$refund['expresscom']}">
+        <div class="fui-cell-group">
+            <div class='fui-cell-title'>填写快递单号</div>
+            <div class="fui-cell">
+                <div class="fui-cell-label">快递公司</div>
+                <div class="fui-cell-info"><select id="express" name="express">
+                    <option value="" data-name="其他快递">其他快递</option>
+
+                    {loop $express_list $value}
+                    <option value="{$value['express']}" data-name="{$value['name']}">{$value['name']}</option>
+                    {/loop}
+                </select></div>
+            </div>
+            <div class="fui-cell">
+                <div class="fui-cell-label">快递单号</div>
+                <div class="fui-cell-info"><input type="text" id="expresssn" class='fui-input' value="{$refund['expresssn']}" max="50"/></div>
+            </div>
+        </div>
+
+    </div>
+    <div class='fui-footer text-right'>
+        <div class="btn btn-sm btn-danger-o" id='express_submit'>提交快递单号</div>
+        <a class="btn btn-sm btn-default-o back">返回</a>
+    </div>
+
+
+
+
+    <script language='javascript'>
+        require(['biz/order/refund'], function (modal) {
+            modal.init({orderid: "{$orderid}",refundid:"{$refundid}"});
+        });
+
+    </script>
+</div>
+{template '_footer'}

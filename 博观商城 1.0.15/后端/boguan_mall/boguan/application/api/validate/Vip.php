@@ -1,0 +1,2 @@
+<?php
+ namespace app\api\validate; class Vip extends BaseValidate { protected $rule = array("\x76\151\x70\111\x64" => "\162\x65\161\165\x69\162\x65\174\x69\163\116\x6f\164\105\155\x70\164\171"); protected $message = array("\166\x69\x70\111\x64\56\162\145\x71\x75\x69\162\x65" => "\xe4\274\232\345\221\230\345\215\241\xe4\270\215\xe5\255\x98\xe5\234\xa8"); }

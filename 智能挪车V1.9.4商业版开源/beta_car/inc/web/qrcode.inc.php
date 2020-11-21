@@ -1,0 +1,2 @@
+<?php
+ goto c2wHl; KrODJ: $errorCorrectionLevel = "\114"; goto VqfYt; lffRd: goto TLT0a; goto HEgYO; sHm2C: load()->library("\x71\x72\143\157\144\x65"); goto KrODJ; c2wHl: global $_GPC, $_W; goto Nhyku; VqfYt: $matrixPointSize = 6; goto ZQcLD; HEgYO: Q29aP: goto sHm2C; Nhyku: if (!empty($_GPC["\x75\x72\x6c"])) { goto Q29aP; } goto zFwHr; ZQcLD: QRcode::png(urldecode($_GPC["\165\x72\154"]), false, $errorCorrectionLevel, $matrixPointSize, 2); goto e08P0; zFwHr: echo "\345\x8f\x82\346\x95\260\xe4\274\xa0\351\200\222\xe6\x9c\x89\350\xaf\257"; goto lffRd; e08P0: TLT0a:

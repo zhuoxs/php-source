@@ -1,0 +1,828 @@
+{php include wl_template('common/header');}
+<link rel="stylesheet" href="{URL_MODULE}/plugin/pocket/app/resource/css/public.css" />
+<link rel="stylesheet" href="{URL_MODULE}/plugin/pocket/app/resource/css/FL_fabu.css"/>
+<link rel="stylesheet" href="{URL_MODULE}/plugin/pocket/app/resource/css/global.css"/>
+<script type="text/Javascript" src="{URL_MODULE}/plugin/pocket/app/resource/js/global.js"></script>
+<link rel="stylesheet" href="{URL_MODULE}/plugin/pocket/app/resource/css/voice.css">
+<script src="{URL_MODULE}/plugin/pocket/app/resource/js/voicekeyin.min.js"></script>
+<style>
+	.blackimg{position: fixed;background-color: rgba(0,0,0,0.6);left: 0;top: 0;width: 100%;height: 100%;display: none;z-index: 199;}
+	.keyword{display: inline-block;padding: 3px 10px 3px 10px;border: 1px solid gainsboro;border-radius: 5px;margin-top: 3px;}
+	.checkword{color: white;background-color: orangered;border-color: orangered;}
+	.redEnvelopes{width: 94%; margin-left: 3%;}
+	.redEnvelopes .RE_list{box-sizing: border-box;line-height: 50px;font-size: 15px;}
+	.redEnvelopes .RE_list span{display: inline-block;width: 80px;}
+	.redEnvelopes .RE_content{display: inline-block;width: calc( 100% - 115px);}
+	#RE_popup{
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: RGBA(0,0,0,0.6);
+		display: none;
+	}
+	#RE_popup .weui-cells.weui-cells_checkbox{
+		position: absolute;
+		top: calc((100% - 275px) / 2);
+		left: 15%;
+		width: 70%;
+		height: 275px;
+		overflow-y: scroll;
+		padding: 5px 0px;
+	}
+	.list-block ul:before {background-color: rgba(0,0,0,0);}
+	.list-block ul:after {background-color: rgba(0,0,0,0);}
+
+	.weui-uploader__file img{height:100%;width: 100%;}
+	#container{height: 100%;width: 100%;bottom: 2.3rem;}
+	#openlocation{line-height: 2;}
+	#openlocation .icon-location{line-height: 1.8;}
+	.mast{color:orangered;}
+	.hhf{
+		display: inline-block;
+		padding: 0;
+		width: 40px;
+		line-height: 22px;
+		text-align: center;
+		border: 1px grey solid;
+		border-radius: 5px;
+		color: orangered;
+		background-color: gainsboro;
+	}
+
+</style>
+<div class="page-group" >
+	<div class="page page-current">
+		<!--分类信息top开始-->
+		<header class="page-header zindex3"> <a class="arrow-wrap" href="javascript:window.history.back(-1);"> <span class="arrow-lefts"></span><i class="fanhuib">返回</i> </a>
+			<div class="text">发布信息</div>
+			<a class="page-headerwode" href="{php echo app_url('pocket/pocket/myinform',array('status'=>0))}"></a>
+		</header>
+		<div class="blackimg"></div>
+		<div class="wsma" style="background-color: white;z-index: 9999;position: fixed;width: 80%;left: 10%;top: 10%;border-radius: 10px;display: none;height: 65%;">
+			<div class="modal-inner" style="background-color: white;max-height: 20rem;overflow-y: scroll;">
+				<div class="modal-title">
+					选择置顶时长
+				</div>
+				<div class="modal-text">
+					<div class="list-block media-list">
+						<ul>
+							<li>
+								<label class="label-checkbox item-content">
+									<input type="radio" name="my-radio" price="0" value="0">
+									<div class="item-media">
+										<i class="icon icon-form-checkbox">
+										</i>
+									</div>
+									<div class="item-inner">
+										<div class="item-title-row">
+											<div class="item-title">
+												不置顶
+											</div>
+											<div class="item-after">
+											</div>
+										</div>
+									</div>
+								</label>
+							</li>
+							{loop $price $item}
+							<li>
+								<label class="label-checkbox item-content">
+									<input type="radio" name="my-radio" price="{$item['price']}" value="{$item['day']}">
+									<div class="item-media">
+										<i class="icon icon-form-checkbox">
+										</i>
+									</div>
+									<div class="item-inner">
+										<div class="item-title-row">
+											<div class="item-title">
+												{$item['day']}天  ({$item['price']}元)
+											</div>
+											<div class="item-after">
+											</div>
+										</div>
+									</div>
+								</label>
+							</li>
+							{/loop}
+						</ul>
+					</div>
+				</div>
+				<input type="hidden" value="{$free}" id="freestatus" />
+			</div>
+			<div class="modal-buttons ">
+				<span class="modal-button" style="background-color: white;">
+					确定
+				</span>
+			</div>
+		</div>
+		<!--发布内容-->
+		<div class="content" style="padding-bottom:65px;padding-top: 45px;">
+			<!--内容-->
+			<div class="fenlei_lianxi" style="margin:0;">
+				<ol class="fenlei_lianxi01" style="width:100%;margin:0;">
+					<li class="fenlei_lianxi014" style="line-height:30px;">
+						<!--<em></em>-->
+						<span style="margin-left:3%;display:block;height:50px;line-height:50px;float:left;">内容描述：</span> <a href="javascript:;" class="Voice icon-post-voice"><i></i><em>语音输入</em></a>
+						<textarea  class="table-detetail" id="infomark" placeholder="内容描述（可以文字和语音录入，语音请讲普通话），请尽量避免使用特殊字符，字体表情，颜文字等特殊文本，防止无法储存造成内容空白。">{$inform['content']}</textarea>
+						{if $inform['reason'] && $inform['status'] == 2}
+							<p class="table-detetail" style="height: auto;color: #CCC;">
+								<span style="color: red;">驳回理由：{$inform['reason']}</span>
+							</p>
+						{/if}
+					</li>
+				</ol>
+			</div>
+			<!--图片-->
+			<div class="weui-cells__title">有图有真相</div>
+			<div class="list-block">
+				<ul>
+					<li>
+						<div class="weui-cell">
+							<div class="weui-cell__bd">
+								<div class="weui-uploader">
+									<div class="weui-uploader__bd">
+										<ul class="weui-uploader__files upload_images_views uploadImg_createImgView" style="margin-left: -45px;">
+											{if $imgs}
+											{loop $imgs $adv}
+											<li class="weui-uploader__file">
+												<img src="{php echo tomedia($adv)}">
+												<input type="hidden" name="advimages[]"  value="{$adv}" />
+											</li>
+											{/loop}
+											{/if}
+										</ul>
+										<span class="uploadImg_maxNumber" maxlength="6"  name="advimages[]"><!--图片上传数量限制 预览图片建立class:uploadImg_createImgView--></span>
+										{php include wl_template('common/img_upload');}
+									</div>
+								</div>
+							</div>
+						</div>
+					</li>
+				</ul>
+			</div>
+			<!--联系人-->
+			<div class="fenlei_lianxi">
+				<ol class="fenlei_lianxi01">
+					<li class="fenlei_lianxi016">
+						<!--<em></em>-->
+						<span>联系人：</span>
+						<input type="text" placeholder="请输入您的称呼" name="infousername" value="{$member['nickname']}" id="infousername"/>
+					</li>
+				</ol>
+			</div>
+			<!--电话号-->
+			<div class="fenlei_lianxi" style="margin:0;">
+				<ol class="fenlei_lianxi01">
+					<li class="fenlei_lianxi012">
+						<!--<em></em>-->
+						<span>电话号码：</span>
+						<input type="number" placeholder="请输入您的电话号码" name="infousermobile" pattern="[0-9]*"  value="{$member['mobile']}" id="infousermobile"/>
+					</li>
+				</ol>
+			</div>
+			<!--电话号-->
+			<div class="fenlei_lianxi" style="margin:0;">
+				<ol class="fenlei_lianxi01">
+					<li class="fenlei_lianxi012">
+						<!--<em></em>-->
+						<span>分享标题：</span>
+						<input type="text" placeholder="默认格式为：XX发布的XX信息" name="sharetitle"  value="{$inform['share_title']}" id="sharetitle"/>
+					</li>
+				</ol>
+			</div>
+			{if $keywords}
+			<div class="fenlei_lianxi" style="margin:0;">
+				<div style="padding-left: 3%;padding-top: .5rem;padding-right: 3%;padding-bottom: .5rem;">
+					请选择标签：
+					{loop $keywords $key}
+					<span {if in_array($key,$informkeyword)} class="keyword checkword" flag = 1 {else} class="keyword" flag = 0 {/if}word = "{$key}"  >{$key}</span>
+					{/loop}
+				</div>
+			</div>
+			{/if}
+			<!--费用-->
+			<div class="fenlei_lianxi {if empty($inform)}ios_payclose{/if}">
+				<ol class="fenlei_lianxi01">
+					<li class="fenlei_lianxi013"><span>是否置顶：</span><div class="fenlei_lianxi0131">请选择置顶</div></li>
+				</ol>
+			</div>
+			<!--红包-->
+			{if p('sharegift') && $inform['redpack'] < 1}
+				<!--选择红包类型的弹框-->
+				<div id="RE_popup">
+					<div class="weui-cells weui-cells_checkbox">
+						<label class="weui-cell weui-check__label">
+							<div class="weui-cell__hd">
+								<input type="radio" class="weui-check" name="RE_value" checked="checked" price="0" package="0">
+								<i class="weui-icon-checked"></i>
+							</div>
+							<div class="weui-cell__bd">
+								<p>不发送红包</p>
+							</div>
+						</label>
+						<label class="weui-cell weui-check__label">
+							<div class="weui-cell__hd">
+								<input type="radio" class="weui-check" name="RE_value" price="1" package="20">
+								<i class="weui-icon-checked"></i>
+							</div>
+							<div class="weui-cell__bd">
+								<p>1元分20包</p>
+							</div>
+						</label>
+						<label class="weui-cell weui-check__label">
+							<div class="weui-cell__hd">
+								<input type="radio" class="weui-check" name="RE_value" price="3" package="50">
+								<i class="weui-icon-checked"></i>
+							</div>
+							<div class="weui-cell__bd">
+								<p>3元分50包</p>
+							</div>
+						</label>
+						<label class="weui-cell weui-check__label">
+							<div class="weui-cell__hd">
+								<input type="radio" class="weui-check" name="RE_value" price="5" package="80">
+								<i class="weui-icon-checked"></i>
+							</div>
+							<div class="weui-cell__bd">
+								<p>5元分80包</p>
+							</div>
+						</label>
+						<label class="weui-cell weui-check__label">
+							<div class="weui-cell__hd">
+								<input type="radio" class="weui-check" name="RE_value" price="10" package="120">
+								<i class="weui-icon-checked"></i>
+							</div>
+							<div class="weui-cell__bd">
+								<p>10元分120包</p>
+							</div>
+						</label>
+						<div class="modal-buttons">
+							<span class="modal-button close_RE" style="width: 100px;height: 30px;line-height: 30px;margin-top: 10px;border-radius: 5%;background: #1ab394;color: #FFF;">
+								关闭
+							</span>
+						</div>
+					</div>
+				</div>
+				<!--选择红包内容-->
+				<div class="weui-cells__title">发送红包可以有效的提高帖子的热度</div>
+				<div class="weui-cells weui-cells_form">
+					<div class="weui-cell weui-cell_switch">
+						<div class="weui-cell__bd">发送红包</div>
+						<div class="weui-cell__ft">
+							<input class="weui-switch" type="checkbox" id="readpackswitch">
+						</div>
+					</div>
+					<div class="weui-cell redpack-input" style="display: none">
+						<div class="weui-cell__hd"><label class="weui-label">红包总金额</label></div>
+						<div class="weui-cell__bd">
+							<input class="weui-input" onchange="getTotalPrice()" type="number" pattern="[0-9]*" placeholder="请输入红包总金额" id="redpack-price">
+						</div>
+					</div>
+					<div class="weui-cell redpack-input" style="display: none">
+						<div class="weui-cell__hd"><label class="weui-label">红包个数</label></div>
+						<div class="weui-cell__bd">
+							<input class="weui-input" type="number" pattern="[0-9]*" placeholder="请输入红包个数" id="redpack-conut">
+						</div>
+					</div>
+				</div>
+				<!--<div class="fenlei_lianxi {if empty($inform)}ios_payclose{/if}">-->
+					<!--<ol class="redEnvelopes">-->
+						<!--<li class="RE_list">-->
+							<!--<span>发送红包：</span>-->
+							<!--<div class="RE_content">不发送红包</div>-->
+						<!--</li>-->
+					<!--</ol>-->
+				<!--</div>-->
+				<!--&lt;!&ndash;红包操作的js&ndash;&gt;-->
+				<!--<script>-->
+					<!--//弹出选择框-->
+					<!--$(".RE_content").click(function () {-->
+						<!--$("#RE_popup").show();-->
+                    <!--});-->
+					<!--//关闭选择框-->
+					<!--$(".close_RE").click(function () {-->
+                        <!--$("#RE_popup").hide();-->
+                    <!--});-->
+					<!--//改变选择的内容-->
+					<!--$("[name='RE_value']").change(function () {-->
+					    <!--//改变内容-->
+						<!--var html = $(this).parents(".weui-cell__hd").siblings(".weui-cell__bd").children("p").html();-->
+						<!--$(".RE_content").html(html);-->
+						<!--//改变价格-->
+                        <!--getTotalPrice();-->
+                        <!--$("#RE_popup").hide();-->
+                    <!--});-->
+				<!--</script>-->
+			{/if}
+			<!--定位设置-->
+			<div class="weui-cells__title">发帖定位可以方便他人联系</div>
+			<div class="weui-cells weui-cells_form">
+				<div class="weui-cell weui-cell_switch" {if $data['locastatus'] == 2} style="display: none"  {/if} >
+					<div class="weui-cell__bd">开启定位</div>
+					<div class="weui-cell__ft">
+						<input class="weui-switch" type="checkbox"  {if $inform['locastatus'] || $data['locastatus'] }checked {/if}   id="locaswitch">
+					</div>
+				</div>
+				<div class="weui-cell loca-input"  {if empty($inform['locastatus']) && empty($data['locastatus'])} style="display: none" {/if}>
+					<div class="weui-cell__hd"><label class="weui-label">发帖地址</label></div>
+					<div class="weui-cell__bd">
+						<input type="text" style="border: 0;position: relative;left: -1rem;font-size: 12px;width: 100%;" placeholder="请输入店铺地址" name="address" value="{$inform['address']}" id="storeaddr">
+					</div>
+					<div class="item-after c-red" id="openlocation"><span class="icon iconfont icon-location"></span>  定位</div>
+				</div>
+				<!--坐标标记-->
+				<input type="hidden" name="lng" value="{$location['lng']}" id="storelng" />
+				<input type="hidden" name="lat" value="{$location['lat']}" id="storelat" />
+			</div>
+
+			<!--发布按钮-->
+			<div {if $inform} style="display: none;" {/if} class="fenlei_fabu {if $type['price']>0}ios_payclose{/if}">
+			<button class="fenlei_fabu01" onclick="asd(0)" id="submitbtn">确认发布<span class="price1" {if $type['price']==0} style="display: none;" {/if}>(<span class="orderprice">{if $type['price']>0}{$type['price']}{else}0{/if}</span>元)</span></button>
+			<input type="hidden" id="subflag" value="1" />
+			<input type="hidden" id="zhidingday" value="0" />
+		</div>
+		<div {if empty($inform)} style="display: none;" {/if} class="fenlei_fabu">
+		<button class="fenlei_fabu01" onclick="asd(1)" id="editbtn">确认修改<span class="price1" {if $type['price']==0} style="display: none;" {/if}>(<span class="orderprice">0</span>元)</span></button>
+		<input type="hidden" id="tieziid" value="{$inform[id]}" />
+	</div>
+</div>
+</div>
+
+<div class="popup popup-about">
+	<div class="content">
+		<div class="content-inner">
+			<div id="container" tabindex="0" style="margin-bottom: 55px;"></div>
+			<div class="fix-bottom">
+				<div class="row">
+					<div class="col-50">
+						<a href="javascript:;" class="prompt-ok button button-big button-fill button-info close-popup">关闭</a>
+					</div>
+					<div class="col-50">
+						<a href="javascript:;" class="prompt-ok button button-big button-fill button-success confirm-popup">确定</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script src="https://map.qq.com/api/js?v=2.exp&key={php echo $_W['wlsetting']['api']['txmapkey'] ? $_W['wlsetting']['api']['txmapkey']:'PSFBZ-MH2WW-QOYRR-O6DJA-NCXQT-WAFQL';}" type="text/javascript"></script>
+<script>
+    var typeprice;
+	$(function () {
+        typeprice = "{$type['price']}";
+        if(!typeprice){
+            typeprice = 0;
+        }
+    });
+    $("#readpackswitch").click(function () {
+        var readpackswitch = document.getElementById("readpackswitch").checked;
+        if (readpackswitch == true) {
+            $(".redpack-input").css('display','flex');
+        } else {
+            $(".redpack-input").hide();
+        }
+    });
+
+	$("#locaswitch").click(function () {
+		var locaswitch = document.getElementById("locaswitch").checked;
+		if (locaswitch == true) {
+			$(".loca-input").css('display','flex');
+		} else {
+			$(".loca-input").hide();
+		}
+	});
+
+    function asd(sa){
+        var flag = $('#subflag').val();
+        if(flag != 0){
+            $('#subflag').val(0);
+            var thumbs = new Array();
+            var commenttext = $('#infomark').val();
+            var username = $('#infousername').val();
+            var mobile = $('#infousermobile').val();
+            var sharetitle = $('#sharetitle').val();
+            var zhidingday = $('#zhidingday').val();
+            var free = $('#freestatus').val();
+            var redpack = 0;
+            var package = 0;
+            //定位信息
+			var locaswitch = document.getElementById("locaswitch").checked;
+			if (locaswitch == true) {
+				locaswitch = 1;
+			}else{
+				locaswitch = 0;
+			}
+			var lat = $('#storelat').val();
+			var lng = $('#storelng').val();
+			var address = $('#storeaddr').val();
+			{if $data['locastatus'] == 2}
+			if(address.length==0 ){
+				$.toast('请定位发帖地址');
+				$('#subflag').val(1);
+				return false;
+			}
+			{/if}
+			{if p('sharegift') && $inform['redpack'] < 1}
+            var readpackswitch = document.getElementById("readpackswitch").checked;
+            if (readpackswitch == true) {
+                redpack = $("#redpack-price").val();
+                package = $("#redpack-conut").val();
+                if(redpack < 1) {
+                    $.toast('红包金额最低不得少于1元');
+                    $('#subflag').val(1);
+                    return false;
+                }
+                if((redpack/package) < 0.01) {
+                    $.toast('红包个数不得大于'+redpack/0.01);
+                    $('#subflag').val(1);
+                    return false;
+                }
+            }
+            {/if}
+            var keyword = '';
+            var keynum = 0;
+            var mtel = "{$mtel}";
+            $('.checkword').each(function(){
+                keyword += $(this).attr('word')+',';
+                keynum += 1;
+            });
+            $('.upload_images_views input').each(function(){
+                var value = $(this).val();
+                if(value) {
+                    thumbs.push(value);
+                }
+            });
+            if(!username) {
+                $.toast('请输入联系人姓名');
+                $('#subflag').val(1);
+                return false;
+            }
+            if(!mobile && mtel>0){
+                $.toast('请输入联系人联系电话');
+                $('#subflag').val(1);
+                return false;
+            }
+            if(!commenttext) {
+                $.toast('请输入帖子内容');
+                $('#subflag').val(1);
+                return false;
+            }
+            if(keynum > 5) {
+                $.toast('最多选择五个标签');
+                $('#subflag').val(1);
+                return false;
+            }
+            if(sa){
+                var tieziid = $('#tieziid').val();
+            }else{
+                var tieziid = 0;
+            }
+            if(free){
+                var freeday = zhidingday;
+                zhidingday = 0;
+            }else{
+                var freeday = 0;
+            }
+            $.post("{php echo app_url('pocket/pocket/fabu_ajax',array('typeid'=>$typeid))}",
+				{redpack:redpack,package:package,thumbs:thumbs,commenttext:commenttext,username:username,mobile:mobile,tieziid:tieziid,freeday:freeday,sharetitle:sharetitle,keyword:keyword,locastatus:locaswitch,lat:lat,lng:lng,address:address},
+				function(result){
+//				alert(JSON.stringify(result));
+                if(sessionStorage.hisData){
+                    var hisData = JSON.parse(sessionStorage.hisData);
+                    hisData.forEach(function(item, index){
+                        if (item.pocket && item.pocket == 1)  {
+                            hisData.splice(index, 1);
+                            sessionStorage.hisData = JSON.stringify(hisData);
+                        }
+                    });
+                }
+                if(result.errno != 0) {
+                    $('#subflag').val(1);
+                    $.confirm(result.message,
+                        function() { //确定后操作。
+                            if(result.errno ==2){location.href = "{php echo app_url('member/user/binding',array('backurl'=>urlencode($url)));}";}
+                            if(result.errno ==4){location.href = "{php echo app_url('pocket/pocket/myinform',array('status'=>0));}";}
+                            if(result.errno ==5){location.href = "{php echo app_url('pocket/pocket/index');}";}
+                            if(result.errno ==6){
+                                $.post("{php echo app_url('pocket/pocket/createFabuOrder')}", {redpack:redpack,day:zhidingday,fk_id:result.tieziid}, function(d){
+                                    if (d.errno) {
+                                        $.alert(d.message, function () {
+                                            location.href="{php echo app_url('pocket/pocket/detail')}&id="+result.message;
+                                        });
+                                    } else {
+                                        location.href = "{php echo app_url('pocket/pocket/createFabuOrder');}&orderId="+d.message;
+                                    }
+                                }, 'json');
+                            }
+                        },
+                        function() { //取消后操作。
+                        });
+                } else {
+                    if(zhidingday > 0){
+                        $.alert('发帖成功,进入置顶支付', function () {
+                            $.post("{php echo app_url('pocket/pocket/createOrder')}", {redpack:redpack,day:zhidingday,fk_id:result.tieziid}, function(d){
+                                if (d.errno) {
+                                    $.alert(d.message, function () {
+                                        location.href="{php echo app_url('pocket/pocket/detail')}&id="+result.message;
+                                    });
+                                } else {
+                                    location.href = "{php echo app_url('pocket/pocket/createOrder');}&orderId="+d.message;
+                                }
+                            }, 'json');
+                        });
+                    }else if(redpack > 0){
+                        $.alert('发帖成功,进入红包支付', function () {
+                            $.post("{php echo app_url('pocket/pocket/RedOrderPay')}", {redpack:redpack,fk_id:result.tieziid}, function(d){
+                                if (d.errno) {
+                                    $.alert(d.message, function () {
+                                        location.href="{php echo app_url('pocket/pocket/detail')}&id="+result.tieziid;
+                                    });
+                                } else {
+                                    location.href = "{php echo app_url('pocket/pocket/RedOrderPay');}&orderId="+d.message;
+                                }
+                            }, 'json');
+                        });
+					}else{
+                        if(sa){
+                            $.alert('修改成功', function () {
+                                location.href="{php echo app_url('pocket/pocket/detail')}&id="+result.tieziid;
+                            });
+                        }else{
+                            $.alert(result.message, function () {
+                                location.href="{php echo app_url('pocket/pocket/index')}";
+                            });
+                        }
+                    }
+                }
+                return false;
+            }, 'json');
+        }else{
+            $.toast('发帖中，请稍后');
+        }
+
+    }
+    $('.fenlei_lianxi013').click(function(){
+        $('.wsma').show();
+        $('.blackimg').show();
+    });
+    $('.blackimg').click(function(){
+        $('.wsma').hide();
+        $('.blackimg').hide();
+    });
+    $('.modal-button').click(function(){
+        $('.wsma').hide();
+        $('.blackimg').hide();
+        var day = $("input[name='my-radio']:checked").val();
+        if(day){
+            $('#zhidingday').val(day);
+            day = day+'天';
+            $('.fenlei_lianxi0131').html(day);
+            var zhidingprice = $("input[name='my-radio']:checked").attr('price');
+        }else{
+            $('#zhidingday').val(0);
+            $('.fenlei_lianxi0131').html('请选择置顶');
+            var zhidingprice = 0;
+        }
+        getTotalPrice();
+    });
+
+    $('.keyword').click(function(){
+        var flag = $(this).attr('flag');
+        if(flag>0){
+            $(this).attr('flag',0);
+            $(this).removeClass('checkword');
+        }else{
+            $(this).attr('flag',1);
+            $(this).addClass('checkword');
+        }
+    });
+
+    /**
+	 * 计算当前的总价格
+     */
+    function getTotalPrice() {
+        var price = $("[name='RE_value']:checked").attr("price");
+        price = price?price:0;
+        var top_price = $("[name='my-radio']:checked").attr("price");
+        top_price = top_price?top_price:0;
+        var total = parseFloat(price) + parseFloat(top_price) + parseFloat(typeprice);
+		{if p('sharegift') && $inform['redpack'] < 1}
+		var redpackprice = $("#redpack-price").val();
+		redpackprice = redpackprice?redpackprice:0;
+		total = parseFloat(total) + parseFloat(redpackprice);
+		{/if}
+		total = total.toFixed(2);
+        if(total){
+            $('.price1').show();
+        }else{
+            $('.price1').hide();
+        }
+        $('.orderprice').html(total);
+    }
+</script>
+<input type="hidden" id="hidrecordText" name="hidrecordText" value="infomark" />
+<script id="VoicePostOne_Tmp" type="text/html">
+	<div>
+		<div class="post-voice-box-rp rel" data-localid="{LOCALID}">
+			<div class="post-voice-box-pause"><img src="{URL_MODULE}/plugin/pocket/app/resource/images/liebiao_yy_bf.png" style="display: block; position: absolute; height:18px; left: 12px;"></div>
+			<span class="abs post-voice-close temp-voice-close" data-voicetype="{TYPE}"></span>
+		</div>
+		<div class="post-rp-voice-time rel">{TIME}</div>
+		<audio id="myvoice"><source src="{MP3PATH}" type="audio/mpeg"></audio>
+	</div>
+</script>
+<script id="VoiceTemplatePost" type="text/html">
+	<!--录音弹窗 开始-->
+	<div class="voice-record-bg bz pressnone">
+		<div class="press-model-tips" id="press-model-tips"><div>如遇到不能录音,切换点击模式试试</div></div>
+		<div id="slide-btn-group" class="slide-btn-group" style="width:22px;">
+			<div id="slide-to-click" >切换点击模式</div>
+			<div id="slide-to-press" style="display:none;">切换长按模式</div>
+		</div>
+		<p class="bz clearfix">
+			<span id="actionsheet_cancel" class="fr" style="float:right;">取消</span>
+
+		</p>
+		<!--长按模式录音 start-->
+		<div id="voice-press-box" style="display:block;">
+			<div class="abs voice-record-volume-bg">
+				<p class="bz"><span class="voice-record-volume-bg-p-span"></span></p>
+			</div>
+			<div class="voice-record-bt-position clearfix">
+				<div class="voice-record-bt bz rel">
+					<div class="voice-record-bt-white bz" id="voice-start-button" style="cursor:pointer;"><i class="voice-record-bt-white-i"></i></div>
+					<span class="abs voice-record-re c333 bz voice-record-button-local" style="font-size: 13px;line-height: 14px;padding-top: 9px;">本地<br>音频</span>
+				</div>
+				<p class="f14" style="margin-top:6px;" id="press-msg-tips">按住录音</p>
+			</div>
+		</div>
+		<!--长按模式录音 end-->
+		<!--长按模式录音 start-->
+		<div id="voice-click-box" style="display:none;">
+			<div class="abs voice-record-volume-bg">
+				<p class="bz"><span class="voice-record-volume-bg-p-span"></span></p>
+			</div>
+			<div class="voice-record-bt-position clearfix">
+				<div class="voice-record-bt bz rel">
+					<div class="voice-record-bt-white bz" id="voice-start-button-click" style="cursor:pointer;"><i class="voice-record-bt-white-i"></i></div>
+					<span class="abs voice-record-re c333 bz voice-record-button-local" style="font-size: 13px;line-height: 14px;padding-top: 9px;">本地<br>音频</span>
+				</div>
+				<p class="f14" style="margin-top:6px;" id="click-msg-tips">点一下录音</p>
+			</div>
+		</div>
+		<!--长按模式录音 end-->
+		<!--录音ing start-->
+
+		<!--录音ing end-->
+		<!--录音结束 start-->
+
+		<!--录音结束 end-->
+	</div>
+	<!--录音弹窗 结束-->
+</script>
+<script>
+    common.uploadImageByWxJs(6);
+    common.deleteImagesInWxJs();
+
+    $(".shurukouling").hide()
+    var hide=1
+    $("#infokoulindiv label").click(function(){
+        if(hide){
+            $(".shurukouling").show()
+            hide=0
+        }else{
+            $(".shurukouling").hide()
+            hide=1
+        }
+    })
+    var fulihide=1;
+    $("#infofulidiv label").click(function(){
+        if(fulihide){
+            $(".fuliclass").show();
+            $("#infofulimoney").focus();
+            fulihide=0
+        }else{
+            $(".fuliclass").hide()
+            fulihide=1
+        }
+    })
+
+
+
+	function setForm(lat, lng, deft){
+		$.showIndicator();
+		$.post(common.createUrl('area/region/get_geocoder', {'lat':lat,'lng':lng}), function(data) {
+			$.hideIndicator();
+			if (data.status == 0) {
+				var _actions = [];
+				OBJ = data.result.pois;
+				if(deft){
+					setFormField(OBJ[0].address, lat, lng);
+					return true;
+				}
+				for(var j in OBJ){
+					_actions.push({
+						text: OBJ[j].address,
+						onClick: function() {  setFormField(OBJ[j].address, lat, lng);$.closeModal(); }
+					});
+				}
+				var buttons2 = [{text: '取消'}];
+				$.actions([_actions, buttons2]);
+			}
+		}, 'json');
+	}
+
+	$('.hhf').click(function () {
+		var text = $('#infomark').val();
+		text = text+"<br/>";
+		$('#infomark').val(text);
+	});
+	var chooseMapRes = [], OBJ = {};
+
+	function setFormField(address, lat, lng){
+		$("input[name='address']").val(address);
+		$("input[name='lat']").val(lat);
+		$("input[name='lng']").val(lng);
+	}
+
+	function setPoint(position){
+		if(typeof position.type != 'undefined'){
+			if(position.type == 'ip'){
+				if(!IGNORETIP){
+					chooseMap(position);
+				}
+				return false;
+			}
+		}
+		setForm((position.latitude||position.lat), (position.longitude||position.lng), 1);
+	}
+
+	function chooseMap(position) {
+		var center = new qq.maps.LatLng((position.latitude||position.lat), (position.longitude||position.lng));
+		var mapinit = function () {
+			geocoder = new qq.maps.Geocoder({
+				complete: function (result) {
+					chooseMapRes = result;
+				}
+			});
+			geocoder.getAddress(center);
+			map = new qq.maps.Map(document.getElementById("container"), {center: center, zoom: 13});
+			marker = new qq.maps.Marker({
+				position: center, map: map
+			});
+			qq.maps.event.addListener(map, 'click', function (event) {
+				var tmpcenter = new qq.maps.LatLng(event.latLng.getLat(), event.latLng.getLng());
+				marker.setPosition(tmpcenter);
+				geocoder.getAddress(tmpcenter);
+			});
+			$.popup('.popup-about');
+		};
+		mapinit();
+	}
+
+	var IGNORETIP = 0;
+	$('#openlocation').on('click', function(){
+		IGNORETIP = 0;
+		var buttons1 = [];
+		buttons1.push({text: "使用当前位置", onClick: function() { common.Geolocation(setPoint); } });
+		buttons1.push({text: "地图选点", onClick: function() { common.Geolocation(chooseMap); } });
+
+		var buttons2 = [{text: '取消'}];
+		var groups = [buttons1, buttons2];
+		$.actions(groups);
+	});
+
+	if($('#openlocation').length>0 && $('#storeaddr').val() == ''){
+		setTimeout(function () {
+			IGNORETIP = 1;
+			common.Geolocation(setPoint);
+			if(typeof wx != 'undefined'){
+				wx.ready(function () {
+					common.Geolocation(setPoint);
+				});
+			}
+		}, 300);
+	}
+
+	$('.confirm-popup').on('click', function(){
+		setForm(chooseMapRes.detail.location.lat, chooseMapRes.detail.location.lng, 0);
+	});
+
+
+</script>
+<div class="wptConfirm">
+	<div class="wptMask"></div>
+	<div class="dialog">
+		<div class="tip">
+			<div class="msg"></div>
+		</div>
+		<div class="btns">
+			<div class="btn-confirm sure btn-green">确定</div>
+			<div class="btn-cancel">取消</div>
+		</div>
+	</div>
+</div>
+{php include wl_template('common/footer');}

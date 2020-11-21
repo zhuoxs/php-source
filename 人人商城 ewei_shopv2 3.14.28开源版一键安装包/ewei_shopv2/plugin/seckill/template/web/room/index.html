@@ -1,0 +1,153 @@
+{template '_header'}
+
+<div class="page-heading"> 
+    <span class='pull-right'>
+        {if !empty($task)}
+        {ifp 'seckill.room.add'}
+        	<a class='btn btn-primary btn-sm' href="{php echo webUrl('seckill/room/add',array('taskid'=>$task['id']))}"><i class='fa fa-plus'></i> 添加会场</a>
+        {/if}
+        {/if}
+    </span>
+    <h2>会场管理 <small>{if !empty($task)}所属专题: [{$task['id']}]-{$task['title']}{/if}</small></h2> </div>
+
+{if !empty($task)}
+<div class="alert alert-info">
+    相同时间段，同一种商品只能存在一次秒杀
+</div>
+{/if}
+<form action="./index.php" method="get" class="form-horizontal form-search" role="form">
+    <input type="hidden" name="c" value="site" />
+    <input type="hidden" name="a" value="entry" />
+    <input type="hidden" name="m" value="ewei_shopv2" />
+    <input type="hidden" name="do" value="web" />
+    <input type="hidden" name="r" value="seckill.room" />
+    <input type="hidden" name="taskid" value="{$_GPC['taskid']}" />
+    <div class="page-toolbar row m-b-sm m-t-sm">
+        <div class="col-sm-4">
+            <div class="input-group-btn">
+                <button class="btn btn-default btn-sm"  type="button" data-toggle='refresh'><i class='fa fa-refresh'></i></button>
+                {ifp 'seckill.room.edit'}
+	                <button class="btn btn-default btn-sm" type="button" data-toggle='batch' data-href="{php echo webUrl('seckill/room/enabled',array('enabled'=>1))}"><i class='fa fa-circle'></i> 启用</button>
+	                <button class="btn btn-default btn-sm" type="button" data-toggle='batch'  data-href="{php echo webUrl('seckill/room/enabled',array('enabled'=>0))}"><i class='fa fa-circle-o'></i> 禁用</button>
+                {/if}
+                {ifp 'seckill.room.delete'}	
+                	<button class="btn btn-default btn-sm" type="button" data-toggle='batch-remove' data-confirm="确认要删除?" data-href="{php echo webUrl('seckill/room/delete')}"><i class='fa fa-trash'></i> 删除</button>
+                {/if}
+            </div>
+        </div>	
+
+        <div class="col-sm-6 pull-right">
+            <select name="enabled" class='form-control input-sm select-sm'>
+                <option value="" {if $_GPC['enabled'] == ''} selected{/if}>状态</option>
+                <option value="1" {if $_GPC['enabled']== '1'} selected{/if}>启用</option>
+                <option value="0" {if $_GPC['enabled'] == '0'} selected{/if}>禁用</option>
+            </select>	
+            <div class="input-group">				 
+                <input type="text" class="input-sm form-control" name='keyword' value="{$_GPC['keyword']}" placeholder="专题名称/会场名称">
+                <span class="input-group-btn">
+                    <button class="btn btn-sm btn-primary" type="submit"> 搜索</button>
+                </span>
+            </div>
+        </div>
+    </div>
+</form>
+
+<form action="" method="post">
+    {if count($list)>0}
+    <table class="table table-responsive table-hover" >
+        <thead class="navbar-inner">
+            <tr>
+                <th style="width:25px;"><input type='checkbox' /></th>
+                <th style='width:50px'>顺序</th>
+                <th style='width:100px'>会场名称</th>
+                <th style='width:100px'>时间段</th>
+                <th style='width:80px'>创建时间</th>
+                <th style='width:60px'>启用</th>
+                <th style="width: 200px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {loop $list $row}
+            <tr>
+                <td>
+                    <input type='checkbox'   value="{$row['id']}"/>
+                </td>
+                <td>
+                    {ifp 'seckill.room.edit'}
+                    <a href='javascript:;' data-toggle='ajaxEdit' data-href="{php echo webUrl('seckill/room/displayorder',array('id'=>$row['id']))}" >{$row['displayorder']}</a>
+                    {else}
+                    {$row['displayorder']}
+                    {/if}
+                </td>
+                <td>
+
+                    {if empty($task)}
+                        <span class="label label-success">所属专题: {$row['task_title']}</span>
+                      <br/>
+                    {/if}
+                    {$row['title']}</td>
+                <td>
+                       {if count($row['times'])<=0}
+                           无时间段数据
+                       {else}
+ <select class="form-control">
+                           {loop $row['times'] $time}
+                  <option>{$time['time']}点: {$time['goodscount']}个商品</option>
+                        {/loop}
+ </select>
+                    {/if}
+                </td>
+                <td>
+                    {php echo date('Y-m-d',$row['createtime'])}<br/>{php echo date('H:i:s',$row['createtime'])}
+                </td>
+                <td>
+                    <span class='label {if $row['enabled']==1}label-success{else}label-default{/if}' 
+                          {ifp 'seckill.room.edit'}
+	                          data-toggle='ajaxSwitch' 
+	                          data-switch-value='{$row['enabled']}'
+	                          data-switch-value0='0|禁用|label label-default|{php echo webUrl('seckill/room/enabled',array('enabled'=>1,'id'=>$row['id']))}'  
+	                          data-switch-value1='1|启用|label label-success|{php echo webUrl('seckill/room/enabled',array('enabled'=>0,'id'=>$row['id']))}'
+                              style="cursor: pointer;"
+                          {/if}>
+                          {if $row['enabled']==1}启用{else}禁用{/if}</span>
+                    </td>
+
+                    <td style="text-align:left;">
+                        {ifp 'seckill.room.view|seckill.room.edit'}
+	                        <a href="{php echo webUrl('seckill/room/edit', array('id' => $row['id'],'taskid'=>$row['taskid']))}" class="btn btn-default btn-sm">
+	                        	<i class='fa fa-edit'></i> {ifp 'seckill.room.edit'}编辑{else}查看{/if}
+	                        </a>
+                        {/if}
+                        {ifp 'seckill.room.delete'}
+                        	<a data-toggle='ajaxRemove' href="{php echo webUrl('seckill/room/delete', array('id' => $row['id']))}"class="btn btn-default btn-sm" data-confirm='确认要删除此会场吗?'><i class="fa fa-trash"></i> 删除</a>
+                        {/if}
+
+                        <a href="{php echo webUrl('seckill/goods', array('roomid' => $row['id']))}" class="btn btn-default btn-sm">
+                            <i class='fa fa-cog'></i> 商品统计
+                        </a>
+
+                    </td>
+
+                </tr>
+                {/loop} 
+                <tr>
+                    <td colspan='7'>
+                        <div class='pagers' style='float:right;'>
+                            {$pager}			
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        {$pager}
+        {else}
+        <div class='panel panel-default'>
+            <div class='panel-body' style='text-align: center;padding:30px;'>
+                暂时没有任何会场!
+            </div>
+        </div>
+        {/if}
+
+    </form>
+
+    {template '_footer'}

@@ -1,0 +1,157 @@
+{template 'web/common/common'}
+{template 'web/distribution/navbar'}
+<link rel="stylesheet" type="text/css" href="../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/layui.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/new-common.css" />
+
+
+<div class="new-style">
+    <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief" style="top: 0;">
+        <ul class="layui-tab-title">
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'distribution_user','status'=>2,'action'=>'distribution')}" ><li class="{if $_GPC['status']==2}layui-this{/if}">全部</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'distribution_user','status'=>1,'action'=>'distribution')}"><li class="{if $_GPC['status']==1}layui-this{/if}">已审核</li></a>
+            <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'distribution_user','status'=>3,'action'=>'distribution')}"><li class="{if $_GPC['status']==3}layui-this{/if}">未审核</li></a>
+        </ul>
+    </div>
+    <div class="layui-form">
+        <table class="layui-table">
+            <thead>
+            <tr>
+                <th>UID</th>
+                <th>头像</th>
+                <th>昵称</th>
+                <th>姓名</th>
+                <th>手机号</th>
+                <th>累计佣金</th>
+                <th>可提现佣金</th>
+                <th>推荐人</th>
+                <th>状态</th>
+                <th>申请时间</th>
+                <th>审核时间</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+                {loop $data['user'] $key $item}
+                <tr>
+                    <td>{$item['uid']}</td>
+                    <td><img src="{$item['avatarurl']}" style="width: 30px;height: 30px;" alt=""></td>
+                    <td>{$item['nickname']}</td>
+                    <td>{$item['checkInfo']['username']}</td>
+                    <td>{$item['checkInfo']['phone']}</td>
+                    <td>{$item['total_price']}</td>
+                    <td>{$item['price']}</td>
+                    <td>{$item['one_sale']}</td>
+                    <td>
+                        {if $item['checkInfo']['status']==1}
+                        <span class="layui-badge layui-bg-green">通过</span>
+                        {else}
+                        <span class="layui-badge layui-bg-gray">未审核</span>
+                        {/if}
+                    </td>
+                    <td>{$item['apply_time']}</td>
+                    <td>{$item['become_time']}</td>
+                    <td>
+                        {if $item['checkInfo']['status']==0}
+                        {if in_array('distribution.agreeSale',$perm)}
+                        <button class="layui-btn layui-btn-xs agree" data-id="{$item['checkInfo']['id']}">通过审核</button>
+                        {/if}
+                        {if in_array('distribution.denySale',$perm)}
+                        <button class="layui-btn layui-btn-xs layui-btn-danger deny" data-id="{$item['checkInfo']['id']}">不通过</button>
+                        {/if}
+                        {/if}
+                        {if in_array('distribution.distribution_withdraw',$perm)}
+                        <a href="{url 'site/entry/admin',array('m'=>'kundian_farm','id'=>$item['id'],'op'=>'distribution_withdraw','uid'=>$item['uid'],'action'=>'distribution')}">
+                            <button class="layui-btn layui-btn-xs"><i class="layui-icon">&#xe60a;</i>提现详情</button>
+                        </a>
+                        {/if}
+                        {if in_array('distribution.distribution_delete',$perm)}
+                        <button class="layui-btn layui-btn-danger layui-btn-xs distribution_del" data-id="{$item['uid']}"><i class="layui-icon">&#xe640;</i>删除</button>
+                        {/if}
+                    </td>
+                </tr>
+                {/loop}
+            </tbody>
+        </table>
+        <div style="text-align: right;float: right;">
+            {$data['pager']}
+        </div>
+    </div>
+</div>
+{template 'common/footer'}
+<script src="../addons/kundian_farm/resource/layui.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function() {
+        var form = layui.form, layer = layui.layer;
+
+        //通过分销商审核
+        $(".agree").click(function () {
+            var that=$(this);
+            var id=$(this).attr('data-id');
+            layer.confirm('确认通过分销商审核吗',function (index) {
+                var load=layer.load();
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'agreeSale','action'=>'distribution')}",
+                    data:{id:id},
+                    dataType:'json',
+                    success:function(res){
+                        layer.close(load);
+                        layer.alert(res.msg);
+                        if(res.status==0){
+                            window.location.reload();
+                        }
+                        layer.close(index);
+                    }
+                })
+            })
+        })
+
+        /**拒绝分销商审核*/
+        $(".deny").click(function() {
+            var that = $(this);
+            var id = $(this).attr('data-id');
+            layer.confirm('确认拒绝分销商审核吗',function (index) {
+                var load = layer.load();
+                $.ajax({
+                    type: "post",
+                    url: "{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'denySale','action'=>'distribution')}",
+                    data: {id: id},
+                    dataType: 'json',
+                    success: function (res) {
+                        layer.close(load);
+                        layer.alert(res.msg);
+                        if (res.status == 0) {
+                            window.location.reload();
+                        }
+                        layer.close(index);
+                    }
+                })
+            })
+        })
+
+        //删除分销商
+        $(".distribution_del").click(function () {
+            var that = $(this);
+            var id = $(this).attr('data-id');
+            layer.confirm('确认删除分销商吗？',function (index) {
+                var load = layer.load();
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'distribution_delete','action'=>'distribution')}",
+                    data:{id:id},
+                    dataType:'json',
+                    success:function(res){
+                        layer.close(load);
+                        layer.alert(res.msg);
+                        if (res.status == 0) {
+                            that.parent().parent().remove();
+                        }
+                        layer.close(index);
+                    }
+                })
+            })
+
+        })
+    })
+</script>

@@ -1,0 +1,91 @@
+{{include file='common/head.html'}}
+<script language='javascript'>
+function add_server(checked,name,group_id)
+{
+	$.ajax({
+		type:'get',
+		url :'?c=server&a=editServer',
+		data:'checked=' + checked +  "&nodename=" + name + '&group_id=' + group_id ,
+		dataType:'json',
+		success:function(ret) {
+			if (ret['code'] != 200) {
+				return alert(ret['msg'] ? ret['msg'] :"变更产品组主机失败");
+			}
+			
+		}
+		
+	});	
+}
+function show_node(val) 
+{
+	if (val.toString() ==='null') {
+		return ;
+	}
+	$.ajax({
+		type:'get',
+		url :'?c=nodes&a=getByModule',
+		data:'module=' + val,
+		dataType:'json',
+		success:function(ret) {
+			if (ret['count'] < 1) {
+				return alert("没有 " + val + " 的主机,请添加");
+			}
+			var str = "<select name='nodenames[]' multiple class= 'overflow  product_server'>";
+			var nodes = ret['nodes'];
+			for (var i in nodes) {
+				str +="<option value=" + nodes[i] + ">" + nodes[i] + "</option>";
+			}
+			str += "</select>";
+			document.getElementById('nodes').innerHTML = str;	
+			
+		}
+	});
+		
+}
+</script>
+<div align="center">
+	<div class="wid_main mar_main" align="left">
+		<div class="block_top" align="left">当前位置：产品管理 --> 增加产品组 </div>
+		<form  name='reg' action='?c=productgroup&a=productgroupUpdate&group_id={{$group_id}}' method='post'>
+		<table class="table_main2" cellpadding="0" cellspacing="1">
+			<tr><td colspan="2" class="bg_main"><b>增加产品组</b></td></tr>
+		  	<tr><td class="wid_general" valign="top">模块列表</td>
+		  		<td>{{$productgroup.product_module}}</td></tr>
+		  
+		   <tr><td class="wid_general" valign="top">主机列表</td>
+				<td class='overflow product_server' id='nodes'>
+				{{foreach from=$nodes item=ret}}
+				<input type='checkbox' onclick='add_server(this.checked,"{{$ret.name}}",{{$productgroup.group_id}})' {{if $ret.checked==1}}checked{{/if}}>{{$ret.name}}<br>
+				
+				{{/foreach}} 
+				</td></tr>
+		   
+		  <tr><td class="wid_general" valign="top">产品组名称:</td>
+				<td><input name="group_name" size="32" maxlength=32 value="{{$productgroup.group_name}}" />*必填</td></tr>
+		  
+		  <tr><td class="wid_general" valign="top">产品创建方式:</td>
+				<td><input name="call_mode" type="radio" value="turn" {{if $productgroup.call_mode=='turn'}}checked{{/if}}/>轮巡
+					<input name="call_mode" type="radio" value="rand" {{if $productgroup.call_mode=='rand'}}checked{{/if}}/>随机
+					</td></tr>
+		  
+		  <tr><td class="wid_general" valign="top">允许自动升级</td>
+				<td><input type='radio' name="allow_upgrade" value="1" {{if $productgroup.allow_upgrade==1}}checked{{/if}}/>是
+					<input type='radio' name="allow_upgrade" value="0" {{if $productgroup.allow_upgrade!=1}}checked{{/if}}/>否</td></tr>
+		  
+		   <tr><td class="wid_general" valign="top">支付周期</td>
+				<td><input type='radio' name="pay_cycle" value="year" {{if $productgroup.pay_cycle=='year'}}checked{{/if}}/>每年
+					<input type='radio' name="pay_cycle" value="month" {{if $productgroup.pay_cycle!='year'}}checked{{/if}}/>每月</td></tr>
+		  
+		  <tr><td class="wid_general" valign="top">优惠折抵正则:</td>
+				<td><input name="entkey_preg" size="32" maxlength=32 value="{{$productgroup.entkey_preg}}" />不填则不启用</td></tr>
+		  
+		  
+		  <tr><td class="wid_general" valign="top">产品组介绍:</td>
+				<td><textarea name="group_info" cols='50' rows='5' />{{$productgroup.group_info}}</textarea></td></tr>
+		  
+		  <tr><td>&nbsp;</td><td><input type="submit" value="确认" /></td> </tr>
+		 
+    	</table>
+     </form>
+	</div>
+</div>

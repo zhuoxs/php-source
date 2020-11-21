@@ -1,0 +1,168 @@
+{extend name="common/index" /}
+{block name="search_box"}
+<blockquote class="layui-elem-quote layui-quote-nm">
+    <p style="font-size: 14px;">只显示当前【配送中】状态的订单</p>
+</blockquote>
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入关键字..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="delivery_type" id="delivery_type" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        <div class="layui-inline">
+            <select name="leader_id" id="leader_id" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        {if($_SESSION['admin']['store_id'] == 0)}
+        <div class="layui-inline">
+            <select name="store_id" id="store_id" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        {/if}
+        <div class="layui-inline">
+            <input autocomplete="off" type="text" title="查询开始时间" class="layui-input" name="begin_time" id="begin_time" placeholder="查询开始时间">
+        </div>
+        <div class="layui-inline">
+            <input autocomplete="off" type="text" title="查询结束时间" class="layui-input" name="end_time" id="end_time" placeholder="查询结束时间">
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+{/block}
+{block name="tool_box"}
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnCSV" class="layui-btn layui-btn-primary layui-btn-sm">导出CSV</a>
+    </div>
+</div>
+{/block}
+{block name="table_config"}
+<script type="text/html" id="dataDeliveryType">
+    {{# if(d.delivery_type == 1){ }}
+    用户自提
+    {{# } }}
+    {{# if(d.delivery_type == 2){ }}
+    商家配送
+    {{# } }}
+</script>
+<script>
+    layui.use(['table','form','laydate'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        var laydate = layui.laydate;
+        laydate.render({
+            type:'datetime',
+            elem: '#begin_time'
+        });
+        laydate.render({
+            type:'datetime',
+            elem: '#end_time'
+        });
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_list6')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                // {type:'checkbox',fixed:'left'},
+                {field:'delivery_type', width:100, title: '配送方式', templet:"#dataDeliveryType"},
+                {field:'name222', width:100, title: '收货人'},
+                {field:'address222', width:300, title: '地址'},
+                {field:'tel222', width:120, title: '联系电话'},
+                {field:'goods_name', width:300, title: '商品名称'},
+                {field:'attr_names', width:180, title: '规格'},
+                {field:'num', width:100, title: '数量',sort:true},
+            ]]
+            ,page: false,
+            height:'full-200',
+        });
+        //        搜索
+        $('#btnSearch').unbind('click').click(function () {
+            //执行重载
+            table.reload('laytable', {
+                where: {
+                    key: $('#key').val(),
+                    delivery_type: $('#delivery_type').val(),
+                    leader_id: $('#leader_id').val(),
+                    begin_time: $('#begin_time').val(),
+                    end_time: $('#end_time').val(),
+                    store_id: $('store_id').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    where: {
+                        key: $('#key').val(),
+                        leader_id: $('#leader_id').val(),
+                        delivery_type: $('#delivery_type').val(),
+                        begin_time: $('#begin_time').val(),
+                        end_time: $('#end_time').val(),
+                    }
+                });
+            }
+        })
+        $('#btnCSV').click(function () {
+            var url = '{:adminurl("outCSV6")}';
+            url += '&key='+$('#key').val();
+            url += '&delivery_type='+$('#delivery_type').val();
+            url += '&leader_id='+$('#leader_id').val();
+            url += '&begin_time='+$('#begin_time').val();
+            url += '&end_time='+$('#end_time').val();
+            url += '&store_id='+$('#store_id').val();
+
+            top.window.open(url);
+        })
+    })
+
+    require(['select2'], function () {
+        $('.select2').select2();
+        var ret = [
+            {"id":0,"text":"全部配送方式"},
+            {"id":1,"text":"用户自提"},
+            {"id":2,"text":"商家配送"},
+        ];
+        ret.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            return obj;
+        });
+        $('#delivery_type').select2({
+            data: ret,
+        })
+        $.get("{:adminurl('select','Cleader')}", function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: '', text: '请选择团长'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#leader_id').select2({
+                data: ret,
+            })
+        })
+        $.get("{:adminurl('select','Cstore')}", function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: 0, text: '平台'});
+            ret.unshift({id: -1, text: '请选择商家'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#store_id').select2({
+                data: ret,
+            })
+        })
+    })
+</script>
+{/block}

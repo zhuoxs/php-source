@@ -1,0 +1,199 @@
+{php include wl_template('common/header');}
+{if !empty($config['cate']['category_status'])&& in_array(1,$config['cate']['category_status']) && $config['cate']['display_status']!=1}
+<style>
+	#nav-bar{width:100%;display: inline;padding-top: 5px;overflow-x: auto;overflow-y: hidden;white-space: nowrap; }
+	#nav-bar li{display: inline-block;margin-left: 5px;padding-left: 1px;padding-right: 1px;padding-bottom: 5px;}
+	ul::-webkit-scrollbar {display: none} 
+	.active{border-bottom: 2px solid orangered;color: orangered;}
+	.top{padding-bottom: 60px;margin-top: 35px;}
+</style>
+<ul class="cf-content" id="nav-bar" style="position: fixed;z-index: 10000;">
+<!--	<li class="cf-tab-item active" data-id="index"><span>首页</span></li>
+-->	{loop $cates $cate}
+	<li class="cf-tab-item" data-id = "{$cate['id']}"><span>{$cate['name']}</span></li>
+	{/loop}
+</ul>
+{/if}
+<div class="page-group">
+    <div class="page page-current" id="page-index">
+    	{php include wl_template('common/followed');} 
+    	{php include wl_template('common/activity_alert');}
+		<div class="content infinite-scroll native-scroll top" style="padding-bottom: 60px;"   data-distance="10" >
+		{loop $page $item}
+			{if $item[on]==1}
+				{php include wl_template('home/'.$item['sort']);}
+			{/if}
+		{/loop}
+		<!--<div id="totop" style="border-radius: 5px;position: fixed;right: 0.3rem;bottom: 2.5rem;z-index: 100;display: none;padding-left: .2rem;padding-right: .2rem;">
+			<i style="font-size: 40px;color: orange;" class="icon iconfont icon-pullup"></i>
+		</div>-->
+		</div>
+		{php include wl_template('common/footerbar');}
+	</div>
+</div>
+<script type="text/html" id="goodslist">
+{{# for(var i = 0, len = d.list.length; i < len; i++){ }}
+<li class="gli">
+	<a href="{{ d.list[i].a }}" class="external">
+		<div class="img">
+			<!--<span class="brand">2折团</span>--><!--三角形斜角标签样式-->
+			<img  src = "{{ d.list[i].gimg }}"  alt="" style="opacity: 1;">
+				<div class="icon_position" style="display: block;">
+					<div class="discount">
+						<span>{{# if(d.list[i].gprice >0){ }}{{ ((d.list[i].gprice/d.list[i].mprice)*10).toFixed(1) }}{{# } else { }} {{((d.list[i].oprice/d.list[i].mprice)*10).toFixed(1) }}{{# } }}折<br></span>
+					</div>
+					{{# if(d.list[i].goodstab != null && typeof(d.list[i].goodstab.length) != "undefined" && d.list[i].goodstab){ }}
+					<div class="pricedown">{{ d.list[i].goodstab }}</div>
+					{{# } }}
+				</div>
+				<!--<div class="icon_position2" style="display: block;">
+					<div class="pricedown" style="float: right;">{{ d.list[i].successgroup }}团<br/>已成功</div>
+					<div class="pricedown" style="float: right;">{{ d.list[i].inggroup }}团<br/>组团中</div>
+				</div>-->
+		{{# var lenn = d.list[i].params.length; if(lenn >= 3){ }}
+		<ul class="desPos">
+			<li class="firstLine " expos="0">{{ d.list[i].params[0].value }}</li>
+			<li class="" expos="0">{{ d.list[i].params[1].value }}</li>
+			<li class="lastLine" expos="0">{{ d.list[i].params[2].value }}</li>
+		</ul>
+		{{# } }}
+		</div>
+		<div class="txt"><h5>{{ d.list[i].gname }}</h5><p>{{ d.list[i].gdesc }}</p>
+			{{# if(d.list[i].isshow == 3){ }}
+			<div class="ico_endi"></div>
+			{{# } }}
+		</div>
+		<!--<div style="background-color: white;padding:5px 15px 5px 10px;">
+			<span style="font-size: 20px;color: orangered;font-weight: bolder;">￥{{ d.list[i].gprice }}</span>
+			<span style="font-size: 12px;color:gainsboro;padding-left: 10px;">已拼{{d.list[i].sale}}{{d.list[i].unit}}</span>
+			<span style="float: right;display: inline-block;padding:4px 16px 4px 16px;background-color: orangered;color: white;border-radius: 5px;">去拼单&nbsp;></span></div>
+		</div>-->
+		<div class="fnWrap" onclick="javascript:window.location.href='{{d.list[i].a}}'" style="padding-left: 10px;"><div class="fnZone"><i>
+			{{# if(d.list[i].group_level_status == 2){ }}
+			阶梯团
+			{{# } else if(d.list[i].gprice == 0) { }}
+			单购
+			{{# } else{ }}
+			{{ d.list[i].groupnum }}{{# if(d.list[i].g_type == 4){ }}{{d.list[i].unit}}{{# } else { }}人{{# } }}团
+			{{# } }}
+		</i>
+			<span style="position: relative;padding-left: 0.3rem;padding-right: 0.3rem;">
+				<b class="price">￥{{# if(d.list[i].gprice >0){ }}{{ d.list[i].gprice }}{{# } else { }} {{ d.list[i].oprice }}{{# } }}</b>
+				<b class="people" style="width: 100px;padding: 0;padding-left: 0.5rem;">已售{{d.list[i].sale}}{{d.list[i].unit}}</b>
+			</span>
+			<span class="btn">去开团 &gt;</span></div>
+		</div>
+	</a>
+</li>
+{{# } }}
+</script>
+<script>
+	$(function() {
+		'use strict';
+		//商品列表页
+		$(document).on("pageInit", "#page-index", function(e, id, page) {
+			var loading = false;
+			var thispagesize = 20;
+			var thispagesizemax = 100;
+			var thispage = 1;
+			var endmark = 0;
+			function addItems(thispage,thispagesize,cateid,flag,fff) {
+				var recommand = 0;
+				if(flag) recommand=1;
+				if (cateid == 'index'){
+					var ajaxurl = "{php echo app_url('goods/list/ajax')}&recommand="+recommand + "&page=" + thispage + "&pagesize=" + thispagesize;
+				}else{
+					var ajaxurl = "{php echo app_url('goods/list/ajax')}&recommand="+recommand  + "&page=" + thispage + "&pagesize=" + thispagesize+ "&gid=" + cateid;
+				}
+				$.ajax({
+					type: "POST",
+					url: ajaxurl,
+					dataType: 'json',
+					beforeSend: function(XMLHttpRequest) {$.showIndicator(); },
+					success: function(data) {
+						thispagesizemax = data.total;
+						if(fff){
+							$(".ul_1").html('');
+						}
+						if (data.list.length > 0) {
+							var gettpl = document.getElementById('goodslist').innerHTML;
+							laytpl(gettpl).render(data, function(html){
+							    $(".ul_1").append(html);
+							    if(history.state.h){
+							    	 $('.content').scrollTop(history.state.h);
+							    	 var h = $('.content').scrollTop();
+							    	if(h == history.state.h)  history.pushState({ h: 0 });
+							    }
+							});
+						} else {
+							$('.loading_more').html('全部数据加载完毕');
+							endmark = 1;
+						}
+						$.hideIndicator(); //取消加载提示。
+					},
+					error: function() {
+						$('.error').show();
+					}
+				});
+			}
+			addItems(thispage, thispagesize,'index',1,1);
+			$(page).on('infinite', function() {
+				if (loading) return;
+				if (endmark) return;
+				loading = true;
+				$(".loading_more").show();
+				loading = false;
+				thispage++;
+				var cateTopId = $('.active').attr('data-id');
+				if(isNaN(cateTopId)){
+					cateTopId = 'index';
+				}
+				addItems(thispage, thispagesize,cateTopId,1,0);
+			});
+			$('.cf-tab-item').click(function(){
+				$('.cf-tab-item').each(function(){
+					$(this).removeClass('active');
+				});
+				$(this).addClass('active');
+			    var lileft = $(this).offset().left;
+			    var scrollleft = $(this).parent().scrollLeft();
+			    var flag = $(window).width()/2;
+			    var cateTopId = $(this).attr('data-id');
+				thispage = 1;
+				$(this).parent().scrollLeft(scrollleft + lileft - flag+35);
+				addItems(thispage, thispagesize,cateTopId,1,1);
+			});
+		});
+		$.init();
+	});
+</script>
+<script type="text/javascript">
+var eleMenus = $(".ul_1").bind("click", function(event) {
+	var h = $('.content').scrollTop();
+    history.pushState({ h: h });
+});
+</script>
+<script>
+	$('.content').scroll(function(){
+		var off = $('.content').scrollTop();
+		if(off > 300){
+			$('#totop').show();
+		}else{
+			$('#totop').hide();
+		}
+		$('.lazy').each(function(){
+			$top = $(this).offset().top;
+			if($top < 200){
+				$newsrc = $(this).attr('data-src');
+				$(this).attr('src',$newsrc);
+			}
+		});
+	});
+	$('#totop').click(function(){
+		$('.content').animate({
+       		scrollTop: 0
+      	}, 500);
+	});
+</script>
+{php include wl_template('common/footer');}
+        

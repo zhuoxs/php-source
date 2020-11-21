@@ -1,0 +1,188 @@
+{template 'common/header'}
+<div class="we7-page-title"> &nbsp; </div>
+<ul class="we7-page-tab">
+<li class="active"><a href="{php echo $this->createWebUrl('expcate')}">党费类目</a></li>
+<li><a href="{php echo $this->createWebUrl('expense')}">党费记录</a></li>
+</ul>
+
+<div class="btn-group we7-btn-group we7-margin-bottom">
+<a class="btn {php echo $op=='display'?'active':'';}" href="{php echo $this->createWebUrl('expcate')}">党费类目管理</a>
+<a class="btn {php echo $op=='post'?'active':'';}" href="{php echo $this->createWebUrl('expcate',array('op'=>'post','id'=>$id))}">添加&编辑党费类目</a>
+{if !empty($id) && $expcate['status']==3}
+<a class="btn {php echo $op=='import'?'active':'';}" href="{php echo $this->createWebUrl('expcate',array('op'=>'import','id'=>$id))}">交费名单导入</a>
+{/if}
+</div>
+
+{if $op == 'display'}
+<table class="table we7-table table-hover vertical-middle">
+<thead class="navbar-inner">
+    <tr>
+        <th style="width:15%;">排序/ID</th>
+        <th style="width:30%;">类目名称</th>
+        <th style="width:20%;">截止时间-类型</th>
+        <th style="width:35%;text-align:right;">操作</th>
+    </tr>
+</thead>
+<tbody>
+    {loop $list $row}
+    <tr>
+        <td>
+            <p>{$row['priority']}</p>
+            {$row['id']}
+        </td>
+        <td>{$row['name']}</td>
+        <td>
+            <p>{php echo date("Y-m-d H:i",$row['endtime']);}</p>
+            {if $row['status']==1}
+            <span class="label label-success">自由金额</span>
+            {elseif $row['status']==2}
+            <span class="label label-primary">固定金额</span>
+            <span class="label label-default">{$row['catemoney']}</span>
+            {elseif $row['status']==3}
+            <span class="label label-info">指定党员</span>
+            {/if}
+        </td>
+        <td style="text-align:right;">
+            {if $row['status']==3}
+            <a class="btn btn-primary btn-sm" href="{php echo $this->createWebUrl('expcate',array('op'=>'import','id'=>$row['id']));}"><i class="fa fa-file"></i> 名单</a>
+            {/if}
+
+            <a class="btn btn-primary btn-sm" href="{php echo $this->createWebUrl('expense',array('cateid'=>$row['id']));}"><i class="fa fa-eye"></i> 记录</a>
+
+            <a class="btn btn-primary btn-sm" href="{php echo $this->createWebUrl('expcate',array('op'=>'post','id'=>$row['id']));}"><i class="fa fa-edit"></i> 修改</a>
+
+            <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('expcate',array('op'=>'delete','id'=>$row['id']));}"  onclick="return confirm('删除后不可恢复,确定要删除吗?')"><i class="fa fa-times"></i> 删除</a>
+        </td>
+    </tr>
+    {/loop}
+</tbody>
+</table>
+<div class="text-right">{$pager}</div>
+
+{elseif $op == 'post'}
+<form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+<input type="hidden" name="c" value="site" />
+<input type="hidden" name="a" value="entry" />
+<input type="hidden" name="m" value="vlinke_cparty" />
+<input type="hidden" name="do" value="expcate" />
+<input type="hidden" name="op" value="post" />
+<input type="hidden" name="id" value="{$id}" />
+<div class="panel panel-default">
+    <div class="panel-heading">
+        党费类目信息设置
+    </div>
+    <div class="panel-body">
+        <div class="form-group">
+            <label class="col-sm-2 control-label">排序ID</label>
+            <div class="col-sm-10">
+                <input type="text" name="priority" class="form-control" value="{$expcate['priority']}" />
+                <div class="help-block">降序，值越大越靠前</div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">类目名称</label>
+            <div class="col-sm-10">
+                <input type="text" name="name" class="form-control" value="{$expcate['name']}" />
+                <div class="help-block"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label"> 支付类型</label>
+            <div class="col-sm-10">
+                <label class="radio-inline"><input type="radio" name="status" value="1" {if $expcate['status']=='1'}checked{/if}> 自由金额 </label>
+                <label class="radio-inline"><input type="radio" name="status" value="2" {if $expcate['status']=='2'}checked{/if}> 固定金额 </label>
+                <label class="radio-inline"><input type="radio" name="status" value="3" {if $expcate['status']=='3'}checked{/if}> 指定党员 </label>
+                <div class="help-block">自由金额：党员自己输入金额；固定金额：类目指定固定金额；指定党员：类目提交后，导入支付名单。</div>
+            </div>
+        </div>
+        <div class="form-group" id="catemoneybox" style="{if $expcate['status']==2}display:block;{else}display:none;{/if}">
+            <label class="col-sm-2 control-label">支付金额</label>
+            <div class="col-sm-10">
+                <div class="input-group">
+                    <input type="text" name="catemoney" class="form-control" value="{$expcate['catemoney']}" />
+                    <span class="input-group-addon">元</span>
+                </div>
+                <div class="help-block">固定金额时，该项必填，且要大于0；其他类型时该值默认为0。</div>
+            </div>
+        </div>
+        <script type="text/javascript">
+        $(document).ready(function() {
+            $('input[type=radio][name=status]').change(function() {
+                if (this.value==2) {
+                    $("#catemoneybox").show();
+                } else {
+                    $("#catemoneybox").hide();
+                }
+            });
+        });
+        </script>
+
+        <div class="form-group">
+            <label class="col-sm-2 control-label"> 交费截止时间</label>
+            <div class="col-sm-10">
+                {php echo tpl_form_field_date("endtime", date('Y-m-d H:i',$expcate['endtime']), true);}
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="col-sm-2 control-label"> 类目说明</label>
+            <div class="col-sm-10">
+                {php echo tpl_ueditor('details', $expcate['details']);}
+                <div class="help-block"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="form-group col-sm-12">
+    <input type="hidden" name="token" value="{$_W['token']}" />
+    <input type="submit" name="submit" value="提交" class="btn btn-primary btn-submit" />
+</div>
+</form>
+{elseif $op == 'import'}
+<form action="" method="post" class="form-horizontal form" role="form" enctype="multipart/form-data">
+<input type="hidden" name="c" value="site" />
+<input type="hidden" name="a" value="entry" />
+<input type="hidden" name="m" value="vlinke_cparty" />
+<input type="hidden" name="do" value="expcate" />
+<input type="hidden" name="op" value="import" />
+<div class="panel panel-default">
+<div class="panel-heading">交费名单批量导入</div>
+<div class="panel-body">
+    <div class="form-group">
+        <label class="col-sm-2 control-label"> 党费类目</label>
+        <div class="col-sm-10">
+            <input type="text" class="form-control" name="name" id="name" value="{$expcate['name']}" readonly>
+            <div class="help-block" id="branchbox"></div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-sm-2 control-label">导入</label>
+        <div class="col-sm-10">
+            <input class="form-control" type="file" name='upload_file' id='upload_file' value=''>
+            <div class="help-block">目前支持EXCEL 一行一条记录【csv 格式请另存格式为.xls 】, 
+            <a target="_blank" href="{MODULE_URL}template/static/expense_demo.xls">点击下载样表</a></div>
+
+            <div class="help-block">
+                <p><strong>备注：</strong></p>
+                <p>1、交费金额列必须大于0，否则视为无效数据；</p>
+                <p>2、程序根据表中身份证号字段查询党员信息，没有查找到用户信息的视为无效数据；</p>
+                <p>3、党员信息对应的该目录已存在交费记录的，分两种情况：<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;①已支付状态的，不做任何修改，视该条数据为无效数据，<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;②待支付状态的，修改该记录的支付金额与备注字段项；</p>
+                <p>4、对于无效数据，管理人员自行检查，程序不做处理；</p>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="form-group col-sm-12">
+    <input type="hidden" name="token" value="{$_W['token']}" />
+    <input type="submit" name="submit" value="提交导入数据" class="btn btn-primary btn-submit" />
+
+    <a class="btn btn-default btn-submit" href="{php echo $this->createWebUrl('expense',array('cateid'=>$expcate['id']));}">查看导入记录</a>
+</div>
+</form>
+
+{/if}
+{template 'common/footer'}

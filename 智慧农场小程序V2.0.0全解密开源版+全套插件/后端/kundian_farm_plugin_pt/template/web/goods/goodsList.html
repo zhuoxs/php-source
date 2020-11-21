@@ -1,0 +1,234 @@
+{template 'web/common/common'}
+{template 'web/common/navbar'}
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/layui.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/new-common.css" />
+<script src="../addons/kundian_farm/resource/layui.js" charset="utf-8"></script>
+<style>
+    .layui-badge{
+        cursor: pointer;
+    }
+    .layui-form-select{width: 200px;float: left}
+    .batchChangeGoods{float: left;margin-left: 20px;margin-top: 4px;}
+</style>
+<blockquote class="layui-elem-quote layui-text">
+    组团商品
+</blockquote>
+<div class="new-style">
+    <blockquote class="layui-elem-quote layui-quote-nm">
+        <form id="myform" class="layui-form" action="{url 'site/entry/admin',array('m'=>$_GPC['m'],'action'=>'goods')}" method="post">
+            <div class="layui-form-item">
+                <input type="text" style="width: 200px;float: left;margin-right: 20px;height: 30px;" name="goods_name" value="{$_GPC['goods_name']}" placeholder="商品名称" class="layui-input">
+                <button type="button" lay-filter="formSubmit" lay-submit="" id="submitForm" class="layui-btn layui-btn-sm"><i class="layui-icon">&#xe615;</i>搜索</button>
+                <a href="{url 'site/entry/admin',array('m'=>$_GPC['m'],'op'=>'editGoods','action'=>'goods')}">
+                    <button class="layui-btn layui-btn-sm" type="button"> <i class="layui-icon">&#xe608;</i> 新增商品</button>
+                </a>
+            </div>
+        </form>
+    </blockquote>
+
+    <form class="layui-form">
+        <div class="layui-form">
+            <div style="height: 40px;margin-top: 20px;">
+                <select name="selectBatchType" id="selectBatchType" style="width: 200px;">
+                    <option value="0">请选择要批量进行的操作</option>
+                    <option value="1">批量上架</option>
+                    <option value="2">批量下架</option>
+                    <option value="3">批量删除</option>
+                </select>
+                <button class="layui-btn layui-btn-sm batchChangeGoods" type="button"><i class="layui-icon">&#xe642;</i>确认</button></a>
+            </div>
+            <table class="layui-table">
+                <thead>
+                    <tr>
+                        <th  style="width: 102px;"><input type="checkbox" id="checkAll"  lay-filter="checkAll" lay-skin="primary" title="全选"></th>
+                        <th>ID</th>
+                        <th>商品名称</th>
+                        <th>商品封面</th>
+                        <th>分类名称</th>
+                        <th>单卖价格</th>
+                        <th>拼团价格</th>
+                        <th>销量</th>
+                        <th>是否上架</th>
+                        <th>排序</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {loop $data['list'] $index $item}
+                    <tr>
+                        <td><input type="checkbox" class="goodsid" name="goodsid" lay-filter="check_one" value="{$item['id']}" lay-skin="primary"></td>
+                        <td>{$item['id']}</td>
+                        <td>{$item['goods_name']}</td>
+                        <td><img src="{$item['cover']}" style="width: 30px;height: 30px;"></td>
+                        <td>{$item['type_name']}</td>
+                        <td>{$item['price']}</td>
+                        <td>{$item['pt_price']}</td>
+                        <td>{$item['sale_count']}</td>
+                        <td>
+                            {if $item['is_put_away']==1}
+                            <span class="layui-badge layui-bg-green fastChangeGoods" data-id="{$item['id']}"
+                                  data-dotype="putaway" data-status="{$item['is_put_away']}" title="点击下架">上架</span>
+                            {else}
+                            <span class="layui-badge layui-bg-gray fastChangeGoods" data-id="{$item['id']}"
+                                  data-dotype="putaway" data-status="{$item['is_put_away']}"  title="点击上架">下架</span>
+                            {/if}
+                        </td>
+                        <td>{$item['rank']}</td>
+                        <td>
+                            <a href="#" title="小程序码" class="showGoodsQcode" data-id="{$item['id']}">
+                                <img src="{$_W['siteroot']}/addons/kundian_farm/resource/img/chengxuma.png" style="width: 20px;height: 20px;">
+                            </a>
+                            <a href="{url 'site/entry/admin',array('m'=>$_GPC['m'],'op'=>'editGoods','id'=>$item['id'],'action'=>'goods')}">
+                                <button class="layui-btn layui-btn-xs" type="button"><i class="layui-icon">&#xe642;</i>修改</button></a>
+                            <a class="delete" data-id="{$item['id']}">
+                                <button  class="layui-btn layui-btn-xs layui-btn-danger deleteGoods" data-id="{$item['id']}"  type="button"><i class="layui-icon">&#x1006;</i>删除</button>
+                            </a>
+                        </td>
+                    </tr>
+                    {/loop}
+                </tbody>
+            </table>
+            <div style="text-align: right;">
+                {$data['pager']}
+            </div>
+        </div>
+    </form>
+</div>
+{template 'common/footer'}
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+layui.use(['form','layer'], function(){ //独立版的layer无需执行这一句
+    var $ = layui.jquery, layer = layui.layer; //独立版的layer无需执行这一句
+    var form = layui.form;
+
+    /** 搜索查询*/
+    form.on('submit(formSubmit)',function (data) {
+        $("input[name='flag']").val('');
+
+        var formData = data.field;
+        let url = "{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'goodsList','action'=>'goods')}";
+        if(formData['goods_name']){
+            url+="&goods_name="+formData['goods_name'];
+        }
+        window.location.href=url;
+    })
+
+    //生成小程序码
+    $(".showGoodsQcode").click(function(){
+        var goods_id=$(this).attr("data-id");
+        var index = layer.load();
+        $.ajax({
+            type:"post",
+            url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'getGoodsQcode','action'=>'goods')}",
+            data:{id:goods_id},
+            dataType:'json',
+            success:function(res){
+                layer.close(index);
+                layer.open({
+                    type: 1
+                      ,offset: "auto" //具体配置参考：http://www.layui.com/doc/modules/layer.html#offset
+                      ,id: 'layerDemo' //防止重复弹出
+                      ,content: '<img src="'+res.goods_qrcode+'" style="width:200px;height:200px;margin:20px;">'
+                      ,btn: '关闭'
+                      ,btnAlign: 'c' //按钮居中
+                      ,shade: 0.5 //不显示遮罩
+                      ,yes: function(){
+                           layer.closeAll();
+                      }
+                });
+
+            }
+        })
+    })
+
+    //快速改变商品上下架、是否推荐状态
+    $(".fastChangeGoods").click(function () {
+        var that=$(this);
+        var data_status=$(this).attr("data-status");
+        var id=$(this).attr('data-id');
+        var status=0;
+        if(data_status==0){
+            status=1;
+        }
+        $.ajax({
+            type:"post",
+            url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'fastChangeGoods','action'=>'goods')}",
+            data:{id:id,status:status},
+            dataType:'json',
+            success:function(res){
+                if(data_status==0){
+                    that.removeClass('layui-bg-gray');
+                    that.addClass('layui-bg-green');
+                    that.attr('data-status',1);
+                    that.html('上架')
+                }else{
+                    that.removeClass('layui-bg-green');
+                    that.addClass('layui-bg-gray');
+                    that.attr('data-status',0);
+                    that.html('下架')
+                }
+                layer.alert(res.msg);
+            }
+        })
+    })
+
+    //快速删除商品信息
+    $(".deleteGoods").click(function () {
+        var id=$(this).attr('data-id');
+        let url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'deleteGoods','action'=>'goods')}";
+        updateData(url,{id:id},'确认删除该商品吗？');
+    })
+
+    //全选
+    form.on('checkbox(checkAll)', function(data){
+        var a = data.elem.checked;
+        if(a == true){
+            $(".goodsid").prop("checked", true);
+            form.render('checkbox');
+        }else{
+            $(".goodsid").prop("checked", false);
+            form.render('checkbox');
+        }
+    });
+
+    //其中一个不选，取消全选
+    form.on('checkbox(check_one)', function(data){
+        var item = $(".goodsid");
+        for(var i=0;i<item.length;i++){
+            if(item[i].checked == false){
+                $("#checkAll").prop("checked", false);
+                form.render('checkbox');
+            }
+        }
+    });
+
+    //批量操作
+    $(".batchChangeGoods").click(function () {
+        var goods_id=new Array();
+        $("input:checkbox[name='goodsid']:checked").each(function() { // 遍历name=goodsid的多选框
+            goods_id.push($(this).val());
+        });
+        if(goods_id.length==0){
+            layer.alert('请选择要进行批量操作的商品！');return false;
+        }
+        var selectType=$("#selectBatchType").val();
+        if(selectType==0){
+            layer.alert('请选择要进行批量操作的操作！');return false;
+        }
+        layer.confirm('确认批量操作吗？',{icon: 3, title:'提示'},function () {
+            $.ajax({
+                type:"post",
+                url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'batchChangeGoods','action'=>'goods')}",
+                data:{goods_id:goods_id,selectType:selectType},
+                dataType:'json',
+                success:function(res){
+                    layer.alert(res.msg, function(index){
+                        window.location.reload();
+                        layer.close(index);
+                    });
+                }
+            })
+        })
+    })
+});
+</script>

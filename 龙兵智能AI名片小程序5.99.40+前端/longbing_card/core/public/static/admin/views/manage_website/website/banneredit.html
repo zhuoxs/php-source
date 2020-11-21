@@ -1,0 +1,201 @@
+
+<title>添加商品</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>添加商品</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-header">添加商品</div>
+        <div class="layui-card-body" style="padding: 15px;">
+
+            <form class="layui-form" action="" lay-filter="component-form-group" onsubmit=" return  false;">
+
+                <input type="hidden" name="itemId">
+                <input type="hidden" name="modular_id">
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">标题</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="title" required lay-verify="required" placeholder="" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">图片</label>
+                    <div class="layui-upload">
+                        <button type="button" class="layui-btn" id="btn-upload-img">上传图片</button>
+                        <div class="layui-upload-list del-image"  id="div-upload-img"><ul></ul></div>
+
+                        <blockquote style="margin-left: 110px" class="layui-elem-quote" style="margin-top: 10px;">
+                            轮播图片, 尺寸: 1200 * 640
+                        </blockquote>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">排序值</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="top" required placeholder="" autocomplete="off" class="layui-input">
+                    </div>
+                    <blockquote style="margin-left: 110px" class="layui-elem-quote" style="margin-top: 10px;">
+                        排序值, 倒序, 值越大排序越靠前, 请填写数字
+                    </blockquote>
+                </div>
+
+                <!--提交数-->
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="LAY-filter-demo-form">立即提交</button>
+                        <button id="backlist" class="layui-btn layui-btn-primary">返回</button>
+                    </div>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.use(['admin', 'form'], function(){
+        var $ = layui.$
+            ,admin = layui.admin
+            ,element = layui.element
+            ,layer = layui.layer
+            ,form = layui.form;
+
+        layer.load();
+
+        //id的值（判断是否编辑）
+        var router = layui.router();
+        var id=router.search.banner_id;
+        var website_id=router.search.website_id;
+        if(typeof(id)=='undefined'){
+            id=0;//默认新增
+        }
+        if(typeof(website_id)=='undefined'){
+            website_id=0;//默认新增
+        }
+        $("#backlist").click(function(){
+            window.history.back();
+            return false;
+        });
+
+        $('.del-image').on('click','.layui-icon', function () {
+            $(this).parents('dd').remove();
+        });
+
+        //发送请求获取数据(数据的回显)
+        admin.req({
+            type:'POST',
+            url: config.url+'manage_website/website/bannerDetail'//数据接口
+            ,data:{"id":id, 'website_id': website_id},
+            done:function(res){
+                if(res.data){
+                    layer.closeAll();
+                    //预设元素
+                    form.val("component-form-group", {
+                        "itemId": res.data.id,// "name": "value"
+                        "modular_id": website_id,// "name": "value"
+                        "title": res.data.title,// "name": "value"
+                        "img": res.data.img,// "name": "value"
+                        "top": res.data.top,// "name": "value"
+                    });
+
+
+                    //图片的回显
+
+                    //单张图片
+                    if(res.data.img && res.data.img.length > 0){
+                        var str = '<dd><i class="layui-icon" >&#x1007;</i> <img  width="100px" src="'+res.data.img[0].path+'">' +
+                            '<p id=""></p>' +
+                            '<input type="hidden" name="img" value="'+res.data.img[0].id+'"></dd>';
+                        $('#div-upload-img ul').append(str);
+                    }
+
+                }
+            }
+        });
+
+        /* 监听提交 */
+        form.on('submit', function(data){
+
+            layer.load();
+            //发送请求
+            var data = data.field;
+            admin.req({
+                type:'POST',
+                url: config.url+'manage_website/website/bannerEdit'//数据接口
+                ,data:data,
+                done:function(res){
+                    if(res.code == 400)
+                    {
+                        layer.closeAll();
+                        layer.msg(data.msg);
+                        return false;
+                    }
+                    layer.msg('成功', {
+                        offset: '15px'
+                        ,icon: 1
+                        ,time: 1000
+                    });
+                    window.history.back();
+                    // window.location.href = config.html_url2 + '&c_id=' + data.company_id + '#/manage_shop/goods/index'
+                }
+            });
+            return  false;
+        });
+
+
+
+        /*上传图片*/
+        layui.use(['admin', 'upload'], function(){
+            var $ = layui.jquery
+                ,upload = layui.upload;
+
+            //轮播图
+            var uploadInst = upload.render({
+                elem: '#btn-upload-img'
+                ,url: config.url+'manage_base/base_admin/upload'//上传地址
+                ,data:{"type":"picture"}
+                ,before: function(obj){
+                    //预读本地文件示例，不支持ie8
+                    /* obj.preview(function(index, file, result){
+                         $('#test-upload-normal-img-avatar').attr('src', result); //图片链接（base64）
+                     });*/
+                    layer.load(0, {
+                        offset: 'auto'
+                    });
+                }
+                ,done: function(res){
+                    if (res.code > 0) {
+                        return layer.msg('上传失败');
+                    }
+                    $('#div-upload-img ul').empty();
+                    var str = '<dd><i class="layui-icon">&#x1007;</i> <img  width="100px" src="'+res.data.src+'"> ' +
+                        '<p id="p-upload-img"></p>' +
+                        '<input type="hidden" name="img" value="'+res.data.id+'" id="img"></dd>';
+                    $('#div-upload-img ul').append(str);
+                    layer.closeAll();
+                }
+                ,error: function(){
+                    //演示失败状态，并实现重传
+                    var demoText = $('#p-upload-img');
+                    demoText.html('<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-mini demo-reload">重试</a>');
+                    demoText.find('.demo-reload').on('click', function(){
+                        uploadInst.upload();
+                    });
+                }
+            });
+
+        });
+
+    });
+
+</script>

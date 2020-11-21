@@ -1,0 +1,276 @@
+{include file="common/head"}
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/mobile/static/css/n-list.css">
+<style>
+    .novel-main .novel-left{box-shadow:none;}
+</style>
+<script>
+    {if condition="$permit eq 0"}
+    novelpermit({$info['gold']},{$info['id']});
+    {/if}
+    var page = 0;
+    var addLiIndex=1;
+    var status =1;
+    function getCommentList(){
+        var nowDate = new Date().getTime();
+        var times = "";
+        var url = "{:url('api/getCommentList')}";
+        var  resourceId = " {$info['id']}";
+        var data = {
+            "page":page,
+            "resourceId":resourceId,
+            "resourceType":3,
+        };
+        var html = '';
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: data,
+            dataType: 'json',
+            success: function(data){
+                console.log(data);
+                $('#comment_num').html("("+data.data.count+")");
+                var datas = data.data.list;
+                if(datas){
+                    page++;
+                    datas.forEach(function(item) {
+                        var headimgurl = '/static/images/user_dafault_headimg.jpg';
+                        if(item.headimgurl){
+                            headimgurl = item.headimgurl;
+                        }
+                        var time = parseInt(item.last_time*1000);
+                        if(parseInt(time+60*30*1000) > nowDate){
+                            times = '刚刚';
+                        }else if(parseInt(time+60*60*1000) > nowDate){
+                            times = '半个小时前';
+                        } else if(parseInt(time+2*60*60*1000) > nowDate){
+                            times = '1小时前';
+                        }else{
+                            var oDate = new Date(time);
+                            var Hours = oDate.getHours()>10 ? oDate.getHours() :  '0'+oDate.getHours();
+                            var Minutes = oDate.getMinutes()>10 ? oDate.getMinutes() :  '0'+oDate.getMinutes();
+                            times = oDate.getFullYear()+'-'+(oDate.getMonth()+1)+'-'+oDate.getDate()+' '+Hours+':'+Minutes;
+                        }
+                        html += '<li>';
+                        html += '<div class="user-avatar">';
+                        html += '    <a href="javascript:">';
+                        html += '    <img src="'+headimgurl+'">';
+                        html += '    </a>';
+                        html += '    </div>';
+                        html += '    <div class="comment-section">';
+                        html += '    <div class="user-info">';
+                        html += '    <a href="javascript:" class="user-name">'+item.nickname+'</a>';
+                        html += '    <span class="comment-timestamp">'+times+'</span>';
+                        html += '</div>';
+                        html += '<div class="comment-text">'+item.content+'</div>';
+                        html += '</div>';
+                        html += '</li>';
+
+                    })
+                    $('#not-comment').remove();
+                    $('#comment-list').append(html);
+                    status =1;
+                }
+
+            }
+        });
+    }
+    function clearComment(){
+        $('.send').removeClass('submit');
+        $("#length").html('0/300');
+        $("#comment_content").val(' ');
+    }
+    function  addComment() {
+        var content =  $.trim($("#comment_content").val());
+        if((content == "" || content == undefined || content == null)) {
+            layer.open({content:'请输入评论的内容!',skin:'msg',time:1});
+            return false;
+        }
+        var reqData={resourceType:'3',resourceId:{$info['id']},content:content};
+        $.post('{:url("api/comment")}',reqData,function(data){
+            if(data.resultCode==0){
+                layer.open({time:1,content:data.message,skin:'msg'});
+                if(data.data.comment_examine_on != 1){
+                    var headimgurl = '/static/images/user_dafault_headimg.jpg';
+                    if(data.data.userinfo.headimgurl){
+                        headimgurl = data.data.userinfo.headimgurl;
+                    }
+                    var html = '';
+                    html += '<li id="liAdd_'+addLiIndex+'">';
+                    html += '   <div class="user-avatar">';
+                    html += '       <a href="javascript:">';
+                    html += '           <img src="'+headimgurl+'">';
+                    html += '       </a>';
+                    html += '    </div>';
+                    html += '    <div class="comment-section">';
+                    html += '   <div class="user-info">';
+                    html += '       <a href="javascript:" class="user-name">'+data.data.userinfo.nickname+'</a>';
+                    html += '       <span class="comment-timestamp">刚刚</span>';
+                    html += '   </div>';
+                    html += '   <div class="comment-text">'+data.data.content+'</div>';
+                    html += '   </div>';
+                    html += ' </li>';
+                    $('#not-comment').remove();
+                    $("#comment-list ").prepend(html);
+                    $("#liAdd_"+addLiIndex).hide().slideDown('fast');
+                    addLiIndex++;
+                }
+                clearComment();
+            }else{
+                layer.open({content:'评论失败，原因：'+data.error,time:1,skin:'msg'});
+            }
+        },'JSON');
+    }
+    $(function () {
+        getCommentList();
+        $(window).scroll(function(){
+            var srollPos = $(window).scrollTop();
+            if(srollPos+$(window).height() > $(document).height() - 80){
+                if(status == 1){
+                    status = 0;
+                    getCommentList();
+                }
+            }
+        });
+
+        $("#comment_content").on("keyup",function () {
+            var length = $("#comment_content").val().length;
+            $("#length").html(length+'/300');
+            if(length > 0){
+                $('.send').addClass('submit');
+                $('.submit').unbind();
+                $('.submit').bind('click',function (){
+                    addComment();
+                })
+            }else{
+                $('.send').removeClass('submit');
+            }
+            if(length > 300){
+                var text = $("#comment_content").val().substring(0,300);
+                $("#comment_content").val(text);
+            }
+        });
+
+        //收藏
+        {if condition="!$isCollected"}
+        $("#giveCollectBtn").on("click",function () {
+            var collectData={type:'3',id:'{$info["id"]}'};
+            $.post('{:url("api/colletion")}',collectData,function (data) {
+                if(data.resultCode==0){
+                    $('#giveCollectBtn .fn-shoucang1').addClass("gived");
+                    layer.open({skin:'msg',content:'收藏成功',time:2});
+                    $('#shoucang').html('已收藏');
+                    $("#giveCollectBtn").unbind('click');
+                }else{
+                    layer.open({skin:'msg',content:'收藏失败，原因：'+data.error,time:2});
+                }
+            },'json');
+        });
+        {/if}
+
+            //点赞
+            {if condition="!$isGooded"}
+            $("#giveGoodBtn").on('click',function(){
+                var reqData={resourceType:'novel',resourceId:{$info['id']}};
+                $.post('{:url("api/giveGood")}',reqData,function(data){
+                    //console.log(data);
+                    if(data.resultCode==0){
+                        $('#goodNum').html(data.data.good);
+                        $('#giveGoodBtn i').addClass("gived");
+                        $('#giveGoodBtn').unbind('click');
+                        layer.open({skin:'msg',content:'点赞成功',time:2});
+                    }else{
+                        layer.open({skin:'msg',content:'点赞失败，原因：'+data.error,time:2});
+                    }
+                },'JSON');
+            });
+            {/if}
+
+    });
+
+</script>
+<!--对联-左-->
+<div class="ads_dl ads-box" id="ads_dl" style="width:30%;float:left;position:fixed;left:0;z-index:1000;top:40%;padding-bottom: 0;border-radius: 0;">
+  <span class="ads-close"><a style="width:12px;height:12px;display:block;" onclick="document.getElementById('ads_dl').style.display='none'" href="javascript:void(0);"></a></span>
+  <script language="javascript" src="{:url('/poster/index',array('pid'=>2))}"></script>
+</div>
+<!--对联-右-->
+<div class="ads_dr ads-box" id="ads_dr" style="width:30%;float:right;position:fixed;right:0;z-index:1000;top:40%;padding-bottom: 0;border-radius: 0;">
+  <span class="ads-close"><a style="width:12px;height:12px;display:block;" onclick="document.getElementById('ads_dr').style.display='none'" href="javascript:void(0);"></a></span>
+  <script language="javascript" src="{:url('/poster/index',array('pid'=>3))}"></script>
+</div>
+<!--底部-->
+<div class="ads_b ads-box" id="ads_b" style="position:fixed;z-index:1000;bottom:51px;background:#000000ba;width:100%;text-align:center;padding-bottom: 0;border-radius: 0;">
+  <span class="ads-close"><a style="width:12px;height:12px;display:block;" onclick="document.getElementById('ads_b').style.display='none'" href="javascript:void(0);"></a></span>
+  <script language="javascript" src="{:url('/poster/index',array('pid'=>4))}"></script>
+</div>
+        <div class="novel-detail">
+            <div class="novel-top">
+                <p class="n-title">{$info['title']}</p>
+                <div class="n-info">
+                    • <span>作者：{$info['username']|default="admin"}</span> •
+                    <span>时间：{$info['update_time']|date="y-m-d H:i:s",###}</span> •
+                    <ul class="operate">
+                        <li id="giveGoodBtn"><i class="btn fn-zan2 {if $isGooded==true}gived{/if}"></i>点赞(<var id="goodNum">{$info.good|default="0"}</var>)
+                        </li>
+                        <li id="giveCollectBtn"><i class="btn fn-shoucang1 {if $isCollected==true}gived{/if}"></i><var
+                                id="shoucang">{if $isCollected==true}已收藏{else/}未收藏{/if}</var></li>
+                    </ul>
+                    <div class="tag">
+                        {volist name="tag_list" id="vo"}
+                        <span style="margin-bottom: 5px;">{$vo['name']}</span>
+                        {/volist}
+                    </div>
+                </div>
+            </div>
+           <br>
+            <div class="n-decs">
+                {$info['content']|htmlspecialchars_decode}
+            </div>
+            <div class="cut">
+                {if !empty($previous_info)}
+                <a class="prev" title="{$previous_info['title']}"
+                   href="{:url('novel/show',array('id'=>$previous_info['id']))}">
+                    <div class="prev-btn" style="margin-left: -7px;"><i class="btn fn-prev"></i></div>
+                    <div class="prev-box">
+                        <div class="img-bg">
+                            <img src="{$previous_info['thumbnail']}">
+                        </div>
+                        <p>{$previous_info['title']}</p>
+                    </div>
+                </a>
+                {/if}
+                {if !empty($next_info)}
+                <a class="next" title="{$next_info['title']}" href="{:url('novel/show',array('id'=>$next_info['id']))}">
+                    <div class="prev-box">
+                        <div class="img-bg">
+                            <img src="{$next_info['thumbnail']}">
+                        </div>
+                        <p>{$next_info['title']}</p>
+                    </div>
+                    <div class="prev-btn" style="margin-right: -7px;"><i class="btn fn-next"></i></div>
+                </a>
+                {/if}
+            </div>
+            <div class="n-discuss">
+                <p class="title">资讯评论</p>
+                <div class="font-text">
+                    <img src="/tpl/peixun/static/images/header.png">
+                    <input type="text">
+                    <div class="area-box">
+                        <textarea id="comment_content"></textarea>
+                        <span id="length">0/300</span>
+                        <div class="btn-box">
+                            <a class="canel" onclick="clearComment()">取消</a>
+                            <a class="send">发送</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="comment-list">
+                    <ul id="comment-list">
+                        <li class='not-comment' id='not-comment'>暂没评论 ~</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+{include file="common/footer"}

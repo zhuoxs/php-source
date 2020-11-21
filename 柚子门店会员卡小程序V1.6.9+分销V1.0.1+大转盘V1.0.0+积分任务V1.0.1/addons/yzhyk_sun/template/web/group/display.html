@@ -1,0 +1,153 @@
+{template 'public/header'}
+
+<!--标题-->
+<div class="title">
+    <blockquote class="layui-elem-quote">拼团列表</blockquote>
+</div>
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入关键字..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="store_id" id="store_id" style="width: 200px;" class="select2 layui-form-select" lay-ignore></select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+	<div style="color: red !important;">&#25042;&#20154;&#28304;&#30721;&#119;&#119;&#119;&#46;&#108;&#97;&#110;&#114;&#101;&#110;&#122;&#104;&#105;&#106;&#105;&#97;&#46;&#99;&#111;&#109;&#32;&#20840;&#31449;&#36164;&#28304;&#50;&#48;&#22359;&#20219;&#24847;&#19979;&#36733;</div>
+</div>
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchFinish" class="layui-btn layui-btn-primary layui-btn-sm">强制成团</a>
+        <!--<a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>-->
+    </div>
+</div>
+<!--数据表-->
+<div class="table-box">
+    <table class="layui-hide" id="laytable"></table>
+</div>
+<script type="text/html" id="dataDate">
+    {{# if(d.time){ }}
+    {{# var date = new Date(d.time * 1000) }}
+    {{ date.getFullYear() }}-{{ date.getMonth()+1<10?'0'+(date.getMonth()+1):date.getMonth()+1 }}-{{ date.getDate()<10 ? '0' + date.getDate():date.getDate() }}
+    {{# } }}
+</script>
+<script type="text/html" id="dataState">
+    {{# if(d.state == -1){ }}
+        已取消
+    {{# } }}
+    {{# if(d.state == 0){ }}
+        拼团中
+    {{# } }}
+    {{# if(d.state == 1){ }}
+        已完成
+    {{# } }}
+</script>
+<script type="text/html" id="dataDistributionType">
+    {{# if(d.state == 0){ }}
+    配送
+    {{# } }}
+    {{# if(d.state == 1){ }}
+    自提
+    {{# } }}
+</script>
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnEdit">查看</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnCopy">删除</a>
+    {{# if(d.state == 20){ }}
+    <a href=javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnDelete">发货</a>
+    {{# } }}
+</script>
+
+<script type="text/javascript">
+    layui.use('table', function () {
+        var table = layui.table;
+//        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{php echo $this->createWebUrl('group',array('op'=>query));}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'store_name', width:180, title: '门店名称',sort:true},
+                {field:'user_name', width:180, title: '团长名称',sort:true},
+                {field:'name', width:180, title: '拼团名称',sort:true},
+                {field:'num2', width:100, title: '总人数',sort:true},
+                {field:'num', width:100, title: '参与人数',sort:true},
+                {field:'state', width:100, title: '状态',sort:true,templet: '#dataState'},
+//                {field:'o',fixed:'right',width:200, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+//        搜索
+        $('#btnSearch').unbind().click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    store_id: $('#store_id').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        store_id: $('#store_id').val(),
+                    }
+                });
+            }
+        })
+        $('#btnBatchFinish').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                var url = "{php echo $this->createWebUrl('group',array('op'=>batchfinish));}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    var data = $.parseJSON(data);
+                    if (data.code == 0) {
+                        layer.msg('成团成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        $.get("{php echo $this->createWebUrl('store',array('op'=>select));}", function (ret) {
+            console.log(ret);
+            ret = JSON.parse(ret);
+            ret.unshift({id: '', text: '请选择门店'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#store_id').select2({
+                data: ret,
+            })
+        })
+    });
+</script>
+
+{template 'public/footer'}

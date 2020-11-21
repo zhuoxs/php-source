@@ -1,0 +1,177 @@
+{template 'header'}
+<style>
+    .pageBind header{
+        background: none;
+    }
+    .pageBind h3{
+        color: #ffffff;
+        font-size: .35rem;
+        text-align: center;
+        margin-top: .5rem;
+        margin-bottom: .5rem;
+    }
+</style>
+<body class="pageBind pageFooter">
+<div id="hook-app">
+    <?php if($config['header_isshow']): ?>
+    <div class="header">
+        <yd-navbar title="修改手机号">
+            <a href="<?php echo $this->createMobileUrl('user'); ?>" slot="left">
+                <yd-navbar-back-icon></yd-navbar-back-icon>
+            </a>
+        </yd-navbar>
+    </div>
+    <?php endif; ?>
+    <h3>当前手机号：{$currentUser['mobile']}</h3>
+    <div class="user-form">
+        <yd-cell-group>
+            <yd-cell-item>
+                <yd-icon slot="icon" name="phone3" size=".4rem"></yd-icon>
+                <span slot="left">新手机号</span>
+                <input type="number" slot="right" placeholder="输入新手机号码" v-model="mobile"/>
+            </yd-cell-item>
+            <yd-cell-item>
+                <yd-icon slot="icon" name="verifycode" size=".4rem"></yd-icon>
+                <span slot="left">验证码</span>
+                <input type="number" slot="right" placeholder="输入验证码" v-model="verifyCode"/>
+
+                <yd-sendcode
+                        slot="right"
+                        v-model="start"
+                        storage-key="code"
+                        @click.native="sendCode"
+                        type="warning"
+                ></yd-sendcode>
+            </yd-cell-item>
+        </yd-cell-group>
+        <yd-button size="large" type="warning" shape="angle" @click.native="bind">确定更改手机号码</yd-button>
+    </div>
+    <yd-popup v-model="provinceModal" position="center" width="auto">
+        <div style="background-color:#fff;" class="modal-wrap">
+            <ul class="province-list">
+                <li v-for="(item,index) in allProvince" :key="index" @click="choseMe(index,'province')" :class="{active:province == item}">{{item}}</li>
+            </ul>
+        </div>
+    </yd-popup>
+    <yd-popup v-model="wordModal" position="center" width="auto">
+        <div style="background-color:#fff;">
+            <ul class="word-list">
+                <li v-for="(item,index) in allWord" :key="index" @click="choseMe(index,'word')" :class="{active:word == item}">{{item}}</li>
+            </ul>
+        </div>
+    </yd-popup>
+</div>
+
+<script>
+    var user_id = "{$user_id}";
+    var bindUrl = "{php echo $this->createMobileUrl('bind-code');}";
+    var smsUrl = "{php echo $this->createMobileUrl('send-sms');}";
+    var checkVerify = "{php echo $this->createMobileUrl('check-verify');}";
+
+    var reg = /^1[345789][0-9]\d{8}/;
+
+    var app = new Vue({
+        el: '#hook-app',
+        data: {
+            chepaihao: '',
+            mobile: '',
+            verifyCode: '',
+            start: false,
+            provinceModal:false,
+            province: '<?php echo $province ?>',
+            allProvince:[
+                '京','津','沪','渝','蒙',
+                '新','藏','宁','桂','港',
+                '澳','黑','吉','辽','晋',
+                '冀','青','鲁','豫','苏',
+                '皖','浙','闽','赣','湘',
+                '鄂','粤','琼','甘','陕',
+                '贵','云','川'
+            ],
+            wordModal:false,
+            word: '<?php echo $word ?>',
+            allWord:[
+                'A','B','C','D','E',
+                'F','G','H','I','J',
+                'K','L','M','N','O',
+                'P','Q','R','S','T',
+                'U','V','W','X','Y',
+                'Z'
+            ],
+            needGuanzhu: 0
+        },
+        methods: {
+            choseMe: function(index,type) {
+                if(type == 'province'){
+                    this.province = this.allProvince[index];
+                    this.provinceModal = false;
+                }else{
+                    this.word = this.allWord[index];
+                    this.wordModal = false;
+                }
+            },
+            bind: function(){
+                if(!this.mobile.trim()){
+                    this.message("请输入手机号");
+                    return false;
+                }
+                if(!reg.test(this.mobile)){
+                    this.message("手机号格式错误");
+                    return false;
+                }
+                if(!this.verifyCode.trim()){
+                    this.message("请输入验证码");
+                    return false;
+                }
+                this.$dialog.loading.open('提交中...');
+                $.post(bindUrl,{user_id:user_id,mobile:this.mobile,verifyCode:this.verifyCode,op:'change',field:'mobile'}).then(function(resp){
+                    app.$dialog.loading.close();
+                    resp = JSON.parse(resp);
+                    if(!resp.error){
+                        app.message(resp.msg);
+                        setTimeout(function(){
+                            location.href = resp.url;
+                        },1500)
+//                        location.href = resp.url;
+                    }else{
+                        app.message(resp.msg);
+                        return false;
+                    }
+                });
+                return false;
+            },
+            sendCode: function() {
+                //检测手机号格式
+                if(!this.mobile.trim()){
+                    this.message("请输入手机号");
+                    return false;
+                }
+                if(!reg.test(this.mobile)){
+                    this.message("手机号格式错误");
+                    return false;
+                }
+                this.$dialog.loading.open('发送中...');
+                $.post(smsUrl,{mobile:this.mobile}).then(function(resp){
+                    resp = JSON.parse(resp);
+
+                    app.start = true;
+                    app.$dialog.loading.close();
+                    app.$dialog.toast({
+                        mes: resp.msg,
+                        icon: resp.error ? 'error' : 'success',
+                        timeout: 1500
+                    });
+
+                })
+            },
+            message:function(msg){
+                this.$dialog.toast({
+                    mes: msg,
+                    timeout: 1500
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>

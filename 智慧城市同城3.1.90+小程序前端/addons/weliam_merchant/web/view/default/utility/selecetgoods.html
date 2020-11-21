@@ -1,0 +1,278 @@
+{if !$_GPC['get_type']}
+    <style>
+        #selectGoodsList .goodsImg img{
+            width: 50px;
+            height: 50px;
+        }
+        #selectGoodsList .modal-body.form-horizontal{
+            padding: 0 30px;
+        }
+        #selectGoodsList .modal-content{
+            max-height: 800px;
+        }
+    </style>
+<div class="modal-dialog selectGoodsList"  id="selectGoodsList" style="min-width: 60%!important;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button data-dismiss="modal" class="close" type="button">×</button>
+            <h4 class="modal-title">请选择商品</h4>
+        </div>
+        <div class="modal-body form-horizontal">
+            <!--搜索-->
+            <div class="form-group">
+                <div class="col-sm-10 searchContent">
+                    <input class="form-control" placeholder="请输入商品名称..." name="search" value=""/>
+                </div>
+                <div class="btn btn-primary searchSelectGoods" data-plugin="plugin">搜索</div>
+            </div>
+            <!--表格-->
+            <div class="app-table-list selectGoodsTable" id="selectGoodsTable">
+                {if !empty($popup)}
+                    {php echo $popup}
+                {else}
+                    <div class="panel panel-default">
+                        <table class="table table-hover table-responsive table-bordered" style="border: 1px solid #e5e5e5;">
+                            <thead>
+                            <tr>
+                                <th class="text-center" width="10%">图片</th>
+                                <th class="text-center" width="40%">商品名称</th>
+                                <th class="text-center" width="10%">商品类型</th>
+                                <th class="text-center" width="10%">商品状态</th>
+                                <th class="text-center" width="10%">商品价格</th>
+                                <th class="text-center" width="10%">商品库存</th>
+                                <th class="text-center" width="10%">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody class="text-center">
+                            {loop $goods $key $val}
+                            <tr>
+                                <td class="text-center goodsImg"><img src="{$val['logo']}" /></td>
+                                <td class="text-left">{$val['goods_name']}</td>
+                                <td class="text-center">
+                                    {if $val['plugin'] == 'rush'}
+                                    抢购
+                                    {elseif $val['plugin'] == 'groupon'}
+                                    团购
+                                    {elseif $val['plugin'] == 'wlfightgroup'}
+                                    拼团
+                                    {elseif $val['plugin'] == 'coupon'}
+                                    卡卷
+                                    {elseif $val['plugin'] == 'bargain'}
+                                    砍价
+                                    {/if}
+                                </td>
+                                <td>
+                                    {if $val['plugin'] == 'rush'}
+                                    {if $val['status'] == 3}
+                                    <span class="label label-default">已结束</span>
+                                    {else}
+                                    <span class="label label-success">正常</span>
+                                    {/if}
+                                    {elseif $val['plugin'] == 'groupon'}
+                                    {if $val['status'] == 3}
+                                    <span class="label label-default">已结束</span>
+                                    {else}
+                                    <span class="label label-success">正常</span>
+                                    {/if}
+                                    {elseif $val['plugin'] == 'wlfightgroup'}
+                                    <span class="label label-success">正常</span>
+                                    {elseif $val['plugin'] == 'coupon'}
+                                    <span class="label label-success">正常</span>
+                                    {elseif $val['plugin'] == 'bargain'}
+                                    {if $val['status'] == 1}
+                                    <span class="label label-warning">未开始</span>
+                                    {elseif $val['status'] == 2}
+                                    <span class="label label-success">进行中</span>
+                                    {else}
+                                    <span class="label label-default">已结束</span>
+                                    {/if}
+                                    {/if}
+                                </td>
+                                <td class="text-center">{$val['price']}</td>
+                                <td>{$val['stk']}</td>
+                                <td>
+                                    <a href="javascript:;" class="btn btn-sm btn-warning determineSelectGoods" sid="{$val['sid']}" id="{$val['id']}" name="{$val['goods_name']}" plugin="{$val['plugin']}">选择</a>
+                                </td>
+                            </tr>
+                            {/loop}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="app-table-foot clearfix">
+                        <div class="pull-left">
+                        </div>
+                        <div class="pull-right">
+                            <div>
+                                <ul class="pagination pagination-centered">
+                                    {if $page > 1}
+                                    <li><a href="javascript:;" class="pager-nav selectGoodsPage" page="1">首页</a></li>
+                                    <li><a href="javascript:;" class="pager-nav selectGoodsPage" page="{php echo ($page - 1)}">«上一页</a></li>
+                                    {/if}
+                                </ul>
+                                <ul class="pagination pagination-centered selectGoodsPageNumber"></ul>
+                                <ul class="pagination pagination-centered">
+                                    {if $totalPgae > $page}
+                                    <li><a href="javascript:;" class="pager-nav selectGoodsPage" page="{php echo ($page + 1)}">下一页»</a></li>
+                                    <li><a href="javascript:;" class="pager-nav selectGoodsPage" page="{php echo $totalPgae}">尾页</a></li>
+                                    {/if}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                {/if}
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button data-dismiss="modal" class="btn btn-default cancelSelectGoods" type="button">关闭</button>
+        </div>
+    </div>
+</div>
+<script>
+    /**
+     * 请求获取新的商品信息
+     * @param params
+     * @constructor
+     */
+    function selectGoodsRequest(params) {
+        var url = biz.url('utility/select/getWholeGoods',params,'');
+        $.ajax(url, {
+            type: "get",
+            dataType: "html",
+            cache: false,
+        }).done(function(html) {
+            $(".selectGoodsTable").html(html);
+        })
+    }
+    /**
+     * 分页获取新的数据信息
+     */
+    $(".selectGoodsList").on('click','.selectGoodsPage',function () {
+        let page = $(this).attr('page');
+        let search = $("[ name='search']").val();
+        page = page ? page : 1;
+        selectGoodsRequest({page:page,search:search,get_type:1});
+    });
+    /**
+     * 搜索商品信息
+     */
+    $(".selectGoodsList").on('click','.searchSelectGoods',function () {
+        let search = $("[ name='search']").val();
+        page = 1;//搜索 从第一页开始
+        selectGoodsRequest({page:page,search:search,get_type:1});
+    });
+</script>
+{else}
+        <div class="panel panel-default">
+            <table class="table table-hover table-responsive table-bordered" style="border: 1px solid #e5e5e5;">
+                <thead>
+                <tr>
+                    <th class="text-center" width="10%">图片</th>
+                    <th class="text-center" width="40%">商品名称</th>
+                    <th class="text-center" width="10%">商品类型</th>
+                    <th class="text-center" width="10%">商品状态</th>
+                    <th class="text-center" width="10%">商品价格</th>
+                    <th class="text-center" width="10%">商品库存</th>
+                    <th class="text-center" width="10%">操作</th>
+                </tr>
+                </thead>
+                <tbody class="text-center">
+                {loop $goods $key $val}
+                <tr>
+                    <td class="text-center goodsImg"><img src="{$val['logo']}" /></td>
+                    <td class="text-left">{$val['goods_name']}</td>
+                    <td class="text-center">
+                        {if $val['plugin'] == 'rush'}
+                        抢购
+                        {elseif $val['plugin'] == 'groupon'}
+                        团购
+                        {elseif $val['plugin'] == 'wlfightgroup'}
+                        拼团
+                        {elseif $val['plugin'] == 'coupon'}
+                        卡卷
+                        {elseif $val['plugin'] == 'bargain'}
+                        砍价
+                        {/if}
+                    </td>
+                    <td>
+                        {if $val['plugin'] == 'rush'}
+                        {if $val['status'] == 3}
+                        <span class="label label-default">已结束</span>
+                        {else}
+                        <span class="label label-success">正常</span>
+                        {/if}
+                        {elseif $val['plugin'] == 'groupon'}
+                        {if $val['status'] == 3}
+                        <span class="label label-default">已结束</span>
+                        {else}
+                        <span class="label label-success">正常</span>
+                        {/if}
+                        {elseif $val['plugin'] == 'wlfightgroup'}
+                        <span class="label label-success">正常</span>
+                        {elseif $val['plugin'] == 'coupon'}
+                        <span class="label label-success">正常</span>
+                        {elseif $val['plugin'] == 'bargain'}
+                        {if $val['status'] == 1}
+                        <span class="label label-warning">未开始</span>
+                        {elseif $val['status'] == 2}
+                        <span class="label label-success">进行中</span>
+                        {else}
+                        <span class="label label-default">已结束</span>
+                        {/if}
+                        {/if}
+                    </td>
+                    <td class="text-center">{$val['price']}</td>
+                    <td>{$val['stk']}</td>
+                    <td>
+                        <a href="javascript:;" class="btn btn-sm btn-warning determineSelectGoods" sid="{$val['sid']}" id="{$val['id']}" name="{$val['goods_name']}" plugin="{$val['plugin']}">选择</a>
+                    </td>
+                </tr>
+                {/loop}
+                </tbody>
+            </table>
+        </div>
+        <div class="app-table-foot clearfix">
+            <div class="pull-left">
+            </div>
+            <div class="pull-right">
+                <div>
+                    <ul class="pagination pagination-centered">
+                        {if $page > 1}
+                        <li><a href="javascript:;" class="pager-nav selectGoodsPage" page="1">首页</a></li>
+                        <li><a href="javascript:;" class="pager-nav selectGoodsPage" page="{php echo ($page - 1)}">«上一页</a></li>
+                        {/if}
+                    </ul>
+                    <ul class="pagination pagination-centered selectGoodsPageNumber"></ul>
+                    <ul class="pagination pagination-centered">
+                        {if $totalPgae > $page}
+                        <li><a href="javascript:;" class="pager-nav selectGoodsPage" page="{php echo ($page + 1)}">下一页»</a></li>
+                        <li><a href="javascript:;" class="pager-nav selectGoodsPage" page="{php echo $totalPgae}">尾页</a></li>
+                        {/if}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+{/if}
+<script>
+    let page_num ="{php echo $totalPgae;}";
+    let page = "{php echo $page}";
+    /**
+     * 循环建立页码
+     */
+    function pageing() {
+        if(page_num > 1){
+            let html = '';
+            for(let i=1;i<=page_num;i++){
+                if(i > (page - 10) && i <= ((page - 10 < 0 ? 0 : page - 10 ) + 10)){
+                    if(i == page){
+                        html += ' <li class="active" page="'+i+'"><a href="javascript:;">'+i+'</a></li>';
+                    }else{
+                        html += ' <li class="selectGoodsPage" page="'+i+'"><a href="javascript:;">'+i+'</a></li>';
+                    }
+                }
+            }
+            $(".selectGoodsPageNumber").html(html);
+        }
+    }
+    pageing();//循环建立页码
+</script>

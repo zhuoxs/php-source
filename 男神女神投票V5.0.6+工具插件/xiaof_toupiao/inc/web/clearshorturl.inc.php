@@ -1,0 +1,2 @@
+<?php
+ goto Pcj2i; Z5GLk: cache_clean("\163\x68\157\162\164\165\x72\x6c"); goto j9jba; Pcj2i: defined("\111\x4e\x5f\x49\101") or exit("\101\143\143\x65\x73\163\x20\x44\145\156\151\145\144"); goto Z5GLk; j9jba: message("\xe6\xb8\205\347\x90\x86\345\xae\x8c\346\x88\x90");

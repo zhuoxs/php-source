@@ -1,0 +1,175 @@
+{template 'header'}
+<style>
+    .car-list{
+        padding: 15px;
+    }
+    .car-item{
+        padding: 10px 10px 12px;
+        display: flex;
+        /*background: #eeeeee;*/
+        justify-content: space-between;
+        align-items: center;
+        /*margin-bottom: 15px;*/
+        border-bottom:1px solid #eeeeee;
+    }
+    .car-prefix{
+        font-size: 30px;
+        width: 50px;
+    }
+    .car-arrow .fa{
+        font-size: 20px;
+    }
+    .car-info{
+        flex:1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .car-info .car-pai{
+        font-size: 20px;
+        margin-bottom: 5px;
+    }
+    .car-info .mobile{
+        color: #777;
+    }
+    .car-jin{
+        background: rgba(215, 29, 6,.01);
+        /*background: rgba(0, 0, 0,.01);*/
+        color: #999999;
+    }
+</style>
+<body class="pageMovelog">
+<div id="hook-app">
+    <header>
+        <div class="avatar"><img src="{$_W['fans']['avatar']}" alt="" /></div>
+    </header>
+    <?php if($carArr): ?>
+    <div class="car-list">
+        <?php foreach($carArr as $car): ?>
+        <?php if($car['status'] == 9): ?>
+        <li class="car-item" @click="doaction({$car['id']},'{$car['chepaihao']}')">
+        <?php else: ?>
+        <li class="car-item car-jin">
+        <?php endif; ?>
+            <div class="car-prefix">{php echo mb_substr($car['chepaihao'],0,1)}</div>
+            <div class="car-info">
+                <span class="car-pai">{php echo mb_substr($car['chepaihao'],1)}</span>
+                <span class="mobile"><i class="fa fa-mobile"></i> {$car['mobile']}</span>
+            </div>
+            <div class="car-arrow">
+                <?php if($car['status'] == 9): ?>
+                <i class="fa fa-cog"></i>
+                <?php else: ?>
+                <i class="fa fa-ban"></i>
+                <?php endif; ?>
+            </div>
+        </li>
+        <?php endforeach; ?>
+    </div>
+    <div class="user-form">
+        <yd-button size="large" type="primary" id="bindMa">添加车辆</yd-button>
+    </div>
+    <div class="user-form" style="display: none;">
+        <yd-cell-group>
+            <yd-cell-item arrow type="a" href="{php echo $this->createMobileUrl('car',['op'=>'update'])}">
+                <yd-icon slot="icon" name="discover" size=".4rem"></yd-icon>
+                <span slot="left">车牌号</span>
+                <span slot="right">{$currentUser['chepaihao']}</span>
+            </yd-cell-item>
+        </yd-cell-group>
+        <yd-button size="large" type="warning" shape="angle" @click.native="update">修改车辆信息</yd-button>
+    </div>
+    <?php else: ?>
+    <div class="user-form">
+        <div class="ctips" style="text-align: center;">暂无车辆</div>
+        <yd-button size="large" type="primary" id="bindMa">扫码绑定</yd-button>
+    </div>
+    <?php endif; ?>
+    <yd-actionsheet :items="mydo" v-model="show" cancel="取消"></yd-actionsheet>
+</div>
+
+<script>
+    $(function(){
+        $('#bindMa').click(function(){
+            wx.scanQRCode({
+                needResult: 1, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
+                scanType: ["qrCode","barCode"], // 可以指定扫二维码还是一维码，默认二者都有
+                success: function (res) {
+                    console.log(res);
+                    var result = res.resultStr; // 当needResult 为 1 时，扫码返回的结果
+                    location.href = result;
+                }
+            });
+            return false;
+        });
+    })
+
+    var updateUrl = "{php echo $this->createMobileUrl('car',['op'=>'update'])}";
+    var delUrl = "{php echo $this->createMobileUrl('car',['op'=>'del'])}";
+
+    var reg = /^1[345789][0-9]\d{8}/;
+
+    var app = new Vue({
+        el: '#hook-app',
+        data: {
+            id: '',
+            show: false,
+            chepaihao: '',
+            mydo: [
+                {
+                    label: '编辑车辆',
+                    callback:function(){
+                        location.href = updateUrl + '&id='+app.id;
+                        console.log('edit')
+                    }
+                },
+                {
+                    label: '删除车辆',
+                    callback:function(){
+                        app.$dialog.confirm({
+                            title: '温馨提示',
+                            mes: '确定要删除【'+app.chepaihao+'】吗？',
+                            opts: function() {
+                                app.$dialog.loading.open('删除中...');
+                                $.post(delUrl,{
+                                    id: app.id
+                                }).then(function(resp){
+                                    resp = JSON.parse(resp);
+                                    console.log(resp);
+                                    app.$dialog.loading.close();
+                                    if(!resp.error){
+                                        app.message(resp.msg);
+                                        setTimeout(function(){
+                                            location.reload();
+                                        },1500)
+                                    }else{
+                                        app.message(resp.msg);
+                                        return false;
+                                    }
+                                })
+                            }
+                        });
+                    }
+                },
+            ]
+        },
+        methods: {
+            doaction: function(id,chepaihao){
+                this.id = id;
+                this.chepaihao = chepaihao;
+                this.show = true;
+            },
+            update: function(){
+                location.href = updateUrl;
+            },
+            message:function(msg){
+                this.$dialog.toast({
+                    mes: msg,
+                    timeout: 1500
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>

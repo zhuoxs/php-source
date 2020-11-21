@@ -1,0 +1,173 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+	<li class="active"><a href="{php echo web_url('app/advertisement/advertisement_post')}">添加广告模板</a></li>
+</ul>
+<form action="" method="post" class="form-horizontal form" >
+	<div class="panel panel-default">
+		<div class="panel-heading">添加广告模板</div>
+		<div class="panel-body">
+		    <div class="form-group">
+		        <label class="col-sm-2 control-label must">模板名称</label>
+		        <div class="col-sm-8 col-xs-12">
+		            <input type="text" name="name" class="form-control" value="{$item['name']}" placeholder="模版名称"></div>
+		    </div>
+		    <div class="form-group">
+				<label class="col-md-2 control-label">广告位置</label>
+				<div class="col-sm-8 col-xs-12">
+					<div class="btn-group">
+						<a href="javascript:;" class="btn btn-primary posi" id="1">首页</a>
+						<a href="javascript:;" class="btn btn-default posi" id="2">通知页面</a>
+						<a href="javascript:;" class="btn btn-default posi" id="3">违章页面</a>
+						<!--<a href="javascript:;" class="btn btn-default posi" id="4">公共页面</a>-->
+					</div>
+					<input class="hideposi" name="position" type="hidden" value="{$item['position']}" />
+				</div>
+			</div>
+			<div class="form-group">
+		        <label class="col-sm-2 control-label must">广告形式</label>
+		        <div class="col-sm-8 col-xs-12">
+		            <label class="radio-inline" onclick="$('#remarkid').hide();$('#cardnumber').hide();"><input type="radio" name="advtype" value="0" {if empty($item['advtype'])}checked{/if}> 默认</label>
+                	<label class="radio-inline" onclick="$('#remarkid').hide();$('#cardnumber').show();"><input type="radio" name="advtype" value="1" {if $item['advtype'] == 1}checked{/if}> 按号码段</label>
+                	<label class="radio-inline" onclick="$('#cardnumber').hide();$('#remarkid').show();"><input type="radio" name="advtype" value="2" {if $item['advtype'] == 2}checked{/if}> 按场景备注</label>
+                	<div class="help-block">场景备注优先级大于号码段，号码段优先级大于默认</div>
+		        </div>
+		    </div>
+		    <div class="form-group" id="cardnumber" {if $item['advtype'] != 1}style="display: none;"{/if}>
+		        <label class="col-sm-2 control-label must">挪车卡号码段</label>
+		        <div class="col-sm-8 col-xs-12">
+		            <input type="text" name="cardnumber" class="form-control" value="{$item['cardnumber']}" placeholder="请填入起始号码和结束号码">
+		            <div class="help-block">仅需输入挪车卡后几位即可，参考形式：100,400</div>
+		        </div>
+		    </div>
+		    <div class="form-group" id="remarkid" {if $item['advtype'] != 2}style="display: none;"{/if}>
+				<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">挪车卡场景备注</label>
+				<div class="col-xs-12 col-sm-8">
+					<select name="remark" class="form-control">
+						<option value="" {if empty($item['remark'])}selected="selected"{/if}>请选择场景备注</option>
+						{loop $remark_arr $row}
+				            <option value="{$row}" {if $item['remark'] == $row}selected="selected"{/if}>{$row}</option>
+						{/loop}
+			        </select>
+				</div>
+			</div>
+		    <div class="form-group splitter sms-template-1"></div>
+		    <div id="datas" class="sms-template-1" style="display:block;">
+		        {if empty($item['content'])}
+                	{php include wl_template('app/advertisement/imgandurl');}
+                {else}
+                    {loop $item['content'] $data}
+                    	{php include wl_template('app/advertisement/imgandurl');}
+                    {/loop}
+                {/if}
+		    </div>
+		    <div class="form-group sms-template-1" style="display:block;">
+		        <label class="col-sm-2 control-label"></label>
+		        <div class="col-sm-8 col-xs-12">
+		            <a class="btn btn-default btn-add-type" href="javascript:;" onclick="addType();">
+		                <i class="fa fa-plus" title=""></i>增加一条广告</a>
+		        </div>
+		    </div>
+		    
+		    <div class="form-group">
+		        <label class="col-sm-2 control-label must">是否限制广告时间</label>
+		        <div class="col-sm-8 col-xs-12">
+		            <label class="radio-inline" onclick="$('.advtime').hide();"><input type="radio" name="issettime" value="0" {if empty($item['issettime'])}checked{/if}> 否</label>
+                	<label class="radio-inline" onclick="$('.advtime').show();"><input type="radio" name="issettime" value="1" {if !empty($item['issettime'])}checked{/if}> 是</label>
+                	<div class="help-block">为保证至少有一条广告信息，默认广告不支持限制时间</div>
+		        </div>
+		    </div>
+		    <div class="form-group advtime" {if empty($item['issettime'])}style="display: none;"{/if}>
+			    <label class="col-sm-2 control-label">广告时间</label>
+                <div class="col-sm-8 col-xs-12">
+                    {php echo tpl_form_field_daterange('time', array('starttime'=>$time['start'],'endtime'=>$time['end']),true);}
+                </div>
+            </div>
+            <div class="form-group">
+		        <label class="col-sm-2 control-label must">状态</label>
+		        <div class="col-sm-8 col-xs-12">
+		            <label class="radio-inline"><input type="radio" name="status" value="0" {if empty($item['status'])}checked{/if}> 禁用</label>
+                	<label class="radio-inline"><input type="radio" name="status" value="1" {if !empty($item['status'])}checked{/if}> 启用</label>
+                	<div class="help-block">关闭后将不能调用</div>
+		        </div>
+		    </div>
+		</div>
+	</div>
+	<div class="form-group col-sm-12">
+		<input type="submit" name="submit" value="提交" class="btn btn-primary col-lg-1" />
+		<input type="hidden" name="token" value="{$_W['token']}" />
+		<input type="hidden" name="id" value="{$item['id']}" />
+	</div>
+</form>
+<script language="javascript">
+$(function () {
+    $(document).on('click', '.data-item-delete', function () {
+        var len = $(".data-item").length;
+        if(len==1){
+            layer.msg('必须保留一条!');
+            return;
+        }
+        $(this).closest('.data-item').remove();
+    });
+    var asd = $('.hideposi').val();
+    if (asd == '') {
+    	asd = 1;
+    }
+    $('.posi').each(function(){
+		$(this).removeClass('btn-primary');
+		$(this).removeClass('btn-default');
+		$(this).addClass('btn-default');
+	});
+	$('#'+asd).removeClass('btn-default');
+	$('#'+asd).addClass('btn-primary');
+});
+
+var kw = 1;
+function addType() {
+    $(".btn-add-type").button("loading");
+    $.ajax({
+        url: "{php echo web_url('app/advertisement/imgandurl')}&kw="+kw,
+        cache: false
+    }).done(function (html) {
+        $(".btn-add-type").button("reset");
+        $("#datas").append(html);
+    });
+    kw++;
+}
+
+$('.posi').click(function(){
+	$('.posi').each(function(){
+		$(this).removeClass('btn-primary');
+		$(this).removeClass('btn-default');
+		$(this).addClass('btn-default');
+	});
+	$(this).removeClass('btn-default');
+	$(this).addClass('btn-primary');
+	var xx = $(this).attr('id');
+	$('.hideposi').val(xx);
+});
+
+$('form').submit(function(){
+    var type = $("input[name='name']").val();
+    if(type){
+        var checkkw = true;
+        $("#datas input").each(function(){
+            if ( $.trim( $(this).val() ) ==''){
+                checkkw = false;
+                layer.msg('图片或链接不能为空!');
+                $(this).focus();
+                return false;
+            }
+        });
+        if( !checkkw){
+            return false;
+        }
+    }else{
+    	layer.msg('模板名称不能为空！');
+    	$("input[name='name']").focus();
+    	return false;
+    }
+    $('form').removeAttr('stop');
+    return true;
+});
+</script>
+{php include wl_template('common/footer');}

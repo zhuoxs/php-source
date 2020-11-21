@@ -1,0 +1,116 @@
+<html ng-app="diandanbao" class="ng-scope"><head><style type="text/css">@charset "UTF-8";[ng\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\:form{display:block;}</style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta content="telephone=no" name="format-detection">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <meta content="production" name="env">
+    <title>{$setting['title']}</title>
+    <link rel="stylesheet" href="{RES}/plugin/light7/light7.min.css">
+    <link rel="stylesheet" type="text/css" href="{php echo $this->cur_mobile_path}/css/common.css"/>
+    <link rel="stylesheet" type="text/css" href="{php echo $this->cur_mobile_path}/css/iconfont.css"/>
+    <link data-turbolinks-track="true" href="{RES}/mobile/{php echo $this->cur_tpl}/assets/diandanbao/weixin.css?v=1" media="all" rel="stylesheet">
+    <style type="text/css">@media screen{.smnoscreen {display:none}} @media print{.smnoprint{display:none}}</style></head>
+<body>
+<script src="{php echo $this->cur_mobile_path}/script/jquery-1.8.3.min.js"></script>
+{php include $this->template('_common');}
+<div class="ng-scope">
+    <div class="ddb-nav-header ng-scope" style="background-color: #ff7200;color:#fff;">
+        <div class="nav-left-item"  onclick="javascript :history.back(-1);"><i class="fa fa-angle-left"></i></div>
+        <div class="header-title ng-binding">商家订单管理</div>
+        <div class="nav-right-item btn-qrcode" style="padding-right: 12px;"><i class="fa fa-qrcode"></i></div>
+    </div>
+    {php include $this->template($this->cur_tpl.'/_nave');}
+    <div class="orders-index-page main-view ng-scope" id="delivery-orders-index" style="height: 100%;overflow: scroll ;overflow-y:scroll;-webkit-overflow-scrolling:touch;">
+        {loop $order_list $items}
+        <div class="space-12"></div>
+        <div class="order-item section ng-scope" onclick="go_detail({$items['id']})">
+            <a class="list-item">
+            <div class="time ng-binding">订单号：{php echo $items['ordersn']}
+                时间：{php echo date('Y-m-d H:i:s',$items['dateline'])}</div>
+            </a>
+            <a class="list-item">
+                <div class="name">
+                    [{if $items['dining_mode']==1}堂点
+                    {elseif  $items['dining_mode']==2}外卖
+                    {elseif $items['dining_mode']==3}预订
+                    {elseif $items['dining_mode']==4}快餐
+                    {elseif $items['dining_mode']==5}收银
+                    {elseif $items['dining_mode']==6}充值
+                    {elseif $items['dining_mode']==7}门店卡开卡
+                    {elseif $items['dining_mode']==8}门店卡充值
+                    {elseif $items['dining_mode']==9}会员开卡
+                    {/if}]
+                    {if empty($items['storename'])}平台{else}{$items['storename']}{/if}
+                    <div class="operation" style="font-size: 14px;">
+                        {if $items['ispay']==4}退款失败{/if}
+                        {if $items['ispay']==3}已退款{/if}
+                        {if $items['ispay']==2}待退款{/if}
+                        {if $items['ispay']==1}<i class="fa fa-check-square-o"></i>已支付{/if}
+                        {if $items['ispay']==0}未支付{/if}
+                    </div>
+                </div>
+                {if $items['dining_mode']==3}
+                <div class="total-amount">预订房号：{$items['table_title']}房</div>
+                <br />预订到店时间：{$items['meal_time']}
+                {/if}
+                {if $items['dining_mode']==1}
+                <div class="total-amount">桌号：{$items['table_title']}</div>
+                <br />
+                {/if}
+                <div class="variants overflow-ellipsis">
+                    共计{$items['totalnum']}件商品 {if $items['is_append']==1}(<font color="#f00">加单!</font>){/if}
+                </div>
+            </a>
+            <div class="list-item">
+                <div class="total-amount"><span class="amount-label">金额：</span>￥{$items['totalprice']}</div>
+                <div class="operation">
+                    {if $items['status']==0}
+                    {php $lbl_color = 'label-default';}
+                    {php $lbl_stauts = '未确认';}
+                    {elseif $items['status']==1}
+                    {php $lbl_color = 'label-green';}
+                    {php $lbl_stauts = '已确认';}
+                    {elseif $items['status']==3}
+                    {php $lbl_color = 'label-green';}
+                    {php $lbl_stauts = '已完成';}
+                    {elseif $items['status']==-1}
+                    {php $lbl_color = 'label-red';}
+                    {php $lbl_stauts = '已取消';}
+                    {/if}
+                    <span class="button {$lbl_color}">
+                        {$lbl_stauts}
+                    </span>
+                    {if $items['status']==3}
+                    {if $items['isfeedback']==0}<span class="button label-orange" onclick="go_feedback({$items['id']})">
+                    待评价</span>{/if}
+                    {/if}
+                </div>
+                <div class="space"></div>
+            </div>
+        </div>
+        {/loop}
+        <div style="height:100px;"></div>
+    </div>
+</div>
+{php echo register_jssdk(false);}
+<script>
+    $('.btn-qrcode').click(function () {
+        wx.scanQRCode({
+            needResult: 1, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
+            scanType: ["qrCode", "barCode"], // 可以指定扫二维码还是一维码，默认二者都有
+            success: function (res) {
+                var result = res.resultStr; // 当needResult 为 1 时，扫码返回的结果
+                location.href= result;
+            }
+        });
+    });
+
+    function jump(status) {
+        window.location.href = "{php echo $this->createMobileUrl('adminorder', array(), true)}" + "&status=" + status;
+    }
+    function go_detail(id) {
+        window.location.href = "{php echo $this->createMobileUrl('adminorderdetail', array(), true)}" + "&orderid=" +
+                id;
+    }
+</script>
+</body>
+</html>

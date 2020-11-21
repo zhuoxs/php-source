@@ -1,0 +1,237 @@
+{php include wl_template('common/header');}
+<link href="{URL_MODULE}plugin/wlsign/app/resource/css/qiandao.css" rel="stylesheet"/>
+<link href="{URL_MODULE}plugin/wlsign/app/resource/css/calendar.css" rel="stylesheet"/>
+<script type="text/javascript" src="{URL_MODULE}plugin/wlsign/app/resource/js/calendar.js"></script>
+<style>
+	.specials{background: url("{URL_MODULE}plugin/wlsign/app/resource/images/gift-fill.png") center no-repeat;background-size: 100%;color: transparent;}
+	.qd-adv .swiper-container img{border-radius: 5px;}
+	#idCalendar .onsign span{background: #CCC;color: #FFF;}
+</style>
+<div class="page-group">
+    <div class="page page-current">
+    	{php include wl_template('signhtml/footerbar');}
+		<div class="content">
+			<div class="qiandao">
+				<div class="qiandao-rule">
+					<i class="icon iconfont icon-questionfill"></i>活动规则
+				</div>
+				<div class="qiandao-rule-content">
+					<div class="qiandao-rule-mask"></div>
+					<div class="qiandao-rule-d">
+						<div class="qiandao-rule-close"><i class="icon iconfont icon-close_light"></i></div>
+						<div class="qd-h4">
+							<div class="qd-h4-t"><span>签到规则</span></div>
+							<div class="qd-h4-c">
+								<div class="qd-h4-c-txt">
+									{$_W['wlsetting']['wlsign']['detail']}
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="qiandao-success" style="display: none">
+					<div class="qiandao-suc-mask"></div>
+					<div class="qiandao-suc-d">
+						<div class="qiandao-suc-t">
+						</div>
+						<div class="qiandao-suc-c">
+							<h1>恭喜您获得+<span id="reward"></span>积分</h1>
+							<p>您是今天第<span id="orders"></span>个签到的用户</p>
+							<h2><span class="qiandao-suc-close">知道了</span></h2>
+						</div>
+					</div>
+				</div>
+				<div class="myBg" style='background: url("{php echo $settings['top_images']?tomedia($settings['top_images']):URL_MODULE.'plugin/wlsign/app/resource/images/bg.jpg';}") 100% no-repeat;background-size:cover;'></div>
+				<section class="qd-head">
+					<div class="qd-hd-t2">
+						<div class="my_head line-after">
+				    		<div class="img-info">
+			                    <div class="my_head_pic">
+			                        <img id="uinLogo" class="my_head_img" width="130" height="130" alt="" src="{$member['avatar']}">
+			                        <span>积分:{$member['integral']}</span>
+			                    </div>
+			                    <div class="my_head_info">
+			                        <h4 id="nickname" class="my_head_name">{$member['nickname']}</h4>
+									<span class="bind_phone">您已签到共:&nbsp;<em>{$member['totaltimes']}天</em>&nbsp;&nbsp;&nbsp;连续签到:&nbsp;<em><span id="cumulativeDays">{$member['times']}</span>天</em></span>
+									<h3 id="bind_sign" class="bind_sign"><i class="icon iconfont icon-rili"></i>&nbsp;
+										<span id="signButton" autoSign="{$settings['autosign']}">{if $daySign}已签到{else}签&nbsp;到{/if}</span>
+									</h3>
+			                    </div>
+		                	</div>
+		        	    </div>
+					</div>
+				</section>
+				<div class="qd-h2">
+					<div class="qd-h2-i">
+						<div class="icondiv">{$member['totaltimes']}天</div>
+						<div class="txt">累计签到</div>
+					</div>
+					<div class="qd-h2-i">
+						<div class="icondiv">{$today}人</div>
+						<div class="txt">今日签到</div>
+					</div>
+					<div class="qd-h2-i">
+						<div class="icondiv">{$yesterday}人</div>
+						<div class="txt">昨日签到</div>
+					</div>
+				</div>
+				<div class="qd-adv">
+					{php include wl_template('dashboard/adv');}
+				</div>
+				<div class="qd-h3">
+					<div class="Calendar">
+						<div id="toyear" class="flex flex-pack-center">
+							<!--<div id="idCalendarPre"><i class="icon iconfont icon-back"></i></div>-->
+							<div class="year-month">
+								<span id="idCalendarYear"></span>年
+								<span id="idCalendarMonth"></span>月
+							</div>
+							<!--<div id="idCalendarNext"><i class="icon iconfont icon-right"></i></div>-->
+						</div>
+						<table border="1px" cellpadding="0" cellspacing="0">
+							<thead>
+								<tr class="tou">
+									<td>日</td>
+									<td>一</td>
+									<td>二</td>
+									<td>三</td>
+									<td>四</td>
+									<td>五</td>
+									<td>六</td>
+								</tr>
+							</thead>
+							<tbody id="idCalendar">
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+    </div>
+</div>
+<script>
+$(function(){
+    var isSign = false;
+    var myday = new Array(); //已签到的数组
+    var cale = new Calendar("idCalendar", {
+		qdDay: myday,
+		onToday: function(o) {
+			o.className = "onToday";
+		},
+		onSignIn: function (year,month){
+			//获取本月签到记录 只有通过onFinish中发起的调用才会执行
+			var the = this;
+			$.ajax({
+				url:common.createUrl('wlsign/signapp/signRecords'),
+				data:{year:year,month:month},
+				dataType:"json",
+				success:function (res) {
+				    if(res.data){
+                        for(var i=0;i<res.data.length;i++){
+                            the.qdDay[i] = res.data[i];
+                        }
+					}
+					cale.Draw(1);
+                    getSpecial(year,month);
+				},
+				error:function () {
+					return false;
+				}
+			});
+			return 1;
+		},
+		onFinish: function(state) {
+		    if(state == 1) {
+                $$("idCalendarYear").innerHTML = this.Year;
+                $$("idCalendarMonth").innerHTML = this.Month;
+                return false;
+            }else{
+                this.onSignIn(this.Year,this.Month);
+			}
+		},
+	});
+	//签到
+	$("#bind_sign").on('click',function () {
+        $.ajax({
+            url:common.createUrl('wlsign/signapp/signIn'),
+            dataType:"json",
+            success:function (res) {
+                if(res.errno == 1){
+                    cale.SignIn();
+                    $("#reward").html(res.data['reward']);
+                    $("#orders").html(res.data['orders']);
+                    $(".qiandao-success").show();
+                    $("#signButton").html("已签到");
+                } else {
+                	$.toast(res.message);
+                }
+            },
+            error:function () {
+                $.toast('签到失败,请检查网络',function () {
+                    history.go(-1);
+                });
+            }
+        });
+    });
+	//获取特殊奖励信息
+	function getSpecial(year,month) {
+        //获取连续签到奖励 获取当月特殊奖励
+        var cumulativeDays = $("#cumulativeDays").html();
+        $.ajax({
+            url:common.createUrl('wlsign/signapp/specialReward'),
+            data:{year:year,month:month,cumulativeDays:cumulativeDays},
+            dataType:"json",
+            success:function (res) {
+                specialJudge(res)
+            },
+            error:function () {
+                return false;
+            }
+        });
+    }
+    //特殊奖励判断
+	function specialJudge(info) {
+	    var data  =  info.data.info;
+	    var year  = $("#idCalendarYear").html();
+        var month = $("#idCalendarMonth").html();
+		$("#idCalendar td span").each(function () {
+			var day  = $(this).html();
+			var date = year+month+day;
+            for(var i=0;i<data.length;i++){
+				if(date == data[i]['time']){
+                    $(this).addClass("specials");
+				    $(this).attr('title',data[i]['title']);
+				    if(info.data.time < data[i]['time']){
+                        $(this).html('');
+					}
+				}
+			}
+        });
+    }
+    //点击特殊奖励时进行提示
+	$("body").on('click',".specials",function () {
+		var title = $(this).attr("title");
+	    $.toast(title);
+    });
+	//判断是否自动签到
+	window.onload = function () {
+		var autoSign = $("#signButton").attr("autoSign");
+		var state    = $("#signButton").html();
+		if(autoSign == 1 && state == '签&nbsp;到'){
+            $("#signButton").click();
+		}
+    }
+});
+$('.qiandao-rule').bind('click',function(){
+	$('.qiandao-rule-content').show();
+});
+$('.qiandao-rule-mask, .qiandao-rule-close').bind('click',function(){
+	$('.qiandao-rule-content').hide();
+});
+$('.qiandao-suc-mask, .qiandao-suc-close').bind('click',function(){
+	$('.qiandao-success').hide();
+});
+
+</script>
+{php include wl_template('common/footer');}
+

@@ -1,0 +1,222 @@
+{template 'common/header'}
+<script src="../addons/crad_qrcode_red/template/mobile/js/MagicZoom.js"></script>
+<ul class="nav nav-tabs">
+    <li class="active"><a href="{php echo $this->createWebUrl('red')}">红包管理</a></li>
+</ul>
+<div class="clearfix">
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="m" value="crad_qrcode_red" />
+                <input type="hidden" name="do" value="red" />
+                <div class="form-group" >
+                    <label class="col-xs-12 col-sm-2 col-md-2 control-label">红包状态</label>
+                    <div class="col-sm-8 col-md-8 col-lg-8 col-xs-12">
+                        <select  name="status" id="status">
+                            <option value="0" {if empty($status)}selected{/if}>所有</option>
+                            <option value="3" {if $status==3}selected{/if}>未发放</option>
+                            <option value="1" {if $status==1}selected{/if}>已发放</option>
+                            <option value="4" {if $status==4}selected{/if}>已退回</option>
+                        </select>
+                        <span class="help-block"></span></div>
+                </div>
+                <div class="form-group" >
+                    <label class="col-xs-12 col-sm-2 col-md-2 control-label">所属活动</label>
+                    <div class="col-sm-8 col-md-8 col-lg-8 col-xs-12">
+                        <select  name="aid" id="aid">
+                            <option value="0" {if empty($aid)}selected{/if}>所属活动</option>
+                            {loop $activity_info $activity_val}
+                            <option value="{$activity_val['id']}" {if $activity_val['id']==$aid}selected{/if}>{$activity_val['name']}</option>
+                            {/loop}
+                        </select>
+                        <span class="help-block"></span></div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 control-label">关键字</label>
+                    <div class="col-sm-8 col-md-8 col-lg-8 col-xs-12">
+                        <input class="form-control" name="keyword" id="keyword" placeholder="输入用户昵称或姓名或openid或电话" type="text" value="{$_GPC['keyword']}">
+                    </div>
+                </div>   
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 control-label"></label>
+                    <div class="col-sm-8 col-md-8 col-lg-8 col-xs-12">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+
+                        <a class="btn btn-primary" style="float: right;margin-right:10px;" href="{php echo $this->createWebUrl('red',array('op'=>'excel','aid'=>$aid))}">导出红包数据</a>
+                        <a class="btn btn-primary refund_opt" style="float: right;margin-right:10px;{if empty($activity_name['refund_open'])}display:none;{/if}"  >校验红包数据</a>
+                        
+                        <input type="hidden" name="token" value="{$_W['token']}" />
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            汇总统计
+        </div>
+        <div class="table-responsive panel-body">
+            <table class="table table-hover">
+                <tr>
+                    <th style="width:16%;">红包总数:{$total}个</th>
+                    <th style="width:16%;">参加人数:{$count_user}人</th>
+                    <th style="width:16%;">已发个数:{$total_send}个</th>
+                    <th style="width:16%;">退回个数:{$total_refund}个</th>
+                    <th style="width:16%;">发放金额:{$sum_money}元</th>
+                    <th style="width:16%;">退回金额:{$refund_money}元</th>
+                </tr>
+
+            </table>
+        </div>
+    </div>  
+
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            红包领取记录
+        </div>
+        <div class="table-responsive panel-body">
+            <form action="" method="post" id="form1" class="form-horizontal form" enctype="multipart/form-data">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th class='with-checkbox' style="width: 20px;"><input type="checkbox" class="check_all" /></th>
+                            <th style="width:5%;">ID</th>
+                            <th style="width:10%;">头像</th>
+                            <th>姓名电话</th>
+                            <th style="width:10%;">红包金额</th>
+                            <th style="width:20%;">时间</th>
+                            <th style="width:10%;">状态</th>
+                            <th style="width:15%;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loop $list $row}
+                        <tr>
+                            <td class="with-checkbox">{if empty($row['status'])}<input type="checkbox" name="ids[]" value="{$row['id']}">{/if}</td>
+                            <td>{$row['id']}</td>
+                            <td>
+                                {if !empty($row['headimgurl'])}
+                                <a  href="{$row['headimgurl']}" class="MagicThumb">
+                                    <img src="{$row['headimgurl']}" style="height:40px;width:40px"></a>&nbsp;&nbsp;
+                                {else}
+                                暂无图片
+                                {/if}
+
+                            </td>
+                            <td>{if $row['realname']}{$row['realname']}</br>{/if}
+                                {if $row['tel']}{$row['tel']}</br>{/if}
+                                {if $row['nickname']}{$row['nickname']}{else}{$row['openid']}{/if}</td>
+                            <td>{$row['money']}</td>
+                            <td>发:{php echo date("Ymd H:i:s",$row['createtime'])}</br>{if $row['status']==4}退:{$row['refund_time']}{/if}</td>
+                            <td>{if empty($row['status'])}<span class="label label-default">未发送</span>
+                                {elseif $row['status']==1}<span class="label label-success">已发送</span>
+                                {elseif $row['status']==4}<span class="label label-danger">已退回</span>
+                                {/if}</td>
+                            <td style="text-align:left;">
+                                {if empty($row['status'])}
+                                <a href="{php echo $this->createWebUrl('red', array('op' => 'consume', 'id'=>$row['id']))}" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title=""  onclick="return confirm('确认向用户：{$row['realname']} 发送{$row['money']}元红包吗？'); return false;">
+                                    发放
+                                </a>
+                                <a href="{php echo $this->createWebUrl('red', array('op' => 'del','id' => $row['id']))}" onclick="return confirm('该操作将会删除本条数据，是否确认操作？'); return false;" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="删除">删除</a>
+                                {/if}
+                            </td>
+                        </tr>
+                        {/loop}
+                    </tbody>
+                    <tr>
+                        <td colspan="10">
+                            <input name="op" id="op" type="hidden" value="" />
+                            <input name="token" type="hidden" value="{$_W['token']}" />
+                            <button type="button" class="btn btn-primary" name="btndeleteall" id="btndeleteall"/>批量删除</button>&nbsp;&nbsp;&nbsp; &nbsp; 
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+        <div class="panel-body text-right">
+            {$pager}
+        </div>
+
+    </div>
+</div>
+<div id="qrcode-message" class="modal" style="display:none" tabindex="-1" role="dialog" aria-hidden="true" style="display: block; padding-right: 17px;">
+    <div class="modal-dialog we7-modal-dialog">
+        <div class="modal-content"><div class="modal-header">
+                <h3>系统提示</h3>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <p id="message_text"></p>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+
+            $(function(){
+            $(".check_all").click(function(){
+            var checked = $(this).get(0).checked;
+                    $("input[type=checkbox]").prop("checked", checked);
+            });
+                    $("#btndeleteall").click(function(){
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+                    if (check.length < 1){
+            alert('请选择要删除的红包!');
+                    return false;
+            }
+            if (confirm("确认要删除选择的红包?删除后不可恢复")){
+            $('#op').val('deleteids');
+                    $('#form1').submit();
+            }
+            });
+            
+              $("#aid").change(function () {
+                  if($(this).val()<1){
+                      $('.refund_opt').hide(); 
+                      return false;
+                  }
+                var sendurl = "{php echo $this->createWebUrl('red')}";
+                $.get(sendurl + "&op=get_refund&aid=" + $(this).val(), function (ret) {
+                    if (ret.refund_open == 1) {
+                       $('.refund_opt').show();
+                    }else{
+                       $('.refund_opt').hide(); 
+                    }
+                }, 'json');
+            });
+
+            $('.refund_opt').on('click', function () {
+        var page = 1;
+        var url = "{php echo $this->createWebUrl('red',array('op'=>'refund'))}";
+        var aid = $('#aid').val();
+        data_post(url, aid, page);
+        });
+        function data_post(url, id, page) {
+        $.post(url, {page: page, aid: id, token:"{$_W['token']}"}, function (ret) {
+        if (ret.sta == 1) {
+        $('#message_text').html("第" + page + "页校验完成");
+        $('#qrcode-message').show();
+        page++;
+        $('#qrcode_count' + id).html(ret.count);
+        data_post(url, id, page);
+        } else if (ret.sta == 2) {
+        $('#qrcode-message').hide();
+        util.message("校验完成");
+        } else {
+        $('#qrcode-message').hide();
+        util.message(ret.error, "", "error");
+        }
+
+        }, "json");
+        }
+            
+            
+            
+            });
+</script>
+{template 'common/footer'}

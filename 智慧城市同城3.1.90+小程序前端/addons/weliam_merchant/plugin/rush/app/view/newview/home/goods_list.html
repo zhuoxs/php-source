@@ -1,0 +1,193 @@
+{php include wl_template('common/header');}
+<style>
+.loading_more{width:100%;text-align:center;padding:100px 0 15px;font-size:14px;color:#9b9b9b}
+.loading{display:inline-block}
+.icon_load{display:inline-block;width:29px;height:29px;text-align:center;vertical-align:middle;background:url(../images/list/ico_loading.png);background-repeat:no-repeat;background-size:contain;margin-right:10px}
+.icon_load{-webkit-transform:rotate(0deg) translateZ(0);-webkit-transition-duration:0ms;-webkit-animation-name:ico_loading;-webkit-animation-duration:1.5s;-webkit-animation-iteration-count:infinite;-webkit-animation-timing-function:linear}
+@-webkit-keyframes ico_loading{from{-webkit-transform:rotate(0deg) translateZ(0)}
+to{-webkit-transform:rotate(360deg) translateZ(0)}}
+.error{display:none;text-align:center}
+.noData{display:none;padding-top:10px;text-align:center}
+.weui-media-box{padding: 10px!important;}
+.weui-media-box__thumb{width: 120px!important;height: 70px!important;}
+.weui-media-box_appmsg .weui-media-box__hd{width: auto!important;height: auto!important;}
+.weui-media-box__desc span:first-child{color: #E34F63; font-size: 16px; margin-right: 4px;}
+.weui-media-box__desc em{text-decoration: line-through;color: #C7C7C7;font-style: normal;}
+.rush_titile{font-size: 14px;line-height: 23px;}
+.weui-media-box__bd p{line-height: 23px;}
+.weui-media-box__bd p:last-child{line-height: 28px;}
+.qiangStyle{width:75px;height:28px;display:inline-block;text-align:center;background-color:#ff6d3e;color:#FFFFFF;font-size:14px;margin-left:4px;border-radius:2px;float:right;line-height:28px;-webkit-box-sizing:border-box;}
+.hadover{background: #999!important;}
+.vipprice{color:#FFFFFF;background-color:rgba(88, 88, 88, 0.43);height:20px;width:120px;text-align:center;line-height:20px;font-size:12px;position:absolute;bottom:10px;z-index:1000;}
+</style>
+<div class="page-group" >
+    <div class="page page-current" id="page-goods-list" >
+    	{php include wl_template('common/rightnav');}
+		<div class="content infinite-scroll">
+			{if $config['content']}
+			<div class="swiper-container" id="indexadv">
+			    <div class="swiper-wrapper">
+			        {loop $config['content'] $adv}
+			    	<div {if !empty($adv['data_url'])}onclick="document.location = '{$adv['data_url']}'"{/if} class="swiper-slide" style="min-height: 100px;font-size: 0;">
+			    		<img src="{php echo tomedia($adv['data_img'])}">
+			    	</div>
+			    	{/loop}
+			    </div>
+			    <div class="swiper-pagination"></div>
+			</div>
+			<style>
+			.swiper-container img {max-width: 100%;max-height: 100%;}
+			</style>
+			<script>
+			var swiper = new Swiper('#indexadv', {
+				speed:500,
+			    autoplay: 3000,
+			    autoplayDisableOnInteraction : false,
+			    setWrapperSize:true,
+			    pagination: '.swiper-pagination',
+			    paginationClickable: true
+			});
+			</script>
+			{/if}
+			<div class="buttons-tab" >
+		      <a href="{php echo app_url('rush/home/index',array('status'=>2))}" class="{if $status==2}active{/if} button">进行中</a>
+		      <a href="{php echo app_url('rush/home/index',array('status'=>1))}" class="{if $status==1}active{/if} button">预告</a>
+		      <a href="{php echo app_url('rush/home/index',array('status'=>3))}" class="{if $status==3}active{/if} button">往期</a>
+		    </div>
+		    <div class="weui-panel weui-panel_access">
+	            <div class="weui-panel__bd ul_1">
+	                
+	            </div>
+        	</div>
+            <div class="loading_more" style="padding-top: 15px;display: none;"><span class="loading"><i class="icon_load"></i>加载中......</span></div>
+	        <div class="error">加载失败，点击重新加载</div>
+	        <div class="noData">全部数据加载完毕</div>
+		</div>
+    </div>
+</div>
+
+<script type="text/html" id="goodslist">
+{{# for(var i = 0, len = d.length; i < len; i++){ }}
+<a href="{{d[i].a}}" class="weui-media-box weui-media-box_appmsg">
+    <div class="weui-media-box__hd">
+        <img class="weui-media-box__thumb" src="{{d[i].thumb}}" alt="">
+        {{# if(d[i].vipprice>0){ }}<div class="vipprice">VIP价：¥{{d[i].vipprice}}</div>{{# } }}
+    </div>
+    <div class="weui-media-box__bd">
+        <p class="weui-media-box__desc rush_titile">{{d[i].name}}</p>
+        <p class="weui-media-box__desc">{{d[i].storename}}</p>
+        <p class="weui-media-box__desc">
+        	<span>¥{{d[i].price}}</span><em>¥{{d[i].oldprice}}</em>
+        	{{# if(d[i].status == 2){ }}
+            <span class="qiangStyle">立即抢购</span>
+            {{# }else if(d[i].status == 1){ }}
+            <span class="qiangStyle" value="{{ d[i].start_time }}"></span>
+            {{# }else{ }}
+            <span class="qiangStyle hadover">已抢完</span>
+            {{# } }}
+        </p>
+    </div>
+</a>
+{{# } }}
+</script>
+<script>
+	$(function() {
+		'use strict';
+		//商品列表页
+		$(document).on("pageInit", "#page-goods-list", function(e, id, page) {
+			var loading = false;
+			var pindex = 1;
+			var psize = 10;
+			function addItems(pindex, psize) {
+				var ajaxurl = "{php echo app_url('rush/home/getGoods',array('status'=>$status))}" + "&pindex=" + pindex + "&psize=" + psize;
+				$.ajax({
+					type: "POST",
+					url: ajaxurl,
+					dataType: 'json',
+					beforeSend: function(XMLHttpRequest) {},
+					success: function(data) {
+						if (data.length > 0) {
+							var gettpl = document.getElementById('goodslist').innerHTML;
+							    laytpl(gettpl).render(data, function(html){
+							    $(".ul_1").append(html);
+							});
+						}else {
+							$(".loading_more").remove();
+							$('.noData').show();
+						}
+						{if $status == 1}
+						countdown();
+						{/if}
+					},
+					error: function() {
+						$('.error').show();
+					}
+				});
+			}
+			addItems(pindex, psize);
+			$(page).on('infinite', function() {
+				if (loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+					loading = false;
+					pindex++;
+					addItems(pindex, psize);
+					$(".loading_more").hide();
+					$.refreshScroller();
+				}, 1000);
+			});
+		});
+		$(document).on('click','#gzqiang',function(){
+			var the = $(this);
+		    var qgid = $(this).attr('qgid');
+		    var gztext = $(this).text();
+			if(gztext == '已关注'){
+				$.alert('小淘气，不要重复关注哦');
+				return false;
+			}
+			$.post("{php echo app_url('rush/home/follow')}",{qgid:qgid},function(d){
+				if(d.result == 1){
+				    $.toast(d.msg);
+				    the.text('已关注');
+				}else{
+					$.toast(d.msg);
+				}
+			},"json");
+		});
+		$.init();
+	});
+    
+    var nowtime = {php echo time()*1000};
+	function countdown() {
+	
+	    se = setInterval(function() {
+	        nowtime = nowtime + 100;
+	        $(".qiangStyle").each(function() {
+	            if (parseInt($(this).attr('value')) > 100) {
+	
+	                var endTime = new Date(parseInt($(this).attr('value')) * 1000);
+	
+	                var nMS = endTime.getTime() - nowtime;
+	                // console.log(endTime.getTime() +'==='+ nowtime);
+	                var myD = Math.floor(nMS / (1000 * 60 * 60 * 24));
+	                var myH = (Math.floor(nMS / (1000 * 60 * 60)) % 24 + myD * 24) < 10 ? "0" + (Math.floor(nMS / (1000 * 60 * 60)) % 24 + myD * 24) : (Math.floor(nMS / (1000 * 60 * 60)) % 24 + myD * 24);
+	                var myM = (Math.floor(nMS / (1000 * 60)) % 60) < 10 ? "0" + (Math.floor(nMS / (1000 * 60)) % 60) : (Math.floor(nMS / (1000 * 60)) % 60);
+	                var myS = (Math.floor(nMS / 1000) % 60) < 10 ? "0" + (Math.floor(nMS / 1000) % 60) : (Math.floor(nMS / 1000) % 60);
+	                var myMS = Math.floor(nMS / 100) % 10;
+	
+	                if (myD >= 0) {
+	                    var str = myH + ":" + myM + ":" + myS + ":" + myMS;
+	                } else {
+	                    var str = "马上抢";
+	                }
+	
+	                $(this).html(str);
+	            }
+	        })
+	    },
+	    100);
+	}
+</script> 
+</script>
+{php include wl_template('common/footer');}

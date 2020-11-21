@@ -1,0 +1,114 @@
+{php include wl_template('common/header');}
+<div class="page-group">
+    <div class="page page-current" id="page-index">
+    <div class="content infinite-scroll native-scroll" data-distance="10"  >
+            <div class="section_body info_detail">
+		        <div>
+	            <div id="div_nav_fixed">
+	                <div id="div_nav" class="div_nav" style="margin-top: -10px;">
+	                    <ul class="boxx" style="padding-left: 0px;">
+	                    	<li>
+	                            <a onclick="exchange(1);" data-idx="1" class="sp {if empty($numb) || $numb==1}on{/if}" id="shangpin1">参与者</a>
+	                        </li>
+	                        <li>
+	                            <a onclick="exchange(2);" data-idx="0" class="sp {if $numb==2}on{/if}" id="shangpin0">中奖者</a>
+	                        </li>
+	                    </ul>
+	                </div>
+	            </div>
+	            <div id="div_sections" class="div_sections">
+	            	<section class="section_detail on">
+	                   <div class="m-detail-record" >
+			            	<div class="w-bar">参与记录 <span class="w-bar-hint">(自{php echo date('m-d H:i', $lottery['starttime'])} 活动开始)</span></div>
+			                <div class="m-detail-record-wrap">
+				                <div id="pro-view-4">
+				                <ul class="m-detail-record-list ul_1" data-pro="entry" id="morelist" >
+				                	
+				                </ul>
+				                <div class="loading_more" style="padding-top: 15px;display: none;">努力加载中......</div>
+    							<div class="error">加载失败，点击重新加载</div>
+				               	</div>
+			                </div>
+			            </div>
+	                </section>
+	            </div>
+		        </div>
+		    </div>
+   		</div>
+   		<div class="weui_extra_area" style="{if $helppay}position: relative;{/if}">
+		        <a href="{php echo app_url('goods/list')}">返回首页</a>
+		        <a href="javascript:">&nbsp;&nbsp; ▏ </a>
+		        <a href="{php echo app_url('order/group',array('tuan_id'=>$tuan_id))}">返回组团页</a>
+		    </div>
+    </div>
+ 	</div>
+ 	
+ 	<input type="hidden" name="numb" id="numb" value="{$numb}" />
+ 	<script type="text/html" id="orderList">
+{{# for(var i = 0, len = d.list.length; i < len; i++){ }}
+<li id="pro-view-5">
+	<div class="f-clear">
+		<div class="avatar"><a href="#"><img width="35" height="35" src="{{d.list[i].avatar}}"></a></div>
+		<div class="text">
+			<p class="f-breakword"><a href="#">{{d.list[i].nickname}}   </a><span style="color: #F26C4F;">{{d.list[i].lottery_status_name}}</span></p>
+			<p><span class="num">参与时间： {{d.list[i].ctime}}</p>
+		</div>
+	</div> 
+</li>
+{{# } }}
+</script>
+ 	<script type="text/javascript">
+ 		function exchange(numb) {
+			location.href = "{php echo app_url('order/group/showMore')}&tuan_id={$tuan_id}"+"&numb="+numb;
+	}
+ 	</script>
+ 	<script>
+	$(function() {
+		'use strict';
+		//商品列表页
+		$(document).on("pageInit", "#page-index", function(e, id, page) {
+			var loading = false;
+			var thispagesize = 10;
+			var thispage = 1;
+
+			function addItems(page, thispagesize) {
+				var numb = $('#numb').val();
+				var ajaxurl = "{php echo app_url('order/group/showMore',array('ajax' => 1))}&tuan_id={$tuan_id}" + "&pindex=" + page + "&pagesize=" + thispagesize+"&numbb="+numb;
+				$.ajax({
+					type: "POST",
+					url: ajaxurl,
+					dataType: 'json',
+					beforeSend: function(XMLHttpRequest) {},
+					success: function(data){
+						if (data.list) {
+							var gettpl = document.getElementById('orderList').innerHTML;
+							laytpl(gettpl).render(data, function(html){
+							    $(".ul_1").append(html);
+								thispage++;
+							});
+						} else {
+							$(".loading_more").show();
+							$('.loading_more').html('全部数据加载完毕');
+						}
+					},
+					error: function() {
+						$('.error').show();
+					}
+				});
+			}
+			addItems(thispage, thispagesize);
+			$(page).on('infinite', function() {
+				if (loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+					loading = false;
+					addItems(thispage, thispagesize);
+					$.refreshScroller();
+				}, 500);
+			});
+		});
+		$.init();
+	});
+</script>
+{php include wl_template('common/footer');}

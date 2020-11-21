@@ -1,0 +1,197 @@
+<title>商品列表</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>商品列表</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">商品列表</div>
+                <div class="layui-card-body">
+                    <!--搜索-->
+                    <div class="test-table-reload-btn" style="margin-bottom: 10px;">
+                        商品名：
+                        <div class="layui-inline">
+                            <input class="layui-input" name="id" id="test-table-demoReload" autocomplete="off">
+                        </div>
+                        <button class="layui-btn" data-type="reload">搜索</button>
+                    </div>
+
+                    <table class="layui-hide" id="test-table-autowidth" lay-filter="test-table-autowidth"></table>
+                    <!--行内操作按钮  设置为会员   禁用   删除（测试用）-->
+                    <script type="text/html" id="test-table-autowidth-barDemo">
+
+                        {{#  if(d.status == 1){ }}
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="turnoff">下架商品</a>
+                        {{#  } else if (d.status == -1) { }}
+                        {{#  } else if (d.status == 0) { }}
+                        <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="adopt">上架商品</a>
+                        {{#  } }}
+                        <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="check">编辑商品</a>
+                        <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="delete">删除商品</a>
+
+                    </script>
+
+                    <script type="text/html" id="test-table-switchTpl">
+                        <input type="checkbox" name="sex" lay-skin="switch" lay-text="正常|禁用" lay-filter="test-table-sexDemo"
+                               value="{{ d.status }}" data-json="{{ encodeURIComponent(JSON.stringify(d)) }}" {{ d.status == 1 ? 'checked' : '' }}>
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .layui-table-cell {
+        height:auto;
+    }
+</style>
+<script>
+
+    layui.use(['admin', 'table'], function(){
+        var table = layui.table;
+        var $ = layui.$
+            ,admin = layui.admin
+            ,element = layui.element
+            ,layer = layui.layer
+            ,form = layui.form;
+
+        //获取参数group_id
+
+
+        layer.load();
+        table.render({
+            elem: '#test-table-autowidth'
+            ,url: config.url+'manage_shop/goods/index'//数据接口
+            ,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+            ,page:true
+            // ,toolbar:true
+            ,cols: [[
+                {field:'id', title: '商品ID', sort: true},
+                {field:'name', title: '商品名称'},
+                {field:'type_title', title: '所属分类'},
+                {field:'cover', title: '封面图'
+                    ,style:'height:100px'
+                    ,templet: function(d){
+                        if (d.cover.length > 0) {
+                            return '<img width="64px" src="'+ d.cover[0].path+'"/>'
+                        }
+                        return '';
+                    }
+                },
+                {field:'price', title: '价格'},
+                {field:'top', title: '排序值'},
+                {field:'create_time', title: '创建时间', sort: true},
+                {align:'center', width:280, toolbar: '#test-table-autowidth-barDemo', title: '操作'}
+
+            ]]
+            ,done: function (res, curr, count) {
+                layer.closeAll();
+            }
+        });
+
+        //监听工具条
+        table.on('tool(test-table-autowidth)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'delete'){
+                //禁用（
+                layer.confirm('是否确定删除商品？', function(index){
+                    // obj.del();//删除显示的节点
+                    //掉删除接口
+                    layer.load();
+                    admin.req({
+                        type:'POST',
+                        url: config.url+'manage_shop/goods/forbidden'//数据接口
+                        ,data:{"id":data.id},
+                        done:function(res){
+                            layer.msg('成功', {
+                                offset: '15px'
+                                ,icon: 1
+                                ,time: 1000
+                            }, function () {
+                                layer.closeAll();
+                                obj.del();
+                            });
+                        }
+                    });
+                });
+            }
+            else if(obj.event === 'turnoff'){
+                //设置为会员
+                layer.confirm('是否确定下架商品？', function(index){
+                    // obj.del();//删除显示的节点
+                    //掉删除接口
+                    layer.load();
+                    admin.req({
+                        type:'POST',
+                        url: config.url+'manage_shop/goods/turnoff'//数据接口
+                        ,data:{"id":data.id},
+                        done:function(res){
+                            layer.msg('成功', {
+                                offset: '15px'
+                                ,icon: 1
+                                ,time: 1000
+                            });
+                            window.location.reload()//刷新当前页面.
+                        }
+                    });
+                });
+            }
+            else if(obj.event === 'adopt'){
+                //设置为会员
+                layer.confirm('是否确定上架商品？', function(index){
+                    // obj.del();//删除显示的节点
+                    //掉删除接口
+                    layer.load();
+                    admin.req({
+                        type:'POST',
+                        url: config.url+'manage_shop/goods/adopt'//数据接口
+                        ,data:{"id":data.id},
+                        done:function(res){
+                            layer.msg('成功', {
+                                offset: '15px'
+                                ,icon: 1
+                                ,time: 1000
+                            });
+                            window.location.reload()//刷新当前页面.
+                        }
+                    });
+                });
+            }
+            else if(obj.event === 'check'){
+                // 跳转到管理企业页面
+                layer.load();
+                window.location.href = config.html_url2 + "?company_id=" + data.company_id + '&goods_id=' +data.id + '#/manage_shop/goods/edit/goods_id='+data.id + '/c_id=' + data.company_id;
+            }
+
+        });
+
+        var active = {
+            reload: function(){
+                var demoReload = $('#test-table-demoReload');
+
+                //执行重载
+                table.reload('test-table-autowidth', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: {
+                            name: demoReload.val(),//传入input里面的值
+                        }
+                    }
+                });
+            }
+        };
+
+        $('.test-table-reload-btn .layui-btn').on('click', function(){
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+    });
+</script>

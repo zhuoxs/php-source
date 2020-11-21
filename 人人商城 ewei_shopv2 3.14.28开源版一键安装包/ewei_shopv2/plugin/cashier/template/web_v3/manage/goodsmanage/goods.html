@@ -1,0 +1,164 @@
+{template '_header'}
+
+<div class="panel panel-default panel-class" style="margin-top: 20px;">
+    <div class="panel-heading">添加/删除 商城商品</div>
+    <form id="setform"  action="" method="post" class="form-horizontal form-validate">
+    <div class="form-group">
+        <label class="col-sm-1 control-label"></label>
+        <div class="col-sm-12 col-xs-12">
+            <div clas="row">
+                <div class="panel panel-default panel-class col-sm-6">
+                    <div class="panel-heading">
+                        <div class="input-group">
+                            <input type="text" class="form-control"/>
+                            <div class="input-group-btn">
+                                <button type="button" class="btn " id="query">搜索</button>
+                                <button type="button" class="btn " id="addall">全部添加</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-body" style="height:500px;overflow:auto">
+                        <table class="table left"></table>
+                    </div>
+                </div>
+                <div class="panel panel-default  panel-class col-sm-6">
+                    <div class="panel-heading">
+                        <div class="input-group">
+                            <input type="text" class="form-control"/>
+                            <div class="input-group-btn">
+                                <button type="button" class="btn " id="query2">搜索</button>
+                                <button type="button" class="btn " id="deleteall">清空</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-body" style="height:500px;overflow:auto">
+                        <table class="table right">
+                            {if !empty($item['goods_ids'])}
+                            {loop $goods $key $val}
+                            <tr data-id="{$val['id']}" data-title="{$val['title']}" data-thumb="{$val['thumb']}">
+                                <td class="col-sm-2">
+                                    <img src="{$val['thumb']}" style="width:50px;height:50px;">
+                                </td>
+                                <td>{$val['title']}</td>
+                                <td class="col-sm-2">
+                                    <button class="btn" type="button" onclick="$(this).parents('tr').remove()">-</button>
+                                </td>
+                            </tr>
+                            {/loop}
+                            {/if}
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-sm-2 control-label"></label>
+        <div class="col-sm-9 col-xs-12">
+            <input type="hidden" name="goods_ids" value=""/>
+            <input type="hidden" name="goods_can_sales" value=""/>
+            <input type="submit"  value="提交" class="btn" />
+        </div>
+    </div>
+</form>
+    <script>
+        $(function () {
+
+            $(":input").keydown(function (e) {
+                if (e.keyCode == '13'){
+                    e.preventDefault();
+                    $(this).next().children(':first-child').trigger('click');
+                }
+            });
+
+            $('#query').click(function (e) {
+                e.preventDefault();
+                var $this = $(this);
+                $.getJSON("{php echo cashierUrl('goodsmanage/query_goods')}",{keyword:$this.parent().prev().val()},function (json) {
+                    var list = json.result.list;
+                    var table_left = $(".table.left");
+                    var html = '';
+                    if (list.length>0){
+                        var timenew = +new Date();
+                        for(var i=0;i<list.length;i++){
+                            html += '<tr data-id="'+list[i]['id']+'" data-title="'+list[i]['title']+'" data-thumb="'+list[i]['thumb']+'">' +
+                                    '<td class="col-sm-2"><img src="'+list[i]['thumb']+'" style="width:50px;height:50px;"/></td>' +
+                                    '<td>'+list[i]['title']+'</td>' +
+                                    '<td class="col-sm-2"><button class="btn" type="button" onclick="addright($(this).parents(\'tr\'))">+</button></td>' +
+                                    '</tr>';
+                        }
+                    }
+                    table_left.html(html);
+                });
+            });
+
+            /**
+             * 全部添加
+             */
+            $("#addall").click(function (e) {
+                e.preventDefault();
+                var table_left = $(".table.left");
+                table_left.find('tr').each(function (i,item) {
+                    addright(item);
+                });
+            });
+
+            /**
+             * 搜索已添加的
+             */
+            $("#query2").click(function (e) {
+                e.preventDefault();
+                var $this = $(this);
+                var val = $this.parent().prev().val();
+                var table_right = $(".table.right");
+                var tr = table_right.find('tr');
+                tr.show();
+                tr.each(function (i,item) {
+                    if ($(item).data('title').indexOf(val) ==-1){
+                        item.style.display = 'none';
+                    }
+                });
+            });
+
+            /**
+             * 全部清空
+             */
+            $("#deleteall").click(function (e) {
+                e.preventDefault();
+                var table_left = $(".table.right");
+                table_left.html('');
+            });
+
+            $("#setform").submit(function (e) {
+                var $this = $(this);
+                $this.attr('stop',1);
+                var table_left = $(".table.right");
+                var tr = table_left.find('tr');
+                if (tr.length>0){
+                    var goods_ids = [];
+//                    var goods_titles = [];
+//                    var goods_thumbs = [];
+                    tr.each(function (i,item) {
+                        goods_ids.push($(item).data('id'));
+//                        goods_titles.push($(item).data('title'));
+//                        goods_thumbs.push($(item).data('thumb'));
+                    });
+                    $(":input[name='goods_ids']").val(goods_ids.join(','));
+//                    $(":input[name='goods_titles']").val(goods_titles.join(','));
+//                    $(":input[name='goods_thumbs']").val(goods_thumbs.join(','));
+                }
+                $this.removeAttr('stop');
+            });
+        });
+        function addright(obj){
+            var $this = $(obj);
+            var table_right = $(".table.right");
+            if (table_right.find('tr[data-id="'+$this.data('id')+'"]').length==0){
+                var html = "<tr data-id='"+$this.data('id')+"' data-title='"+$this.data('title')+"' data-thumb='"+$this.data('thumb')+"'>"+$this.html()+"</tr>";
+                html = html.replace('<button class="btn" type="button" onclick="addright($(this).parents(\'tr\'))">+</button>','<button class="btn" type="button" onclick="$(this).parents(\'tr\').remove()">-</button>');
+                table_right.append(html);
+            }
+            $this.remove();
+        }
+    </script>
+{template '_footer'}

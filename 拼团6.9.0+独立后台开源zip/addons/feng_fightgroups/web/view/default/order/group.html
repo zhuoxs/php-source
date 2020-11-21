@@ -1,0 +1,539 @@
+{php include wl_template('common/header');}
+{if $op == 'all' && empty($will_die)}
+<ul class="nav nav-tabs">
+	<li {if $_GPC['groupstatus'] == ''}class="active"{/if}>
+        <a href="{php echo web_url('order/group')}">全部团购 <span class="label label-warning pull-right" style="margin-left: 10px;">{$all}</span></a>
+    </li>
+    <li{if $_GPC['groupstatus'] == 2} class="active"{/if}>
+        <a href="{php echo web_url('order/group', array('groupstatus' =>2))}">团购成功 <span class="label label-warning pull-right" style="margin-left: 10px;">{$status2}</span></a>
+    </li>
+	<li {if $_GPC['groupstatus'] == 1} class="active"{/if}>
+        <a href="{php echo web_url('order/group', array('groupstatus' =>1))}">团购失败 <span class="label label-warning pull-right" style="margin-left: 10px;">{$status1}</span></a>
+    </li>
+	<li {if  $_GPC['groupstatus'] == 3}class="active"{/if}>
+        <a href="{php echo web_url('order/group', array('groupstatus' =>3))}">团购中 <span class="label label-warning pull-right" style="margin-left: 10px;">{$status3}</span></a>
+    </li>
+    <li {if  $_GPC['groupstatus'] == 3 && !empty($will_die)}class="active"{/if}>
+        <a href="{php echo web_url('order/group', array('groupstatus' =>3,'will_die'=>'will_die'))}">手动成团</a>
+    </li>
+</ul>
+<div class="panel">
+	    <div class="panel-body">
+            <form action="" method="get" class="form-horizontal" role="form" id="form1">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="feng_fightgroups" />
+                <input type="hidden" name="do" value="order" />
+                <input type="hidden" name="ac" value="group" />
+                <input type="hidden" name="op" value="{$op}"/>
+                <input type="hidden" name="groupstatus" value="{$_GPC['groupstatus']}"/>
+                <div class="form-group">
+                    <div class="col-md-2">
+                        <select name="timetype" class="form-control">
+                            <option value="">时间类型</option>
+                            <option value="1" {if $_GPC['timetype']==1}selected="selected"{/if}>开团时间</option>
+                            <option value="2" {if $_GPC['timetype']==2}selected="selected"{/if}>团结束时间</option>
+                        </select>
+                    </div>
+                     <div class="col-md-4">
+                     	<div class="input-group">
+                            {php echo tpl_form_field_daterange('time', array('starttime'=>date('Y-m-d H:i:s', $starttime),'endtime'=>date('Y-m-d H:i:s', $endtime)),true);}
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <select name="keywordtype" class="form-control">
+                        	<option value="">关键字类型</option>
+                            <option value="1" {if $_GPC['keywordtype']==1}selected="selected"{/if}>团编号</option>
+                            <option value="2" {if $_GPC['keywordtype']==2}selected="selected"{/if}>商品名称</option>
+                            <option value="3" {if $_GPC['keywordtype']==3}selected="selected"{/if}>商品ID</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+						<div class="input-group">
+							<input type="text" name="keyword" class="form-control" value="{$_GPC['keyword']}"  placeholder="请输入关键字"/>
+							<span class="input-group-addon" id="search">搜索</span><span class="input-group-addon" id="output">导出</span>
+						</div>
+					</div>
+				</div>
+            </form>
+	    </div>
+	</div>
+	<div class="panel panel-default">
+		<div class="table-responsive">
+			<table class="table table-hover table-bordered">
+				<thead class="navbar-inner">
+					<tr>
+						<th style="width:80px; text-align: center;">团编号</th>
+						<th style="width:80px;text-align: center;">商品ID</th>
+						<th style="width:220px;text-align: center;">商品名称</th>
+						<th style="width:60px;text-align: center;">状态</th>
+						<th style="width:80px;text-align: center;">已买/总需</th>
+						<th style="width:170px;text-align: center;">开团时间<!-- <span id="timeSortStart"> {if $timeSortStart=='starttime asc'}<i class="fa fa-sort-numeric-asc"></i>{else}<i class="fa fa-sort-numeric-desc"></i>{/if}</i>--></th>
+						<th style="width:170px;text-align: center;">到期时间 </th><!--<span id="timeSortEnd">到期时间{if $timeSortEnd=='endtime asc'}<i class="fa fa-sort-numeric-asc"></i>{else}<i class="fa fa-sort-numeric-desc"></i>{/if}</span>-->
+						<th style="width:60px;text-align: center;">已发货</th>
+						<th style="width:150px; text-align: center;">操作</th>
+					</tr>
+				</thead>
+				<tbody style="text-align: center;">
+					{loop $alltuan $key $item}
+					<tr>
+						<td>{$item['groupnumber']}</td>
+						<td>{$item['goodsid']}</td>
+						<td>{$item['goodsname']}</td>
+						<td>
+							{if $item['groupstatus']==1 }
+								<span class="label label-warning">失败</span>
+							{/if}
+							{if $item['groupstatus']==2 }
+								 <span class="label label-success">成功</span>
+							{/if}
+							{if $item['groupstatus']==3 }
+								 <span class="label label-info">进行</span>
+							{/if}
+						</td>
+						<td>
+							<font color="red">
+								{if $item['goods']['g_type']==4 && SIGN && $item['endnum']}{$item['endnum']}{else}{php echo $item['neednum']-$item['lacknum']}{/if}
+								</font>/{$item['neednum']}
+						</td>
+						<td>{php echo date('Y-m-d H:i', $item['starttime'])}</td>
+						<td>{php echo date('Y-m-d H:i', $item['endtime'])}</td>
+						<td>
+							{if $item['sendnum']>0}
+							<span class="label label-danger">{$item['sendnum']}人</span>
+							{else}
+							<span class="label label-default">0人</span>
+							{/if}
+						</td>
+						<td style="text-align:right;">
+							<a href="{php echo web_url('order/group/group_detail', array('groupnumber' => $item['groupnumber'],'lottery_id'=>$lottery_id))}" class="btn btn-success btn-sm">查看团信息</a>
+						</td>
+					</tr>
+					{/loop}
+				</tbody>
+			</table>
+		</div>
+	</div>
+	{$pager}
+</div>
+<script type="text/javascript">
+		var groupstatus = '{$_GPC['groupstatus']}';
+		var keywordtype = '{$_GPC['keywordtype']}';
+		var keyword = '{$_GPC['keyword']}';
+		var timetype = '{$_GPC['timetype']}';
+		var times = "{$_GPC['time']['start']}";
+		var timee = "{$_GPC['time']['end']}";
+		$("#search").click(function(){ //提交搜索
+			$('#form1')[0].submit();
+		});
+		$('#output').click(function(){ //导出
+			location.href = "{php echo web_url('order/group/output')}&groupstatus="+groupstatus+"&keywordtype="+keywordtype+"&keyword="+keyword+"&timetype="+timetype+"&times="+times+"&timee="+timee;
+		});
+	$("#timeSortEnd").click(function(){ //排序 团结束时间
+		var timeSortEnd = 'endtime asc';
+		if($("#timeSortEnd").find("i").hasClass("fa-sort-numeric-asc")) timeSortEnd = 'endtime desc';
+		if($("#timeSortEnd").find("i").hasClass("fa-sort-numeric-desc")) timeSortEnd = 'endtime asc';
+		location.href = "{php echo web_url('order/group')}&groupstatus="+groupstatus+"&keywordtype="+keywordtype+"&keyword="+keyword+"&timetype="+timetype+"&times="+times+"&timee="+timee+"&timeSortEnd="+timeSortEnd+"&timeSortStart={$timeSortStart}";
+	});
+	$("#timeSortStart").click(function(){ //排序 开团时间
+		var timeSortStart = 'starttime asc';
+		if($("#timeSortStart").find("i").hasClass("fa-sort-numeric-asc")) timeSortStart = 'starttime desc';
+		if($("#timeSortStart").find("i").hasClass("fa-sort-numeric-desc")) timeSortStart = 'starttime asc';
+		location.href = "{php echo web_url('order/group')}&groupstatus="+groupstatus+"&keywordtype="+keywordtype+"&keyword="+keyword+"&timetype="+timetype+"&times="+times+"&timee="+timee+"&timeSortStart="+timeSortStart+"&timeSortEnd={$timeSortEnd}";
+	})
+</script>
+{/if}
+
+{if $op=='group_detail'}
+<ul class="nav nav-tabs">
+	<li {if $groupstatus == ''}class="active"{/if}>
+        <a href="{php echo web_url('order/group')}">全部团购 <span class="label label-warning pull-right" style="margin-left: 10px;">{$all}</span></a>
+    </li>
+    <li{if $groupstatus == 2} class="active"{/if}>
+        <a href="{php echo web_url('order/group', array('groupstatus' =>2))}">团购成功 <span class="label label-warning pull-right" style="margin-left: 10px;">{$status2}</span></a>
+    </li>
+	<li {if $groupstatus == 1} class="active"{/if}>
+        <a href="{php echo web_url('order/group', array('groupstatus' =>1))}">团购失败 <span class="label label-warning pull-right" style="margin-left: 10px;">{$status1}</span></a>
+    </li>
+	<li {if  $groupstatus == 3}class="active"{/if}>
+        <a href="{php echo web_url('order/group', array('groupstatus' =>3))}">团购中 <span class="label label-warning pull-right" style="margin-left: 10px;">{$status3}</span></a>
+    </li>
+    <li {if  $groupstatus == 3 && !empty($will_die)}class="active"{/if}>
+        <a href="{php echo web_url('order/group', array('groupstatus' =>3,'will_die'=>'will_die'))}">手动成团</a>
+    </li>
+</ul>
+<style type="text/css">
+.main .form-horizontal .form-group{margin-bottom:0;}
+.main .form-horizontal .modal .form-group{margin-bottom:15px;}
+#modal-confirmsend .control-label{margin-top:0;}
+.order-overview .order-info .info-group{width:25%; text-align:center; float:left;}
+.order-overview .order-info .info-group+.info-group{border-left:1px dotted #ccc; }
+.order-overview .h4{font-size:22px; display:block;}
+.order-overview .order-widget .info-group{width:33.3%; text-align:center; float:left; }
+.order-overview .order-widget .info-group+.info-group{border-left:1px solid #ddd;}
+.order-overview .coordinate{margin-top:20px;}
+</style>
+<div class="main">
+	<div class="order-overview">
+		<div class="order-info panel panel-default">
+			<div class="panel-body clearfix">
+				<div class="info-group">
+					<span class="h4">
+						<a href="#">{$groupnumber}</a>
+					</span>
+					<span class="info-description">团ID </span>
+				</div>
+				<div class="info-group">
+					<span class="h4">
+						<a href="#">{$thistuan['neednum']}</a>
+					</span>
+					<span class="info-description">{if SIGN}目标数量{else}需要人数{/if}</span>
+				</div>
+				<div class="info-group">
+					<span class="h4">
+						<a href="#">{if $goods['g_type']==4 && SIGN}{$thistuan['endnum']}{else}{$thistuan['lacknum']}{/if}</a>
+					</span>
+					<span class="info-description">{if $goods['g_type']==4 && SIGN}目前数量{else}缺少人数{/if}</span>
+				</div>
+				<div class="info-group">
+					<span class="h4">{if $thistuan['groupstatus']==1 }
+							<span class="label label-default">组团失败</span>
+						{/if}
+						{if $thistuan['groupstatus']==2 }
+							 <span class="label label-success">组团成功</span>
+						{/if}
+						{if $thistuan['groupstatus']==3 }
+							 <span class="label label-warning">组团中</span>
+						{/if}</span>
+					<span class="info-description">团状态</span>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="panel panel-default">
+			<div class="table-responsive">
+				<table class="table table-hover">
+					<thead>
+					<tr>
+						<th style="width:80px;">商品图</th>
+						<th style="width:180px;">商品名</th>
+						<th class="text-center" style="width:120px;">所属商家</th>
+					</tr>
+					</thead>
+					<tbody>
+					<tr data-toggle="popover" data-trigger="hover" data-placement="left" class="js-goods-img">
+						<td><img class="scrollLoading" src="{IMAGE_PIXEL}" data-url="{$goods['gimg']}" onerror="this.src='{IMAGE_NOPIC_SMALL}'" height="50" width="50"/></td>
+						<td class="line-feed">
+							{php echo cutstr($goods['gname'], 30, true);}
+						</td>
+						<td class="text-center">
+							<span class="">{$goods['merchantname']}</span>
+						</td>
+					</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	<div class="panel panel-default">
+	   	<div class="table-responsive">
+	   		<table class="table table-hover">
+	   			<thead class="navbar-inner">
+	   				<tr>
+						<th style="width:50px;" class="text-center"><input type="checkbox" onclick="var ck = this.checked;$(':checkbox').each(function(){this.checked = ck});" />全选</th>
+	   					<th style="width:40px;">排序</th>
+	   					<th style="width:70px;">姓名</th>
+	   					<th style="width:100px;">电话</th>
+	   					<th style="width:80px;">支付方式</th>
+	   					<th style="width:80px;">订单状态</th>
+	   					<th style="width:60px;">运费</th>
+	   					<th style="width:100px;">数量<br>总价</th>
+	   					<th style="width:140px;">下单时间</th>
+	   					<th style="width:220px;">地址</th>
+	   					<th style="width:100px; text-align:right;">操作</th>
+	   				</tr>
+	   			</thead>
+	   			<tbody>
+	   				{php  $i=1;}
+	   				{loop $orders $key $item}
+	   				<tr>
+	   					<td class="text-center" style="width:50px;">
+							<center><input type="checkbox" name="checkbox[]" class="checkbox" value="{$item['id']}" /></center>
+						</td>
+	   					<td>{php echo $i++}</td>
+	   					<td>{$item['addname']}</td>
+	   					<td>{$item['mobile']}</td>
+	   					<td><span class="label label-{$item['pay_typeCss']}">{$item['pay_typeName']}</span></td>
+	   					<td><span class="label label-{$item['statusCss']}">{$item['statusName']}</span></td>
+	   					<td>{$item['freight']} 元</td>
+	   					<td>{$item['gnum']}<br>{$item['price']} 元</td>
+	   					<td>{php echo date('Y-m-d H:i:s', $item['createtime'])}</td>
+	   					<td>{$item['address']}</td>
+	   					<td style="text-align:right;">
+	   						<a href="{php echo web_url('order/order/detail', array('id' => $item['id'],'is_tuan'=>1))}" class="btn btn-success btn-sm">查看订单</a>
+	   					</td>
+	   				</tr>
+	   				{/loop}
+	   			</tbody>
+	   		</table>
+	   	</div>
+	   	</div>
+</div>
+{/if}
+
+{if $op == 'all' &&  !empty($will_die)}
+<div class="main">
+    <div class="panel panel-default">
+	    <div class="panel-heading">筛选</div>
+	    <div class="panel-body">
+            <form action="" method="get" class="form-horizontal" role="form" >
+               <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="feng_fightgroups" />
+                <input type="hidden" name="do" value="order" />
+                <input type="hidden" name="ac" value="group" />
+                <input type="hidden" name="groupstatus" value="3" />
+                <input type="hidden" name="will_die" value="{$_GPC['will_die']}" />
+				<div class="col-xs-12 col-sm-3" >
+					<input type="text" name="endhour" class="form-control" value="{$endhour}"  placeholder="可查询离团结束还差几小时."/>
+					<label class="control-label">(该小时后团购将失败.)</label>
+				</div>
+				<div class="col-xs-12 col-sm-3" >
+					<input type="text" name="lacknumber" class="form-control" value="{$lacknumber}" placeholder="可查询团还差几人."/>
+					<label class="control-label">(缺少该人数的团.)</label>
+				</div>
+                <div class="col-xs-12 col-sm-3">
+                	<input type="hidden" name="keywordtype"  value="3" />
+                    <input class="form-control" name="keyword" id="" type="text" value="{$_GPC['keyword']}" placeholder="可查询商品ID">
+                </div>
+                <div class="form-group">
+                        <input type="hidden" name="token" value="{$_W['token']}" />
+					<button class="btn btn-default min-width" name="submit" type="submit"><i class="fa fa-search"></i> 搜索</button>
+                   </div>
+                <div class="form-group">
+                </div>
+            </form>
+	    </div>
+	</div>
+</div>
+	<div class="panel panel-default">
+		<div class="panel-body table-responsive">
+			<table class="table table-hover">
+				<thead class="navbar-inner">
+					<tr>
+						<th style="width:10%;">团购编号</th>
+						<th style="width:30%;">商品</th>
+						<th style="width:10%;">团购状态</th>
+						<th style="width:10%;">人数 / 总需</th>
+						<th style="width:10%;">开团时间</th>
+						<th style="width:10%;">到期时间</th>
+						<th style="width:30%; text-align:right;">操作</th>
+					</tr>
+				</thead>
+				<tbody>
+					{loop $alltuan $key $item}
+					<tr>
+						<td>{$item['groupnumber']}</td>
+						<td><img class="scrollLoading" src="{IMAGE_PIXEL}" data-url="{$item['goods']['gimg']}" onerror="this.src='{IMAGE_NOPIC_SMALL}'" height="50" width="50"/>{php echo cutstr($item['goods']['gname'], 30, true);}</td>
+						<td><span class="label label-info">组团中</span></td>
+						<td><font color="red">{php echo $item['neednum']-$item['lacknum']}</font> / {$item['neednum']}</td>
+						<td>{php echo date('H:i', $item['starttime'])}<br>{php echo date('Y/m/d', $item['starttime'])}</td>
+						<td>{php echo date('H:i', $item['endtime'])}<br>{php echo date('Y/m/d', $item['endtime'])}</td>
+						<td style="text-align:right;">
+							<a href="javascript:;" onclick="auto({$item['groupnumber']})"  class="btn btn-danger btn-sm" >点击成团</a>
+							<a href="{php echo web_url('order/group/group_detail', array('groupnumber' => $item['groupnumber']))}" class="btn btn-success btn-sm">查看团信息</a>
+						</td>
+					</tr>
+					{/loop}
+				</tbody>
+			</table>
+		</div>
+	</div>
+	{$pager}
+</div>
+
+<script>
+	function auto(groupnumber){
+			util.message('系统正在创建机器人补单,请不要离开页面', "{php echo web_url('order/group/autogroup')}&groupnumber="+groupnumber, 'success');
+		}
+$(function(){
+		$(".scrollLoading").scrollLoading();
+		var $pop = null;
+		$('.scrollLoading').hover(function(){
+			var img = $(this).attr('src');
+			var obj = this;
+			var $pop = util.popover(obj, function($popover, obj){
+				obj.$popover = $popover;
+			}, '<div><img src="'+img+'" style="max-width:200px; max-height:200px;"></div>');
+		}, function(){
+			this.$popover.remove();
+		});
+	});
+</script>
+{/if}
+
+{if $op=='autogroup'}
+<style type="text/css">
+.main .form-horizontal .form-group{margin-bottom:0;}
+.main .form-horizontal .modal .form-group{margin-bottom:15px;}
+#modal-confirmsend .control-label{margin-top:0;}
+</style>
+<ul class="nav nav-tabs">
+	<li {if $groupstatus == '' && $op==''}class="active"{/if}>
+        <a href="{php echo $this->createWebUrl('grouporder', array('groupstatus' =>''))}">全部团购</a>
+    </li>
+    <li{if $groupstatus == 2} class="active"{/if}>
+        <a href="{php echo $this->createWebUrl('grouporder', array('groupstatus' =>2))}">团购成功</a>
+    </li>
+	<li {if $groupstatus == 1} class="active"{/if}>
+        <a href="{php echo $this->createWebUrl('grouporder', array('groupstatus' =>1))}">团购失败</a>
+    </li>
+	<li {if  $groupstatus == 3 && empty($will_die)}class="active"{/if}>
+        <a href="{php echo $this->createWebUrl('grouporder', array('groupstatus' =>3))}">团购中</a>
+    </li>
+    <li {if  $groupstatus == 3 && !empty($will_die)&&$op==''}class="active"{/if}>
+        <a href="{php echo $this->createWebUrl('grouporder', array('groupstatus' =>3,'will_die'=>'will_die'))}">即将团购失败的团</a>
+    </li>
+	{if $op=='autogroup'}
+    <li class="active">
+        <a href="#">自动成团</a>
+    </li>
+    {/if}
+</ul>
+<div class="main">
+	<form class="form-horizontal form" action="" method="post" enctype="multipart/form-data" onsubmit="return formcheck(this)">
+		<input type="hidden" name="dispatchid" value="{$dispatch['id']}" />
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				团信息
+			</div>
+			<div class="panel-body">
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 control-label">团ID :</label>
+					<div class="col-sm-9 col-xs-12">
+						<p class="form-control-static">{$groupnumber}</p>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 control-label">需要人数 :</label>
+					<div class="col-sm-9 col-xs-12">
+						<p class="form-control-static">{$thistuan['neednum']}</p>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 control-label">缺少人数 :</label>
+					<div class="col-sm-9 col-xs-12">
+						<p class="form-control-static">{$thistuan['lacknum']}</p>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-3 col-md-2 control-label">团状态:</label>
+					<div class="col-sm-9 col-xs-12">
+						<p class="form-control-static">
+                       {if $thistuan['groupstatus']==1 }
+								<span class="label label-warning">组团失败</span>
+							{/if}
+							{if $thistuan['groupstatus']==2 }
+								 <span class="label label-success">组团成功</span>
+							{/if}
+							{if $thistuan['groupstatus']==3 }
+								 <span class="label label-info">组团中</span>
+							{/if}
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	   	<div class="panel panel-default">
+	   	<div class="panel-heading">
+			已购买用户信息
+		</div>
+	   	<div class="panel-body table-responsive">
+	   		<table class="table table-hover">
+	   			<thead class="navbar-inner">
+	   				<tr>
+	   					<th style="width:80px;">订单号</th>
+	   					<th style="width:70px;">姓名</th>
+	   					<th style="width:100px;">电话</th>
+	   					<th style="width:80px;">支付方式</th>
+	   					<th style="width:80px;">订单状态</th>
+	   					<th style="width:60px;">运费</th>
+	   					<th style="width:60px;">总价</th>
+	   					<th style="width:140px;">下单时间</th>
+	   					<th style="width:220px;">地址</th>
+	   					<th style="width:100px; text-align:right;">操作</th>
+	   				</tr>
+	   			</thead>
+	   			<tbody>
+	   				{loop $orders $item}
+	   				<tr>
+	   					<td>{$item['orderno']}</td>
+	   					<td>{$item['addname']}</td>
+	   					<td>{$item['mobile']}</td>
+	   					<td><span class="label label-{$item['pay_typeCss']}">{$item['pay_typeName']}</span></td>
+	   					<td><span class="label label-{$item['statusCss']}">{$item['statusName']}</span></td>
+	   					<td>{$goods['freight']} 元</td>
+	   					<td>{$item['price']} 元</td>
+	   					<td>{php echo date('Y-m-d H:i:s', $item['createtime'])}</td>
+	   					<td>{$item['address']}</td>
+	   					<td style="text-align:right;">
+	   						<a href="{php echo $this->createWebUrl('order', array('op' => 'detail', 'id' => $item['id'],'is_tuan'=>1))}" class="btn btn-success btn-sm">查看订单</a>
+	   						<a href="{php echo $this->createWebUrl('order', array('id' => $item['id'], 'op' => 'delete'))}" onclick="return confirm('此操作不可恢复，确认删除？');"
+	   							class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="删除"><i class="fa fa-times"></i>
+	   						</a>
+	   					</td>
+	   				</tr>
+	   				{/loop}
+	   			</tbody>
+	   		</table>
+	   	</div>
+	   	</div>
+		<div class="panel panel-default">
+			 <div class="panel-heading">
+				商品信息
+			</div> 
+			<div class="panel-body table-responsive">
+				<table class="table table-hover">
+					<thead class="navbar-inner">
+					<tr>
+						<th style="width:5%;">ID</th>
+						<th style="width:15%;">商品标题</th>
+						<th style="width:15%;">商品图片</th>
+						<th style="width:15%;">团购价</th>
+						<th style="width:15%;">单买价</th>
+						<th style="width:15%;">市场价</th>
+						<th style="width:10%;">数量</th>
+						<th style="width:10%;">操作</th>
+					</tr>
+					</thead>
+					<tr>
+						<td>{$goods['id']}</td>
+						<td>{$goods['gname']}</td>
+						<td>
+						<div style=" width:40px;height:40px;">
+                            <img src="{$_W['attachurl']}{$goods['gimg']}" style=" width:40px;height:40px;" alt="" title="">
+                        </div>  
+						</td>
+						<td>{$goods['gprice']}元</td>
+						<td>{$goods['oprice']}元</td>
+						<td>{$goods['mprice']}元</td>
+						<td>{$goods['gnum']}</td>
+						<td>
+							<a href="{php echo $this->createWebUrl('goods', array('id' => $goods['id'], 'op' => 'edit'))}" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="编辑"><i class="fa fa-edit"></i></a>
+						</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</form>
+</div>
+{/if}
+<script>
+	require(['bootstrap'],function($){
+		$('.btn').hover(function(){
+			$(this).tooltip('show');
+		},function(){
+			$(this).tooltip('hide');
+		});
+	});
+</script>
+{php include wl_template('common/footer');}

@@ -1,0 +1,418 @@
+{template 'common/header'}
+<style>
+    .file-box{width:100%; margin-top: 30px; margin-bottom: 30px;}
+
+    .form-group
+    {
+        margin-bottom: 20px !important;
+    }
+    .we7-modal-dialog, .modal-dialog
+    {
+        top: 15% !important;
+    }
+    .txt{ height:35px; border:1px solid #EEEEEE; width:90%; padding-left:10px ; background: white;}
+    .btn_one{ background-color:#FFF; border:1px solid #EEEEEE;height:35px; width:100%; border-left:none ;}
+    .file{ position:absolute; top:0; left:0; height:35px; filter:alpha(opacity:0);opacity: 0;width:100%; }
+</style>
+<div class='container' style='padding: 0 5px 10px; margin: 0; width: 100%'>
+
+    <ul class="nav nav-tabs">
+        <li {if $op== 'display'}class="active"{/if}><a href="{php echo $this->createWebUrl('beforehand')}">预印码管理</a></li>
+        <li {if $op== 'post'}class="active"{/if}>
+            {if empty($id)}
+            <a href="{php echo $this->createWebUrl('beforehand',array('op'=>'post'))}">添加预印码</a>
+            {else}
+            <a href="{php echo $this->createWebUrl('beforehand',array('op'=>'post','id'=>$id))}">编辑预印码</a>
+            {/if}
+        </li> 
+    </ul>
+    {if $op=='display'}
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="crad_qrcode_red" />
+                <input type="hidden" name="do" value="beforehand" />
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">关键字</label>
+                    <div class="col-sm-8 col-lg-3">
+                        <input class="form-control" name="keyword" id="" placeholder="输入预印码名称" type="text" value="{$_GPC['keyword']}">
+                    </div>
+                    <div class=" col-xs-12 col-sm-2 col-lg-2">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">预印码列表  总数：{$total}</div>
+
+        <div class="panel-body table-responsive">
+
+            <form action="" id="form1" method="post" class="form-horizontal form" enctype="multipart/form-data">
+
+                <table class="table table-hover">
+
+                    <thead>
+                        <tr>
+                            <th style="width: 5%;" class="row-first">选择</th>
+                            <th style="width: 6%;">ID</th>
+                            <th>预印码名称</th>
+                            <th>编号</th>
+                            <th style="width: 15%;">二维码</th>                   
+                            <th style="width: 15%;">创建时间</th>
+                            <th style="width: 11%;">操作</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="main">
+
+                        {loop $list $row}
+
+                        <tr>
+                            <td><input type="checkbox" name="ids[]" value="{$row['id']}" /></td>
+                            <td>{$row['id']}</td>
+                            <td>{$row['name']}</td>
+                            <td>{if $row['qrcode_count']}所有: {$row['qrcode_all']}</br>转移: {$row['qrcode_move']}</br>未绑: {$row['not_band']}{/if}</td>
+                            <td>总数:{$row['qrcode_num']}</br>生成:<span id="qrcode_count{$row['id']}">{$row['qrcode_count']}</span></td>
+                            <td>{php echo date("Y-m-d H:i:s",$row['createtime'])}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false" href="javascript:;">二维码 <span class="caret"></span></a>
+                                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                        {if $row['qrcode_num']>$row['qrcode_count']}
+                                        <li>
+                                            <a class="btn btn-default create_qrcode" title="生成二维码"  data-id="{$row['id']}">生成二维码</a>
+                                        </li>
+                                        {/if}
+                                        <li>
+                                            <a class="btn btn-default" title="二维码管理"  href="{php echo $this->createWebUrl('qrcode',array('bid'=>$row['id']))}">二维码管理</a>
+                                        </li>
+                                        <li>
+                                            <a class="btn btn-default" title="下载未使用二维码图片" href="javascript:download_op('download_qrcode_notuse',{$row['id']})">导出未绑定二维码图片</a>
+                                        </li>
+                                        <li>
+                                            <a class="btn btn-default " title="下载未使用二维码地址excel" href="javascript:download_op('download_excel',{$row['id']})">导出二维码地址excel</a>
+                                        </li>
+                                         <li>
+                                            <a class="btn btn-default" title="下载未使用二维码地址TXT" href="javascript:download_op('download_txt',{$row['id']})">导出二维码地址TXT</a>
+                                        </li>
+                                        <li>    
+                                          <a class="btn btn-default"  title="下载所有二维码图片" href="javascript:download_op('download_qrcode',{$row['id']})">导出所有二维码图片</a>
+                                        </li>
+                                        {if $accounts_list}
+                                        <li>
+                                            <a class="btn btn-default move_qrcode" title="转移二维码"  data-id="{$row['id']}" onclick="$('#move_code').html('{$row['not_band']}');">转移二维码</a>
+                                        </li>
+                                        {/if}
+                                         <li>
+                                            <a class="btn btn-default" title="商家绑定记录" href="{php echo $this->createWebUrl('beforehand',array('op'=>'band_list','type'=>'1','id'=>$row['id']))}" >商家绑定记录</a>
+                                        </li>
+                                         <li>
+                                            <a class="btn btn-default" title="活动绑定记录" href="{php echo $this->createWebUrl('beforehand',array('op'=>'band_list','type'=>'2','id'=>$row['id']))}" >活动绑定记录</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                
+                                <a class="btn  btn-default" title="编辑" href="{php echo $this->createWebUrl('beforehand',array('op'=>'post','shopid'=>$shopid,'id'=>$row['id']))}" ><i class="fa fa-edit"></i></a>
+                                <a class="btn  btn-danger" href="{php echo $this->createWebUrl('beforehand', array('op' => 'del','shopid'=>$shopid,'id' => $row['id']))}" onclick="return confirm('该操作将会删除本条数据，是否确认操作？');
+                                        return false;" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="删除"><i class="fa fa-times"></i></a>
+                            </td>
+                        </tr>
+                        {/loop}
+
+                        <tr>
+                            <td colspan="10">
+                                <input name="op" id="op" type="hidden" value="" />
+                                <input name="token" type="hidden" value="{$_W['token']}" />
+                                <button type="button" class="btn btn-primary" name="btndeleteall" id="btndeleteall" value=""/>批量删除</button> 
+                                <button  type="button" class="btn btn-danger" onclick="delete_all()">清空（删除所有记录）</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </form>
+        </div>
+        {$pager}
+    </div>
+    <div id="qrcode-message" class="modal" style="display:none" tabindex="-1" role="dialog" aria-hidden="true" style="display: block; padding-right: 17px;">
+        <div class="modal-dialog we7-modal-dialog">
+            <div class="modal-content"><div class="modal-header">
+                    <h3>系统提示</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <p id="message_text"></p>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+        <div class="modal" id="code-choice" style="display:none">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" onclick="$('#code-choice').hide();"><span aria-hidden="true">&times;</span></button>
+                    <h3 class="modal-title">请设置需要下载的预印码编号</h3>
+                </div>
+                <div class="modal-body we7-form">
+                    
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">起止编号</label>
+                        <div class="col-sm-10">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="开始编号" name="start_code" id="start_code_download" value="">
+                                <div class="input-group-addon"></div>
+                                <input type="text" class="form-control" placeholder="结束编号" name="end_code" id="end_code_download" value="">
+                            </div>
+                            <span class="help-block">不填则下载所有预印码</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input id="code_bid" type="hidden" value=''>
+                    <input id="code_op" type="hidden" value=''>
+                    <button type="button" class="btn btn-primary" id="save_download_qrcode">确认</button>
+                    <button type="button" class="btn btn-default" onclick="$('#code-choice').hide();">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="qrcode-move" style="display:none">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" onclick="$('#qrcode-move').hide();"><span aria-hidden="true">&times;</span></button>
+                    <h3 class="modal-title">将预印码转移到其他公众号</h3>
+                </div>
+                <div class="modal-body we7-form">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">可转移编号</label>
+                        <div class="col-sm-10" id="move_code">
+
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">转移到公众号</label>
+                        <div class="col-sm-10">
+                            <select name="cid" id="cid">
+                                {loop $accounts_list $a_val}
+                                <option value="{$a_val['uniacid']}" >{$a_val['app_name']}
+                                    {/loop}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">起止编号</label>
+                        <div class="col-sm-10">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="开始编号" name="start_code" id="start_code" value="">
+                                <div class="input-group-addon"></div>
+                                <input type="text" class="form-control" placeholder="结束编号" name="end_code" id="end_code" value="">
+                            </div>
+                            <span class="help-block">不填则从最小编号开始转移</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">绑定个数</label>
+                        <div class="col-sm-10">
+                            <input id="band_num" type="text" class="form-control" value="">
+                            <span class="help-block">不填转移所有未绑定和未使用的二维码</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input id="sbid" type="hidden" value=''>
+                    <button type="button" class="btn btn-primary" id="save_move_qrcode">确认</button>
+                    <button type="button" class="btn btn-default" onclick="$('#qrcode-move').hide();">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function delete_all() {
+            if (confirm('确认删除 所有信息吗,删除完不可恢复?')) {
+                var shopid = $("#shopid").val();
+                var keyword = $("#keyword").val();
+                window.location.href = "{php echo $this->createWebUrl('beforehand',array('op'=>'deleteall'))}" + "&shopid=" + shopid + "&keyword=" + keyword;
+            }
+        }
+            
+           function download_op(op, id) {
+                $('#code_bid').val(id);
+                $('#code_op').val(op);
+                $('#code-choice').show();
+            }
+        $(function() {
+
+            $("#cid").change(function() {
+
+                var URL = "{php echo $this->createWebUrl('beforehand', array('op'=>'get_beforehand'));}";
+                $.get(URL + "&id=" + $(this).val(), function(ret) {
+                    $("#not_band_str").html(ret.not_band);
+                }, 'json');
+
+            });
+
+
+            $(".check_all").click(function() {
+                var checked = $(this).get(0).checked;
+                $("input[type=checkbox]").attr("checked", checked);
+            });
+            $("#btndeleteall").click(function() {
+                var check = $("input[type=checkbox][class!=check_all]:checked");
+                if (check.length < 1) {
+                    alert('请选择要删除的数据!');
+                    return false;
+                }
+                if (confirm("确认要删除选择的数据?删除后不可恢复")) {
+                    $('#op').val('deleteids');
+                    $('#form1').submit();
+                }
+            });
+
+
+
+            $('.move_qrcode').on('click', function() {
+                var id = $(this).data("id");
+                $('#sbid').val(id);
+                $('#qrcode-move').show();
+            });
+
+            $('#save_move_qrcode').on('click', function() {
+                var url = "{php echo $this->createWebUrl('beforehand',array('op'=>'move_qrcode'))}";
+                var start_code = $('#start_code').val();
+                var sbid = $('#sbid').val();
+                var cid = $('#cid').val();
+                var end_code = $('#end_code').val();
+                var band_num = $('#band_num').val();
+                $.post(url, {sbid: sbid, cid: cid, start_code: start_code, end_code: end_code, band_num: band_num, token: "{$_W['token']}"}, function(ret) {
+                    if (ret.sta == 1) {
+                        $('#qrcode-move').hide();
+                        util.message("成功转移" + ret.count + "个预印码");
+                        setTimeout("window.location.reload()", 2000);
+                    } else {
+                        util.message(ret.error, "", "error");
+                    }
+
+                }, "json");
+
+            });
+
+
+            $('.create_qrcode').on('click', function() {
+                var page = 1;
+                var url = "{php echo $this->createWebUrl('beforehand',array('op'=>'create_qrcode'))}";
+                var id = $(this).data("id");
+                data_post(url, id, page);
+            });
+            
+            
+            function data_post(url, id, page) {
+                $.post(url, {page: page, id: id, token: "{$_W['token']}"}, function(ret) {
+                    if (ret.sta == 1) {
+                        $('#message_text').html("第" + page + "页生成完成，累计" + ret.count + "个</br>");
+                        $('#qrcode-message').show();
+                        page++;
+                        $('#qrcode_count' + id).html(ret.count);
+                        data_post(url, id, page);
+                    } else if (ret.sta == 2) {
+                        $('#qrcode-message').hide();
+                        $('#qrcode_count' + id).html(ret.count);
+                        util.message("生成完成");
+                        setTimeout("window.location.reload()", 2000);
+                    } else {
+                        $('#qrcode-message').hide();
+                        util.message(ret.error, "", "error");
+                    }
+
+                }, "json");
+            }
+            
+        
+            
+           $('#save_download_qrcode').on('click', function() {
+                $('#code-choice').hide();
+                var sbid = $('#code_bid').val();
+                var op = $('#code_op').val();
+                var end_code = $('#end_code_download').val();
+                var start_code = $('#start_code_download').val();
+                var url = "{php echo $this->createWebUrl('beforehand')}";
+                if(op=="download_qrcode_notuse"||op=="download_qrcode"){
+                if (!confirm('二维码图片打包需要一定时间，中途请不要关闭网页，是否确认操作？'))
+                return false;
+                var page = 1;
+                data_post_download(url+ "&id=" + sbid+ "&op=" + op+ "&end_code=" + end_code+ "&start_code=" + start_code, sbid, page);
+                }else{
+               window.location.href = url+ "&id=" + sbid+ "&op=" + op+ "&end_code=" + end_code+ "&start_code=" + start_code;  
+                }
+            });
+
+
+            function data_post_download(url, id, page) {
+                $.post(url, {page: page, id: id, token: "{$_W['token']}"}, function(ret) {
+                    if (ret.sta == 1) {
+                        $('#message_text').html("第" + page + "页数据打包完成，累计" + ret.count + "个</br>");
+                        $('#qrcode-message').show();
+                        page++;
+                        data_post_download(url, id, page);
+                    } else if (ret.sta == 2) {
+                        $('#qrcode-message').hide();
+                        window.location.href = "{php echo $this->createWebUrl('beforehand',array('op'=>'download_qrcode_zip'))}" + "&id=" + id;
+                    } else {
+                        $('#qrcode-message').hide();
+                        util.message(ret.error, "", "error");
+                    }
+
+                }, "json");
+            }
+
+
+
+        });
+
+    </script>
+
+    {/if} 
+
+    {if $op=='post'}
+    <div class="main">
+        <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+            <div class="panel panel-default">
+                <div class="panel-heading">{if empty($id)}添加{else}编辑{/if}预印码</div>
+                <div class="panel-body">
+
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label"><span class="text-danger">*</span>预印码名称</label>
+                        <div class="col-sm-6 col-xs-12">
+                            <input type="text" name="name" class="form-control" value="{$set['name']}" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-xs-1 col-sm-1 col-md-2 control-label">二维码数量</label>
+                        <div class="col-sm-6 col-xs-12">
+                            <input type="text" name="qrcode_num" class="form-control" value="{$set['qrcode_num']}"/>
+                            <span class="help-block">整数，不填无数量限制</span></div>
+                    </div>
+                    <div class="form-group col-sm-12">
+                        <input type="hidden" name="token" value="{$_W['token']}" /> 
+                        <input type="hidden" name="id" value="{$id}" /> 
+                        <input type="submit" name="submit" value="提交" class="btn btn-primary col-lg-1" />
+                    </div>
+
+                </div>
+        </form>
+    </div>
+</div>
+
+{/if} 
+{template 'common/footer'}

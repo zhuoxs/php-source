@@ -1,0 +1,139 @@
+{template '_header'}
+<style type="text/css">
+    .full-content-info{max-height:42px;line-height: 21px;overflow: hidden;}
+    select.select-sm{width:120px;}
+</style>
+<div class="page-heading" xmlns:border-top="http://www.w3.org/1999/xhtml">
+    <h2>投诉管理 <small>数量: <span class='text-danger'>{$total}</span> 条</small></h2>
+</div>
+
+<form action="./index.php" method="get" class="form-horizontal form-search" role="form">
+    <input type="hidden" name="c" value="site" />
+    <input type="hidden" name="a" value="entry" />
+    <input type="hidden" name="m" value="ewei_shopv2" />
+    <input type="hidden" name="do" value="web" />
+    <input type="hidden" name="r"  value="sns.complain" />
+    <div class="page-toolbar row m-b-sm m-t-sm">
+        <div class="col-sm-7">
+            <div class="btn-group btn-group-sm" style="float:left;">
+                <button class="btn btn-default btn-sm"  type="button" data-toggle='refresh'><i class='fa fa-refresh'></i></button>
+                <select name='searchtime' class='form-control  input-sm select-md' style="width:85px;padding:0;"  >
+                    <option value=''>不按时间</option>
+                    <option value='create' {if $_GPC['searchtime']=='create'}selected{/if}>投诉时间</option>
+                    <option value='checked' {if $_GPC['searchtime']=='checked'}selected{/if}>审核时间</option>
+                </select>
+                {php echo tpl_form_field_eweishop_daterange('time', array('starttime'=>date('Y-m-d H:i', $starttime),'endtime'=>date('Y-m-d H:i', $endtime)),true);}
+            </div>
+        </div>
+
+
+        <div class="col-sm-5 pull-right">
+            <div class="input-group">
+                <input type="text" class="input-sm form-control" name='keyword' value="{$_GPC['keyword']}" placeholder="投诉内容"> <span class="input-group-btn">
+                <button class="btn btn-sm btn-primary" type="submit"> 搜索</button> </span>
+            </div>
+        </div>
+
+    </div>
+</form>
+
+<form action="" method="post">
+    {if count($complains)>0}
+    <table class="table table-responsive table-hover" >
+        <thead class="navbar-inner">
+        <tr>
+            <th style="width:25px;"><input type='checkbox' /></th>
+            <th style='width:30px; text-align: center;'></th>
+            <th style='width: 240px;'>投诉话题/评论</th>
+            <th style='width: 100px;'>投诉人</th>
+            <th style='width:100px'>投诉时间</th>
+            <th style="width: 145px;">操作(红色表示有未审核评论)</th>
+        </tr>
+        </thead>
+        <tbody>
+        {loop $complains $row}
+        <tr>
+            <td>
+                <input type='checkbox' value="{$row['id']}"/>
+            </td>
+            <td style="text-align: center;">
+                <img style="width:30px;height:30px;padding1px;border:1px solid #ccc" src="{php echo tomedia($row['complainant']['avatar'])}">
+            </td>
+            <td class="full">
+                <label class="label label-danger">{$row['typename']}</label>
+                <div class="full-content-info">
+                    <a href="{php echo webUrl('member/list/detail',array('id'=>$row['complainant']['id']))}">{$row['complainant']['nickname']}</a>:{$row['content']}
+                </div>
+            </td>
+            <td>
+                <a href="{php echo webUrl('member/list/detail',array('id'=>$row['defendant']['id']))}">{$row['defendant']['nickname']}</a>
+            </td>
+            <td>
+                {php echo date('Y-m-d H:i', $row['createtime'])}
+            </td>
+            <td style="text-align:right;">
+                {ifp 'sns.complain.check'}
+                {if $row['checked']==0}
+                <a data-toggle="ajaxModal" href="{php echo webUrl('sns/complain/checked', array('id' => $row['id'],'type'=>$row['complaint_type']))}" class="btn btn-default btn-sm" style="{if $row['needchecks']>0}color:red{/if}">
+                    审核
+                </a>
+                {/if}
+                {/if}
+                {ifp 'sns.complain.delete'}
+                <a data-toggle='ajaxRemove' href="{php echo webUrl('sns/complain/delete', array('id' => $row['id']))}" class="btn btn-default btn-sm" data-confirm='确认要删除此投诉吗?' title="删除">
+                    <i class="fa fa-remove"></i>
+                </a>
+                {/if}
+                {ifp 'sns.complain.delete'}
+                <a data-toggle='ajaxRemove' href="{php echo webUrl('sns/complain/delete1', array('id' => $row['id']))}"class="btn btn-default btn-sm" data-confirm='确认要彻底删除此投诉吗?'>
+                    <i class="fa fa-trash"></i> 彻底删除
+                </a>
+                {/if}
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style=';border-top:none;'></td>
+            <td  style='border-top:none;'>
+                <a href="javascript:;" onclick="$(this).closest('tr').next('tr').toggle()">[投诉内容]</a>
+            </td>
+            <td colspan="3" style='text-align: right;border-top:none;' class='aops'>
+                <a class="{if $row['deleted']==1}text-default{else}text-danger{/if}" href="javascript:void(0);">
+                {if $row['deleted']==1}已删除{else}正常{/if}
+                </a>
+                <a class="{if $row['checked']==1}text-danger{else}text-default{/if}" href="javascript:void(0);">
+                {if $row['checked']==1}已审核{elseif $row['checked']==-1}未通过{else}待审核{/if}
+                </a>
+            </td>
+        </tr>
+        <tr style="display:none;">
+            <td colspan="2" style=';border-top:none;'></td>
+            <td colspan="4"  style='border-top:none;' class="full">
+                {$row['complaint_text']}
+                <br/>
+                {if count($row['images'])>0}
+                {loop $row['images'] $img}
+                <a href="{php echo tomedia($img)}" target="_blank"><img src="{php echo tomedia($img)}" style="width:50px;border:1px solid #ccc;padding:1px;margin:2px;" /></a>
+                {/loop}
+                {/if}
+
+            </td>
+        </tr>
+
+        {/loop}
+        </tbody>
+    </table>
+    <div style="text-align:right;width:100%;">
+        {$pager}
+    </div>
+    {else}
+    <div class='panel panel-default'>
+        <div class='panel-body' style='text-align: center;padding:30px;'>
+            暂时没有任何投诉!
+        </div>
+    </div>
+    {/if}
+
+</form>
+
+
+{template '_footer'}

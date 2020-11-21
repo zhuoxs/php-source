@@ -1,0 +1,163 @@
+{php include wl_template('common/header');}
+{php $indexnav = array_chunk($nav,$_W['agentset']['meroof']['navnum'],true);}
+<link rel="stylesheet" href="{URL_MODULE}plugin/wlfightgroup/app/resource/css/orderdetail.css"></link>
+<div class="page-group" >
+    <div class="page page-current" id="page-goods-list" >
+		{php include wl_template('common/menu');}
+		{if !empty($advdata)}
+			{php include wl_template('diypage/advdata');}
+		{/if}
+		<div class="content infinite-scroll" style="padding-bottom: 10px;">
+            {if !$set['search'] || $set['search'] == 0}{php include wl_template('dashboard/search');}{/if}
+			<!--幻灯片-->
+			<div class="banner" id="ban_adv">
+			    <div class="swiper-wrapper">
+				{loop $advs $adv}
+					<div class="swiper-slide"><a href="{$adv['link']}"><img src="{php echo tomedia($adv['thumb'])}"></a></div>
+				{/loop}			    
+			    </div>
+			    <div class="swiper-pagination"></div>
+			</div>
+			<style>
+				.banner{visibility: visible;width: 100%;position: relative;overflow: hidden;}
+				.banner img{width: 100%;}
+			</style>
+			<script>
+			    $(function() {
+			        var mySwiper = new Swiper ('#ban_adv', {
+			            autoplay:3000,
+			            speed:500,
+			            loop:true,
+			            pagination: '.swiper-pagination',
+    					paginationClickable: true,
+			            autoplayDisableOnInteraction:false
+			        });
+			    });
+			</script>
+			<!--商品分类-->
+			{if $nav}
+			<section class="banner-tab">
+				<div class="swiper-container" id="banner_tab">
+					<div class="swiper-wrapper">
+						{loop $indexnav $datanav}
+						<div class="swiper-slide">
+							<ul class="tab-list">
+								{loop $datanav $itme}
+								<li  {if $_W['agentset']['meroof']['navnum'] == 10 || $_W['agentset']['meroof']['navnum'] == 5} style="width:20%;" {else} style="width:25%;" {/if}>
+								<a href="{$itme['link']}" class="external" ><img src="{php echo tomedia($itme['logo'])}" />
+									<span {if $itme['color']}style="color: {$itme['color']};"{/if}>{$itme['name']}</span>
+								</a>
+								</li>
+								{/loop}
+							</ul>
+						</div>
+						{/loop}
+					</div>
+					<div class="swiper-pagination" id="banner_tab_page"></div></div>
+			</section>
+			{/if}
+
+			<!--精选商品-->
+			<div class="pp_state">
+			    <div class="pp_state_txt"><i class="icon iconfont icon-appreciatelight"></i> 精选商品 </div>
+			</div>
+			<div class="list" style="padding-bottom: 0px;">
+			    <div class="act-tip2-t2">
+			    	
+			    </div>
+			</div>
+			<div class="infinite-scroll-preloader">
+				<div  class="weui-loadmore">
+			        <i class="weui-loading"></i>
+			        <span class="weui-loadmore__tips">正在加载</span>
+			    </div>
+			</div>
+		</div>
+	</div>
+</div>
+{php include wl_template('htmltpl/fightlist');}
+<script>
+	var swiper = new Swiper('#banner_tab', {
+		loop: true,
+		pagination: '#banner_tab_page',
+		paginationClickable: true
+	});
+
+	var page = 1,pagesize = 10,loading = false,endmark =1;
+	
+	var hisDataIs = 0;
+	if(sessionStorage.hisData){
+		var hisData = JSON.parse(sessionStorage.hisData);
+		hisData.forEach(function(item, index){
+			if(item.hisUrl == encodeURI(window.location.href+"&aid={$_W['aid']}")){
+				hisDataIs = 1;
+				$('.act-tip2-t2').html(item.data);
+				$('.content').scrollTop(item.scrollTop);
+				page = item.page;
+				$('.infinite-scroll-preloader').hide();
+			}
+		});
+	}
+	if(hisDataIs == 0){
+		asd();
+	}
+	
+	function asd(){
+		$.post("{php echo app_url('wlfightgroup/fightapp/getindexgoods')}",{},function(d){
+			$('.infinite-scroll-preloader').hide();
+			loading = false;
+			if(JSON.stringify(d).length>40){
+				sessionStorage.setItem("demokey",JSON.stringify(d));
+				var contentdata = d.slice(0,pagesize);
+				addItems(contentdata);
+			}else{
+				var nothing_html = "<li style='list-style-type:none;'><div style='padding-top:1px'>" +
+				'<div class="weui-loadmore weui-loadmore_line"><span class="weui-loadmore__tips" style="background-color: #efeff4;">暂无更多数据</span></div></div></li>';
+				$(".content").append(nothing_html);
+			}
+		}, 'json');
+	}
+	function addItems(data) {
+		var html = '';
+		//当数据库数据小于number时，改变number
+			$('.infinite-scroll-preloader').css({
+				"display": "none"
+			});
+		var gettpl = document.getElementById('fightlist_tpl').innerHTML;
+		laytpl(gettpl).render(data, function(html) {
+			$('.act-tip2-t2').append(html);
+			loading = false;
+		});
+		if(data.length == 0) {
+			var nothing_html = "<li style='list-style-type:none;'><div style='padding-top:1px'>" +
+				'<div class="weui-loadmore weui-loadmore_line"><span class="weui-loadmore__tips" style="background-color: #efeff4;">暂无更多数据</span></div></div></li>';
+				$(".content").append(nothing_html);
+				endmark = 0;
+		}
+		page++;
+	}
+	
+	$(document).on('infinite', '.infinite-scroll', function() {
+		if(loading) return;
+		loading = true;
+		if(endmark){
+		$('.infinite-scroll-preloader').show();
+		setTimeout(function() {
+			var dt = JSON.parse(sessionStorage.getItem("demokey"));
+			var xxx = dt.slice((page-1)*pagesize ,(page-1)*pagesize+pagesize);
+			addItems(xxx);
+		}, 800);}
+	});
+	$.init();
+	
+	window.onunload = function(){
+		var hisDataItem = {};
+		hisDataItem.hisUrl = encodeURI(window.location.href+"&aid={$_W['aid']}");
+		hisDataItem.data = $('.act-tip2-t2').html();
+		hisDataItem.scrollTop = $('.content').scrollTop();
+		hisDataItem.page = page;
+		common.History_pag(hisDataItem);
+	}
+
+</script>
+{php include wl_template('common/footer');}

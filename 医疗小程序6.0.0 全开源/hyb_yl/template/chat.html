@@ -1,0 +1,153 @@
+{template 'common/header'}
+<style type="text/css">
+    .we7-body-alert{display: none!important;}
+	.row{
+			margin: 10px auto;
+		}
+		.avatar{
+		 	width: 40px;height: 40px;border-radius: 5px;vertical-align: top;
+		 display: inline-block;margin:0 auto;
+		}
+		.msg{background-color:#FFF;padding:10px 8px;font-size:15px;vertical-align: top;display: inline-block;border-radius: 5px;max-width:230px;width: auto;}
+		.td-avatar{
+			vertical-align: top;width: 50px;text-align: center;
+		}
+		.td-msg{
+			vertical-align: top;background-color:#FFF;padding:8px 8px;border-radius: 5px;
+		}
+		.tr-time{
+			height: 20px;
+		}
+		.td-time{
+			text-align: center;color:#999;font-size: 13px;padding: 10px 10px;
+		}
+		.head td{
+			padding: 10px 0px;
+			text-align: center;
+			vertical-align: middle;
+			overflow: hidden;
+		}
+		.headimg{
+			width:15%;
+		}
+		.headimg img{
+			width: 20px;
+			height: 20px;
+			display: inline-block;vertical-align: top;margin-top:1px;
+		}
+		.weui-textarea{
+			border-radius: 8px;vertical-align: bottom;
+		}
+		.weui-btn{
+			text-align: center;line-height:38px;border-radius:8px;margin:0px auto;vertical-align:middle;background-color: #22B14C;
+		}
+}
+</style>
+<script src="{GIZ_STATIC}js/util.js" type="text/javascript">
+</script>
+<table class="head" style="width:350px;background-color: #888;color: #FFF;margin-bottom: 10px;margin: 0 auto;">
+    <tr style="height: 20px;">
+        <td class="headimg" onclick="javascript:history.go(-1);" style="cursor: pointer;">
+            返回
+        </td>
+        <td class="headuser">
+            {$_GPC['user']}
+        </td>
+        <td "="" class="headimg">
+        </td>
+    </tr>
+</table>
+<div id="scroll" style="width:350px;position: relative;height:450px;overflow-y: scroll;margin:0px  auto;background-color: #EBEBEB;">
+    <table id="msgtb" style="width: 100%;">
+        {loop $msgs $index $item}
+        <tr class="tr-time">
+            <td>
+            </td>
+            <td class="td-time">
+                <?php echo date("Y-m-d H:i:s",$item['createtime']);?>
+            </td>
+            <td>
+            </td>
+        </tr>
+        <tr>
+            <td class="td-avatar">
+                <?php if($item['fromuser']==$_GPC['user']){ ?>
+                <img class="avatar" src="{GIZ_STATIC}images/avatar_default.jpg"/>
+            </td>
+            <?php } ?>
+            <td class="td-msg" style="text-align: <?php if($item['touser']==$_GPC['user']){echo 'right';}else{echo 'left';}?>">
+                <?php if($item['type']=="text"){
+	 			echo $item['content'];
+	 			}else{?>
+                <a href="{$_W['attachurl']}{$item['picture']}" target="__block">
+                    <img src="{$_W['attachurl']}{$item['picture']}" style="height: 60px;width: auto;"/>
+                </a>
+                <?php } ?>
+            </td>
+            <td class="td-avatar">
+                <?php if($item['touser']==$_GPC['user']){ ?>
+                <img alt="{$item['nickname']}" class="avatar" src="{$item['avatar']}" title="{$item['nickname']}"/>
+            </td>
+            <?php } ?>
+        </tr>
+    </table>
+</div>
+{/loop}
+<div style="width:10px ;height: 30px;">
+</div>
+<table class="bottom" style="height: 60px;background-color: #EBEBEB;margin:0px  auto;width: 350px;">
+    <tr>
+        <td style="width: 80%;text-align: center;">
+            <textarea class="weui-textarea" id="msg-content" style="width: 96%;margin:0 auto;display: inline-block;resize:none;text-align: left;">
+            </textarea>
+        </td>
+        <td style="width: 20%;vertical-align: middle;">
+            <a class="weui-btn weui-btn_primary" data-toggle="popover" data-trigger="focus" href="javascript:void(0);" id="sendBtn" onclick="sendMsg()" role="button" style="display: inline-block;width:100%;height:45px;line-height:45px;font-size:14px;color:#fff;">
+                发送
+            </a>
+        </td>
+    </tr>
+</table>
+<script type="text/javascript">
+    $(function(){
+ 		$("#scroll").scrollTop(parseInt($("#msgtb").css("height"))-450);
+ 	})
+
+  function sendMsg(){
+  	var content=$("#msg-content").val();
+  	console.log(content)
+  	if(content.length<1){
+  		return false;
+  	}
+  	$.ajax({
+  		url:"<?php echo  $this->routeUrl('message.sendMsg');?>&appid=<?php echo $msgs[count($msgs)-1]['appid'];?>&touser={$_GPC['user']}",
+  		data:{content:content},
+  		dataType:"json",
+  		success:function(datas){
+  			var options={
+  				"placement":"top",
+  				"title":"提示",
+  				"content":datas.errmsg
+  			}
+  			
+  			var code=parseInt(datas.errcode); 
+  			if(code>0){
+  				options.content="发送失败！ errcode: "+datas.errcode+'  errmsg:'+datas.errmsg;
+  				$("#sendBtn").popover(options)
+  				$("#sendBtn").popover('show')
+  			}else{
+  				options.content="发送成功";
+  				$("#sendBtn").popover(options)
+  				$("#sendBtn").popover('show')
+  				$("#msg-content").val("");
+  				setTimeout(function(){
+                  
+  				  history.go(0);
+  				},2000);
+  			}
+  			
+  		}
+  	});
+  }
+</script>
+{template 'common/footer'}

@@ -1,0 +1,175 @@
+<style>
+    #map {
+        width: 660px;
+        height: 500px;
+        -webkit-transition: all 0.5s ease-in-out;
+        transition: all 0.5s ease-in-out;
+    }
+</style>
+<div class="main">
+	<form action="" method="post" class="form-horizontal form">
+		<div class="panel panel-default">
+			<div class="panel-heading">{if !empty($_GPC['id'])}编辑{else}添加{/if}</div>
+			<div class="panel-body">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label text-right">序号</label>
+                    <div class="col-sm-9">
+                        <input type="number" min="0" class="form-control" name="pay_position" value="{$item['pay_position']}" placeholder="0">
+                        <span class="help-block">物品位置，请填数字，数字大的排在前面</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label text-right"><span class="color-red">*</span> 标题</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" name="title" value="{$item['title']}" placeholder="">
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">物品描述</label>
+                    <div class="col-sm-9">
+                        <textarea type="text" class="form-control" name="description" >{$item['description']}</textarea>
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">appid</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" name="appid" value="{$item['appid']}" placeholder="">
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">跳转链接</label>
+                    <div class="col-sm-9">
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="url" value="{$item['url']}">
+                            <div class="input-group-btn">
+                                <button type="button" class="btn btn-default dropdown-toggle slide_btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">本站链接
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-right select_list">
+                                    {if $all_links}
+                                    {loop $all_links $links}
+                                    <li>
+                                        <a class="select-url" href="#" data-url="{$links['url']}">{$links['title']}</a>
+                                    </li>
+                                    {/loop}
+                                    {/if}
+                                </ul>
+                            </div>
+                        </div>
+                        <span class="help-block">选择本站链接不需要填写appid！</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">
+                        <span class="color-red">*</span>头像
+                    </label>
+                    <div class="col-sm-8 col-xs-12">
+                        {php echo tpl_form_field_image('avatar', $item['avatar'], $siteroot.'/web/resource/images/nopic.jpg')}
+                        <span class="help-block">推荐尺寸：80*80</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">
+                        <span class="color-red">*</span>封面图片
+                    </label>
+                    <div class="col-sm-8 col-xs-12">
+                        {php echo tpl_form_field_image('album', $item['album'][0], $siteroot.'/web/resource/images/nopic.jpg')}
+                        <span class="help-block">推荐尺寸：80*80</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">地理位置</label>
+                    <div class="col-sm-8 col-md-8 col-xs-12">
+                        {php echo tpl_form_field_coordinate('location', $location);}
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input type="hidden" name="area_points" value="">
+                    <label class="col-xs-12 col-sm-4 col-md-3 col-lg-2 control-label">展示地区</label>
+                    <div class="col-sm-8 col-xs-12 col-lg-9">
+                        <div id="map"></div>
+                        <div class="help-block">
+                            <button type="button" class="btn btn-success btn_start_draw">开始画线</button>
+                            <button type="button" class="btn btn-danger btn_clear_draw">清除画线</button>
+                        </div>
+                        <div class="help-block">
+                            单击鼠标左键移动开始画线，双击鼠标左键结束画线（结束后可移动边线微调），画线形状为一个完整的空间，如：正方形、矩形、多边形等，用户地理位置在坐标点范围内时显示，否则不显示，注：获取不到用户地理位置时默认显示
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label text-right">状态</label>
+                    <div class="col-sm-9">
+                        <div class="input-group">
+                            <label class="radio-inline">
+                                <input type="radio" name="status" value="1" {if !isset($item['status'])|| $item['status']==1}checked{/if}> 发布
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="status" value="-1" {if isset($item['status'])&&$item['status']==0}checked{/if}> 下架
+                            </label>
+                        </div>
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+			</div>
+		</div>
+		<div class="form-group col-sm-12">
+			<button type="submit" class="btn btn-primary" name="submit" value="提交">提交</button>
+			<input type="hidden" name="token" value="{$_W['token']}" />
+		</div>
+	</form>
+</div>
+<script>
+    require(['jquery', 'util'], function($, util){
+        //表单
+        $('form').submit(function(){
+            var title = $('input[name=title]');
+            if (title.val() == '') {
+                util.message('请输入标题！', '', 'error');
+                return false;
+            }
+            var avatar = $('input[name=avatar]');
+            if (avatar.val() == '') {
+                util.message('请上传头像！', '', 'error');
+                return false;
+            }
+            var cover = $('input[name=cover]');
+            if (cover.val() == '') {
+                util.message('请上传封面图！', '', 'error');
+                return false;
+            }
+            //兑换限制坐标点
+            if (overlays.length > 0) {
+                var points = new Array();
+                for (var i = 0; i < overlays.length; i++) {
+                    var overlay = overlays[i].getPath();
+                    for (var j = 0; j < overlay.length; j++) {
+                        var grid = overlay[j];
+                        var poi = {
+                            lng: grid.lng.toString(),
+                            lat: grid.lat.toString()
+                        };
+                        points.push(poi);
+                    }
+                }
+                points = base64_encode(JSON.stringify(points));
+                console.log(points)
+                $('input[name=area_points]').val(points);
+            }
+            return true;
+        });
+        //初始化选择链接
+        var initSelectUrl = function(){
+            $('.select-url').unbind('click').click(function () {
+                var url = $(this).data('url');
+                $(this).parent().parent().parent().prev().val(url);
+                return false
+            });
+        };
+        initSelectUrl();
+    });
+</script>

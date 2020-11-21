@@ -1,0 +1,233 @@
+<style>
+    .table>thead>tr>th,.table>tbody>tr>td {
+        vertical-align: middle;
+    }
+    .dropdown-menu {
+        min-width: 70px;
+    }
+</style>
+<div class="main">
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site">
+                <input type="hidden" name="a" value="entry">
+                <input type="hidden" name="do" value="report">
+                <input type="hidden" name="act" value="display">
+                <input type="hidden" name="m" value="superman_hand2">
+                <div class="form-group">
+                    <div class="col-sm-4 col-md-4 col-xs-12">
+                        <input class="form-control" name="title" type="text" value="{$_GPC['title']}" placeholder="物品标题 , 支持模糊搜索">
+                    </div>
+                    <div class="col-sm-4 col-md-4 col-xs-12">
+                        <input class="form-control" name="nickname" type="text" value="{$_GPC['nickname']}" placeholder="卖家昵称 , 支持模糊搜索">
+                    </div>
+                    <div class="col-sm-3 col-md-3 col-xs-12 category_wrap">
+                        <select class="form-control" name="status">
+                            <option value="-1" {if $status == '-1'}selected{/if}>全部</option>
+                            <option value="0" {if isset($status) && $status == 0}selected{/if}>未处理</option>
+                            <option value="1" {if $status == 1}selected{/if}>已处理</option>
+                        </select>
+                    </div>
+                    <div class="col-xs-12 col-sm-1 col-md-1">
+                        <button class="btn btn-primary"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <form action="" method="post">
+        <div class="panel panel-default">
+            <div class="table-responsive panel-body" style="overflow: visible">
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <!--<th width="30">
+                            <input type="checkbox" name="checkall">
+                        </th>-->
+                        <th width="300">标题</th>
+                        <th>卖家昵称</th>
+                        <th width="200">举报原因</th>
+                        <th width="80">状态</th>
+                        <th width="120">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {if !empty($list)}
+                    {loop $list $li}
+                    <tr>
+                        <!--<td>
+                            <input type="checkbox" name="reportids[]" value="{$li['id']}">
+                        </td>-->
+                        <td>
+                            {$li['item']['title']}
+                        </td>
+                        <td>
+                            {$li['nickname']}
+                        </td>
+                        <td>
+                            {$li['reason']}
+                        </td>
+                        <td>
+                            {if $li['status']==1}
+                            <span class="label label-success">已处理</span>
+                            {else}
+                            <button type="button" data-id="{$li['id']}" class="btn btn-xs btn-default status_update">
+                                未处理
+                            </button>
+                            {/if}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                {if $li['status']==0}
+                                <a href="#" data-id="{$li['id']}" data-uid="{$li['seller_uid']}" data-nickname="{$li['nickname']}" data-blocktime="{$li['blacklist']['blocktime']}" data-blockuid="{$li['blacklist']['uid']}" data-toggle="modal" data-target=".audit_modal" class="btn btn-default btn-sm btn_audit">审核</a>
+                                {/if}
+                                <a href="{php echo $this->createWebUrl('report', array('act' => 'delete', 'id' => $li['id']))}" class="btn btn-default btn-sm" onclick="return confirm('此操作不可恢复，确认吗？'); return false;">删除</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {/loop}
+                    {/if}
+                    </tbody>
+                </table>
+            </div>
+            <div class="panel-footer">
+                总共 <strong>{$total}</strong> 条
+            </div>
+        </div>
+        <div class="bottom-row clearfix">
+            <div class="col-xs-4 text-left" style="padding: 0">
+               <!-- <input name="batch_submit" type="submit" value="批量处理" class="btn btn-primary" />
+                <input type="hidden" name="token" value="{$_W['token']}" />-->
+            </div>
+            <div class="col-xs-8 text-right" style="padding: 0">
+                {$pager}
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal fade audit_modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                <h4 class="modal-title">封禁用户账号</h4>
+            </div>
+            <form action="" class="form-horizontal audit_form" method="post">
+                <div class="modal-body">
+                    <div class="form-group" style="min-height: 35px; line-height: 35px;">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label text-right" style="padding-top: 0">UID</label>
+                        <div class="col-sm-8 col-md-8 col-xs-12">
+                            <span class="uid_show"></span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="min-height: 35px; line-height: 35px;">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label text-right" style="padding-top: 0">用户名</label>
+                        <div class="col-sm-8 col-md-8 col-xs-12">
+                            <span class="nickname_show"></span>
+                        </div>
+                    </div>
+                    <div class="form-group text-day" style="min-height: 35px; line-height: 35px;">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label text-right" style="padding-top: 0">封禁天数</label>
+                        <div class="col-sm-8 col-md-8 col-xs-12">
+                            <input class="form-control" name="day" type="number" value="">
+                            <span class="help-block">填-1为永久</span>
+                        </div>
+                    </div>
+                    <div class="form-group text-remark" style="min-height: 35px; line-height: 35px;">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label text-right" style="padding-top: 0">备注</label>
+                        <div class="col-sm-8 col-md-8 col-xs-12">
+                            <textarea class="form-control" name="remark"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group text-explain" style="min-height: 35px; line-height: 35px; display: none;">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label text-right" style="padding-top: 0">说明</label>
+                        <div class="col-sm-8 col-md-8 col-xs-12">
+                            <a href="" data-url="{php echo $this->createWebUrl('report', array('act'=> 'black'))}" class="black_tips text-danger"></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button name="audit_submit" type="submit" value="yes" class="btn btn-primary">确认</button>
+                    <input type="hidden" name="token" value="{$_W['token']}">
+                    <input type="hidden" name="reportid">
+                    <input type="hidden" name="uid">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    require(['jquery'],function($){
+        //全选
+        $('input[name=checkall]').click(function(){
+            if ($(this).prop('checked')) {
+                $('input[name="reportids[]"]').prop('checked', true);
+            } else {
+                $('input[name="reportids[]"]').prop('checked', false);
+            }
+        });
+
+        //审核
+        $('.btn_audit').click(function () {
+            var t = this;
+            var id = $(t).attr('data-id');
+            var uid = $(t).attr('data-uid');
+            var nickname = $(t).attr('data-nickname');
+            var blocktime = $(t).attr('data-blocktime');
+            var blockuid = $(t).attr('data-blockuid');
+            $('.audit_form .nickname_show').html(nickname);
+            $('.audit_form .uid_show').html(uid);
+            $('.audit_form input[name=reportid]').val(id);
+            $('.audit_form input[name=uid]').val(uid);
+            if (blockuid > 0) {
+                var url = $('.black_tips').attr('data-url');
+                $('.black_tips').attr('href', url);
+                $('.black_tips').html('该用户账号已封禁，截止时间：'+blocktime);
+                $('.audit_form .text-day').css('display', 'none');
+                $('.audit_form .text-remark').css('display', 'none');
+                $('.audit_form .text-explain').css('display', 'block');
+                $('.audit_modal .modal-footer').css('display', 'none');
+            } else {
+                $('.audit_form .text-day').css('display', 'block');
+                $('.audit_form .text-remark').css('display', 'block');
+                $('.audit_form .text-explain').css('display', 'none');
+                $('.audit_modal .modal-footer').css('display', 'block');
+            }
+        });
+
+        //审核表单
+        $('.audit_form').submit(function(){
+            var day = $('input[name=day]');
+            if (day.val() == '') {
+                util.message('封禁天数为空，请填写！', '', 'error');
+                return false;
+            }
+            return true;
+        });
+
+        //修改状态
+        $('.status_update').click(function(){
+            var t = this;
+            var id = $(t).attr('data-id');
+            if (confirm('确认更改为已处理吗？') == false) {
+                return;
+            }
+            $.ajax({
+                url: "{php echo $this->createWebUrl('report', array('act' => 'setattr'))}",
+                data: 'id='+id,
+                success: function (response) {
+                    if (response == 'success') {
+                        util.message('操作成功', '', 'success');
+                        setTimeout(function(){
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        util.message(response, '', 'error');
+                    }
+                }
+            });
+        });
+    });
+</script>

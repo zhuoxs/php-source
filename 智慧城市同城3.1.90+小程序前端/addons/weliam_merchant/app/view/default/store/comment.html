@@ -1,0 +1,189 @@
+{php include wl_template('common/header');}
+<div class="page-group" >
+    <div class="page page-current" id="page-index">
+		<header class="bar bar-nav create-actions">
+			<a class="button button-link button-nav pull-left back" href="{php echo app_url('store/supervise/platform')}"><span class="icon icon-left"></span>返回</a>
+			<h1 class='title' class="">评价列表</h1>
+		</header>
+		<div class="content infinite-scroll">
+		  	<div class="buttons-tab">
+			    <a href="{php echo app_url('store/supervise/comment')}" class="button {if empty($replyone) && empty($checkone)}active{/if}">所有</a>
+				<a href="{php echo app_url('store/supervise/comment',array('checkone'=>1))}" class="button {if $checkone == 1}active{/if}">待审核</a>
+				<a href="{php echo app_url('store/supervise/comment',array('replyone'=>1))}" class="button {if $replyone == 1}active{/if}">待回复</a>
+				<a href="{php echo app_url('store/supervise/comment',array('replyone'=>2))}" class="button {if $replyone == 2}active{/if}">已回复</a>
+			</div>
+			<div class="allorder" style="margin-top: .5rem;">
+			</div>
+			<div class="weui-loadmore loading_more" style="display: none;">
+	            <i class="weui-loading"></i>
+	            <span class="weui-loadmore__tips">正在加载</span>
+	        </div>
+	        <div class="weui-loadmore weui-loadmore_line" style="display: none;">
+	            <span class="weui-loadmore__tips" style="background-color: #EFEFF4;">暂无更多数据</span>
+	        </div>
+	    </div>
+	</div>
+</div>
+<script type="text/html" id="orderlist">
+{{# for(var i = 0, len = d.data.length; i < len; i++){ }}
+<div class="weui-form-preview">
+    <div class="weui-form-preview__hd">
+        <label class="weui-form-preview__label" style="overflow:hidden;text-overflow:ellipsis;white-space: nowrap;max-width: 60%;">{{# if(d.data[i].level == 1){ }}好评{{# } else if(d.data[i].level == 2){ }}中评{{# } else if(d.data[i].level == 3){ }}差评{{# } }}</label>
+        <em class="weui-form-preview__value">
+        	<div class="stars">
+        		{{# for(var j = 0;j < 5; j++){ }}
+        			{{# if(j < d.data[i].star){ }}
+						<span class="star-item on"></span>
+					{{# }else{ }}
+						<span class="star-item off"></span>
+					{{# } }}
+				{{# } }}
+			</div>
+        </em>
+    </div>
+    <div class="weui-form-preview__bd">
+        <div class="weui-form-preview__item">
+            <label class="weui-form-preview__label">评价者</label>
+            <span class="weui-form-preview__value">{{ d.data[i].nickname }}</span>
+        </div>
+        <div class="weui-form-preview__item">
+            <label class="weui-form-preview__label">评价内容</label>
+            <span class="weui-form-preview__value">
+            	{{ d.data[i].text }}
+            </span>
+        </div>
+        <div class="weui-form-preview__item">
+            <label class="weui-form-preview__label">评价时间</label>
+            <span class="weui-form-preview__value">
+            	{{ d.data[i].createtime }}
+            </span>
+        </div>
+    </div>
+    {if $_W['agentset']['comment']['comment_check'] != 2}
+    {{# if(d.data[i].checkone == 1 || d.data[i].replyone == 1){ }}
+    <div class="weui-form-preview__ft">
+    	{{# if(d.data[i].checkone == 1 && d.data[i].replyone == 1){ }}
+    	<a class="weui-form-preview__btn weui-form-preview__btn_default external replyone" href="javascript:" oid="{{ d.data[i].id }}">回复</a>
+    	<button type="submit" class="weui-form-preview__btn weui-form-preview__btn_primary external checkone" href="javascript:" oid="{{ d.data[i].id }}">审核</button>
+    	{{# } else if(d.data[i].checkone != 1 && d.data[i].replyone == 1){ }}
+    	<a class="weui-form-preview__btn weui-form-preview__btn_primary external replyone" href="javascript:" oid="{{ d.data[i].id }}">回复</a>
+    	{{# } else if(d.data[i].checkone == 1 && d.data[i].replyone != 1){ }}
+    	<a class="weui-form-preview__btn weui-form-preview__btn_primary external checkone" href="javascript:" oid="{{ d.data[i].id }}">审核</a>
+    	{{# } }}
+    </div>
+    {{# } }}
+    {else}
+    {{# if(d.data[i].replyone == 1){ }}
+    <div class="weui-form-preview__ft">
+    	<a class="weui-form-preview__btn weui-form-preview__btn_primary external replyone" href="javascript:" oid="{{ d.data[i].id }}">回复</a>
+    </div>
+    {{# } }}
+    {/if}
+</div>
+<br>
+{{# } }}
+</script>
+<script>
+	$(function() {
+		$(document).on("pageInit", "#page-index", function(e, id, page) {
+			var loading = false;
+			var pindex = 1;
+			function addItems(pindex) {
+				$.post("{php echo app_url('store/supervise/comment',array('checkone'=>$checkone,'replyone'=>$replyone))}",{pindex:pindex},function(d){
+					if (d.data.length > 0) {
+						var gettpl1 = document.getElementById('orderlist').innerHTML;
+						laytpl(gettpl1).render(d, function(html){
+						   $(".allorder").append(html);
+						});
+					}else if(pindex == 1){
+						$(".allorder").html('<div class="common-no-con"><img src="{URL_APP_IMAGE}order_no_con.png" alt=""><p>暂时没有评价</p></div>');
+					}else{
+						$(".weui-loadmore_line").show();
+						$(".loading_more").remove();
+					}
+				}, 'json');
+			}
+			addItems(pindex);
+			$(page).on('infinite', function() {
+				if (loading) return;
+				loading = true;
+				$(".loading_more").show();
+				setTimeout(function() {
+					loading = false;
+					pindex++;
+					addItems(pindex);
+					$(".loading_more").hide();
+					$.refreshScroller();
+				}, 1000);
+			});
+		});
+		$(document).on('click','.replyone',function(){
+			var orderid = $(this).attr('oid');
+			$.prompt('请输入您想回复的内容', function (value) {
+		        $.post("{php echo app_url('store/supervise/commentreply')}",{orderid:orderid,replytext:value},function(d){
+					if(d.errno == 0){
+						$.alert('回复成功！', function () {
+				            location.href = "{php echo app_url('store/supervise/comment',array('checkone'=>$checkone,'replyone'=>$replyone))}";
+				        });
+					}else{
+						$.toast(d.message);
+					}
+				},"json");
+		    });
+		});
+		$(document).on('click','.checkone',function(){
+			var orderid = $(this).attr('oid');
+			$.modal({
+		      	title:  '评价审核',
+		      	text: '是否通过这条评价的审核？',
+		      	buttons: [
+			        {
+			          text: '取消',
+			          onClick: function() {
+			          }
+			        },
+			        {
+			          text: '不通过',
+			          onClick: function() {
+			            $.post("{php echo app_url('store/supervise/commentcheck')}",{orderid:orderid,checkone:3},function(d){
+							if(d.errno == 0){
+								$.alert('审核成功！', function () {
+						            location.href = "{php echo app_url('store/supervise/comment',array('checkone'=>$checkone,'replyone'=>$replyone))}";
+						        });
+							}else{
+								$.toast(d.message);
+							}
+						},"json");
+			          }
+			        },
+			        {
+			          text: '通过',
+			          bold: true,
+			          onClick: function() {
+			            $.post("{php echo app_url('store/supervise/commentcheck')}",{orderid:orderid,checkone:2},function(d){
+							if(d.errno == 0){
+								$.alert('审核成功！', function () {
+						            location.href = "{php echo app_url('store/supervise/comment',array('checkone'=>$checkone,'replyone'=>$replyone))}";
+						        });
+							}else{
+								$.toast(d.message);
+							}
+						},"json");
+			          }
+			        },
+			    ]
+		   	});
+		});
+		$.init();
+	});
+</script>
+<style type="text/css">
+	.stars {height: 1.6rem;}
+	.stars .star-item {width: 1rem;height: 1rem;margin-right: 1px;background-size: 1rem 1rem;margin-top: .3rem;}
+	.stars .star-item {display: inline-block;background-repeat: no-repeat;}
+	.stars .star-item.on {background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAdCAYAAAC9pNwMAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyhpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDY3IDc5LjE1Nzc0NywgMjAxNS8wMy8zMC0yMzo0MDo0MiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTUgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6NTRGNkRGNzA2QjgyMTFFNkFFQjVFRkIyNzZERjNFOEQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NTRGNkRGNzE2QjgyMTFFNkFFQjVFRkIyNzZERjNFOEQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo1NEY2REY2RTZCODIxMUU2QUVCNUVGQjI3NkRGM0U4RCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo1NEY2REY2RjZCODIxMUU2QUVCNUVGQjI3NkRGM0U4RCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PpQH5+oAAAHMSURBVHjaxJe/TgJBEMY5pVBrQAspiVpoAY2CxEJ7CxJDZbkJBVpowxvYQGJiI6WNIYRXIDERHsCOQKGxIIJUFKhB1283gyHk0Lu5O5zkxy7772N2Z+cOQ177uLanP4W840z2+/h2QiVLeI4pGgaHmqIRnqVwBswTGc4CBuOMF8AzCND3V70DQr557XF6TNRH9fQstjprsc1V4TiImrRHEWRxL4WzzD5HwhGQ+qU/Ba8jdqJ6G2UILIMg1UNUH7UF6epYsU/QJV6o7BCjto6fksENXRM3TP3AFWLTpF9du2O11WVwAHo+762ntYQsj864BnZAy0PRltYQsjYZXE26LnUPROt6bSGb06K6S9tecVG0Qtvb/es6DcARyLsgmtdrCTmw+jz+AufgEVwyEo2afwrBK24CKYIPhqfvNJeduaLM+704JadbFk46ON9dJ8IJB8KJ/xJme7w+8aYxbg90DEmqm1kAT6s1jrCZt31wBmLgnohRW9+O13M2tqoElAcFMPxpFXIICtRXsnpUVjxugH16oWtPHS1kG6RpbIPrsXoBWAU5sAWqlkNKyCrNyek1ikbIzl8YlQA2wBMrnoVU2e4Corcol8yGfAswAGyVaSErvYjsAAAAAElFTkSuQmCC);}
+	.stars .star-item.off {
+	    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAdCAYAAAC9pNwMAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyhpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDY3IDc5LjE1Nzc0NywgMjAxNS8wMy8zMC0yMzo0MDo0MiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTUgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MkMwOTcxNjk2QjgzMTFFNkFFQjVFRkIyNzZERjNFOEQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MkMwOTcxNkE2QjgzMTFFNkFFQjVFRkIyNzZERjNFOEQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDoyQzA5NzE2NzZCODMxMUU2QUVCNUVGQjI3NkRGM0U4RCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDoyQzA5NzE2ODZCODMxMUU2QUVCNUVGQjI3NkRGM0U4RCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pr/SWFMAAAG/SURBVHjaxJY/S8NAGIcbGyG1hXYIJt0sLqVkc1Jc/BSuTp38NrroorOItEK3iouoCIIURQdtt1qXYlU0YKv+XnkLIVza5JK0B08vufTyvPc/ytbOXkIy5elns7zxLFNZTcgni3Mp8YykNAMWiO3d/cwkxSWgMKVJiZOg6LgvotXJSYgXgea417gsdrHlsyxSsQF0QbmO7jbiFFuSz0KJs6Aw4nkBrc4G2UDmQcqFJrhWfDRiHfJf5F/A5tx9/Y/Km8EaL5MoEgU4x4jSAJxSlE1Q46jiTuSoYX9vDse4A6rgLUYpvbsKacc9uXqgAl5ikNI7K5D2vGa1zd3eilDa4u61xy2nPqiDRgRSekcd0r7f85iWxCV4Bys+lpKo/jmEd7IbyD34kWjpgOtK71y65PpWPfZ03+J8iPE1w4iNaYnNaYhzri8NZ+qCY6br8R8NB0ZO5vNWFPE3uAa3jtl+xGfxEpgVvOM1rPgJXIBPZyHWKgXQQOsekS+7vr9ojjwEFQ8nFkV8BtqjxgwBUEAnCIDW7yoPlRl0jOngT4MrcDhO6gqgzXWobhqBpIK0mMoPwIfMdObuv+HuFzr+BBgA06Z0wbQa03AAAAAASUVORK5CYII=);
+	}
+</style>
+{php include wl_template('common/footer');}

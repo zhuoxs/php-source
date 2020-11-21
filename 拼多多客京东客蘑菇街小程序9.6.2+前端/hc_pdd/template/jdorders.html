@@ -1,0 +1,156 @@
+{template 'common/header'}
+<style>
+    .mathyts{
+        overflow:hidden;
+      
+    }
+    .mathyts span{
+        float:left;
+        line-height:36px;
+    }
+    .form-control_s{
+        float:right;
+        width:60%;
+    }
+</style>
+<div class="clearfix">
+<ul class="nav nav-tabs">
+    <li><a href="{php echo $this->createWebUrl('orders')}">拼多多订单</a></li>
+    <li><a href="{php echo $this->createWebUrl('moguorders')}">蘑菇街订单</a></li>
+    <li class="active"><a href="{php echo $this->createWebUrl('jdorders')}">京东订单</a></li>
+</ul>
+<div class="panel">
+<div class="panel panel-default">
+        <div class="panel-heading">同步</div>
+        <div class="panel-body">
+            <form action="" method="post" class="form-horizontal" role="form" id="form1">
+                <div class="form-group">                 
+                    <div class="col-md-4 mathyts" >
+                        <label class="col-xs-6 col-sm-3 col-md-3 control-label">订单更新时间</label>
+                        <div class="col-sm-6 col-xs-6">
+                             {php echo tpl_form_field_date('starttime',$info['starttime'], $withtime = false);}
+                        </div>                  
+                    </div>                              
+                    <div class="col-md-4 mathyts">
+                        <input type="hidden" name="act" value="refresh">
+                        <button type="submit" class="btn btn-primary"><i class="fa fa-refresh"></i>同步京东订单</button>
+                    </div>
+                    <div class="col-md-3 mathyts ">
+                    <a href="{php echo $this->createWebUrl('sendjdmoney')}" class="btn btn-primary btn-sm" data-toggle="tooltip" data-placement="top" title="" data-original-title="发放京东佣金到用户账户"><i class="fa fa-send"></i>发放京东佣金到用户账户</a>
+                    </div>
+                </div>
+                <div class="form-group">                 
+                    <span style="color:red;">每天同步一次前一日的订单。比如今天是9月2日。则订单更新时间选择9月1日，点击同步京东订单。如果想要同步今日订单，则订单更新时间选择9月2日，点击同步。</span>
+                </div>
+            </form>
+        </div>
+        <div class="panel-body">
+            <div class="tab-content">
+                <div class="tab-pane active">
+                    <div class=". form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">订单同步定时任务</label>
+                        <div class="col-xs-12 col-sm-8 col-lg-7">
+                            <span class="label label-success">{$url}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+</div>
+<div class="panel panel-default">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="" method="get" class="form-horizontal" role="form" id="form1">
+                <input type="hidden" name="c" value="site">
+                <input type="hidden" name="a" value="entry">
+                <input type="hidden" name="m" value="hc_pdd">
+                <input type="hidden" name="do" value="jdorders">
+                <div class="form-group">                 
+                    <div class="col-md-4 mathyts" >
+                        <span>订单状态:</span>
+                        <select  name="order_status" class="form-control form-control_s" >                        
+                            <option value="" {if empty($order_status)}selected{/if}>所有</option>
+                            <option value="3" {if $order_status==3}selected{/if}>无效订单</option>
+                            <option value="16" {if $order_status==16}selected{/if}>已支付</option>
+                            <option value="17" {if $order_status==17}selected{/if}>已完成</option>
+                            <option value="18" {if $order_status==18}selected{/if}>已结算</option>
+                            <option value="66" {if $order_status==66}selected{/if}>已发放</option>
+                        </select>
+                    </div>                
+                    <div class="col-md-4 mathyts ">
+                    <span>推广位ID:</span>
+                          <input type="text" class="form-control form-control_s" name="positionId" id="positionId" value="{$positionId}">
+                    </div>
+                    <div class="pull-right col-md-2">
+                        <input type="hidden" name="act" value="so">
+                        <button type="submit" class="btn btn-default"><i class="fa fa-search"></i>搜索</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+</div>
+<div class="panel panel-default">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th class="text-center" style="width:9%;">创建时间 </th>
+                <th class="text-center" style="width:9%;">推广位id</th>
+                <th class="text-center" style="width:9%;">推广人</th>
+                <th class="text-center" style="width:9%;">商品信息</th>
+                <!-- <th class="text-center" style="width:9%;">商品图</th> -->
+                <th class="text-center" style="width:9%;">订单状态 </th>
+                <th class="text-center" style="width:9%;">付款金额</th>
+                <th class="text-center" style="width:9%;">佣金比例</th>
+                <th class="text-center" style="width:9%;">预估佣金</th>
+                <th class="text-center" style="width:9%;">佣金类型</th>
+                <th class="text-center" style="width:9%;">用户佣金</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $result $index $item}
+            <tr>
+                <td class="text-center">{$item['orderTime']}</td>
+                <td class="text-center">
+                {$item['positionId']}
+                </td>
+                <td class="text-center">
+                    {if $item['positionId'] == 0}
+                    平台推广
+                    {else}
+                    {$item['nick_name']}
+                    {/if}    
+                </td>
+                <td>{$item['skuList']['skuName']}</td>
+                <!-- <td class="text-center"><img class="scrollLoading" src="{$item['products'][0]['productUrl']}" data-url="{$item['products'][0]['productUrl']}"  height="50" width="50"></td> -->
+                <td class="text-center">{$item['validCode']}</td>
+                <td class="text-center">{$item['skuList']['estimateCosPrice']}</td>
+                <td class="text-center">{$item['skuList']['commissionRate']}%</td>
+                <td class="text-center">{$item['skuList']['estimateFee']}</td>
+                {if $item['is_daili'] == 0}
+                <td class="text-center">用户订单</td>
+                {/if}
+                {if $item['is_daili'] == 1}
+                <td class="text-center">代理订单</td>
+                {/if}
+                {if $item['is_daili'] == 2}
+                <td class="text-center">总监订单</td>
+                {/if}
+                <td class="text-center">{$item['commission']}</td>
+            </tr>           
+            {/loop}
+            {if empty($result) }
+            <tr ng-if="!wechats">
+            <td colspan="11" class="text-center">暂无数据</td>
+            </tr>
+            {/if}
+            <tr>
+                <td colspan="11" style="text-align:right">{$page}</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+</div>
+{template 'common/footer'}

@@ -1,0 +1,293 @@
+{template 'weui/header'}
+<input type="hidden" id="opensound" value="{$setting['opensound']}">
+<input type="hidden" id="mustsound" value="{$setting['mustsound']}">
+<input type="hidden" id="openvideo" value="{$setting['openvideo']}">
+<input type="hidden" id="mustvideo" value="{$setting['mustvideo']}">
+<div class="xiaof-header">
+
+</div>
+
+<div class="xiaof-panel">
+	<form id="join-form">
+		<input type="hidden" name="token" value="{$_W['token']}"/>
+		<input type="hidden" name="pid" value="{$item['id']}"/>
+		<input type="hidden" name="lng" id="lng" value=""/>
+		<input type="hidden" name="lat" id="lat" value=""/>
+
+        <!--添加抖音视频时储存视频地址sign-->
+        <input type="hidden" id="video_url" name="video_url" value="{$item['videourl']}"/>
+        <input type="hidden" id="originaurl" name="originaurl" value="{$item['originaurl']}"/>
+        <input type="hidden" id="title" name="title" value="{$item['title']}"/>
+
+		<div class="weui-cells__title">报名信息</div>
+		<div class="weui-cells weui-cells_form">
+			<div class="weui-cell">
+				<div class="weui-cell__hd"><label class="weui-label">{if empty($setting['joinname'])}名称{else}{$setting['joinname']}{/if}</label></div>
+				<div class="weui-cell__bd">
+					<input class="weui-input" type="text" name="name" value="{$item['name']}" {if isset($item['id'])}disabled="disabled"{/if} placeholder="请输入{if empty($setting['joinname'])}名称{else}{$setting['joinname']}{/if}">
+				</div>
+			</div>
+			{if empty($setting['joinphone'])}
+			<div class="weui-cell">
+				<div class="weui-cell__hd"><label class="weui-label">手机号</label></div>
+				<div class="weui-cell__bd">
+					<input class="weui-input" type="tel" name="phone" id="phone" value="{$item['phone']}" {if isset($item['id'])}disabled="disabled"{/if} placeholder="请输入手机号">
+				</div>
+			</div>
+			{/if}
+			{if $setting['opengroups'] >= 1}
+			<div class="weui-cell weui-cell_select weui-cell_select-after">
+				<div class="weui-cell__hd">
+					<label for="" class="weui-label">分组</label>
+				</div>
+				<div class="weui-cell__bd">
+					<select class="weui-select" name="groups" {if isset($item['id'])}disabled="disabled"{/if}>
+						{loop $setting['groups'] $groupid $groupitem}
+						<option {if $groupid == $item['groups']} selected{/if} value="{$groupid}">{$groupitem['name']}</option>
+						{/loop}
+					</select>
+				</div>
+			</div>
+			{/if}
+			{loop $setting['joinfield'] $joinfielditem}
+			<div class="weui-cell">
+				<div class="weui-cell__hd"><label class="weui-label">{$joinfielditem['name']}</label></div>
+				<div class="weui-cell__bd">
+					<input class="weui-input" type="text" name="{$joinfielditem['sign']}" value="{$item['data'][$joinfielditem['sign']]}" placeholder="{if empty($joinfielditem['isnull'])}必填{/if}">
+				</div>
+			</div>
+			{/loop}
+		</div>
+
+		<div class="weui-cells weui-cells_form">
+			<div class="weui-cell">
+				<div class="weui-cell__bd">
+					<div class="weui-uploader">
+						<div class="weui-uploader__hd">
+							<p class="weui-uploader__title">图片上传{if $setting['douyinlinkjoin'] >= 1}(选填){/if}</p>
+							<div class="weui-uploader__info">允许{if empty($setting['limitpic'])}5{else}{$setting['limitpic']}{/if}张</div>
+						</div>
+						<div class="weui-uploader__bd">
+							<ul class="weui-uploader__files" id="pic-container">
+								{loop $lists $picitem}
+								<li class='picid weui-uploader__file' onclick="$(this).remove();"><div class='pic-close'>x</div><input type="hidden" name="pics[]" value="{$picitem['url']}"/><img src="{php echo tomedia($picitem['thumb']);}"/></li>
+								{/loop}
+							</ul>
+							<div class="weui-uploader__input-box">
+								{if $setting['openwildcarddomain'] == 1}
+								<input class="weui-uploader__input" type="file" id="imagefile" name="imagefile[]" accept="image/*" multiple="true" onchange="$.xiaof.imageUpload(this.value)">
+								{else}
+								<span class="weui-uploader__input" id="filepicker"></span>
+								<script type="text/javascript">
+                                    $.xiaof.imageWechatupload();
+                                </script>
+								{/if}
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		{if $setting['openvideo'] >= 1}
+		<div class="weui-cells weui-cells_form">
+			<div class="weui-cell">
+				<div class="weui-cell__bd">
+					<div class="weui-uploader">
+						<div class="weui-uploader__hd">
+							<p class="weui-uploader__title">视频上传</p>
+						</div>
+						<div class="weui-uploader__bd">
+							<input type='hidden' name='video' id="video-input" value='{$item['video']}'/>
+							<ul class="weui-uploader__files" id="video-container">
+								{if !empty($item['video'])}
+								<li class='picid weui-uploader__file'>
+									<video width="77" height="77" class="picid" id="video-play" controls autobuffer poster="{$item['video']}?vframe/jpg/offset/0|imageView2/1/w/77">
+										<source src="{$item['video']}" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'></source>
+									</video>
+								</li>
+								{/if}
+							</ul>
+                            <div class="video_continer" style="float: left; position: relative; margin-right: 9px; margin-bottom: 9px; width: 77px; height: 77px; border: 1px solid #d9d9d9; background-image: url('{MODULE_URL}template/mobile/images/upload.png'); background-size: 100% 100%; text-align: center; line-height: 77px; vertical-align: middle; font-size: 12px; display: none">
+                                <div>等待上传</div>
+                                <a href="javascript:;" onclick="$(this).parent().css('display','none'); $('.video-tips').html('');" class="fa fa-times-circle" title="删除该视频" style="position: absolute; right: 0px; top: 0px; color: red; font-size: 14px;"></a>
+                            </div>
+							<div class="weui-uploader__input-box">
+								<input class="weui-uploader__input" type="file" value="{$item['video']}" autocomplete="off" id="videofile" name="videofile" accept="video/*" onchange="$.xiaof.videoChange(this.value)">
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="weui-cells__tips video-tips"></div>
+		{/if}
+
+        {if $setting['douyinlinkjoin'] >= 1}
+        <div class="weui-cells__title">拍摄视频抖音链接</div>
+        <div class="weui-cells weui-cells_form">
+            <div class="weui-cell">
+                <div class="weui-cell__bd">
+                    <textarea class="weui-textarea" name="videourl" id="videourl" placeholder="请输入拍摄视频抖音链接" rows="3">{$item['videourl']}</textarea>
+                </div>
+            </div>
+        </div>
+        {/if}
+
+		{if $setting['opensound'] >= 1}
+		<div class="weui-cells weui-cells_form">
+			<div class="weui-cell">
+				<div class="weui-cell__bd">
+					<div class="weui-uploader">
+						<div class="weui-uploader__hd">
+							<p class="weui-uploader__title">录音</p>
+							<div class="weui-uploader__info sound-info">允许60秒</div>
+						</div>
+						<div class="weui-uploader__bd sound-box clearfix">
+							<div id="sound-container">
+								{if !empty($item['sound'])}
+								<input type='hidden' name='sound' value="{$item['sound']}"/>
+								{/if}
+							</div>
+							<div class="sound-tips fn-left">
+								<div id="sound-show">
+									<span></span>
+									<span></span>
+									<span></span>
+									<span></span>
+									<span></span>
+								</div>
+							</div>
+							<div class="sound-opt fn-left">
+								<div class="sound-play fn-left">
+									<i class="fa fa-play-circle-o"></i><br/>播放
+								</div>
+								<div class="sound-start fn-left">
+									<i class="fa fa-dot-circle-o"></i><br/>{if !empty($item['sound'])}重录{else}录音{/if}
+								</div>
+							</div>
+
+						</div>
+					</div>
+					<script type="text/javascript">
+                        $.xiaof.registerSoundupload(".sound-start");
+                        {if !empty($item['sound'])}
+						$(function(){
+                            $(".sound-play").show();
+                            var audio;
+                            $(".sound-play").click(function(){
+                                if($('#media').length <= 0){
+                                    var audioSrc = "{$item['sound']}";
+                                    $("body").append('<audio id="media" preload="auto" src="'+audioSrc+'" loop></audio>');
+                                    audio = $('#media');
+                                }
+                                if($(this).hasClass("off")){
+                                    $(this).removeClass("off");
+                                    audio[0].play();
+                                    $(".sound-tips").show();
+                                }else{
+                                    $(this).addClass("off");
+                                    audio[0].pause();
+                                    $(".sound-tips").hide();
+                                }
+                            });
+						})
+                        {/if}
+					</script>
+				</div>
+			</div>
+		</div>
+		{/if}
+
+		<div class="weui-cells__title">{if empty($setting['joindescribe'])}介绍{else}{$setting['joindescribe']}{/if}</div>
+		<div class="weui-cells weui-cells_form">
+			<div class="weui-cell">
+				<div class="weui-cell__bd">
+					<textarea class="weui-textarea" name="describe" placeholder="您的{if empty($setting['joindescribe'])}介绍{else}{$setting['joindescribe']}{/if}" rows="3">{$item['describe']}</textarea>
+				</div>
+			</div>
+		</div>
+	</form>
+	<div class="weui-btn-area">
+		<a class="weui-btn weui-btn_primary" href="javascript:" id="form-submit">确定</a>
+		{if !empty($setting['joinfee']) && !empty($myid) && empty($item['entryfee'])}<a href="javascript:" onclick="feetips()" class="weui-btn weui-btn_primary">支付报名费用</a>{/if}
+	</div>
+</div>
+{template 'weui/footer'}
+<script type="text/javascript" src="{MODULE_URL}template/mobile/weui/js/ajaxfileupload.js"></script>
+<script type="text/javascript">
+    $(document).ready(function(){
+        console.log('11111');
+        var videourl = '#在抖音，记录美好生活#复古版传奇手游上线了，电脑1:1移植优化，跟电脑版一模一样! http://v.douyin.com/AVxwyx/ 复制此链接，打开【抖音短视频】，直接观看视频！\n';
+        if(videourl.indexOf("https") >= '0'){
+            var attr = videourl.split('https://');
+        }else{
+            var attr = videourl.split('http://');
+        }
+        var attr2 = attr[1].split('/');
+        var url = 'http://' + attr2[0] + '/' + attr2[1] + '/';
+        console.log(url);
+        $.ajax({
+            url: 'https://api.toubiec.cn/douy',
+            type: "post",
+            data: 'url=' + videourl,
+            dataType: "json",
+            success: function (data) {
+                console.log('11111');
+
+                console.log(data['data']);
+
+            }
+        });
+        console.log('22222');
+
+
+
+        {if $setting['joinfollow'] == 1}
+        $.post(window.sysinfo.siteroot + "app/index.php?c=entry&do=join&m=xiaof_toupiao&isajax=yes&i=" + window.sysinfo.uniacid, '', function (data) {
+            var result = new Function('return' + data)();
+            if (result.errno == 0) {
+
+            } else if (result.errno == 109) {
+                feetips();
+            } else {
+                $.alert(result.message, tips);
+                //tempPicUrls = picUrls;
+            }
+        });
+        {/if}
+    });
+	function feetips(){
+        $.modal({
+            title: tips,
+            text: '资料上传成功，报名费¥{$setting['joinfee']}<br/>支付后提交报名',
+            buttons: [
+                { text: "取消", className: "default", onClick: function(){$.closeModal();}},
+                { text: "支付", onClick: function(){
+                    window.location.href = "{php echo $this->payUrl('paycheck', $setting['joinfee'], array('action'=>2));}";
+                }}
+            ]
+        });
+    }
+    $(function () {
+    {if $setting == false}
+        $.alert("没有找到该活动");
+    {elseif time() <= strtotime($setting['joinstart'])}
+        $.alert("活动报名未开始，请开始后再参加，开始时间{$setting['joinstart']}");
+    {elseif time() >= strtotime($setting['joinend'])}
+        $.alert("活动报名已结束，敬请期待下次活动");
+    {elseif $setting['openwapjoin'] == 1}
+        $.alert('<p style="text-align:center;">已禁止网页报名！</p>');
+    {elseif $_W['container'] !== 'wechat'}
+        $.alert("活动只允许在微信上报名参加，请在微信上打开本页面");
+    {elseif $setting['joinfollow'] == 1 && !$this->checkFollow()}
+        $("#form-submit").click(function(){
+            $.alert('{if !empty($setting['followjointext'])}<p style="text-align:center;">{$setting['followjointext']}</p>{/if}{$accountqrcode}');
+        });
+        $("#form-submit").click();
+    {else}
+        $.xiaof.registerJoin({if !empty($setting['joinjumplink'])}"{$setting['joinjumplink']}"{else}{if !empty($setting['joinjump'])}"{php echo self::appUrl($setting['joinjump'])}"{else}false{/if}{/if}, {if empty($setting['limitpic'])}5{else}{$setting['limitpic']}{/if}, {if empty($setting['joinphone'])}true{else}false{/if});
+    {/if}
+	{if !empty($setting['joinfee']) && !empty($myid) && empty($item['entryfee'])}feetips();{/if}
+    });
+</script>

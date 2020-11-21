@@ -1,0 +1,216 @@
+{template 'weui/header'}
+<link rel="stylesheet" type="text/css" href="{MODULE_URL}template/mobile/weui/css/swiper.min.css"/>
+{if !empty($setting['indexlisttype'])}<style>.grid .grid-item{width: 100%;}</style>{/if}
+<style>
+{if empty($setting['picdescribe'])}.pic-describe{display: none;}{/if}
+</style
+<div class="xiaof-header">
+	<div class="head-banner">
+		{if is_array($setting['thumb'])}
+		{if count($setting['thumb']) <=1}
+		<a href="{php echo trim($setting['thumblinkarr'][0]);}"><img src="{php echo tomedia(reset($setting['thumb']))}"></a>
+		{else}
+		<div class="swiper-container">
+			<div class="swiper-wrapper">
+				{php $ti = 0;}
+				{loop $setting['thumb'] $k $thumbitem}
+                <div class="swiper-slide">
+                    {if !empty($setting['todaystar'])}
+                    {if $k+1 == count($setting['thumb'])}
+                    <div class="starsigndiv">
+                        <div class="starsign">今日之星</div>
+                    </div>
+                    {/if}
+                    {/if}
+                    <a href="{php echo trim($setting['thumblinkarr'][$ti]);}"><img src="{php echo tomedia($thumbitem);}"></a></div>
+				{php $ti++;}
+				{/loop}
+			</div>
+			<div class="swiper-pagination"></div>
+		</div>
+		<script>
+			$(function(){
+                new Swiper('.swiper-container', {
+                    pagination: '.swiper-pagination',
+                    paginationClickable: true,
+                    autoplay: {if $setting['thumbsecond']}{$setting['thumbsecond']}*1000{else}3000{/if}
+                });
+			})
+		</script>
+		{/if}
+		{else}
+		<img src="{php echo tomedia($setting['thumb'])}">
+		{/if}
+	</div>
+    {if empty($setting['openacvititydata'])}
+	<div class="xiaof-navbar xiaof-box">
+		<span class="xiaof-box-item">
+			<i class="fa fa-user"></i>参与选手<br>
+			{$good}
+		</span>
+		<span class="xiaof-box-item">
+			<i class="fa fa-thumbs-up"></i>累计{$setting['xiaofvotekeys']}<br/>
+			{$shares}
+		</span>
+		<span class="xiaof-box-item">
+			<i class="fa fa-fire"></i>访问量<br/>
+			{$click}
+		</span>
+	</div>
+    {/if}
+</div>
+
+{if empty($setting['openwapjoin'])}
+<div class="wrapper xiaof-margin-top8">
+	{if self::checkjoin()}
+	<a class="weui-btn weui-btn_primary wechat-pay" href="{php echo self::appUrl('show');}">我的报名</a>
+	{else}
+	<a class="weui-btn weui-btn_primary wechat-pay" href="{php echo self::appUrl('join');}">我要报名</a>
+	{/if}
+</div>
+{/if}
+
+<div class="xiaof-panel" id="pic-container">
+	<div class="index-title wrapper">
+		<!--<h3>{$setting['title']}</h3>-->
+		{if isset($_GPC['groups'])}<h5>{$setting['groups'][$_GPC['groups']]['name']}</h5>{/if}
+	</div>
+    <div class="index-enditme">
+        开始时间：{$setting['start']}&nbsp;
+        结束时间：{php echo date('Y-m-d H:i:s', strtotime($setting['end'])+$setting['overtime'])}
+    </div>
+	<div class="index-enditme">
+		活动结束倒计时：<span id="shower" class="index-shower"></span>
+		<script type="text/javascript">
+            {if strtotime($setting['end'])-time()>=1 || $setting['overtime'] > 0}
+            {if strtotime($setting['end'])-time()>=1}
+            var ti = {php echo strtotime($setting['end'])-time();};
+            {else if strtotime($setting['end'])-time()<=1 && $setting['overtime'] > 0}
+            var ti = {php echo strtotime($setting['end'])+$setting['overtime']-time()};
+            {/if}
+                function showtime(){
+                    var d = parseInt(ti/3600/24);
+                    var h = parseInt((ti%(3600*24))/3600);
+                    var m = parseInt((ti%(3600*24))%3600/60);
+                    var s = parseInt((ti%(3600*24))%60);
+                    if(ti == 0){
+                        window.clearInterval(timeset);
+                        window.location.reload();
+                    }
+                    document.getElementById('shower').innerHTML = '<span class="times">'+d+' 天</span><span class="times">'+ h+' 时</span><span class="times">'+m+' 分</span><span class="times">'+s+' 秒</span>';
+                    ti = ti -1;
+                }
+                if(ti > 0){
+                    showtime();
+                    var timeset = setInterval("showtime()",1000);
+                }
+                {else}
+                document.getElementById('shower').innerHTML = '已结束';
+                {/if}
+		</script>
+	</div>
+
+	<div class="weui-search-bar index-search" id="searchBar">
+		<form class="weui-search-bar__form" onsubmit="return false;">
+			<div class="weui-search-bar__box">
+				<i class="weui-icon-search"></i>
+				<input type="search" class="weui-search-bar__input" id="searchInput" placeholder="搜索 编号/名称" required="">
+				<a href="javascript:" class="weui-icon-clear" id="searchClear"></a>
+			</div>
+			<label class="weui-search-bar__label" id="searchText">
+				<i class="weui-icon-search"></i>
+				<span>搜索 编号/名称</span>
+			</label>
+		</form>
+		<a href="javascript:" class="weui-search-bar__cancel-btn" id="searchCancel">取消</a>
+	</div>
+
+	<div class="weui-cells search-result">
+	</div>
+
+	<div id="container" class="clearfix">
+		<div class="grid clearfix" id="grid-container">
+			{loop $lists $item}
+			<div class="grid-item">
+				<div class="pic-box">
+					<span class="uid">{$item['uid']}号</span>
+					<a class="pic-a" href="{php echo self::appUrl('show','xiaof_toupiao','&id='.$item['id'].'');}">
+
+						<div class="multimedia">
+							{if !empty($setting['opengiving']) && in_array('indexuser', $setting['givingshow'])}
+							<i class="fa fa-gift"></i>{php echo $this->getGivingvalue($item['id']);}
+							{/if}
+							{if $setting['openvideo'] >= 1 && !empty($item['video'])}
+							<i class="fa fa-video-camera"></i>
+							{/if}
+							{if $setting['opensound'] >= 1 && !empty($item['sound'])}
+							<i class="fa fa-volume-up"></i>
+							{/if}
+						</div>
+
+						<img class="item-thumb" src="{php echo tomedia($item['pic']);}" alt=""/>
+						{if !empty($item['describe'])}
+						<div class="pic-describe">
+							{$item['describe']}
+						</div>
+						{/if}
+					</a>
+					<div class="pic-info">
+						<span class="ballot"><span class="name">{$item['name']}</span>&nbsp;&nbsp;<span class="good-num">{$item['good']}</span>{$setting['xiaofvotekey']}</span>
+						{if empty($setting['jumpplayer'])}
+						<div class="vote votes" data-id="{$item['id']}">{$setting['xiaofvotekeys']}</div>
+						{else}
+						<a class="vote" data-id="{$item['id']}" href="{php echo self::appUrl('show','xiaof_toupiao','&id='.$item['id'].'');}">{$setting['xiaofvotekeys']}</a>
+						{/if}
+					</div>
+				</div>
+			</div>
+			{/loop}
+		</div>
+
+	</div>
+
+	<div class="weui-loadmore weui-loadmore_start">
+		<i class="weui-loading"></i>
+		<span class="weui-loadmore__tips">正在加载</span>
+	</div>
+	<div class="weui-loadmore weui-loadmore_line">
+		<span class="weui-loadmore__tips">没有更多</span>
+	</div>
+</div>
+
+<!--展示活动介绍-->
+{if !empty($setting['indexshowdetail'])}
+{if !empty($detailitem['detail'])}
+<div class="weui-panel weui-panel_access">
+    <div class="weui-panel__hd">活动介绍</div>
+    <div class="weui-panel__bd">
+        <div class="weui-media-box weui-media-box_appmsg">
+            <div class="weui-media-box__bd">
+                <p class="weui-media-box__desc">{php echo htmlspecialchars_decode($detailitem['detail']);}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{/if}
+{/if}
+
+<script type="text/javascript" src="{MODULE_URL}template/mobile/weui/js/swiper.jquery.min.js"></script>
+<script type="text/javascript" src="{MODULE_URL}template/mobile/weui/js/masonry.pkgd.min.js"></script>
+<script type="text/javascript" src="{MODULE_URL}template/mobile/weui/js/imagesloaded.min.js"></script>
+{if !empty($setting['verifycode'])}
+<script src="{MODULE_URL}template/mobile/js/gt.js"></script>
+{/if}
+<script type="text/javascript">
+	$(function(){
+        $.xiaof.searchUser('show');
+        $.xiaof.registerLoadpic("{$_GPC['type']}", "{$_GPC['groups']}");
+        $.xiaof.registerVote(".votes", "bind", {if !empty($setting['verifycode'])}true{else}false{/if});
+            {if !empty($setting['audio'])}
+            var audioSrc = "{php echo tomedia($setting['audio'])}";
+            eval(function(p,a,c,k,e,d){e=function(c){return(c<a?"":e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--)d[e(c)]=k[c]||e(c);k=[function(e){return d[e]}];e=function(){return'\\w+'};c=1;};while(c--)if(k[c])p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c]);return p;}('F i$=["\\A\\e\\b\\j",\'\\z\\b\\c\\r\\o\\v\\f\\a\\d\\d\\p\\h\\r\\c\\b\\g\\e\\w\\g\\J\\c\\d\\m\\o\\l\\f\\a\\j\\w\\j\\c\\q\\n\\k\\h\\o\\c\\b\\p\\h\\a\\k\\b\\c\\e\\w\\A\\m\\q\\h\\o\\d\\m\\j\\f\\g\\p\\h\\b\\c\\d\\l\\f\\a\\j\\K\\o\\A\\f\\e\\v\\E\\I\\h\\y\\z\\b\\c\\r\\o\\c\\b\\p\\h\\j\\c\\q\\n\\k\\h\\o\\v\\f\\a\\d\\d\\p\\h\\s\\e\\m\\a\\m\\g\\h\\y\\z\\B\\b\\c\\r\\y\\z\\a\\k\\b\\c\\e\\o\\l\\s\\g\\f\\e\\a\\b\\p\\h\\a\\k\\m\\e\\h\\o\\a\\k\\m\\e\\l\\f\\a\\j\\p\\h\\a\\k\\m\\e\\l\\f\\a\\j\\h\\o\\c\\b\\p\\h\\u\\g\\b\\c\\a\\h\\o\\d\\s\\v\\p\\h\',\'\\h\\o\\f\\e\\e\\l\\y\\z\\B\\a\\k\\b\\c\\e\\y\\z\\B\\b\\c\\r\\y\',\'\\x\\u\\g\\b\\c\\a\',"\\x\\a\\k\\b\\c\\e\\w\\A\\m\\q","\\e\\n\\n","\\l\\f\\a\\j\\w\\j\\c\\q\\n\\k","\\e\\n\\n","\\x\\j\\c\\q\\n\\k","\\s\\e\\m\\a\\m\\g","\\x\\u\\g\\b\\c\\a","\\e\\n\\n","\\l\\f\\a\\j\\w\\j\\c\\q\\n\\k","\\x\\j\\c\\q\\n\\k","\\s\\e\\m\\a\\m\\g","\\x\\u\\g\\b\\c\\a"];$(i$[0])["\\a\\l\\l\\g\\q\\b"](i$[1]+H+i$[2]);F G=$(i$[3]);G[C]["\\l\\f\\a\\j"]();$(i$[4])["\\v\\f\\c\\v\\E"](M(){$(D)["\\L\\a\\d\\t\\f\\a\\d\\d"](i$[5])?($(D)["\\a\\b\\b\\t\\f\\a\\d\\d"](i$[6])["\\s\\g\\u\\e\\r\\g\\t\\f\\a\\d\\d"](i$[7]),$(i$[8])["\\a\\b\\b\\t\\f\\a\\d\\d"](i$[9]),$(i$[N])[C]["\\l\\f\\a\\j"]()):($(D)["\\a\\b\\b\\t\\f\\a\\d\\d"](i$[O])["\\s\\g\\u\\e\\r\\g\\t\\f\\a\\d\\d"](i$[P]),$(i$[S])["\\s\\g\\u\\e\\r\\g\\t\\f\\a\\d\\d"](i$[R]),$(i$[Q])[C]["\\l\\a\\k\\d\\g"]())});',55,55,'||||||||||x61|x64|x69|x73|x6f|x6c|x65|x22|_|x79|x75|x70|x74|x66|x20|x3d|x6e|x76|x72|x43|x6d|x63|x5f|x23|x3e|x3c|x62|x2f|0x0|this|x6b|var|xiaof_9bbbb|audioSrc|x3b|x78|x3a|x68|function|10|11|12|15|14|13'.split('|'),0,{}))
+            {/if}
+	});
+    {if $setting['audio'] != ""}wx.ready(function(){document.getElementById('media').play();});{/if}
+</script>
+{template 'weui/footer'}

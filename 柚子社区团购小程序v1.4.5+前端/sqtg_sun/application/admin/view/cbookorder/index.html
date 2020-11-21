@@ -1,0 +1,294 @@
+{extend name="common/index" /}
+{block name="search_box"}
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入姓名..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="type" id="type" style="width: 200px;" class="select2" lay-ignore>
+            </select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+{/block}
+
+<!--数据表-操作列-->
+
+{block name="tool_template"}
+<!--
+<script type="text/html" id="dataTool">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnEdit">详情</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDelete">发货</a>
+</script>-->
+{/block}
+
+
+{block name="tool_box"}
+<!--工具栏-->
+<!--<div class="tool-box">
+    <!-- <div class="layui-btn-group">
+        <a href="javascript:;" id="btnAdd" class="layui-btn layui-btn-primary layui-btn-sm">新增</a>
+        <a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchEnable" class="layui-btn layui-btn-primary layui-btn-sm">启用</a>
+        <a href="javascript:;" id="btnBatchUnEnable" class="layui-btn layui-btn-primary layui-btn-sm">禁用</a>
+    </div>
+
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchHot" class="layui-btn layui-btn-primary layui-btn-sm">推荐</a>
+        <a href="javascript:;" id="btnBatchUnHot" class="layui-btn layui-btn-primary layui-btn-sm">取消推荐</a>
+    </div>
+
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnShowIndexenable" class="layui-btn layui-btn-primary layui-btn-sm">首页推荐</a>
+        <a href="javascript:;" id="btnShowIndexdisable" class="layui-btn layui-btn-primary layui-btn-sm">取消推荐</a>
+    </div>
+</div>
+{/block}-->
+{block name="table_config"}
+<script type="text/html" id="dataShowIndex">
+    <input type="checkbox" name="show_index" value="{{d.id}}" lay-skin="switch" lay-text="是|否" lay-filter="show_index" {{ d.show_index == 1 ? 'checked' : '' }}>
+</script>
+
+<script type="text/html" id="dataTools">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnDetail">详情</a>
+    {{# if(d.order_status ==1 ){ }}
+    <!--  <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnFahuo">发货</a>
+      <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnFahuo">发货</a>-->
+    {{# } }}
+
+    {{# if(d.order_status ==5&&(d.review_status==0||d.refund_status==2)&&d.refund_status!=1 ){ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnRefund">退款</a>
+    {{# } }}
+</script>
+
+<script>
+    layui.use(['table','form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_list')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'orderformid', width:180, title: '订单号',fixed:'left',sort:true},
+                {field:'order_amount', width:180, title: '订单金额',sort:true},
+                {field:'book_name', width:250, title: '预约姓名',sort:false},
+                {field:'book_phone', width:250, title: '预约电话',sort:false},
+                {field:'book_time', width:250, title: '预约时间',sort:false},
+                {field:'book_shop', width:250, title: '预约门店',sort:false},
+                {field:'goods', width:180,height:500, title: '商品名称',sort:false},
+                {field:'order_status_z', width:180, title: '订单状态',sort:false},
+                {field:'pay_status_z', width:180, title: '支付状态',sort:false},
+                {field:'pay_type_z', width:180, title: '支付方式',sort:false},
+                {field:'pay_time_d', width:180, title: '支付时间',sort:false},
+                {field:'o',fixed:'right',width:200, title: '操作',templet: '#dataTools'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+        //        搜索
+        $('#btnSearch').unbind('click').click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    type: $('#type').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        parent_id: $('#parent_id').val(),
+                    }
+                });
+            }
+        })
+        //监听启用状态切换操作
+        form.on('switch(show_index)', function(obj){
+            if (obj.elem.checked){
+                var url = "{:adminurl('showindexenable')}";
+                var msg = "是";
+            }else{
+                var url = "{:adminurl('showindexdisable')}";
+                var msg = "否";
+            }
+            $.post(url, {ids:obj.value}, function(data){
+                if (typeof data == 'string'){
+                    data = $.parseJSON(data);
+                }
+                if (data.code == 0) {
+                    layer.msg(msg+'成功',{icon: 6,anim: 6});
+                    // table.reload('laytable',{});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        });
+        //首页推荐
+        $('#btnShowIndexenable').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                var url = "{:adminurl('showindexenable')}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('启用成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+        //商品详情
+        $(document).on('click','.btnDetail',function(e){
+            var id = $(this).data('id')
+            var index = layer.open({
+                type: 2,
+                title: '详情',
+                shadeClose: true,
+                shade: false,
+                maxmin: true, //开启最大化最小化按钮
+                area: ['893px', '600px'],
+                content: "{:adminurl('detail')}&id="+id,
+            });
+            layer.full(index);
+            return false;
+        })
+        $(document).on('click','.btnRefund',function(e){
+            var id = $(this).data('id')
+            var index = layer.open({
+                type: 2,
+                title: '售后退款',
+                shadeClose: true,
+                shade: false,
+                maxmin: true, //开启最大化最小化按钮
+                area: ['893px', '600px'],
+                content: "{:adminurl('refund')}&id="+id,
+            });
+            layer.full(index);
+            return false;
+        })
+        // 发货
+        $(document).on('click','.btnFahuo',function(e){
+            var id = $(this).data('id')
+            var index = layer.open({
+                type: 2,
+                title: '发货',
+                shadeClose: true,
+                shade: false,
+                maxmin: true, //开启最大化最小化按钮
+                area: ['893px', '600px'],
+                content: "{:adminurl('fahuo')}&id="+id,
+            });
+            layer.full(index);
+            return false;
+            /*
+            var id = $(this).data('id')
+            layer.confirm('确认发货', {
+                btn: ['确定','取消'] //按钮
+            }, function(){
+                var url = "{:adminurl('fahuo')}";
+                $.post(url, {ids:id}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('发货成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            });
+            return false;*/
+        })
+
+        //取消推荐
+        $('#btnShowIndexdisable').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                var url = "{:adminurl('showindexdisable')}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('禁用成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+    /*    $.get("{:adminurl('select_root')}", function (ret) {
+            if (typeof ret == "string"){
+                ret = JSON.parse(ret);
+            }
+            ret.unshift({id: '', text: '请选择上级分类'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#parent_id').select2({
+                data: ret,
+            })
+        })*/
+        var ret = [
+            {"id":0,"text":"全部订单"},
+            {"id":1,"text":"待支付"},
+            {"id":2,"text":"待配送"},
+            {"id":3,"text":"配送中"},
+            {"id":4,"text":"已完成"},
+            {"id":5,"text":"售后退款"},
+            ];
+       // ret.unshift({id: '', text: '请选择类型'});
+        ret.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            return obj;
+        });
+        $('#type').select2({
+            data: ret,
+        })
+
+    })
+</script>
+{/block}

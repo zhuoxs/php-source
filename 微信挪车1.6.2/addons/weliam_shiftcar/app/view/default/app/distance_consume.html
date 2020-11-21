@@ -1,0 +1,128 @@
+{php include wl_template('common/header');}
+<div class="page-group">
+    <div class="page page-current" id="page-pecc">
+   		<header class="bar bar-nav">
+			<h1 class="title">核销车主消费</h1>
+		</header>
+		<div class="content native-scroll">
+			<div class="content-block-title">消费类型</div>
+			<div class="list-block media-list">
+		      <ul>
+		        <li>
+		          <label class="label-checkbox item-content">
+		            <input type="radio" name="my-radio" checked="checked" value="1">
+		            <div class="item-media"><i class="icon icon-form-checkbox"></i></div>
+		            <div class="item-inner">
+		              <div class="item-title-row">
+		                <div class="item-title">消费余额</div>
+		              </div>
+		            </div>
+		          </label>
+		        </li>
+		        <li>
+		          <label class="label-checkbox item-content">
+		            <input type="radio" name="my-radio" value="2">
+		            <div class="item-media"><i class="icon icon-form-checkbox"></i></div>
+		            <div class="item-inner">
+		              <div class="item-title-row">
+		                <div class="item-title">消费消费次数</div>
+		              </div>
+		            </div>
+		          </label>
+		        </li>
+		      </ul>
+		    </div>
+		    <div class="content-block-title">消费信息</div>
+		    <div class="list-block">
+		      <ul>
+		      	<li>
+		          <div class="item-content">
+		            <div class="item-inner">
+		              <div class="item-title label">车主信息</div>
+		              <div class="item-input">
+		                <input type="text" value="{$carmember['mobile']}" readonly="readonly">
+		              </div>
+		            </div>
+		          </div>
+		        </li>
+		        <li>
+		          <div class="item-content">
+		            <div class="item-inner">
+		              <div class="item-title label">商户信息</div>
+		              <div class="item-input">
+		                <input type="text" value="{$storename}" readonly="readonly">
+		              </div>
+		            </div>
+		          </div>
+		        </li>
+		        <li>
+		          <div class="item-content">
+		            <div class="item-inner">
+		              <div class="item-title label">消费数量</div>
+		              <div class="item-input">
+		                <input type="tel" placeholder="请输入消费金额或消费次数" id="sendcontent">
+		              </div>
+		            </div>
+		          </div>
+		        </li>
+		        <li>
+		          <div class="item-content">
+		            <div class="item-inner">
+		              <div class="item-title label">赠送积分</div>
+		              <div class="item-input">
+		                <input type="tel" placeholder="请输入赠送积分数量" id="jifennum">
+		              </div>
+		            </div>
+		          </div>
+		        </li>
+		      </ul>
+		    </div>
+		    <div class="content-block">
+		      	<a href="javascript:;" class="weui_btn weui_btn_primary" id="callmover" mtype='1'>确认消费</a>
+		    </div>
+		</div>
+    </div>
+</div>
+<script>
+$(document).on('click','#callmover',function () {
+	var sendcontent = $('#sendcontent').val();
+	var retype = $("input[name='my-radio']:checked").val();
+	var jifennum = $('#jifennum').val();
+	if(!sendcontent){
+	 	$.toast("请输入消费金额或消费次数");
+	 	return false;
+	}
+	if(retype == 1 && sendcontent > {$mccard['credit2']}){
+	 	$.toast("消费金额大于车主剩余余额");
+	 	return false;
+	}
+	if(retype == 2 && sendcontent > {$mccard['times']}){
+	 	$.toast("消费次数大于车主剩余次数");
+	 	return false;
+	}
+	var a,b;
+	(retype == 1) ? a = "金额"+sendcontent+"元" : a = "次数"+sendcontent+"次";
+	(jifennum > 1) ? b = "，赠送积分"+jifennum+"分" : b = '';
+	var confirmmsg = "确认车主{$carmember['mobile']}本次消费"+a+b;
+	
+    $.confirm(confirmmsg,
+        function () {
+        	$.post("{php echo app_url('app/distance/conpost',array('userid'=>$userid,'sid'=>$mis,'mid'=>$mid))}",{sendcontent:sendcontent,retype:retype,jifennum:jifennum},function(d){
+				if(d.result == 1){
+					$.alert('核销成功，点击确定返回微信！', function () {
+				        wx.closeWindow();
+				    });
+				}else if(d.result == 2){
+					$.toast(d.msg);
+				}else{
+					$.toast("未知错误");
+				}
+			},"json");
+        },
+        function () {
+        	$.toast("取消消费");
+        }
+    );
+});
+</script>
+{php include wl_template('common/footer');}

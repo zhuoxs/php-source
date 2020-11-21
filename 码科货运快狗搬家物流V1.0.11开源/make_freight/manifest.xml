@@ -1,0 +1,653 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns="http://www.lanrenzhijia.com" versionCode="0.6">
+	<application setting="false">
+		<name><![CDATA[码科货运快狗搬家物流]]></name>
+		<identifie><![CDATA[make_freight]]></identifie>
+		<version><![CDATA[1.0.11]]></version>
+		<type><![CDATA[business]]></type>
+		<ability><![CDATA[码科货运]]></ability>
+		<description><![CDATA[码科货运]]></description>
+		<author><![CDATA[懒人源码]]></author>
+		<url><![CDATA[https://www.lanrenzhijia.com]]></url>
+	</application>
+	<platform>
+		<subscribes>
+		</subscribes>
+		<handles>
+		</handles>
+		<rule embed="false" />
+		<card embed="false" />
+		<supports>
+			<item type="wxapp" />
+		</supports>
+	</platform>
+	<bindings>
+	    <cover>
+	        
+		</cover>
+		<rule>
+		    
+		</rule>
+		<menu>
+			<entry title="后台入口" do="index" state="" direct="false" />
+
+		</menu>
+	</bindings>
+	<install><![CDATA[CREATE TABLE `ims_freight_about` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `company` varchar(20) NOT NULL COMMENT '公司名称',
+  `img_url` varchar(255) NOT NULL COMMENT '图片',
+  `versions` varchar(20) NOT NULL COMMENT '版本号',
+  `phone` char(11) NOT NULL COMMENT '联系电话',
+  `work_time` varchar(30) NOT NULL COMMENT '工作时间',
+  `email` varchar(20) NOT NULL COMMENT '邮箱',
+  `wechat` varchar(50) NOT NULL COMMENT '微信公众号',
+  `uniacid` int(11) NOT NULL,
+  `update_time` int(11) NOT NULL COMMENT '更新时间',
+  `create_time` int(11) NOT NULL COMMENT '添加时间',
+  PRIMARY KEY (`id`),
+  KEY `uniacid` (`uniacid`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='关于我们';
+CREATE TABLE `ims_freight_admin` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `username` varchar(20) NOT NULL DEFAULT '' COMMENT '用户名',
+  `nickname` varchar(50) NOT NULL DEFAULT '' COMMENT '昵称',
+  `password` varchar(32) NOT NULL DEFAULT '' COMMENT '密码',
+  `salt` varchar(30) NOT NULL DEFAULT '' COMMENT '密码盐',
+  `avatar` varchar(100) NOT NULL DEFAULT '' COMMENT '头像',
+  `email` varchar(100) NOT NULL DEFAULT '' COMMENT '电子邮箱',
+  `loginfailure` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT '失败次数',
+  `logintime` int(10) DEFAULT NULL COMMENT '登录时间',
+  `uniacid` int(10) DEFAULT NULL COMMENT 'uniacid',
+  `createtime` int(10) DEFAULT NULL COMMENT '创建时间',
+  `updatetime` int(10) DEFAULT NULL COMMENT '更新时间',
+  `token` varchar(59) NOT NULL DEFAULT '' COMMENT 'Session标识',
+  `status` varchar(30) NOT NULL DEFAULT 'normal' COMMENT '状态',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT='管理员表';
+CREATE TABLE `ims_freight_admin_log` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `admin_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '管理员ID',
+  `username` varchar(30) NOT NULL DEFAULT '' COMMENT '管理员名字',
+  `url` varchar(1500) NOT NULL DEFAULT '' COMMENT '操作页面',
+  `title` varchar(100) NOT NULL DEFAULT '' COMMENT '日志标题',
+  `content` text NOT NULL COMMENT '内容',
+  `ip` varchar(50) NOT NULL DEFAULT '' COMMENT 'IP',
+  `useragent` varchar(255) NOT NULL DEFAULT '' COMMENT 'User-Agent',
+  `createtime` int(10) DEFAULT NULL COMMENT '操作时间',
+  PRIMARY KEY (`id`),
+  KEY `name` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT='管理员日志表';
+CREATE TABLE `ims_freight_amount_detail` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `driver_id` int(11) NOT NULL,
+  `amount` decimal(10,2) NOT NULL COMMENT '金额',
+  `type` tinyint(1) NOT NULL COMMENT '1=加，2=减',
+  `title` varchar(20) NOT NULL COMMENT '标题',
+  `create_time` int(11) NOT NULL COMMENT '添加时间',
+  `uniacid` int(10) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `ims_freight_attachment` (
+  `id` int(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `admin_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '管理员ID',
+  `user_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '会员ID',
+  `url` varchar(255) NOT NULL DEFAULT '' COMMENT '物理路径',
+  `imagewidth` varchar(30) NOT NULL DEFAULT '' COMMENT '宽度',
+  `imageheight` varchar(30) NOT NULL DEFAULT '' COMMENT '高度',
+  `imagetype` varchar(30) NOT NULL DEFAULT '' COMMENT '图片类型',
+  `imageframes` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '图片帧数',
+  `filesize` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '文件大小',
+  `mimetype` varchar(100) NOT NULL DEFAULT '' COMMENT 'mime类型',
+  `extparam` varchar(255) NOT NULL DEFAULT '' COMMENT '透传数据',
+  `createtime` int(10) DEFAULT NULL COMMENT '创建日期',
+  `updatetime` int(10) DEFAULT NULL COMMENT '更新时间',
+  `uploadtime` int(10) DEFAULT NULL COMMENT '上传时间',
+  `storage` varchar(100) NOT NULL DEFAULT 'local' COMMENT '存储位置',
+  `sha1` varchar(40) NOT NULL DEFAULT '' COMMENT '文件 sha1编码',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT='附件表';
+CREATE TABLE `ims_freight_auth_group` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `pid` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '父组别',
+  `name` varchar(100) NOT NULL DEFAULT '' COMMENT '组名',
+  `rules` text NOT NULL COMMENT '规则ID',
+  `createtime` int(10) DEFAULT NULL COMMENT '创建时间',
+  `updatetime` int(10) DEFAULT NULL COMMENT '更新时间',
+  `status` varchar(30) NOT NULL DEFAULT '' COMMENT '状态',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT='分组表';
+CREATE TABLE `ims_freight_auth_group_access` (
+  `uid` int(10) unsigned NOT NULL COMMENT '会员ID',
+  `group_id` int(10) unsigned NOT NULL COMMENT '级别ID',
+  UNIQUE KEY `uid_group_id` (`uid`,`group_id`),
+  KEY `uid` (`uid`),
+  KEY `group_id` (`group_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT='权限分组表';
+CREATE TABLE `ims_freight_auth_rule` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `type` enum('menu','file') NOT NULL DEFAULT 'file' COMMENT 'menu为菜单,file为权限节点',
+  `pid` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '父ID',
+  `name` varchar(100) NOT NULL DEFAULT '' COMMENT '规则名称',
+  `title` varchar(50) NOT NULL DEFAULT '' COMMENT '规则名称',
+  `icon` varchar(50) NOT NULL DEFAULT '' COMMENT '图标',
+  `condition` varchar(255) NOT NULL DEFAULT '' COMMENT '条件',
+  `remark` varchar(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `ismenu` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT '是否为菜单',
+  `createtime` int(10) DEFAULT NULL COMMENT '创建时间',
+  `updatetime` int(10) DEFAULT NULL COMMENT '更新时间',
+  `weigh` int(10) NOT NULL DEFAULT '0' COMMENT '权重',
+  `status` varchar(30) NOT NULL DEFAULT '' COMMENT '状态',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`) USING BTREE,
+  KEY `pid` (`pid`),
+  KEY `weigh` (`weigh`)
+) ENGINE=InnoDB AUTO_INCREMENT=177 DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT='节点表';
+CREATE TABLE `ims_freight_banner` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `url` varchar(100) DEFAULT NULL COMMENT '跳转链接',
+  `appid` varchar(30) DEFAULT NULL COMMENT '跳转链接',
+  `type` tinyint(4) NOT NULL COMMENT '轮播图片',
+  `app_url` varchar(30) DEFAULT NULL COMMENT '轮播图片',
+  `image` varchar(255) NOT NULL COMMENT '轮播图片',
+  `sort` int(11) NOT NULL COMMENT '排序',
+  `show_switch` tinyint(4) NOT NULL COMMENT '是否显示',
+  `create_time` int(11) NOT NULL COMMENT '添加时间',
+  `uniacid` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `soft` (`sort`) USING BTREE,
+  KEY `uniacid` (`uniacid`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='轮播图管理';
+CREATE TABLE `ims_freight_cates` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) NOT NULL DEFAULT '' COMMENT '分类名称',
+  `icon` varchar(255) NOT NULL DEFAULT '' COMMENT '分类图标',
+  `type` tinyint(4) NOT NULL COMMENT '类型:1=问题分类，2=网点分类',
+  `status` enum('0','1') NOT NULL DEFAULT '1' COMMENT '状态',
+  `sort` int(11) NOT NULL,
+  `create_time` int(11) NOT NULL COMMENT '添加时间',
+  `uniacid` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `ims_freight_command` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `type` varchar(30) NOT NULL DEFAULT '' COMMENT '类型',
+  `params` varchar(1500) NOT NULL DEFAULT '' COMMENT '参数',
+  `command` varchar(1500) NOT NULL DEFAULT '' COMMENT '命令',
+  `content` text COMMENT '返回结果',
+  `executetime` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '执行时间',
+  `createtime` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+  `updatetime` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
+  `status` enum('successed','failured') NOT NULL DEFAULT 'failured' COMMENT '状态',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT='在线命令表';
+CREATE TABLE `ims_freight_config` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(30) NOT NULL DEFAULT '' COMMENT '变量名',
+  `value` text NOT NULL COMMENT '变量值',
+  `uniacid` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `name` (`name`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT='系统配置';
+CREATE TABLE `ims_freight_counter` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `city_id` int(11) NOT NULL COMMENT '所属分类',
+  `name` varchar(30) NOT NULL COMMENT '营业点名称',
+  `address` varchar(255) NOT NULL COMMENT '营业点地址',
+  `phone` char(11) NOT NULL COMMENT '联系电话',
+  `uniacid` int(11) NOT NULL,
+  `create_time` int(11) NOT NULL COMMENT '添加时间',
+  `update_time` int(11) NOT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='营业网点';
+CREATE TABLE `ims_freight_coupon` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL COMMENT '优惠券名称',
+  `code` varchar(100) NOT NULL COMMENT '兑换码',
+  `amount` int(11) NOT NULL DEFAULT '0' COMMENT '数量',
+  `price` decimal(10,2) NOT NULL COMMENT '金额',
+  `start_time` int(11) NOT NULL COMMENT '开始时间',
+  `end_time` int(11) NOT NULL COMMENT '结束时间',
+  `is_show_switch` tinyint(4) NOT NULL DEFAULT '1' COMMENT '是否显示',
+  `createtime` int(11) NOT NULL COMMENT '创建时间',
+  `use_limit` decimal(10,2) NOT NULL DEFAULT '0.00' COMMENT '使用门槛',
+  `sort` int(11) NOT NULL,
+  `uniacid` int(11) NOT NULL,
+  `updatetime` char(10) NOT NULL,
+  `desc` varchar(20) NOT NULL COMMENT '简述',
+  `get_number` int(11) NOT NULL DEFAULT '0' COMMENT '领取数量',
+  `over_time` int(10) NOT NULL COMMENT '过期时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`) USING BTREE,
+  KEY `show` (`is_show_switch`) USING BTREE,
+  KEY `sort` (`sort`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='优惠券';
+CREATE TABLE `ims_freight_driver` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nick_name` varchar(11) NOT NULL COMMENT '微信昵称',
+  `open_id` varchar(50) NOT NULL,
+  `driver_name` varchar(10) NOT NULL COMMENT '姓名',
+  `driver_phone` char(11) NOT NULL COMMENT '联系号码',
+  `driver_IDcard` char(18) NOT NULL COMMENT '身份证号',
+  `plate_number` varchar(10) NOT NULL COMMENT '车牌号',
+  `front_IDcard_image` varchar(255) NOT NULL COMMENT '正面身份证照',
+  `contrary_IDcard_image` varchar(255) NOT NULL COMMENT '背面身份证照',
+  `driving_license` varchar(255) NOT NULL COMMENT '驾驶证',
+  `car_image` varchar(255) NOT NULL COMMENT '车身照',
+  `photo` varchar(255) NOT NULL COMMENT '个人照片',
+  `drivers_license` varchar(255) NOT NULL COMMENT '行驶证',
+  `drivers_license_copy` varchar(255) NOT NULL COMMENT '行驶证副本',
+  `create_time` int(11) NOT NULL COMMENT '创建时间',
+  `update_time` int(11) NOT NULL COMMENT '更新时间',
+  `status` tinyint(1) NOT NULL COMMENT '状态:0=审核中,1=审核通过,2=审核失败',
+  `uniacid` int(11) NOT NULL,
+  `car_id` int(11) NOT NULL COMMENT '车型',
+  `flank_car_image` varchar(255) NOT NULL COMMENT '侧面车身照',
+  `user_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user` (`user_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='司机审核列表';
+CREATE TABLE `ims_freight_driver_cancel_order` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `order_id` int(11) NOT NULL,
+  `driver_id` int(11) NOT NULL,
+  `create_time` int(11) NOT NULL COMMENT '取消时间',
+  `order_number` varchar(50) NOT NULL COMMENT '取消的订单号',
+  `uniacid` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `ims_freight_driver_info` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `driver_id` int(11) NOT NULL,
+  `latitude` double(10,6) NOT NULL COMMENT '维度',
+  `longitude` double(10,6) NOT NULL COMMENT '经度',
+  `statef` tinyint(1) NOT NULL COMMENT '状态:1=接单，2=不听单,3=禁止接单',
+  `address` varchar(255) NOT NULL COMMENT '听单地址',
+  `balance` decimal(10,2) NOT NULL COMMENT '余额',
+  `service_mark` float(10,1) unsigned NOT NULL DEFAULT '5.0' COMMENT '服务分数',
+  `service_number` int(11) NOT NULL,
+  `cancel_number` int(11) NOT NULL DEFAULT '0' COMMENT '取消订单次数',
+  `uniacid` int(11) NOT NULL,
+  `count_km` double(8,2) NOT NULL COMMENT '配送总行程',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `driver_id` (`driver_id`) USING BTREE,
+  KEY `lat,lot` (`latitude`,`longitude`,`uniacid`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `ims_freight_driver_order` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `driver_id` int(11) NOT NULL COMMENT '司机ID',
+  `order_id` int(11) NOT NULL COMMENT '订单ID',
+  `create_time` int(11) NOT NULL COMMENT '接单时间',
+  `end_time` int(11) NOT NULL COMMENT '送达时间',
+  `picture` varchar(255) NOT NULL COMMENT '货物照片',
+  `get_cargo_time` int(11) NOT NULL COMMENT '取货时间',
+  `order_time` int(11) NOT NULL COMMENT '订单总共花费时间',
+  `latitude` double(10,6) NOT NULL,
+  `longitude` double(10,6) NOT NULL,
+  `deduct_price` decimal(10,2) NOT NULL COMMENT '平台扣取费用',
+  `uniacid` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `order_id` (`order_id`),
+  KEY `uni` (`uniacid`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `ims_freight_driver_update_car` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `driver_id` int(11) NOT NULL,
+  `car_id` int(11) NOT NULL,
+  `plate_number` varchar(20) NOT NULL COMMENT '车牌号',
+  `flank_car_image` varchar(255) NOT NULL COMMENT '车神侧面照',
+  `car_image` varchar(255) NOT NULL COMMENT '车神正面照',
+  `drivers_license` varchar(255) NOT NULL COMMENT '行驶证',
+  `drivers_license_copy` varchar(255) NOT NULL COMMENT '行驶证副本',
+  `uniacid` int(11) NOT NULL,
+  `create_time` char(10) NOT NULL COMMENT '创建时间',
+  `update_time` char(10) NOT NULL COMMENT '修改时间',
+  `status` enum('0','1','2') NOT NULL DEFAULT '0' COMMENT '状态:0=待审核,1=审核通过,2=审核失败',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `driver_id` (`driver_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='更改车型审核列表';
+CREATE TABLE `ims_freight_faq` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(30) NOT NULL COMMENT '问题名',
+  `content` varchar(255) NOT NULL COMMENT '解答内容',
+  `sort` int(10) NOT NULL COMMENT '排序',
+  `uniacid` int(11) NOT NULL,
+  `create_time` int(10) NOT NULL COMMENT '添加时间',
+  `update_time` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `sort` (`sort`,`uniacid`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='常见问题';
+CREATE TABLE `ims_freight_feedback` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `uid` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL DEFAULT '' COMMENT '问题类型',
+  `content` varchar(255) NOT NULL DEFAULT '' COMMENT '反馈内容',
+  `images` varchar(500) NOT NULL COMMENT '反馈图片',
+  `status` enum('0','1') NOT NULL DEFAULT '0' COMMENT '状态:0=未处理,1=已处理',
+  `create_time` int(11) NOT NULL,
+  `update_time` int(11) NOT NULL,
+  `uniacid` int(11) NOT NULL,
+  `contact` varchar(20) NOT NULL COMMENT '联系方式',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='问题反馈';
+CREATE TABLE `ims_freight_order` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `order_number` varchar(50) NOT NULL COMMENT '订单号',
+  `place_dispatch` varchar(255) NOT NULL COMMENT '发货地',
+  `place_dispatch_detail` varchar(255) NOT NULL COMMENT '发货地详情',
+  `place_receipt` varchar(255) NOT NULL COMMENT '收货地',
+  `place_receipt_detail` varchar(255) DEFAULT NULL COMMENT '收货地详情',
+  `shipper_name` varchar(20) NOT NULL COMMENT '发货人',
+  `shipper_phone` char(11) NOT NULL COMMENT '发货人手机号',
+  `consignee` varchar(255) NOT NULL COMMENT '收货人',
+  `consignee_phone` char(11) NOT NULL COMMENT '收货人电话',
+  `appointment_time` varchar(50) NOT NULL COMMENT '预约时间',
+  `remark` varchar(255) NOT NULL COMMENT '备注',
+  `real_price` decimal(10,2) NOT NULL COMMENT '实际价格',
+  `price` decimal(10,2) NOT NULL COMMENT '订单价格',
+  `discount_price` decimal(10,2) NOT NULL COMMENT '优惠价',
+  `user_coupon_id` int(10) NOT NULL COMMENT '优惠券中间表ID',
+  `distance` double(7,2) NOT NULL COMMENT '运送距离',
+  `car_id` int(11) NOT NULL COMMENT '车辆ID',
+  `car_name` varchar(50) NOT NULL COMMENT '配送车名字',
+  `start_price` decimal(10,2) NOT NULL COMMENT '起步价',
+  `start_km` int(11) NOT NULL COMMENT '起步里程',
+  `beyond` decimal(10,2) NOT NULL COMMENT '超出起步里程价格',
+  `start_lat` varchar(255) NOT NULL COMMENT '发货地纬度',
+  `start_lot` varchar(255) NOT NULL COMMENT '发货地经度',
+  `end_lat` varchar(255) NOT NULL COMMENT '收货地纬度',
+  `end_lot` varchar(255) NOT NULL COMMENT '收地经度',
+  `status` enum('1','2','3','4','5','6','7','8') NOT NULL DEFAULT '7' COMMENT '订单状态:1=待接单,2=待取货,3=运输中,4=待评价,5=已完成,6=已取消,7=待付款，',
+  `type` tinyint(4) NOT NULL DEFAULT '1' COMMENT '类型:1=同城,2=跨城预约',
+  `uid` int(11) NOT NULL COMMENT '用户ID',
+  `uniacid` int(11) NOT NULL,
+  `bulk` varchar(255) NOT NULL COMMENT '物品体积',
+  `goods_name` varchar(255) NOT NULL COMMENT '物品名称',
+  `create_time` int(11) NOT NULL COMMENT '下单时间',
+  `update_time` int(11) NOT NULL COMMENT '修改时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `order` (`order_number`) USING BTREE,
+  KEY `nor` (`status`,`uid`,`uniacid`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `ims_freight_score` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `score` int(11) NOT NULL COMMENT '总评价',
+  `score1` int(11) NOT NULL,
+  `score2` int(11) NOT NULL,
+  `order_id` int(11) NOT NULL,
+  `driver_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `uniacid` int(11) NOT NULL,
+  `suggest` varchar(50) NOT NULL COMMENT '建议',
+  `create_time` int(10) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `order_id` (`order_id`) USING BTREE,
+  KEY `score` (`score`,`score1`,`score2`,`driver_id`,`user_id`,`uniacid`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `ims_freight_user_coupon` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `coupon_id` int(11) NOT NULL COMMENT '优惠券ID',
+  `user_id` int(11) NOT NULL COMMENT '用户ID',
+  `uniacid` int(11) NOT NULL,
+  `price` decimal(10,2) NOT NULL COMMENT '优惠价格',
+  `use_limit` decimal(10,2) NOT NULL COMMENT '使用门槛',
+  `title` varchar(20) NOT NULL COMMENT '优惠券名称',
+  `desc` varchar(50) NOT NULL COMMENT '优惠券简介',
+  `create_time` int(11) NOT NULL COMMENT '领取时间',
+  `status` tinyint(4) NOT NULL COMMENT '状态:0=未使用,1=使用,2=已过期',
+  `end_time` int(10) NOT NULL COMMENT '过期时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `ims_freight_user_formid` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '骑手id',
+  `open_id` varchar(32) NOT NULL DEFAULT '' COMMENT '骑手openid',
+  `form_id` varchar(32) NOT NULL DEFAULT '' COMMENT '服务通知formid',
+  `expire_time` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '过期时间',
+  `uniacid` int(10) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `open_id` (`open_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `ims_freight_users` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nick_name` varchar(50) NOT NULL COMMENT '用户昵称',
+  `avatar` varchar(255) NOT NULL COMMENT '头像',
+  `open_id` varchar(50) NOT NULL COMMENT 'open_id',
+  `gender` tinyint(4) NOT NULL COMMENT '性别:1=男,2=女',
+  `grade` tinyint(4) NOT NULL COMMENT '等级:1=普通会员,2=会员',
+  `phone` char(11) NOT NULL COMMENT '手机号',
+  `real_name` varchar(20) NOT NULL COMMENT '真实姓名',
+  `amount` decimal(10,2) NOT NULL DEFAULT '0.00' COMMENT '消费金额',
+  `create_time` int(10) NOT NULL COMMENT '创建时间',
+  `update_time` int(11) NOT NULL,
+  `last_time` int(10) NOT NULL COMMENT '最近登录时间',
+  `uniacid` int(10) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+CREATE TABLE `ims_freight_vehicle` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `title` varchar(50) NOT NULL DEFAULT '' COMMENT '车辆名称',
+  `load_capacity` varchar(10) NOT NULL,
+  `length` varchar(6) NOT NULL,
+  `width` varchar(6) NOT NULL,
+  `height` varchar(6) NOT NULL,
+  `icon` varchar(255) NOT NULL COMMENT '车辆图标',
+  `s_icon` varchar(255) NOT NULL COMMENT '选中图标',
+  `image` varchar(255) NOT NULL COMMENT '车辆图片',
+  `starting_price` decimal(10,2) NOT NULL COMMENT '起步价',
+  `starting_km` int(11) NOT NULL COMMENT '起步里程',
+  `beyond_price` decimal(11,2) NOT NULL COMMENT '超出起步价格',
+  `status` tinyint(4) NOT NULL COMMENT '状态：0=显示，1=隐藏',
+  `create_time` int(11) NOT NULL COMMENT '添加时间',
+  `update_time` int(11) NOT NULL COMMENT '修改时间',
+  `uniacid` int(11) NOT NULL,
+  `sort` int(10) NOT NULL COMMENT '排序',
+  PRIMARY KEY (`id`),
+  KEY `sort` (`status`,`uniacid`,`sort`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `ims_freight_withdrawal` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `order_number` varchar(255) NOT NULL COMMENT '提现单号',
+  `driver_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL COMMENT '内容',
+  `open_id` varchar(30) NOT NULL,
+  `amount` decimal(10,2) NOT NULL COMMENT '提现金额',
+  `status` enum('0','1') NOT NULL DEFAULT '0' COMMENT '状态:0=待打款,1=已打款',
+  `uniacid` int(10) NOT NULL,
+  `create_time` int(11) NOT NULL COMMENT '提现时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `order` (`order_number`) USING BTREE,
+  KEY `index` (`driver_id`,`open_id`,`status`,`uniacid`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='提现列表';
+
+
+INSERT INTO `ims_freight_admin` (`id`, `username`, `nickname`, `password`, `salt`, `avatar`, `email`, `loginfailure`, `logintime`, `uniacid`, `createtime`, `updatetime`, `token`, `status`) VALUES
+(1, 'admin', 'Admin', '075eaec83636846f51c152f29b98a2fd', 's4f3', '/assets/img/avatar.png', 'admin@fastadmin.net', 0, 1502029281, 0, 1492186163, 1502029281, 'd3992c3b-5ecc-4ecb-9dc2-8997780fcadc', 'normal');
+
+INSERT INTO `ims_freight_auth_group` (`id`, `pid`, `name`, `rules`, `createtime`, `updatetime`, `status`) VALUES
+(1, 0, 'Admin group', '*', 1490883540, 149088354, 'normal');
+
+INSERT INTO `ims_freight_auth_group_access` VALUES ('1', '1');
+
+INSERT INTO `ims_freight_auth_rule` (`id`, `type`, `pid`, `name`, `title`, `icon`, `condition`, `remark`, `ismenu`, `createtime`, `updatetime`, `weigh`, `status`) VALUES
+(1,	'file',	0,	'dashboard',	'Dashboard',	'fa fa-dashboard',	'',	'Dashboard tips',	1,	1497429920,	1497429920,	143,	'normal'),
+(2,	'file',	0,	'general',	'系统配置',	'fa fa-cogs',	'',	'',	1,	1497429920,	1560395006,	137,	'normal'),
+(4,	'file',	0,	'addon',	'Addon',	'fa fa-rocket',	'',	'Addon tips',	0,	1502035509,	1561125495,	0,	'normal'),
+(5,	'file',	0,	'auth',	'Auth',	'fa fa-group',	'',	'',	1,	1497429920,	1497430092,	99,	'normal'),
+(6,	'file',	2,	'general/config',	'Config',	'fa fa-cog',	'',	'Config tips',	1,	1497429920,	1497430683,	60,	'normal'),
+(7,	'file',	2,	'general/attachment',	'Attachment',	'fa fa-file-image-o',	'',	'Attachment tips',	1,	1497429920,	1497430699,	53,	'normal'),
+(8,	'file',	2,	'general/profile',	'Profile',	'fa fa-user',	'',	'',	1,	1497429920,	1497429920,	34,	'normal'),
+(9,	'file',	5,	'auth/admin',	'Admin',	'fa fa-user',	'',	'Admin tips',	1,	1497429920,	1497430320,	118,	'normal'),
+(10,	'file',	5,	'auth/adminlog',	'Admin log',	'fa fa-list-alt',	'',	'Admin log tips',	1,	1497429920,	1497430307,	113,	'normal'),
+(11,	'file',	5,	'auth/group',	'Group',	'fa fa-group',	'',	'Group tips',	1,	1497429920,	1497429920,	109,	'normal'),
+(12,	'file',	5,	'auth/rule',	'菜单规则',	'fa fa-align-justify',	'',	'Rule tips',	0,	1497429920,	1561128254,	104,	'normal'),
+(13,	'file',	1,	'dashboard/index',	'View',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	136,	'normal'),
+(14,	'file',	1,	'dashboard/add',	'Add',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	135,	'normal'),
+(15,	'file',	1,	'dashboard/del',	'Delete',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	133,	'normal'),
+(16,	'file',	1,	'dashboard/edit',	'Edit',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	134,	'normal'),
+(17,	'file',	1,	'dashboard/multi',	'Multi',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	132,	'normal'),
+(18,	'file',	6,	'general/config/index',	'View',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	52,	'normal'),
+(23,	'file',	7,	'general/attachment/index',	'View',	'fa fa-circle-o',	'',	'Attachment tips',	0,	1497429920,	1497429920,	59,	'normal'),
+(24,	'file',	7,	'general/attachment/select',	'Select attachment',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	58,	'normal'),
+(25,	'file',	7,	'general/attachment/add',	'Add',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	57,	'normal'),
+(26,	'file',	7,	'general/attachment/edit',	'Edit',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	56,	'normal'),
+(27,	'file',	7,	'general/attachment/del',	'Delete',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	55,	'normal'),
+(28,	'file',	7,	'general/attachment/multi',	'Multi',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	54,	'normal'),
+(29,	'file',	8,	'general/profile/index',	'View',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	33,	'normal'),
+(30,	'file',	8,	'general/profile/update',	'Update profile',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	32,	'normal'),
+(31,	'file',	8,	'general/profile/add',	'Add',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	31,	'normal'),
+(32,	'file',	8,	'general/profile/edit',	'Edit',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	30,	'normal'),
+(33,	'file',	8,	'general/profile/del',	'Delete',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	29,	'normal'),
+(34,	'file',	8,	'general/profile/multi',	'Multi',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	28,	'normal'),
+(40,	'file',	9,	'auth/admin/index',	'View',	'fa fa-circle-o',	'',	'Admin tips',	0,	1497429920,	1497429920,	117,	'normal'),
+(41,	'file',	9,	'auth/admin/add',	'Add',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	116,	'normal'),
+(42,	'file',	9,	'auth/admin/edit',	'Edit',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	115,	'normal'),
+(43,	'file',	9,	'auth/admin/del',	'Delete',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	114,	'normal'),
+(44,	'file',	10,	'auth/adminlog/index',	'View',	'fa fa-circle-o',	'',	'Admin log tips',	0,	1497429920,	1497429920,	112,	'normal'),
+(45,	'file',	10,	'auth/adminlog/detail',	'Detail',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	111,	'normal'),
+(46,	'file',	10,	'auth/adminlog/del',	'Delete',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	110,	'normal'),
+(47,	'file',	11,	'auth/group/index',	'View',	'fa fa-circle-o',	'',	'Group tips',	0,	1497429920,	1497429920,	108,	'normal'),
+(48,	'file',	11,	'auth/group/add',	'Add',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	107,	'normal'),
+(49,	'file',	11,	'auth/group/edit',	'Edit',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	106,	'normal'),
+(50,	'file',	11,	'auth/group/del',	'Delete',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	105,	'normal'),
+(51,	'file',	12,	'auth/rule/index',	'View',	'fa fa-circle-o',	'',	'Rule tips',	0,	1497429920,	1497429920,	103,	'normal'),
+(52,	'file',	12,	'auth/rule/add',	'Add',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	102,	'normal'),
+(53,	'file',	12,	'auth/rule/edit',	'Edit',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	101,	'normal'),
+(54,	'file',	12,	'auth/rule/del',	'Delete',	'fa fa-circle-o',	'',	'',	0,	1497429920,	1497429920,	100,	'normal'),
+(55,	'file',	4,	'addon/index',	'View',	'fa fa-circle-o',	'',	'Addon tips',	0,	1502035509,	1502035509,	0,	'normal'),
+(56,	'file',	4,	'addon/add',	'Add',	'fa fa-circle-o',	'',	'',	0,	1502035509,	1502035509,	0,	'normal'),
+(57,	'file',	4,	'addon/edit',	'Edit',	'fa fa-circle-o',	'',	'',	0,	1502035509,	1502035509,	0,	'normal'),
+(58,	'file',	4,	'addon/del',	'Delete',	'fa fa-circle-o',	'',	'',	0,	1502035509,	1502035509,	0,	'normal'),
+(59,	'file',	4,	'addon/local',	'Local install',	'fa fa-circle-o',	'',	'',	0,	1502035509,	1502035509,	0,	'normal'),
+(60,	'file',	4,	'addon/state',	'Update state',	'fa fa-circle-o',	'',	'',	0,	1502035509,	1502035509,	0,	'normal'),
+(61,	'file',	4,	'addon/install',	'Install',	'fa fa-circle-o',	'',	'',	0,	1502035509,	1502035509,	0,	'normal'),
+(62,	'file',	4,	'addon/uninstall',	'Uninstall',	'fa fa-circle-o',	'',	'',	0,	1502035509,	1502035509,	0,	'normal'),
+(63,	'file',	4,	'addon/config',	'Setting',	'fa fa-circle-o',	'',	'',	0,	1502035509,	1502035509,	0,	'normal'),
+(64,	'file',	4,	'addon/refresh',	'Refresh',	'fa fa-circle-o',	'',	'',	0,	1502035509,	1502035509,	0,	'normal'),
+(65,	'file',	4,	'addon/multi',	'Multi',	'fa fa-circle-o',	'',	'',	0,	1502035509,	1502035509,	0,	'normal'),
+(66,	'file',	0,	'command',	'在线命令管理',	'fa fa-terminal',	'',	'',	0,	1556699179,	1561125514,	0,	'normal'),
+(67,	'file',	66,	'command/index',	'查看',	'fa fa-circle-o',	'',	'',	0,	1556699179,	1556699179,	0,	'normal'),
+(68,	'file',	66,	'command/add',	'添加',	'fa fa-circle-o',	'',	'',	0,	1556699179,	1556699179,	0,	'normal'),
+(69,	'file',	66,	'command/detail',	'详情',	'fa fa-circle-o',	'',	'',	0,	1556699179,	1556699179,	0,	'normal'),
+(70,	'file',	66,	'command/execute',	'运行',	'fa fa-circle-o',	'',	'',	0,	1556699179,	1556699179,	0,	'normal'),
+(71,	'file',	66,	'command/del',	'删除',	'fa fa-circle-o',	'',	'',	0,	1556699179,	1556699179,	0,	'normal'),
+(72,	'file',	66,	'command/multi',	'批量更新',	'fa fa-circle-o',	'',	'',	0,	1556699179,	1556699179,	0,	'normal'),
+(73,	'file',	0,	'vehicle',	'车辆管理',	'fa fa-truck',	'',	'',	1,	1556780012,	1561125536,	96,	'normal'),
+(74,	'file',	73,	'vehicle/index',	'查看',	'fa fa-circle-o',	'',	'',	0,	1556780012,	1556780012,	0,	'normal'),
+(75,	'file',	73,	'vehicle/add',	'添加',	'fa fa-circle-o',	'',	'',	0,	1556780012,	1556780012,	0,	'normal'),
+(76,	'file',	73,	'vehicle/edit',	'编辑',	'fa fa-circle-o',	'',	'',	0,	1556780012,	1556780012,	0,	'normal'),
+(77,	'file',	73,	'vehicle/del',	'删除',	'fa fa-circle-o',	'',	'',	0,	1556780012,	1556780012,	0,	'normal'),
+(79,	'file',	6,	'general/config/small_program',	'小程序配置',	'fa fa-circle-o',	'',	'',	0,	1556780199,	1556780266,	0,	'normal'),
+(80,	'file',	6,	'general/config/base',	'基础设置',	'fa fa-circle-o',	'',	'',	0,	1556780247,	1556780247,	0,	'normal'),
+(81,	'file',	0,	'base',	'基础设置',	'fa fa-cog',	'',	'',	1,	1556788041,	1556898771,	0,	'normal'),
+(82,	'file',	81,	'base/feed_back',	'问题反馈',	'fa fa-commenting-o',	'',	'',	1,	1556788041,	1556898900,	0,	'normal'),
+(83,	'file',	82,	'base/feed_back/index',	'查看',	'fa fa-circle-o',	'',	'',	0,	1556788041,	1556788041,	0,	'normal'),
+(85,	'file',	82,	'base/feed_back/edit',	'编辑',	'fa fa-circle-o',	'',	'',	0,	1556788041,	1556788041,	0,	'normal'),
+(86,	'file',	82,	'base/feed_back/del',	'删除',	'fa fa-circle-o',	'',	'',	0,	1556788041,	1556788041,	0,	'normal'),
+(88,	'file',	82,	'base/feed_back/look_cate',	'分类查看',	'fa fa-circle-o',	'',	'',	0,	1556883661,	1556883785,	0,	'normal'),
+(89,	'file',	82,	'base/feed_back/add_cate',	'分类添加',	'fa fa-circle-o',	'',	'',	0,	1556883700,	1556883851,	0,	'normal'),
+(90,	'file',	82,	'base/feed_back/edit_cate',	'分类编辑',	'fa fa-circle-o',	'',	'',	0,	1556883822,	1556883822,	0,	'normal'),
+(91,	'file',	82,	'base/feed_back/del_cate',	'分类删除',	'fa fa-circle-o',	'',	'',	0,	1556883877,	1556883877,	0,	'normal'),
+(92,	'file',	0,	'user',	'用户管理',	'fa fa-user',	'',	'',	1,	1556952075,	1561125653,	98,	'normal'),
+(93,	'file',	92,	'user/users',	'用户列表',	'fa fa-users',	'',	'',	1,	1556952075,	1556952150,	0,	'normal'),
+(94,	'file',	93,	'user/users/index',	'查看',	'fa fa-circle-o',	'',	'',	0,	1556952075,	1556952075,	0,	'normal'),
+(95,	'file',	93,	'user/users/add',	'添加',	'fa fa-circle-o',	'',	'',	0,	1556952075,	1556952075,	0,	'normal'),
+(96,	'file',	93,	'user/users/edit',	'编辑',	'fa fa-circle-o',	'',	'',	0,	1556952075,	1556952075,	0,	'normal'),
+(99,	'file',	0,	'orders',	'订单管理',	'fa fa-tasks',	'',	'',	1,	1557026685,	1561125851,	95,	'normal'),
+(100,	'file',	99,	'orders/order',	'订单列表',	'fa fa-circle-o',	'',	'',	1,	1557026685,	1557037765,	0,	'normal'),
+(101,	'file',	100,	'orders/order/index',	'查看',	'fa fa-circle-o',	'',	'',	0,	1557026685,	1557037796,	0,	'normal'),
+(103,	'file',	100,	'orders/order/edit',	'编辑',	'fa fa-circle-o',	'',	'',	0,	1557026685,	1557037816,	0,	'normal'),
+(104,	'file',	100,	'orders/order/del',	'删除',	'fa fa-circle-o',	'',	'',	0,	1557026685,	1557037827,	0,	'normal'),
+(106,	'file',	81,	'base/coupon',	'优惠券',	'fa fa-circle-o',	'',	'',	1,	1557058092,	1557058092,	0,	'normal'),
+(107,	'file',	106,	'base/coupon/index',	'查看',	'fa fa-circle-o',	'',	'',	0,	1557058092,	1557058092,	0,	'normal'),
+(108,	'file',	106,	'base/coupon/add',	'添加',	'fa fa-circle-o',	'',	'',	0,	1557058092,	1557058092,	0,	'normal'),
+(109,	'file',	106,	'base/coupon/edit',	'编辑',	'fa fa-circle-o',	'',	'',	0,	1557058092,	1557058092,	0,	'normal'),
+(110,	'file',	106,	'base/coupon/del',	'删除',	'fa fa-circle-o',	'',	'',	0,	1557058092,	1557058092,	0,	'normal'),
+(112,	'file',	81,	'base/about',	'关于我们',	'fa fa-circle-o',	'',	'',	1,	1557060570,	1557060570,	0,	'normal'),
+(113,	'file',	112,	'base/about/index',	'查看',	'fa fa-circle-o',	'',	'',	0,	1557060570,	1557060570,	0,	'normal'),
+(114,	'file',	112,	'base/about/add',	'添加',	'fa fa-circle-o',	'',	'',	0,	1557060570,	1557060570,	0,	'normal'),
+(115,	'file',	112,	'base/about/edit',	'编辑',	'fa fa-circle-o',	'',	'',	0,	1557060570,	1557060570,	0,	'normal'),
+(116,	'file',	112,	'base/about/del',	'删除',	'fa fa-circle-o',	'',	'',	0,	1557060570,	1557060570,	0,	'normal'),
+(118,	'file',	81,	'base/banner',	'轮播图管理',	'fa fa-circle-o',	'',	'',	1,	1557105512,	1557105512,	0,	'normal'),
+(119,	'file',	118,	'base/banner/index',	'查看',	'fa fa-circle-o',	'',	'',	0,	1557105512,	1557105512,	0,	'normal'),
+(120,	'file',	118,	'base/banner/add',	'添加',	'fa fa-circle-o',	'',	'',	0,	1557105512,	1557105512,	0,	'normal'),
+(121,	'file',	118,	'base/banner/edit',	'编辑',	'fa fa-circle-o',	'',	'',	0,	1557105512,	1557105512,	0,	'normal'),
+(122,	'file',	118,	'base/banner/del',	'删除',	'fa fa-circle-o',	'',	'',	0,	1557105512,	1557105512,	0,	'normal'),
+(124,	'file',	81,	'base/counter',	'营业网点',	'fa fa-circle-o',	'',	'',	1,	1557107864,	1557107864,	0,	'normal'),
+(125,	'file',	124,	'base/counter/index',	'查看',	'fa fa-circle-o',	'',	'',	0,	1557107864,	1557107864,	0,	'normal'),
+(126,	'file',	124,	'base/counter/add',	'添加',	'fa fa-circle-o',	'',	'',	0,	1557107864,	1557107864,	0,	'normal'),
+(127,	'file',	124,	'base/counter/edit',	'编辑',	'fa fa-circle-o',	'',	'',	0,	1557107864,	1557107864,	0,	'normal'),
+(128,	'file',	124,	'base/counter/del',	'删除',	'fa fa-circle-o',	'',	'',	0,	1557107864,	1557107864,	0,	'normal'),
+(130,	'file',	81,	'base/faq',	'常见问题',	'fa fa-circle-o',	'',	'',	1,	1557111437,	1557111437,	0,	'normal'),
+(131,	'file',	130,	'base/faq/index',	'查看',	'fa fa-circle-o',	'',	'',	0,	1557111437,	1557111437,	0,	'normal'),
+(132,	'file',	130,	'base/faq/add',	'添加',	'fa fa-circle-o',	'',	'',	0,	1557111437,	1557111437,	0,	'normal'),
+(133,	'file',	130,	'base/faq/edit',	'编辑',	'fa fa-circle-o',	'',	'',	0,	1557111437,	1557111437,	0,	'normal'),
+(134,	'file',	130,	'base/faq/del',	'删除',	'fa fa-circle-o',	'',	'',	0,	1557111437,	1557111437,	0,	'normal'),
+(135,	'file',	130,	'base/faq/multi',	'批量更新',	'fa fa-circle-o',	'',	'',	0,	1557111437,	1557111437,	0,	'normal'),
+(136,	'file',	124,	'base/counter/look_cate',	'分类城市查看',	'fa fa-circle-o',	'',	'',	0,	1557112037,	1557112037,	0,	'normal'),
+(137,	'file',	124,	'base/counter/add_cate',	'分类城市添加',	'fa fa-circle-o',	'',	'',	0,	1557112064,	1557112064,	0,	'normal'),
+(138,	'file',	124,	'base/counter/edit_cate',	'城市分类编辑',	'fa fa-circle-o',	'',	'',	0,	1557112103,	1557112103,	0,	'normal'),
+(139,	'file',	124,	'base/counter/del_cate',	'城市分类删除',	'fa fa-circle-o',	'',	'',	0,	1557112126,	1557112126,	0,	'normal'),
+(140,	'file',	0,	'driver',	'司机管理',	'fa fa-user-circle-o',	'',	'',	1,	1557307683,	1561125737,	97,	'normal'),
+(141,	'file',	140,	'driver/drivers',	'司机审核列表',	'fa fa-circle-o',	'',	'',	1,	1557307683,	1557315717,	0,	'normal'),
+(142,	'file',	141,	'driver/drivers/index',	'查看',	'fa fa-circle-o',	'',	'',	0,	1557307683,	1557307683,	0,	'normal'),
+(143,	'file',	141,	'driver/drivers/add',	'添加',	'fa fa-circle-o',	'',	'',	0,	1557307683,	1557307683,	0,	'normal'),
+(144,	'file',	141,	'driver/drivers/edit',	'编辑',	'fa fa-circle-o',	'',	'',	0,	1557307683,	1557307683,	0,	'normal'),
+(145,	'file',	141,	'driver/drivers/del',	'删除',	'fa fa-circle-o',	'',	'',	0,	1557307683,	1557307683,	0,	'normal'),
+(146,	'file',	141,	'driver/drivers/multi',	'批量更新',	'fa fa-circle-o',	'',	'',	0,	1557307683,	1557307683,	0,	'normal'),
+(153,	'file',	140,	'driver/driver_list',	'司机列表',	'fa fa-circle-o',	'',	'',	1,	1557316255,	1557319612,	10,	'normal'),
+(154,	'file',	153,	'driver/driver_list/index',	'查看',	'fa fa-circle-o',	'',	'',	0,	1557316255,	1557316255,	0,	'normal'),
+(155,	'file',	153,	'driver/driver_list/add',	'添加',	'fa fa-circle-o',	'',	'',	0,	1557316255,	1557316255,	0,	'normal'),
+(156,	'file',	153,	'driver/driver_list/edit',	'编辑',	'fa fa-circle-o',	'',	'',	0,	1557316255,	1557316255,	0,	'normal'),
+(157,	'file',	153,	'driver/driver_list/del',	'删除',	'fa fa-circle-o',	'',	'',	0,	1557316255,	1557316255,	0,	'normal'),
+(158,	'file',	153,	'driver/driver_list/multi',	'批量更新',	'fa fa-circle-o',	'',	'',	0,	1557316255,	1557316255,	0,	'normal'),
+(159,	'file',	140,	'driver/withdraw',	'提现列表',	'fa fa-circle-o',	'',	'',	1,	1557473619,	1557473687,	0,	'normal'),
+(160,	'file',	159,	'driver/withdraw/index',	'查看',	'fa fa-circle-o',	'',	'',	0,	1557473619,	1557473619,	0,	'normal'),
+(161,	'file',	159,	'driver/withdraw/add',	'添加',	'fa fa-circle-o',	'',	'',	0,	1557473619,	1557473619,	0,	'normal'),
+(162,	'file',	159,	'driver/withdraw/edit',	'编辑',	'fa fa-circle-o',	'',	'',	0,	1557473619,	1557473619,	0,	'normal'),
+(163,	'file',	159,	'driver/withdraw/del',	'删除',	'fa fa-circle-o',	'',	'',	0,	1557473619,	1557473619,	0,	'normal'),
+(165,	'file',	99,	'orders/appointment',	'跨城预约',	'fa fa-circle-o',	'',	'',	1,	1557477676,	1557477712,	0,	'normal'),
+(166,	'file',	165,	'orders/appointment/index',	'查看',	'fa fa-circle-o',	'',	'',	0,	1557477676,	1557477676,	0,	'normal'),
+(167,	'file',	165,	'orders/appointment/add',	'添加',	'fa fa-circle-o',	'',	'',	0,	1557477676,	1557477676,	0,	'normal'),
+(168,	'file',	165,	'orders/appointment/edit',	'编辑',	'fa fa-circle-o',	'',	'',	0,	1557477676,	1557477676,	0,	'normal'),
+(169,	'file',	165,	'orders/appointment/del',	'删除',	'fa fa-circle-o',	'',	'',	0,	1557477676,	1557477676,	0,	'normal'),
+(170,	'file',	165,	'orders/appointment/multi',	'批量更新',	'fa fa-circle-o',	'',	'',	0,	1557477676,	1557477676,	0,	'normal'),
+(171,	'file',	6,	'general/config/sms',	'短信配置',	'fa fa-circle-o',	'',	'',	0,	1558581202,	1558581202,	0,	'normal'),
+(172,	'file',	6,	'general/config/wechat',	'微信配置',	'fa fa-circle-o',	'',	'',	0,	1560908708,	1560908708,	0,	'normal'),
+(173,	'file',	6,	'general/config/ssl',	'ssl证书配置',	'fa fa-circle-o',	'',	'',	0,	1560908759,	1560908759,	0,	'normal'),
+(174,	'file',	6,	'general/config/rest',	'其他配置',	'fa fa-circle-o',	'',	'',	0,	1560908803,	1560908803,	0,	'normal'),
+(175,	'file',	81,	'general/config/activity',	'活动设置',	'fa fa-circle-o',	'',	'',	1,	1561080566,	1561080566,	0,	'normal'),
+(176,	'file',	6,	'general/config/registel_tpl',	'注册小程序模板',	'fa fa-circle-o',	'',	'',	0,	1561127784,	1561128192,	0,	'normal');
+]]></install>
+	<uninstall><![CDATA[DROP TABLE IF EXISTS `ims_freight_about`;
+DROP TABLE IF EXISTS `ims_freight_admin`;
+DROP TABLE IF EXISTS `ims_freight_admin_log`;
+DROP TABLE IF EXISTS `ims_freight_amount_detail`;
+DROP TABLE IF EXISTS `ims_freight_attachment`;
+DROP TABLE IF EXISTS `ims_freight_auth_group`;
+DROP TABLE IF EXISTS `ims_freight_auth_group_access`;
+DROP TABLE IF EXISTS `ims_freight_auth_rule`;
+DROP TABLE IF EXISTS `ims_freight_banner`;
+DROP TABLE IF EXISTS `ims_freight_cates`;
+DROP TABLE IF EXISTS `ims_freight_command`;
+DROP TABLE IF EXISTS `ims_freight_config`;
+DROP TABLE IF EXISTS `ims_freight_counter`;
+DROP TABLE IF EXISTS `ims_freight_coupon`;
+DROP TABLE IF EXISTS `ims_freight_driver`;
+DROP TABLE IF EXISTS `ims_freight_driver_cancel_order`;
+DROP TABLE IF EXISTS `ims_freight_driver_info`;
+DROP TABLE IF EXISTS `ims_freight_driver_order`;
+DROP TABLE IF EXISTS `ims_freight_driver_update_car`;
+DROP TABLE IF EXISTS `ims_freight_faq`;
+DROP TABLE IF EXISTS `ims_freight_feedback`;
+DROP TABLE IF EXISTS `ims_freight_order`;
+DROP TABLE IF EXISTS `ims_freight_score`;
+DROP TABLE IF EXISTS `ims_freight_user_coupon`;
+DROP TABLE IF EXISTS `ims_freight_user_formid`;
+DROP TABLE IF EXISTS `ims_freight_users`;
+DROP TABLE IF EXISTS `ims_freight_vehicle`;
+DROP TABLE IF EXISTS `ims_freight_withdrawal`;
+]]></uninstall>
+	<upgrade><![CDATA[upgrade.php]]></upgrade>
+</manifest>

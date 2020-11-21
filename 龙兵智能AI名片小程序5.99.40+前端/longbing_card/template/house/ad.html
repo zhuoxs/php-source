@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/css/main.css" media="all">
+</head>
+<body>
+
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">Banner管理</div>
+
+                <div class="layui-card-body">
+
+                    <div class="div-search-body">
+
+                        <a class="layui-btn btn-add" href="javascript:;">
+                            <i class="layui-icon">&#xe608;</i> 新增Banner
+                        </a>
+
+                    </div>
+
+                    <table class="layui-table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>位置</th>
+                            <th>图片</th>
+                            <th>跳转类型</th>
+                            <th>跳转链接</th>
+                            <th>排序值</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {loop $list $item}
+                        <tr>
+                            <td>{$item['id']}</td>
+                            <td>{if $item['type']==1 }
+                                房源首页广告位
+                                {else}
+                                该位置未开发
+                                {/if}
+                            </td>
+                            <td>
+                                {if $item['path']}
+                                <img src="{$item['path']}" alt="">
+                                {else}
+                                暂无图标
+                                {/if}
+                            </td>
+                            <td>{if $item['link_type']==1 }
+                                拨打电话
+                                {elseif $item['link_type']==2}
+                                跳转其他小程序
+                                {elseif $item['link_type']==3}
+                                跳转网页
+                                {elseif $item['link_type']==4}
+                                跳转小程序内部页面
+                                {else}
+                                暂无
+                                {/if}
+                            </td>
+                            <td>{$item['link']}</td>
+                            <td>{$item['top']}</td>
+                            {if $item['status'] == 1}
+                            <td><span class="layui-badge layui-bg-blue">已开启</span></td>
+                            {else}
+                            <td><span class="layui-badge layui-bg-black">已关闭</span></td>
+                            {/if}
+
+                            <td>
+
+                                {if $item['status'] == 1}
+                                <button type="button" class="layui-btn layui-btn-xs layui-btn-warm btn-disable-item"
+                                        itemId="{$item['id']}">
+                                    关闭
+                                </button>
+                                {else}
+                                <button type="button" class="layui-btn layui-btn-xs layui-btn-normal btn-enable-item"
+                                        itemId="{$item['id']}">
+                                    开启
+                                </button>
+                                {/if}
+                                <button type="button" class="layui-btn layui-btn-xs btn-edit-item"
+                                        itemId="{$item['id']}" itemTop="{$item['top']}" itemTitle="{$item['title']}">
+                                    编辑
+                                </button>
+
+                            </td>
+                        </tr>
+                        {/loop}
+                        </tbody>
+                    </table>
+
+                    <div id="dataTable"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<input type="hidden" name="itemId" id="itemId" value="0">
+
+<script src="../../../addons/{$module_name}/images/layuiadmin/layui/layui.js"></script>
+<script src="../../../addons/{$module_name}/images/js/jquery.min.js"></script>
+
+{template 'common/footer'}
+
+<style>
+    .friend-link{
+        text-align: center;
+    }
+    .copyright{
+        text-align: center;
+        padding-bottom: 20px;
+    }
+</style>
+
+<script>
+    var keyword = $('#inputSearch').val();
+    layui.use(['layer', 'laypage'], function () {
+        var layer = layui.layer
+            , laypage = layui.laypage;
+
+        //执行一个laypage实例
+        laypage.render({
+            elem: 'dataTable' //注意，这里的 test1 是 ID，不用加 # 号
+            , count: {$count} //数据总数，从服务端得到
+            , curr: {$curr}
+            , limit: {$perPage} //每页显示的条数
+            ,layout: ['count', 'prev', 'page', 'next', 'refresh', 'skip']
+            , jump: function (obj, first) {
+                //obj包含了当前分页的所有参数，比如：
+                console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+
+                //首次不执行
+                if (!first) {
+                    //do something
+                    layer.load();
+                    window.location.href = "{php echo $this->createWebUrl('house/ad')}" + "&page=" + obj.curr;
+                }
+            }
+        });
+    });
+
+    //  禁用
+    $('.btn-disable-item').click(function () {
+        var id = $(this).attr('itemId');
+        if (!id) {
+            layer.msg('获取参数失败!');
+            return false;
+        }
+        layer.open({
+            content: '是否关闭该内容?',
+            yes: function (index, layero) {
+                layer.close(index); //如果设定了yes回调，需进行手工关闭
+                layer.load();
+                var url = "{php echo $this->createWebUrl('house/ad')}";
+                var data = {
+                    action: 'disable',
+                    id: id
+                };
+
+                postDataReload(url, data);
+            }
+        });
+    });
+
+    //  启用
+    $('.btn-enable-item').click(function () {
+        var id = $(this).attr('itemId');
+        if (!id) {
+            layer.msg('获取参数失败!');
+            return false;
+        }
+        layer.open({
+            content: '是否开启该内容?',
+            yes: function (index, layero) {
+                layer.close(index); //如果设定了yes回调，需进行手工关闭
+                layer.load();
+                var url = "{php echo $this->createWebUrl('house/ad')}";
+                var data = {
+                    action: 'enable',
+                    id: id
+                };
+
+                postDataReload(url, data);
+            }
+        });
+    });
+
+    //添加
+    $('.btn-add').click(function () {
+        layer.load();
+        var url = "{php echo $this->createWebUrl('house/adEdit')}";
+        window.location.href = url;
+    });
+
+    //  编辑
+    $('.btn-edit-item').click(function () {
+        var id = $(this).attr('itemId');
+        if (!id) {
+            layer.msg('获取id失败!');
+            return false;
+        }
+        layer.load();
+        var url = "{php echo $this->createWebUrl('house/adEdit')}" + "&id=" +id;
+        window.location.href = url;
+    });
+
+
+</script>
+<script src="../../../addons/{$module_name}/images/js/main.js"></script>
+</body>
+</html>

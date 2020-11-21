@@ -1,0 +1,295 @@
+var t = {};
+
+t.apiWxBlindTel = function(t) {
+    return this.post("Api_wx|blindTel", t, 0, !1);
+}, t.apiWxDecryptPhone = function(t) {
+    return this.post("Api_wx|decryptPhone", t, 0, !1);
+}, t.apiStoreConfirmAllOrder = function(t) {
+    return this.post("Api_store|confirmAllOrder", t, 0, !1);
+}, t.apiGetQRCode = function(t) {
+    return this.post("Api_wx|getQRCode", t, 0, !1);
+}, t.apiDeleteQRCode = function(t) {
+    return this.post("Api_wx|deleteQRCode", t, 0, !1);
+}, t.apiStoreGetBannerAll = function(t) {
+    return this.post("Api_store|getBannerAll", t, 0, !1);
+}, t.apiUserMyInfo = function(t) {
+    return this.post("Api_user|myInfo", t, 0, !1);
+}, t.apIindexNotic = function(t) {
+    return this.post("Api_index|notic", t, 0, !1);
+}, t.apIindexMenuIcon = function(t) {
+    return this.post("Api_index|menuIcon", t, 0, !1);
+}, t.apIindexIndex = function(t) {
+    return this.post("Api_index|index", t, 0, !1);
+}, t.apiPanicIndexPanicList = function(t) {
+    return this.post("Api_panic|indexPanicList", t, 0, !1);
+}, t.apiDistributionSetDistributionParents = function(t) {
+    return this.post("Api_distribution|setDistributionParents", t, 0, !1);
+}, t.apiCityGetProvinceList = function(t) {
+    return this.post("Api_city|getProvinceList", t, 0, !1);
+}, t.apiCityGetCityArea = function(t) {
+    return this.post("Api_city|getCityArea", t, 0, !1);
+}, t.apiCityGetCityByAdcode = function(t) {
+    return this.post("Api_city|getCityByAdcode", t, 0, !1);
+}, t.apiCityGetAddressToAdcodeByCity = function(t) {
+    return this.post("Api_city|getAddressToAdcodeByCity", t, 0, !1);
+}, t.apiCityGetAddressToAdcodeDetail = function(t) {
+    return this.post("Api_city|getAddressToAdcodeDetail", t, 0, !1);
+}, t.apiCityGetAddressToCity = function(t) {
+    return this.post("Api_city|getAddressToCity", t, 0, !1);
+}, t.apiCityGetSearchCity = function(t) {
+    return this.post("Api_city|getSearchCity", t, 0, !1);
+}, t.apiIndexGetWeatherDetail = function(t) {
+    return this.post("Api_index|getWeatherDetail", t, 0, !1);
+}, t.apiIndexGetStatistics = function(t) {
+    return this.post("Api_index|getStatistics", t, 0, !1);
+}, t.apiStoreApplyStore = function(t) {
+    return this.post("Api_store|applyStore", t, 0, !1);
+}, t.apiStoreGetMyStore = function(t) {
+    return this.post("Api_store|getMyStore", t, 0, !1);
+}, t.apiStoreGetStoreRecharges = function(t) {
+    return this.post("Api_store|getStoreRecharges", t, 0, !1);
+}, t.apiStoreGetStoreDetail = function(t) {
+    return this.post("Api_store|getStoreDetail", t, 0, !1);
+}, t.apiStoreGetStoreCategoryList = function(t) {
+    return this.post("Api_store|getStoreCategoryList", t, 0, !1);
+}, t.apiStoreGetStoreList = function(t) {
+    return this.post("Api_store|getStoreList", t, 0, !1);
+}, t.apiStoreGetStoreDistrictList = function(t) {
+    return this.post("Api_store|getStoreDistrictList", t, 0, !1);
+}, t.apiStoreGetNewsestStore = function(t) {
+    return this.post("Api_store|getNewsestStore", t, 0, !1);
+}, t.apiStoreSetcancelCollection = function(t) {
+    return this.post("Api_store|setcancelCollection", t, 0, !1);
+}, t.apiStoreGetMyCollectionList = function(t) {
+    return this.post("Api_store|getMyCollectionList", t, 0, !1);
+}, t.apiStoreCheckStoreUserPermission = function(t) {
+    return this.post("Api_store|checkStoreUserPermission", t, 0, !1);
+}, t.apiWithdrawSetWithDraw = function(t) {
+    return this.post("Api_withdraw|setWithDraw", t, 0, !1);
+}, t.apiWithdrawGetWithDrawSet = function(t) {
+    return this.post("Api_withdraw|getWithDrawSet", t, 0, !1);
+}, t.apiStoreRenewalfeeStore = function(t) {
+    return this.post("Api_store|renewalfeeStore", t, 0, !1);
+}, t.apiVipVipcard = function(t) {
+    return this.post("Api_vip|vipcard", t, 0, !1);
+}, t.apiUserGetUserPrivilege = function(t) {
+    return this.post("Api_user|getUserPrivilege", t, 0, !1);
+}, t.apiVipOpenVip = function(t) {
+    return this.post("Api_vip|openVip", t, 0, !1);
+}, t.apiVipCodeActivation = function(t) {
+    return this.post("Api_vip|codeActivation", t, 0, !1);
+}, t.apiVipWelfareList = function(t) {
+    return this.post("Api_vip|welfareList", t, 0, !1);
+}, t.apIcouponCouponList = function(t) {
+    return this.post("Api_coupon|couponList", t, 0, !1);
+}, t.apIcouponCouponDetails = function(t) {
+    return this.post("Api_coupon|couponDetails", t, 0, !1);
+}, t.apIcouponGetCoupon = function(t) {
+    return this.post("Api_coupon|getCoupon", t, 0, !1);
+}, t.apIcouponMyCoupon = function(t) {
+    return this.post("Api_coupon|myCoupon", t, 0, !1);
+}, t.apIcouponOrderinfo = function(t) {
+    return this.post("Api_coupon|Orderinfo", t, 0, !1);
+}, t.apiPanicPanicList = function(t) {
+    return this.post("Api_panic|panicList", t, 0, !1);
+}, t.apiPanicPanicDetail = function(t) {
+    return this.post("Api_panic|panicDetails", t, 0, !1);
+}, t.apiPanicPanicGetAttrInfo = function(t) {
+    return this.post("Api_panic|getAttrInfo", t, 0, !1);
+}, t.apiPanicPanicBuy = function(t) {
+    return this.post("Api_panic|buy", t, 0, !1);
+}, t.apiPanicOrderInfo = function(t) {
+    return this.post("Api_panic|orderInfo", t, 0, !1);
+}, t.apiPanicPayAgain = function(t) {
+    return this.post("Api_panic|payAgain", t, 0, !1);
+}, t.apiPanicCancelOrder = function(t) {
+    return this.post("Api_panic|cancelOrder", t, 0, !1);
+}, t.apiPanicDelOrder = function(t) {
+    return this.post("Api_panic|delOrder", t, 0, !1);
+}, t.apiPanicAddComment = function(t) {
+    return this.post("Api_panic|addComment", t, 0, !1);
+}, t.apiPanicOrderList = function(t) {
+    return this.post("Api_panic|orderList", t, 0, !1);
+}, t.apiPanicAfterSale = function(t) {
+    return this.post("Api_panic|afterSale", t, 0, !1);
+}, t.apiPanicCancelAfterSale = function(t) {
+    return this.post("Api_panic|cancelAfterSale", t, 0, !1);
+}, t.apiPoodsGetGoodsList = function(t) {
+    return this.post("Api_goods|getGoodsList", t, 0, !1);
+}, t.apiGoodsGetBookGoodsList = function(t) {
+    return this.post("Api_goods|getBookGoodsList", t, 0, !1);
+}, t.apiGoodsGetCategoryList = function(t) {
+    return this.post("Api_goods|getCategoryList", t, 0, !1);
+}, t.apiGoodsGetGoodsDetail = function(t) {
+    return this.post("Api_goods|getGoodsDetail", t, 0, !1);
+}, t.apGoodscheckGoods = function(t) {
+    return this.post("Api_goods|checkGoods", t, 0, !1);
+}, t.apiGoodsGetGoodsAttrInfo = function(t) {
+    return this.post("Api_goods|getGoodsAttrInfo", t, 0, !1);
+}, t.apiCommentBaseCommentList = function(t) {
+    return this.post("Api_comment|baseCommentList", t, 0, !1);
+}, t.apiOrderGetPlaceOrder = function(t) {
+    return this.post("Api_order|getPlaceOrder", t, 0, !1);
+}, t.apiOrderSetOrder = function(t) {
+    return this.post("Api_order|setOrder", t, 0, !1);
+}, t.apiOrderGetWxParamByOrderId = function(t) {
+    return this.post("Api_order|getWxParamByOrderId", t, 0, !1);
+}, t.apiOrderGetOrderList = function(t) {
+    return this.post("Api_order|getOrderList", t, 0, !1);
+}, t.apiOrderGetOrderDetail = function(t) {
+    return this.post("Api_order|getOrderDetail", t, 0, !1);
+}, t.apiOrderCancelOrder = function(t) {
+    return this.post("Api_order|cancelOrder", t, 0, !1);
+}, t.apiOrderConfirmOrder = function(t) {
+    return this.post("Api_order|confirmOrder", t, 0, !1);
+}, t.apiOrderGetWxParamByOrderId = function(t) {
+    return this.post("Api_order|getWxParamByOrderId", t, 0, !1);
+}, t.apiOrderDelOrder = function(t) {
+    return this.post("Api_order|delOrder", t, 0, !1);
+}, t.apiOrderSetOrderRefund = function(t) {
+    return this.post("Api_order|setOrderRefund", t, 0, !1);
+}, t.apiCommentComment = function(t) {
+    return this.post("Api_comment|comment", t, 0, !1);
+}, t.apiOrderGetOrderDetailByOrderNo = function(t) {
+    return this.post("Api_order|getOrderDetailByOrderNo", t, 0, !1);
+}, t.apiOrderCancelOrderRefund = function(t) {
+    return this.post("api_order|cancelOrderRefund", t, 0, !1);
+}, t.apiActivityGetActivityList = function(t) {
+    return this.post("Api_activity|getActivityList", t, 0, !1);
+}, t.apiGoodsGetAllTypeGoods = function(t) {
+    return this.post("Api_goods|getAllTypeGoods", t, 0, !1);
+}, t.apiDistributionSetDistributionpromoter = function(t) {
+    return this.post("Api_distribution|setDistributionpromoter", t, 0, !1);
+}, t.apiDistributionIsDistributionpromoter = function(t) {
+    return this.post("Api_distribution|isDistributionpromoter", t, 0, !1);
+}, t.apiDistributionGetDistributionset = function(t) {
+    return this.post("Api_distribution|getDistributionset", t, 0, !1);
+}, t.apiDistributionGetTeamLevel = function(t) {
+    return this.post("Api_distribution|getTeamLevel", t, 0, !1);
+}, t.apiDistributionGetDistributionorderList = function(t) {
+    return this.post("Api_distribution|getDistributionorderList", t, 0, !1);
+}, t.apiDistributionSetWithDraw = function(t) {
+    return this.post("Api_distribution|setWithDraw", t, 0, !1);
+}, t.apiDistributionGetDistributionpromoterDetail = function(t) {
+    return this.post("Api_distribution|getDistributionpromoterDetail", t, 0, !1);
+}, t.apiDistributionGetMercapdetails = function(t) {
+    return this.post("Api_distribution|getMercapdetails", t, 0, !1);
+}, t.apiDistributionGetWithdrawList = function(t) {
+    return this.post("Api_distribution|getWithdrawList", t, 0, !1);
+}, t.apiPinGoodsList = function(t) {
+    return this.post("Api_pin|goodsList", t, 0, !1);
+}, t.apiPinGoodsDetails = function(t) {
+    return this.post("Api_pin|goodsDetails", t, 0, !1);
+}, t.apiPinGetAttrInfo = function(t) {
+    return this.post("Api_pin|getAttrInfo", t, 0, !1);
+}, t.apiPinGetRules = function(t) {
+    return this.post("Api_pin|getRules", t, 0, !1);
+}, t.apiPinGetBuy = function(t) {
+    return this.post("Api_pin|getBuy", t, 0, !1);
+}, t.apiPinJoinPage = function(t) {
+    return this.post("Api_pin|joinPage", t, 0, !1);
+}, t.apiPinOrderDetails = function(t) {
+    return this.post("Api_pin|orderDetails", t, 0, !1);
+}, t.apiPinOrderList = function(t) {
+    return this.post("Api_pin|orderList", t, 0, !1);
+}, t.apiPinCancleOrd = function(t) {
+    return this.post("Api_pin|cancleOrd", t, 0, !1);
+}, t.apiPinAgainPay = function(t) {
+    return this.post("Api_pin|againPay", t, 0, !1);
+}, t.apiPinAfterSale = function(t) {
+    return this.post("Api_pin|afterSale", t, 0, !1);
+}, t.apiPinCancelAfterSale = function(t) {
+    return this.post("Api_pin|cancelAfterSale", t, 0, !1);
+}, t.apiPinAddComment = function(t) {
+    return this.post("Api_pin|addComment", t, 0, !1);
+}, t.apiFreesheetFreeSheetList = function(t) {
+    return this.post("Api_freesheet|FreeSheetList", t, 0, !1);
+}, t.apiFreesheetFreeSheetInfo = function(t) {
+    return this.post("Api_freesheet|freeSheetInfo", t, 0, !1);
+}, t.apiFreesheetRuleset = function(t) {
+    return this.post("Api_freesheet|ruleset", t, 0, !1);
+}, t.apiFreesheetLottery = function(t) {
+    return this.post("Api_freesheet|lottery", t, 0, !1);
+}, t.apiFreesheetHelpLottery = function(t) {
+    return this.post("Api_freesheet|helpLottery", t, 0, !1);
+}, t.apiFreesheetOrderInfo = function(t) {
+    return this.post("Api_freesheet|orderInfo", t, 0, !1);
+}, t.apiFreesheetOrderList = function(t) {
+    return this.post("Api_freesheet|orderList", t, 0, !1);
+}, t.apiFreesheetDelOrd = function(t) {
+    return this.post("Api_freesheet|delOrd", t, 0, !1);
+}, t.apiInfoGetInfosettings = function(t) {
+    return this.post("Api_info|getInfosettings", t, 0, !1);
+}, t.apiInfoGetInfocategory = function(t) {
+    return this.post("Api_info|getInfocategory", t, 0, !1);
+}, t.apiIGetInfotop = function(t) {
+    return this.post("Api_info|getInfotop", t, 0, !1);
+}, t.apiISetInfo = function(t) {
+    return this.post("Api_info|setInfo", t, 0, !1);
+}, t.apiInfoGetInfosettings = function(t) {
+    return this.post("Api_info|getInfosettings", t, 0, !1);
+}, t.apiInfoGetInfoList = function(t) {
+    return this.post("Api_info|getInfoList", t, 0, !1);
+}, t.apiInfoSetLike = function(t) {
+    return this.post("Api_info|setLike", t, 0, !1);
+}, t.apiStoreGetBanner = function(t) {
+    return this.post("Api_store|getBanner", t, 0, !1);
+}, t.apiInfoGetInfoDetail = function(t) {
+    return this.post("Api_info|getInfoDetail", t, 0, !1);
+}, t.apiInfoGetMyInfo = function(t) {
+    return this.post("Api_info|getMyInfo", t, 0, !1);
+}, t.apiInfoSetInfoComment = function(t) {
+    return this.post("Api_info|setInfoComment", t, 0, !1);
+}, t.apiInfoGetInfoCommentList = function(t) {
+    return this.post("Api_info|getInfoCommentList", t, 0, !1);
+}, t.apiInfoDelInfo = function(t) {
+    return this.post("Api_info|delInfo", t, 0, !1);
+}, t.apiInfoIsSecondInfocategory = function(t) {
+    return this.post("Api_info|isSecondInfocategory", t, 0, !1);
+}, t.apiInfoGetMyInfobrowselike = function(t) {
+    return this.post("Api_info|getMyInfobrowselike", t, 0, !1);
+}, t.ApiRechargeRecharge = function(t) {
+    return this.post("Api_recharge|recharge", t, 0, !1);
+}, t.apiRechargePay = function(t) {
+    return this.post("Api_recharge|pay", t, 0, !1);
+}, t.apiRechargeBalanceList = function(t) {
+    return this.post("Api_recharge|balanceList", t, 0, !1);
+}, t.apiIntegralMyInteral = function(t) {
+    return this.post("Api_integral|myInteral", t, 0, !1);
+}, t.apiIntegralIntegralRecord = function(t) {
+    return this.post("Api_integral|integralRecord", t, 0, !1);
+}, t.apiIntegralCategory = function(t) {
+    return this.post("Api_integral|category", t, 0, !1);
+}, t.apiIntegralGoodslist = function(t) {
+    return this.post("Api_integral|goodslist", t, 0, !1);
+}, t.apiIntegralintegralSet = function(t) {
+    return this.post("Api_integralintegralSet", t, 0, !1);
+}, t.apiIntegralBannerPic = function(t) {
+    return this.post("Api_integral|bannerPic", t, 0, !1);
+}, t.apiIntegralGoodsDetails = function(t) {
+    return this.post("Api_integral|goodsDetails", t, 0, !1);
+}, t.apiIntegralOrderList = function(t) {
+    return this.post("Api_integral|orderList", t, 0, !1);
+}, t.apiIntegralCancelOrder = function(t) {
+    return this.post("Api_integral|cancelOrder", t, 0, !1);
+}, t.apiIntegralDelOrd = function(t) {
+    return this.post("Api_integral|delOrd", t, 0, !1);
+}, t.apiIntegralCheckGet = function(t) {
+    return this.post("Api_integral|checkGet", t, 0, !1);
+}, t.apiIntegralGoodsDetails = function(t) {
+    return this.post("Api_integral|goodsDetails", t, 0, !1);
+}, t.apiIntegralGetDistribution = function(t) {
+    return this.post("Api_integral|getDistribution", t, 0, !1);
+}, t.apiIntegralBuy = function(t) {
+    return this.post("Api_integral|buy", t, 0, !1);
+}, t.apiIntegralGetShop = function(t) {
+    return this.post("Api_integral|getShop", t, 0, !1);
+}, t.apiIntegralAgainPay = function(t) {
+    return this.post("Api_integral|againPay", t, 0, !1);
+}, t.apiIntegralBalancePay = function(t) {
+    return this.post("Api_integral|balancePay", t, 0, !1);
+}, t.apiIntegralOrderDetails = function(t) {
+    return this.post("Api_integral|orderDetails", t, 0, !1);
+}, t.apiShopGetShop = function(t) {
+    return this.post("Api_shop|getShop", t, 0, !1);
+}, module.exports = t;

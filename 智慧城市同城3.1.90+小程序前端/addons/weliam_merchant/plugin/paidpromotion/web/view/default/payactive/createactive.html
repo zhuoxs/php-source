@@ -1,0 +1,359 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+	<li ><a href="{php echo web_url('paidpromotion/payactive/activelist')}">活动列表</a></li>
+	<li {if empty($id)}class="active"{/if}><a href="{php echo web_url('paidpromotion/payactive/createactive')}">添加活动</a></li>
+	{if !empty($id)}
+	<li class="active"><a href="#">编辑活动</a></li>
+	{/if}
+</ul>
+<div class="app-content">
+	<div class="app-form">
+		<form action="" method="post" class="form-horizontal form form-validate" id="form">
+		<div class="panel panel-default">
+		<div class="panel-heading">活动设置</div>
+		<div class="panel-body">
+			<div class="form-group">
+				<label class="col-sm-2 control-label">活动标题</label>
+				<div class="col-sm-7 col-xs-12">
+					<input type="text" name="active[title]" class="form-control" value="{$active['title']}" />
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label">活动时间</label>
+				<div class="col-sm-7 col-xs-12">
+					{php echo tpl_form_field_daterange('activetime', array('starttime'=>date('Y-m-d H:i:s',$active['starttime']),'endtime'=>date('Y-m-d H:i:s',$active['endtime'])),true);}
+					<span class='help-block'>同一时段相同插件场只能有一个支付有礼活动,不可重复创建。</span>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">活动广告图</label>
+				<div class="col-sm-6 col-xs-6">
+					{php echo tpl_form_field_image('active[img]',$active['img']);}
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">广告链接</label>
+				<div class="col-sm-6 col-xs-6">
+					<input type="text" name="active[advurl]" class="form-control" value="{$active['advurl']}" />
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label">参与用户资格</label>
+				<div class="col-sm-9 col-xs-12">
+					<label class="radio-inline">
+                        <input type="radio" value="0" name="userstatus" {if $active['datestatus'] == 0 || empty($active['userstatus']) } checked {/if}>全体用户
+                    </label>
+					<label class="radio-inline">
+                        <input type="radio" value="1" name="userstatus" {if $active['datestatus'] == 1} checked {/if}>一卡通会员
+                    </label>
+				</div>
+			</div>
+			<div class="form-group layui-form-item">
+				<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">适用插件</label>
+				<div class="col-sm-9 layui-input-block">
+					<label class="checkbox-inline" onclick="showplu()" >
+						<input type="checkbox" value="rush" name="plugin[]" {if $active['rushflag']} checked="checked" {/if}/> 抢购
+					</label>
+					<label class="checkbox-inline" onclick="showplu()" >
+						<input type="checkbox" value="groupon" name="plugin[]" {if $active['grouponflag']} checked="checked" {/if}/> 团购
+					</label>
+					<label class="checkbox-inline" onclick="showplu()" >
+						<input type="checkbox" value="fightgroup" name="plugin[]" {if $active['fightgroupflag']} checked="checked" {/if}/> 拼团
+					</label>
+					<label class="checkbox-inline" onclick="showplu()" >
+						<input type="checkbox" value="coupon" name="plugin[]" {if $active['couponflag']} checked="checked" {/if}/> 卡券
+					</label>
+					<label class="checkbox-inline" onclick="showplu()" >
+						<input type="checkbox" value="halfcard" name="plugin[]" {if $active['halfcardflag']} checked="checked" {/if}/> 一卡通
+					</label>
+					<label class="checkbox-inline" onclick="showplu()" >
+						<input type="checkbox" value="charge" name="plugin[]" {if $active['chargeflag']} checked="checked" {/if}/> 付费入驻
+					</label>
+					<label class="checkbox-inline" >
+						<input type="checkbox" value="payonline" name="plugin[]" {if $active['payonlineflag']} checked="checked" {/if}/> 在线买单
+					</label>
+					<span class='help-block'>在线买单需要在参与方式为订单金额时有效</span>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label">参与活动方式</label>
+				<div class="col-sm-9 col-xs-12">
+					<label class="radio-inline" onclick="changeorderstatus(0)" >
+                        <input type="radio" value="0" name="orderstatus" {if $active['orderstatus'] == 0 || empty($active['orderstatus'])} checked {/if}>订单金额
+                    </label>
+                    <label class="radio-inline" onclick="changeorderstatus(1)" >
+                        <input type="radio" value="1" name="orderstatus" {if $active['orderstatus'] == 1} checked {/if}>购买商品
+                    </label>
+				</div>
+			</div>
+			<div class="form-group" id="orderprice"   {if $active['orderstatus']} style="display: none;" {/if}>
+				<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">订单金额</label>
+				<div class="col-md-6">
+					<div class="input-group">
+						<span class="input-group-addon">￥</span>
+						<input type="text" name="active[orderprice]" class="form-control" value="{$active['orderprice']}" />
+					</div>
+				</div>
+			</div>
+			<div id="ordergoods" {if empty($active['orderstatus'])} style="display: none;" {/if} >
+				<!--抢购-->
+				<div class="form-group" id="rushgoods" {if empty($active['rushflag'])} style="display: none;" {/if}>
+					<label class="col-xs-7 col-sm-3 col-md-2 control-label">抢购商品</label>
+					<div class="col-sm-7 col-xs-6">
+						<select multiple="multiple" name="rushids[]" class="form-control select2 col-sm-7 col-xs-6" style="width: 100%;">
+						{if $rushgoods}
+						{loop $rushgoods $rush}
+							<option value="{$rush['id']}" {if in_array($rush['id'],$active['rushids'])} selected="selected" {/if}>{$rush['name']}</option>
+						{/loop}
+						{else}
+							<option value="0"  selected="selected" >无商品</option>
+						{/if}
+						</select>
+					</div>
+				</div>
+				<!--团购-->
+				<div class="form-group" id="groupongoods" {if empty($active['grouponflag'])} style="display: none;" {/if}>
+					<label class="col-xs-7 col-sm-3 col-md-2 control-label">团购商品</label>
+					<div class="col-sm-7 col-xs-6">
+						<select multiple="multiple" name="grouponids[]" class="form-control select2 col-sm-7 col-xs-6" style="width: 100%;">
+						{if $groupongoods}
+						{loop $groupongoods $groupon}
+							<option value="{$groupon['id']}" {if in_array($groupon['id'],$active['grouponids'])} selected="selected" {/if}>{$groupon['name']}</option>
+						{/loop}
+						{else}
+							<option value="0"  selected="selected" >无商品</option>
+						{/if}
+						</select>
+					</div>
+				</div>
+				<!--拼团-->
+				<div class="form-group" id="fightgroupgoods" {if empty($active['fightgroupflag'])} style="display: none;" {/if}>
+					<label class="col-xs-7 col-sm-3 col-md-2 control-label">拼团商品</label>
+					<div class="col-sm-7 col-xs-6">
+						<select multiple="multiple" name="fightgroupids[]" class="form-control select2 col-sm-7 col-xs-6" style="width: 100%;">
+						{if $fightgroupgoods}
+						{loop $fightgroupgoods $fight}
+							<option value="{$fight['id']}" {if in_array($fight['id'],$active['fightgroupids'])} selected="selected" {/if}>{$fight['name']}</option>
+						{/loop}
+						{else}
+							<option value="0"  selected="selected" >无商品</option>
+						{/if}
+						</select>
+					</div>
+				</div>
+				<!--卡券-->
+				<div class="form-group" id="coupongoods" {if empty($active['couponflag'])} style="display: none;" {/if}>
+					<label class="col-xs-7 col-sm-3 col-md-2 control-label">超级券</label>
+					<div class="col-sm-7 col-xs-6">
+						<select multiple="multiple" name="couponids[]" class="form-control select2 col-sm-7 col-xs-6" style="width: 100%;">
+						{if $coupongoods}
+						{loop $coupongoods $coupon}
+							<option value="{$coupon['id']}" {if in_array($coupon['id'],$active['couponids'])} selected="selected" {/if}>{$coupon['title']}</option>
+						{/loop}
+						{else}
+							<option value="0"  selected="selected" >无商品</option>
+						{/if}
+						</select>
+					</div>
+				</div>
+				<!--一卡通-->
+				<div class="form-group" id="halfcardgoods" {if empty($active['halfcardflag'])} style="display: none;" {/if}>
+					<label class="col-xs-7 col-sm-3 col-md-2 control-label">一卡通类型</label>
+					<div class="col-sm-7 col-xs-6">
+						<select multiple="multiple" name="halfcardids[]" class="form-control select2 col-sm-7 col-xs-6" style="width: 100%;">
+						{if $halfcardgoods}
+						{loop $halfcardgoods $halfcard}
+							<option value="{$halfcard['id']}" {if in_array($halfcard['id'],$active['halfcardids'])} selected="selected" {/if}>{$halfcard['name']}</option>
+						{/loop}
+						{else}
+							<option value="0"  selected="selected" >无商品</option>
+						{/if}
+						</select>
+					</div>
+				</div>
+				<!--付费入驻-->
+				<div class="form-group" id="chargegoods" {if empty($active['chargeflag'])} style="display: none;" {/if}>
+					<label class="col-xs-7 col-sm-3 col-md-2 control-label">付费入驻类型</label>
+					<div class="col-sm-7 col-xs-6">
+						{if $chargegoods}
+						<select multiple="multiple" name="chargeids[]" class="form-control select2 col-sm-7 col-xs-6" style="width: 100%;">
+						{loop $chargegoods $charge}
+							<option value="{$charge['id']}" {if in_array($charge['id'],$active['chargeids'])} selected="selected" {/if}>{$charge['name']}</option>
+						{/loop}
+						{else}
+							<option value="0"  selected="selected" >无商品</option>
+						{/if}
+						</select>
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="col-sm-7 col-xs-6 col-xs-offset-2" style="padding: 0;">
+						<span class='help-block'>不选择商品即该插件下所有商品都参与活动。</span>
+					</div>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">赠送积分</label>
+				<div class="col-md-6">
+					<div class="input-group">
+						<span class="input-group-addon">每消费</span>
+						<input type="text" name="active[integralrate]" class="form-control" value="{$active['integralrate']}" />
+						<span class="input-group-addon">元赠送1积分</span>
+					</div>
+					<span class='help-block'>不填或填0即为不赠送积分</span>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label">赠品</label>
+				<div class="col-sm-9 col-xs-12">
+					<label class="radio-inline" onclick="changegiftstatus(0)" >
+                        <input type="radio" value="0" name="giftstatus" {if $active['giftstatus'] == 0 || empty($active['giftstatus'])} checked {/if}>无赠品
+                    </label>
+					<label class="radio-inline" onclick="changegiftstatus(1)" >
+                        <input type="radio" value="1" name="giftstatus" {if $active['giftstatus'] == 1} checked {/if}>优惠券
+                    </label>
+					<label class="radio-inline" onclick="changegiftstatus(2)" >
+                        <input type="radio" value="2" name="giftstatus" {if $active['giftstatus'] == 2} checked {/if}>激活码
+                    </label>
+				</div>
+			</div>
+			<!--赠券-->
+			<div class="form-group" id="giftcoupon"  {if $active['giftstatus'] != 1} style="display: none;" {/if}>
+				<label class="col-xs-7 col-sm-3 col-md-2 control-label">赠送优惠券</label>
+				<div class="col-sm-7 col-xs-6">
+					<select name="active[giftcouponid][]"  multiple="multiple"  class="form-control select2 col-sm-7 col-xs-6" style="width: 100%;">
+						{if $giftcoupons}
+                            {loop $giftcoupons $gift}
+                                <option value="{$gift['id']}" {if in_array($gift['id'],$active['giftcouponid'])} selected="selected" {/if}>{$gift['title']}</option>
+                            {/loop}
+						{else}
+							<option value="0"  selected="selected" >无可用卡券</option>
+						{/if}
+					</select>
+				</div>
+			</div>
+			<!--赠码-->
+			<div class="form-group" id="giftcode"  {if $active['giftstatus'] != 2} style="display: none;" {/if}>
+				<label class="col-sm-2 control-label">赠送激活码</label>
+				<div class="col-sm-7 col-xs-6">
+					<select name="active[codereamrk]" class="form-control select2 col-sm-7 col-xs-6" style="width: 100%;">
+						{if $giftcode}
+						{loop $giftcode $codee}
+						<option value="{$codee['remark']}" {if $codee['remark'] == $active['codereamrk']} selected="selected" {/if}>{$codee['remark']}</option>
+						{/loop}
+						{else}
+							<option value="0"  selected="selected" >无可用激活码</option>
+						{/if}
+					</select>
+				</div>
+			</div>
+			<!--获取方式-->
+			<div class="form-group" id="getstatus" {if $active['giftstatus'] != 1} style="display: none;" {/if}>
+				<label class="col-sm-2 control-label">发放方式</label>
+				<div class="col-sm-9 col-xs-12">
+					<label class="radio-inline" >
+                        <input type="radio" value="0" name="getstatus" {if $active['getstatus'] == 0 || empty($active['getstatus'])} checked {/if}>手动领取
+                    </label>
+                    <label class="radio-inline" >
+                        <input type="radio" value="1" name="getstatus" {if $active['getstatus'] == 1} checked {/if}>自动发放
+                    </label>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label">状态</label>
+				<div class="col-sm-9 col-xs-12">
+					<label class="radio-inline" >
+                        <input type="radio" value="1" name="status" {if $active['status'] == 1} checked {/if}>启用
+                    </label>
+					<label class="radio-inline" >
+                        <input type="radio" value="0" name="status" {if $active['status'] == 0 || empty($active['status'])} checked {/if}>禁止
+                    </label>
+				</div>
+			</div>
+		</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label"></label>
+			<div class="col-sm-9">
+				<input type="hidden" name="id" value="{$id}" id="id"/>
+				<input type="submit" name="submit" value="提交" class="btn btn-primary min-width" />
+				<input type="hidden" name="token" value="{$_W['token']}" />
+			</div>
+		</div>
+		</form>
+	</div>
+</div>
+<script>
+	function changeorderstatus(flag){
+		if(flag){
+			$('#orderprice').hide();
+			$('#ordergoods').show();
+		}else{
+			$('#orderprice').show();
+			$('#ordergoods').hide();
+		}
+		showplu();
+	}
+
+	function changegiftstatus(flag){
+		if(flag == 1){
+			$('#giftcoupon').show();
+			$('#giftcode').hide();
+			$('#getstatus').show();
+		}else if(flag == 2){
+			$('#giftcoupon').hide();
+			$('#giftcode').show();
+			$('#getstatus').hide();
+		}else{
+			$('#giftcoupon').hide();
+			$('#giftcode').hide();
+			$('#getstatus').hide();
+		}
+	}
+	$(function(){
+		var t = setInterval(de,1000);
+		function de(){
+			$('.layui-form-select').remove();
+		}
+		showplu();
+	});
+
+	function showplu(){
+		var arrChk=$("input[name='plugin[]']:checked");
+		var arrplu = new Array();
+		$(arrChk).each(function(){
+			arrplu.push($(this).val());
+		});
+		if($.inArray('rush',arrplu) > -1){
+			$('#rushgoods').show();
+		}else{
+			$('#rushgoods').hide();
+		}
+		if($.inArray('groupon',arrplu) > -1){
+			$('#groupongoods').show();
+		}else{
+			$('#groupongoods').hide();
+		}
+		if($.inArray('fightgroup',arrplu) > -1){
+			$('#fightgroupgoods').show();
+		}else{
+			$('#fightgroupgoods').hide();
+		}
+		if($.inArray('coupon',arrplu) > -1){
+			$('#coupongoods').show();
+		}else{
+			$('#coupongoods').hide();
+		}
+		if($.inArray('halfcard',arrplu) > -1){
+			$('#halfcardgoods').show();
+		}else{
+			$('#halfcardgoods').hide();
+		}
+		if($.inArray('charge',arrplu) > -1){
+			$('#chargegoods').show();
+		}else{
+			$('#chargegoods').hide();
+		}
+	}
+</script>
+{php include wl_template('common/footer');}

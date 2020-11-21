@@ -1,0 +1,364 @@
+{php include wl_template('common/header');}
+<style type="text/css">
+	.rank img{width:16px; height:16px;}
+	ul.order-process li {float : left; width : 20%; text-align : center; overflow : hidden;}
+	ul.order-process li p {margin-bottom : 10px;}
+	ul.order-process .order-process-time {color : #CCC;}
+	ul.order-process .order-process-state {color : #999;}
+	ul.order-process .square {display : inline-block; width : 20px; height : 20px; border-radius : 10px; background-color : #E6E6E6; color : #FFF;font-style : normal; position : absolute; left : 50%; z-index : 2; top : 50%; margin : -10px 0 0 -10px;}
+	ul.order-process .square.finish{padding-top:2px; padding-right:2px;}
+	ul.order-process .bar {position : relative; height : 20px;}
+	ul.order-process .bar:after {content : " "; display : block; width : 100%; height : 4px; background-color : #E6E6E6; position : absolute; top : 50%; margin-top : -2px; z-index : 1;}
+	ul.order-process li:first-child .bar:after {margin-left : 50%;}
+	ul.order-process li:last-child .bar:after {margin-left :-50%;}
+	ul.order-process .active .square,ul.order-process .active .bar:after {background-color : #80CCFF;}
+	ul.order-process .active .order-process-state {color : #80CCFF;}
+	.order-detail-info>div{margin-bottom:10px; padding-left:15px;}
+	.page-trade-order h4{font-size:14px; font-weight:700;}
+	.page-trade-order .form-group{margin-bottom:0;}
+	.page-trade-order .form-group .control-label{font-weight:normal; color:#999;}
+	.page-trade-order .order-infos{border-right:1px solid #ddd;}
+	.page-trade-order .parting-line{height:1px;border-top:1px dashed #e5e5e5; margin:3px 0;}
+	.page-trade-order .order-state{padding-left:40px; position:relative; margin:20px 0 40px;}
+	.page-trade-order .order-state>span{color:#07d; position:absolute; left:0; top:5px; font-size:25px; display:inline-block; width:30px; height:30px; border:1px solid #07d; border-radius:30px; text-align:center; line-height:30px;}
+	#close-order ul li{padding:5px 15px; cursor:pointer;}
+	#close-order ul li:hover{background:#eee;}
+	.fix a.js-order-edit-address{display:none; color:red;}
+	.fix:hover a.js-order-edit-address{display:inline;}
+	.page-trade-order .col-sm-9{word-break: break-word; overflow:hidden;}
+</style>
+
+<!--订单物流 start-->
+<div class="page-trade-order">
+	<div class="order-list">
+		<div class="freight-content">
+			<div class="freight-template-item panel panel-default">
+				<div class="panel-heading clearfix">
+					<div class="pull-left">
+						<strong>订单号：{$item['orderno']}</strong>
+					</div>
+				</div>
+				<div class="panel-body table-responsive collapse in" id="freight-template-item-0" style="padding:0;  overflow-y:hidden;">
+					<table class="table">
+						<tbody>
+							<tr>
+								<div style="margin-top:20px;">
+									<ul class="order-process clearfix">
+										<li {if !empty($item['orderno'])}class="active"{/if}>
+											<p class="order-process-state">买家已下单</p>
+											<p class="bar"><i class="square">{if !empty($item['orderno'])}√{else}1{/if}</i></p>
+											<p class="order-process-time">{php echo date("Y-m-d H:i:s", $item['createtime'])}</p>
+										</li>
+										<li  {if in_array($item['status'],array('1','2','3','4','6','7'))}class="active"{/if}>
+											<p class="order-process-state">买家己付款</p>
+											<p class="bar"><i class="square">{if in_array($item['status'],array('1','2','3','4','6','7'))}√{else}2{/if}</i></p>
+											<p class="order-process-time">{php echo date("Y-m-d H:i:s", $item['ptime'])}</p>
+										</li>
+										{if $item['status']!=6 && $item['status']!=7}
+										<li  {if in_array($item['status'],array('2','3','4','6','7'))}class="active"{/if}>
+											<p class="order-process-state">等待上门核销</p>
+											<p class="bar"><i class="square">{if in_array($item['status'],array('2','3','4','6','7'))}√{else}3{/if}</i></p>
+											<p class="order-process-time"></p>
+										</li>
+										
+										<li  {if in_array($item['status'],array('4','6','7'))}class="active"{/if}>
+											<p class="order-process-state">交易完成</p>
+											<p class="bar"><i class="square">{if in_array($item['status'],array('4','6','7'))}√{else}5{/if}</i></p>
+											<p class="order-process-time"></p>
+										</li>
+										{/if}
+										{if $item['status']==6 || $item['status']==7}
+										<li {if $item['status']==6 || $item['status']==7}class="active"{/if}>
+											<p class="order-process-state">待退款</p>
+											<p class="bar"><i class="square finish">{if $item['status']==6 || $item['status']==7}√{else}3{/if}</i></p>
+											<p class="order-process-time"></p>
+										</li>
+										<li {if $item['status']==7}class="active"{/if}> 
+											<p class="order-process-state">已退款</p>
+											<p class="bar"><i class="square">{if $item['status']==7}√{else}4{/if}</i></p>
+											<p class="order-process-time"></p>
+										</li>
+										{/if}
+									</ul>
+								</div>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<!--订单物流 end-->
+<!--订单概况 start-->
+<div class="page-trade-order">
+	<div class="order-list">
+		<div class="freight-content">
+			<div class="freight-template-item panel panel-default">
+				<div class="panel-body clearfix">
+					<form class="form-horizontal" role="form">
+						<div class="col-xs-12 col-sm-6 order-infos">
+							<h4>订单信息</h4>
+							<div class="form-group clearfix">
+								<label class="col-md-3 control-label">订单编号：</label>
+								<div class="col-md-9 form-control-static">
+									{$item['orderno']}
+								</div>
+							</div>
+							<div class="form-group clearfix">
+								<label class="col-md-3 control-label">付款类型：</label>
+								<div class="col-md-9 form-control-static">
+									{if $item['pay_type'] == 4}货到付款{else}微信支付{/if}
+								</div>
+							</div>
+							<div class="form-group clearfix">
+								<label class="col-md-3 control-label">支付流水：</label>
+								<div class="col-md-9 form-control-static">
+									{$item['price']}元
+								</div>
+							</div>
+							<div class="form-group clearfix" >
+								<label class="col-md-3 control-label">支付单号：</label>
+								<div class="col-md-9 form-control-static">
+									{if $item['transid']}{$item['transid']}{else}-{/if}
+								</div>
+							</div>
+							<div class="form-group clearfix hidden">
+								<label class="col-md-3 control-label">买家：</label>
+								<div class="col-md-9 form-control-static">
+									非粉丝
+								</div>
+							</div>
+							<div class="parting-line"></div>
+							<div class="form-group clearfix">
+								<label class="col-md-3 control-label">配送方式：</label>
+								<div class="col-md-9 form-control-static">
+									上门消费
+								</div>
+							</div>
+							<div class="form-group clearfix">
+								<label class="col-md-3 control-label">提货人信息：</label>
+								<div class="col-md-9 form-control-static">
+									{$item['addname']} - {$item['mobile']}
+								</div>
+							</div>
+							<div class="form-group clearfix">
+								<label class="col-md-3 control-label">自提地址信息：</label>
+								<div class="col-md-9 form-control-static fix">
+									{if !empty($item_fetch_log['province'])}
+									<p>{$item_fetch_log['province']['name']} {$item_fetch_log['city']['name']} {$item_fetch_log['district']['name']} {$item_fetch_log['store']['address']}, {$item_fetch_log['store']['name']}, {if !empty($item_fetch_log['store']['tel'])} {$item_fetch_log['store']['tel']} {else} {$item_fetch_log['store']['mobile']} {/if}</p>
+									{else}
+									-
+									{/if}
+								</div>
+							</div>
+							<div class="parting-line"></div>
+							<div class="form-group clearfix">
+								<label class="col-md-3 control-label">买家留言：</label>
+								<div class="col-md-9 form-control-static">
+									{$item['remark']}
+								</div>
+							</div>
+						</div>
+						<div class="col-xs-12 col-sm-6">
+							<div class="order-state">
+								<span><i class="fa fa-exclamation"></i></span>
+								<h4>
+									订单状态 : <span id="order_status_text" class="big">{if $item['status']==0}未付款{elseif $item['status']==1}已付款{elseif $item['status']==2}待消费{elseif $item['status']==3}已完成{elseif $item['status']==4}已完成{elseif $item['status']==5}已取消{elseif $item['status']==6}待退款{elseif $item['status']==7}已退款{/if}</span>
+									<h5 class="text-gray" id="order_status_content">{if $item['status']==0}买家下单，未支付。{elseif $item['status']==1}买家下单并支付，组团中。{elseif $item['status']==2}买家组团成功，等待上门消费。{elseif $item['status']==3}买家已消费。{elseif $item['status']==4}买家已消费，订单交易完成。{elseif $item['status']==5}买家取消订单。{elseif $item['status']==6}买家组团失败，等待卖待退款。{elseif $item['status']==7}卖家已退款。{/if}</h5>
+									
+									<h5 class="js-cancel-reason b">
+										如买家未在规定时间内付款，订单将自动成为已取消订单，如买家未在设置时间内确认收货，订单将自动成为已签收订单；
+									</h5>
+								</h4>
+							</div>
+							<div class="form-group clearfix js-fee">
+								<div class="col-md-offset-1 col-md-6">
+									<div>
+										<h5>货价<span class="pull-right text-currency b">￥{php echo currency_format($item['goodsprice']);}</span></h5>
+										<h5>运费<span class="pull-right b">￥{php echo currency_format($item['freight']);}</span></h5>
+										{if $item['is_usecard']==0 || !empty($item['first_fee'])}
+										<h5 class="js-discount-info" style="cursor: pointer;">
+											优惠
+											<i class="fa fa-caret-right"></i>
+											<span class="pull-right b js-discount-fee" style="display: block;">
+												- ￥{php echo $item['discount_fee']+$item['first_fee'] }
+											</span>
+										</h5>
+										<div style="padding-left: 1em;display: none;" class="js-discount-info-detail">
+												<h6>优惠券减({php echo cutstr($coupon_template['name'], '15', true);})<span class="pull-right">- ￥{php echo currency_format($item['discount_fee']);}</span></h6>
+												<h6>团长优惠(团ID：{$item['tuan_id']})<span class="pull-right">- ￥{php echo currency_format($item['first_fee']);}</span></h6>
+										</div>
+										{/if}
+										<hr>
+										<h4><span class="big">{if intval($item['status']) == 0}应付{else}已付{/if}金额：</span><span class="pull-right text-currency b big">￥{php echo currency_format($item['price']);}</span><p></p></h4>
+									</div>
+								</div>
+							</div>
+							<div class="parting-line"></div>
+							<div class="form-group clearfix">
+								<label class="col-md-3 control-label">卖家备注：</label>
+								<div class="col-md-9 form-control-static js-admin-remark">
+									{if $item['adminremark']} {$item['adminremark']} {else} - {/if}
+								</div>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!--订单概况 end-->
+<div class="page-trade-order">
+	<div class="order-list">
+		<div class="freight-content">
+			<div class="freight-template-item panel panel-default">
+				<div Class="panel-heading">
+					清单
+				</div>
+				<div class="panel-body table-responsive collapse in" style="overflow-y:hidden;">
+					<table class="table">
+						<thead class="js-freight-cost-list-header">
+							<tr>
+								<th style="width:33%;">商品名称</th>
+								<th style="width:33%; text-align: center;">规格</th>
+								<th style="width:33%; text-align: center;">数量</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td  class="goods-info"><img width="50" height="50" src="{$item['goods']['gimg']}">{$item['goods']['gname']}</td>
+								<td style="text-align: center;">{$item['optionname']}</td>
+								<td class="text-center">{$item['gnum']}</td>
+							</tr>
+							<tr>
+								<td class="text-center b">合计:</td>
+								<td class="text-center b">
+									<span class="js-count-payment" >￥{php echo currency_format($item['price']);}</span>
+								</td>
+							</tr>
+							<tr>
+								<input type="hidden" name="id" id="id" value="{$id}" />
+								<td colspan="10" class="text-right">
+									{if empty($item['status'])}
+									<button  class="btn btn-primary js-confrimpay">确认付款</button>
+									{/if}
+									{if $item['status'] == 2}
+									<button type="button" class="btn btn-primary js-confirmsend" data-toggle="modal" data-target="#modal-confirmsend">确认核销</button>
+									{/if}
+									{if $item['status'] == 4}					
+									<button  class="btn btn-danger js-cancelsend">取消核销</button>
+									{/if}	
+									{if !empty($item['transid'])}
+										{if $item['status'] == 7}
+										<button  class="btn btn-success" >已退款</button>
+										{elseif $item['status']==1 || $item['status']==6 || $item['status']==2 || $item['status']==3 || $item['status']==4}
+										<button class="btn btn-success js-refund" >退款</button>
+										{/if}
+									{/if}
+								</td>
+						</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+require(['jquery', 'order'], function($, o){
+	$(function(){
+		$('.js-discount-info').click(function(){
+			$arrow = $(this).find('i');
+			if($arrow.hasClass('fa-caret-right')) {
+				$(this).next().show()
+				$arrow.removeClass('fa-caret-right').addClass('fa-caret-down');
+				$('.js-discount-fee').hide();
+			} else {
+				$arrow.removeClass('fa-caret-down').addClass('fa-caret-right');
+				$(this).next().hide()
+				$('.js-discount-fee').show();
+			}
+		});
+		o.rank($('.rank').get(0));
+		
+		$('.goods-info').hover(function() {
+			var obj = this;
+			var img = $(this).find('img').attr('src');
+			var $pop = util.popover(obj, function($popover, obj) {
+				obj.$popover = $popover;
+			}, '<div><img src="'+ img+'" style="max-width:200px; max-height:200px;"></div>');
+		}, function() {
+			this.$popover.remove();
+		});
+		{if !empty($item['express']) && !empty($item['express_no'])}
+		$(".js-logistics").click(function() {
+			var obj = this;
+			var expressid = "{$item['express']}";
+			var expressno = "{$item['express_no']}";
+			util.loading();
+			$.post("{php echo url('order/express/logistics_info');}", {type : expressid, postid : expressno}, function(data) {
+				if (!data.errno) {
+					var html = '';
+					$.each(data, function(index, content) {
+						if (content != '') {
+							html += '<div><span class="time">' +content.time+ '</span>'+'<span class="content">' +content.content+ '</span></div>';
+						};
+					});
+					util.loaded();
+					var $pop = util.popover(obj, function($popover, obj) {
+						obj.$popover = $popover;
+					}, {placement: 'right', html : '<div id="return-data" style="height:300px; overflow-y:scroll;"><p>查询结果：</p>' + html+'</div>'});
+				} else {
+					util.loaded();
+					$pop = util.popover(obj, function($popover, obj) {
+						obj.$popover = $popover;
+					}, {placement: 'right', html : '<p>查询结果：</p>' + '<div><span class="content">' +data.message+ '</span></div>'});
+				}
+			}, 'json');
+		});
+		{/if}
+		
+		$('.js-confrimpay').click(function(e) {
+			e.stopPropagation();
+			var id = $('#id').val();
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				location.href = "{php echo web_url('order/fetch/confrimpay')}&id="+id;
+			}, {html: "确认付款?"});
+			
+		});
+		$('.js-confirmsend').click(function(e) {
+			e.stopPropagation();
+			var id = $('#id').val();
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				location.href = "{php echo web_url('order/fetch/confirmsend')}&id="+id;
+			}, {html: "确认核销?"});
+			
+		});
+		$('.js-cancelsend').click(function(e) {
+			e.stopPropagation();
+			var id = $('#id').val();
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				location.href = "{php echo web_url('order/fetch/cancelsend')}&id="+id;
+			}, {html: "确认取消?"});
+			
+		});
+		$('.js-refund').click(function(e) {
+			var id = $('#id').val();
+			e.stopPropagation();
+			util.nailConfirm(this, function(state) {
+				if(!state) return;
+				location.href = "{php echo web_url('order/fetch/refund')}&id="+id;
+			}, {html: "确认退款?"});
+			
+		});
+	});
+});
+</script>
+{php include wl_template('common/footer');}

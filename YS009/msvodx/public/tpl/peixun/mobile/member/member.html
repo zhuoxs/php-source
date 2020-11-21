@@ -1,0 +1,134 @@
+{include file="common/header"}
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/mobile/static/css/member.css">
+<style>
+    .choice a{display: block;margin: 10px 5px;border:1px solid #ddd;padding: 7px 0;border-radius: 32px;width: 80%;margin: 10px auto;}
+    .layui-m-layercont{padding: 30px;}
+    .layui-m-layer0 .layui-m-layerchild{width: 70%;background: rgba(255,255,255,.9);}
+</style>
+<script>
+    function sign(){
+        var url = "{:url('api/sign')}";
+        $.post(url, {}, function (data) {
+            if (data.resultCode == 0) {
+                $('.sign').find('var').html('+'+data.data['value']);
+                $('.sign').addClass("signs");
+                $('.sign').addClass("Completion");
+                layer.open({skin:'msg',content:'签到成功',time:2, end:function(){
+                    $('.sign').removeClass("signs");
+                }});
+            }else{
+                layer.open({skin:'msg',content:data.error,time:2});
+            }
+        }, 'JSON');
+    }
+</script>
+    <div>
+        <div class="info-box">
+            <img class="pic-info" src="{$info['headimgurl']}" />
+            <div class="info-d">
+                <span class="name">{$info['nickname']}</span>
+
+                <span>
+                    <a href="{:url('member/record_gold')}" style="display: inline-block;color:#fff;margin-right: 10px;"><i class="btn fn-jinbi2 vip"></i>{$info['money']}</a>
+                    {if condition="$info['is_permanent'] eq 1"}
+                            <i class="btn fn-vip1 vip"></i> 永久vip
+                   {else/}
+                   {if condition="$info['out_time'] gt time()"}
+                    <i class="btn fn-vip1 vip"></i> {:safe_date('Y/m/d',$info['out_time'])} 截止
+                    {else/}
+                        {if condition="empty($info['out_time'])"}
+                            <i class="btn fn-vip1"></i>您还不是VIP
+                         {else/}
+                            <i class="btn fn-vip1"></i>已过期
+                         {/if}
+                    {/if}
+                    {/if}
+                </span>
+            </div>
+            <div class="foot-bg"></div>
+        </div>
+        <div class="M-member">
+           <!-- <div class="m-box money info-d">
+                &lt;!&ndash;<a href="{:url('member/record_gold')}" style="display: inline-block;"><i class="btn fn-jinbi2 vip"></i>{$info['money']}</a>&ndash;&gt;
+                <div><a>卡密充值</a></div>
+            </div>-->
+            <div class="m-box info-d" style="width: 30%;">
+                <div><a href="{:url('member/card_pwd')}">卡密充值</a></div>
+            </div>
+            <div class="m-box info-d">
+                <div>
+                    <a href="{:url('systemPay/recharge')}">充值金币/VIP</a>
+                </div>
+            </div>
+            <div class="m-box ">
+                <a  {if condition="isSign() neq '1'"}class="sign"   {else/} class="sign Completion" {/if}  onclick="sign()">签到 <var>+2</var></a>
+            </div>
+
+        </div>
+        <div class="M-left">
+            <ul>
+                <li><a href="{:url('member/video')}"><i class="btn fn-video"></i><br />我的视频</a></li>
+                <li><a href="{:url('member/novel')}"><i class="btn fn-novel"></i><br />我的资讯</a></li>
+                <li><a href="{:url('member/img')}"><i class="btn fn-img"></i><br />我的图片</a></li>
+                <li><a href="{:url('member/collection_video')}"><i class="btn fn-info"></i><br />我的收藏</a></li>
+                <li class="withdrawals"><a><i class="btn fn-tixian"></i><br />提现管理</a></li>
+                <li><a href="{:url('member/record_pay')}"><i class="btn fn-3"></i><br />充值记录</a></li>
+                <li><a href="{:url('member/record_video')}"><i class="btn fn-icon12"></i><br />消费记录</a></li>
+                <li><a href="{:url('member/agent')}"><i class="btn fn-management"></i><br />代理商</a></li>
+                <li class="manage"><a><i class="btn fn-info-mage"></i><br />信息管理</a></li>
+                <!--<li><a href="{:url('member/card_pwd')}"><i class="btn fn-qiaquan"></i><br />卡密充值</a></li>-->
+            </ul>
+        </div>
+        <div class="logout">
+            <i class="btn fn-tuichu"></i>
+            <a onclick="logout()" >退出登陆</a>
+        </div>
+    </div>
+    <?php  $register_validate = empty(get_config('register_validate')) ? 0 : get_config('register_validate');?>
+<script>
+    function logout(){
+        var url="{:url('api/logout')}";
+        $.post(url,{},function(){
+            layer.open({time: 2,skin:'msg',content: '退出成功',end:function(){
+                location.href="/";
+            }});
+        },'JSON');
+    }
+
+    $(function () {
+      var register_validate =  "{$register_validate}";
+       $(".M-left li.manage").click(function(){
+           var info = "{:url('member/info')}";
+           var email = "{:url('member/set_email')}";
+           var phone = "{:url('member/set_phone')}";
+           var pwd = "{:url('member/set_pwd')}";
+           var gold = "{:url('member/record_gold')}";
+           var content = '';
+           content +='<div class="choice"><a href="'+info+'">个人信息</a>';
+           if(register_validate == 1){
+               content +='<a href="'+email+'">更换邮箱</a>';
+           }
+           if(register_validate == 2){
+               content +='<a href="'+phone+'">更换手机</a>';
+           }
+           content +='<a href="'+pwd+'">修改密码</a>';
+           content +='<a href="'+gold+'">金币记录</a></div>';
+           layer.open({
+               content: content
+           });
+       });
+       /*提现*/
+        $(".M-left li.withdrawals").click(function(){
+            var add = "{:url('member/add_card')}";
+            var operate = "{:url('member/get_out_pay')}";
+            var record = "{:url('member/record_out_pay')}";
+            layer.open({
+                content: '<div class="choice"><a href="'+operate+'">提现</a><a href="'+record+'">提现记录</a><a href="'+add+'">新增账户</a></div>'
+            });
+        });
+
+
+    });
+</script>
+
+{include file="common/footer"}

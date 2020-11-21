@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{$_W['sys_name']}</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="">
+    {template 'public/header'}
+
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+    {template 'public/top'}
+    {template 'public/left'}
+
+    <div class="layui-body">
+        <div class="layui-main">
+            <div class="layui-tab">
+                <ul class="layui-tab-title">
+                    <li {if $operation == 'display'} class="layui-this" {/if}><a href="{php echo $this->createWebUrl('shop_adv',array('op' =>'display'))}">轮播图</a></li>
+                    <li {if empty($adv['id']) && $operation == 'post'} class="layui-this" {/if}><a href="{php echo $this->createWebUrl('shop_adv',array('op' =>'post'))}">添加</a></li>
+                    {if !empty($adv['id']) && $operation == 'post'}<li class="layui-this"><a href="{php echo $this->createWebUrl('shop_adv',array('op' =>'post','id'=>$adv['id']))}">编辑</a></li>{/if}
+                </ul>
+            </div>
+
+        {if $operation == 'display'}
+            <div class="layui-form">
+                <table class="layui-table" lay-even="" lay-skin="nob">
+                    <colgroup>
+                        <col width="50">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>排序</th>
+                            <th>标题</th>
+                            <th>图片</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {php $this_statuses = array('0'=>'禁用','1'=>'启用'); }
+                        {loop $list $adv}
+                        <tr>
+                            <td>{$adv['id']}</td>
+                            <td>{$adv['displayorder']}</td>
+                            <td>{$adv['advname']}</td>
+                            <td><img src="{php echo tomedia($adv['thumb'])}" class="my-lay-table-img"></td>
+                            <td>{$this_statuses[$adv['enabled']]}</td>
+                            <td style="text-align:left;">
+                                <a href="{php echo $this->createWebUrl('shop_adv', array('op' => 'post', 'id' => $adv['id']))}" class="layui-btn layui-btn-normal" title="编辑">编辑</a>
+                                <a href="javascript:;" class="layui-btn layui-btn-danger btn-del" data-id="{$adv['id']}" title="删除">删除</a>
+                            </td>
+                        </tr>
+                        {/loop}
+                    </tbody>
+                </table>
+                <div class="pager">
+                    {$pager}
+                </div>
+            </div>
+
+            <script>
+                // 分页
+                layui.use('laypage', function(){
+                    var laypage = layui.laypage;
+
+                    laypage.render({
+                        elem: $('.pager')
+                        ,limit: '{php echo $psize; }'
+                        ,count: '{php echo $total; }'
+                        ,theme: '#1E9FFF'
+                        ,curr:  '{php echo $pindex; }'
+                        ,hash: '{php echo $pindex; }'
+                        ,jump: function (obj, first) {
+                            if (first != true) {
+                                var currentPage = obj.curr; //获取点击的页码
+                                window.location.href = "{php echo $this->createWebUrl('shop_adv')}&page=" + currentPage;
+                            }
+                        }
+                    });
+                });
+                $(function () {
+                    $('.pager').show();
+                });
+            </script>
+            <script>
+                // 删除
+                layui.use('layer', function(){
+                    var layer = layui.layer;
+
+                    $('.btn-del').click(function () {
+                        $obj = $(this);
+                        $del_id = $obj.data('id');
+                        layer.confirm('确定要删除吗？', {
+                            offset: '30%',
+                            btn: ['再想想', '删除'],
+                            scrollbar: false,
+                            closeBtn: 0,
+                        }, function (i) {
+                           layer.close(i);
+                        }, function (i) {
+                            let $url = "{php echo $this->createWebUrl('shop_adv', array('op'=>'delete'))}";
+
+                            $.ajax({
+                                type: "POST",
+                                url: $url,
+                                dataType: 'json',
+                                data: {
+                                    id: $del_id
+                                },
+                                success: function (rs) {
+                                    console.log(rs);
+                                    if (rs.message.errno == '0') {
+                                        layer.msg('删除成功！', {
+                                            time: 500
+                                        },
+                                        function () {
+                                            $obj.closest('tr').fadeOut(200, function () {
+                                                $obj.remove();
+                                            });
+                                        });
+                                    } else {
+                                        layer.alert(rs.message.message);
+                                        $obj.removeClass('lock');
+                                    }
+                                },
+                                error: function () {
+                                    layer.alert('提交过程发生错误，请与管理员联系！');
+                                    $obj.removeClass('lock');
+                                }
+                            });
+                        });
+                    });
+                });
+            </script>
+
+        {elseif $operation == 'post'}
+            <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+                {if empty($adv['id']) && $operation == 'post'}
+                    <legend>添加</legend>
+                {else}
+                    <legend>编辑</legend>
+                {/if}
+            </fieldset>
+            <form class="layui-form" action="" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="id" value="{$adv['id']}" />
+                <div class="layui-form-item">
+                    <label class="layui-form-label">排序</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="displayorder" value="{$adv['displayorder']}" class="layui-input" placeholder="数字越大，排名越靠前">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">标题</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="advname" lay-verify="required" value="{$adv['advname']}" class="layui-input" placeholder="为保证访问速度，最多只显示最近上传5张图片！">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">图片</label>
+                    <div class="layui-input-block">
+                        {php echo slwl_tpl_form_field_image('thumb', $adv['thumb']);}
+                        <div class="layui-form-mid layui-word-aux">图片大小为 750 * 310 像素</div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">动作</label>
+                    <div class="layui-input-block">
+                        {php echo slwl_tpl_form_show_link('page_url', $adv['page_url']);}
+                        <div class="layui-form-mid layui-word-aux">可手动输入带 https 链接，但小程序必需配置相关域名信息</div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">状态</label>
+                    <div class="layui-input-block">
+                        <input type="radio" name="enabled" value="1" title="启用" {if $adv['enabled']==1 || empty($adv['id'])}checked{/if}>
+                        <input type="radio" name="enabled" value="0" title="禁用" {if $adv['enabled']==0 && !empty($adv['id'])}checked{/if}>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit="" lay-filter="adv">提交</button>
+                        <input type="hidden" name="token" value="{$_W['token']}" />
+                    </div>
+                </div>
+            </form>
+
+            <script>
+                layui.use('form', function(){
+                    var form = layui.form;
+
+                    form.on('submit(adv)', function(data){
+                        let url = "{php echo $this->createWebUrl('shop_adv', array('op'=>'post'))}";
+                        var $obj = $(this);
+
+                        if (!$obj.hasClass('lock')) {
+                            $obj.addClass('lock'); // 不能再点击
+
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                dataType: 'json',
+                                data: data.field,
+                                success: function (rs) {
+                                    console.log(rs.message.errno);
+                                    if (rs.message.errno == '0') {
+                                        layer.msg('保存成功！' , {
+                                            time: 500
+                                        }, function () {
+                                            window.location.href = "{php echo $this->createWebUrl('shop_adv')}";
+                                        });
+                                    } else {
+                                        layer.alert(rs.message.message);
+                                    }
+                                    $obj.removeClass('lock');
+                                },
+                                error: function () {
+                                    layer.alert('提交过程发生错误，请与管理员联系！');
+                                    $obj.removeClass('lock');
+                                }
+                            });
+                        }
+
+                        return false;
+                    });
+                });
+            </script>
+        {/if}
+        </div>
+    </div>
+
+    {template 'public/copyright'}
+</div>
+
+{template 'public/footer'}
+</body>
+</html>

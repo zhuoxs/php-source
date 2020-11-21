@@ -1,0 +1,2 @@
+<?php
+ namespace GuzzleHttp\Psr7; use Psr\Http\Message\StreamInterface; class NoSeekStream implements StreamInterface { use StreamDecoratorTrait; public function seek($offset, $whence = SEEK_SET) { throw new \RuntimeException("\x43\141\156\x6e\157\x74\x20\163\x65\x65\153\x20\141\x20\116\x6f\x53\145\x65\x6b\123\x74\x72\x65\141\x6d"); } public function isSeekable() { return false; } }

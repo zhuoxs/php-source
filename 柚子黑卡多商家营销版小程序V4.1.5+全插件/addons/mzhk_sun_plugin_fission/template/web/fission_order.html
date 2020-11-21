@@ -1,0 +1,149 @@
+{template 'common/header'}
+<link rel="stylesheet" href="../addons/mzhk_sun/static/layui/css/layui.css?1"  media="all">
+<script src="../addons/mzhk_sun/static/layui/layui.js" charset="utf-8"></script>
+
+<link rel="stylesheet" type="text/css" href="../addons/mzhk_sun_plugin_fission/template/style/style.css">
+<style type="text/css">
+	.table-responsive{border: 1px solid #e7e7eb;}
+	.table-responsive th{background-color: #f4f6f9;border-right: 1px solid #e7e7eb}
+	.table-responsive td{border-right: 1px solid #e7e7eb}
+	.table-responsive .btn-primary{border:0; padding: 3px 8px; margin-bottom: 3px;}
+	.row {margin-left: -35px;}
+</style>
+<ul class="we7-page-tab">
+	<li class="active"><a>裂变券订单</a></li>
+</ul>
+<!-- 搜索start -->
+<div class="row ygrow">
+    <div class="col-lg-12">
+        <form action="" method="get">
+			<input type="hidden" name="c" value="site" />
+			<input type="hidden" name="a" value="entry" />
+			<input type="hidden" name="m" value="mzhk_sun_plugin_fission" />
+			<input type="hidden" name="do" value="fission_order" />
+			<input type="hidden" name="op" id="doop" value="" />
+            <div class="input-group">
+                <table>
+                  <tr>
+                    <td>
+                      <select name="nametype">
+                        <option value="">请选择输入内容</option>
+                        <option value="key_fname" {if $nametype=='key_fname'}selected{/if}>商品名称</option>
+                        <option value="key_bname" {if $nametype=='key_bname'}selected{/if}>商家名称</option>
+						<option value="key_uname" {if $nametype=='key_uname'}selected{/if}>用户名称</option>
+						<option value="key_id" {if $nametype=='key_uname'}selected{/if}>订单ID</option>
+                      </select>
+                    </td>
+                    <td><input type="text" name="keywords" class="form-control" value="{$keywords}" placeholder="请输入"></td>
+					<td>
+                      <select name="timetype">
+                        <option value="">请选择要搜索的时间方式</option>
+                        <option value="key_addtime" {if $timetype=='key_addtime'}selected{/if}>领取时间</option>
+                        <option value="key_paytime" {if $timetype=='key_paytime'}selected{/if}>激活时间</option>
+                        <option value="key_finishtime" {if $timetype=='key_finishtime'}selected{/if}>核销时间</option>
+                      </select>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control" name="time_start_end" value="{$time_start_end}" id="time_start_end" placeholder="-" style="width: 200px">
+                    </td>
+					<td>
+                      <span class="input-group-btn">
+                        <input type="submit" class="btn btn-default" name="submit" id="searchorder" value="查找"/>
+                      </span>
+                    </td>
+                  </tr>
+                </table>
+            </div>
+            <input type="hidden" name="token" value="{$_W['token']}"/>
+        </form>
+    </div>
+</div>
+<!-- 搜索end -->
+<div class="clearfix" style="margin-left: -20px;margin-right: -20px;">
+	<table class="table table-responsive">
+		<tr>
+			<th>id</th>
+			<th>裂变券名称</th>
+			<th>优惠内容</th>
+			<th>商家名称</th>
+			<th>领取时间</th>
+			<th>激活时间</th>
+			<th>核销时间</th>
+			<th>用户名称</th>
+			<th>用户电话</th>
+			<th>订单状态</th>
+			<th>核销码</th>
+			<th>操作</th>
+		</tr>
+		{loop $list $index $val}
+			<tr>
+				<td>{$val['id']}</td>
+				<td>{$val['fname']}</td>
+				<td>{$val['discount']}</td>
+				<td>{$val['bname']}</td>
+				<td>{php echo date("Y-m-d H:i:s",$val['addtime']);}</td>
+				<td>{if $val['atime']==0}未激活{else}{php echo date("Y-m-d H:i:s",$val['atime']);}{/if}</td>
+				<td>{if $val['wftime']==0 || $val['wftime']==null}未核销{else}{php echo date("Y-m-d H:i:s",$val['wftime']);}{/if}</td>
+				<td>{$val['username']}</td>
+				<td>{$val['telphone']}</td>
+				<td>{if $val['is_activation']==0 && $val['wfstatus']==0}待激活{elseif $val['is_activation']==1 && $val['wfstatus']==0}待使用{else}已完成{/if}</td>
+				<td>{$val['wfcode']}</td>
+				<td>
+					{if $val['is_activation']==1 && $val['wfstatus']!=1}
+						<a href="{php echo $this->createWeburl('SetOrderStatus', array('id'=>$val[id]));}" class="btn btn-primary" style="background-color: #d9534f;">完成订单</a>
+						<br>
+					{/if}
+					<a data-toggle="modal" data-target="#myModal{$val['id']}" class="btn btn-primary" style="background-color: #0275d8;">删除</a>
+					<div class="modal fade" id="myModal{$val['id']}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    <h4 class="modal-title" id="myModalLabel" style="font-size: 20px;">提示</h4>
+                                </div>
+                                <div class="modal-body" style="font-size: 20px">
+                                    确定删除么？
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                                    <a href="{php echo $this->createWeburl('DeleteOrder', array('id'=>$val[id]));}" type="button" class="btn btn-info" >确定</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+				</td>
+			</tr>
+		{/loop}
+	</table>
+
+	<div id="fenye">
+	{$pager}
+	</div>
+</div>
+<script type="text/javascript">
+    $(function(){
+
+        layui.use('laydate', function () {
+            var laydate = layui.laydate;
+            laydate.render({
+              elem: '#time_start_end',
+              range: true
+            });
+        });
+
+        $(".allcheck").on('click',function(){
+            var checked = $(this).get(0).checked;
+            $("input[type=checkbox]").prop("checked",checked);
+        });
+
+        $("#exportorder").on('click',function(){
+            $("#doop").val("exportorder");
+        })
+        $("#searchorder").on('click',function(){
+            $("#doop").val("");
+        })
+
+        $("#frame-2").show();
+        $("#yframe-2").addClass("wyactive");
+    })
+</script>

@@ -1,0 +1,553 @@
+<div class="good_choose_layer" style="display: none;"></div>
+<div class="good_choose" style="display: none;">
+    <div class="info">
+         <div class="left">
+             <img id="chooser_img" src="{php echo tomedia($goods['gimg']);}">
+         </div>
+         <div class="right">
+               	<div class="price" id="option_opricee">￥<span id="option_oprice">请选规格</span></div>
+               	<div class="price" id="option_gpricee">￥<span id="option_gprice">请选规格</span></div>
+        		<span id='stockcontainer' class="stock" style="float:left;margin-left:5px;"></span>
+        		<input type="hidden" id="stockval" value="" />
+         </div>
+        <!--<div class="close" onclick="closechoose()"><i class="fa fa-remove-o"></i></div>-->
+    </div>
+    <div class="other">
+    	{loop $specs $spec}
+   	 	<input type='hidden' name="optionid[]" class='optionid optionid_{$spec['id']}' value="" title="{$spec['title']}">
+        <div class="spec" style='float:left;display:block;height:30px;line-height:30px;overflow:hidden;text-overflow:ellipsis;margin-left:10px;padding:0'>{$spec['title']}</div>
+            <span style="float:left;margin-left:8px;" class='spec_items options options_{$spec['id']}' specid='{$spec['id']}'>
+            {loop $spec['items'] $o}
+            <span class="property option option_{$spec['id']}" specid='{$spec['id']}' oid="{$o['id']}" sel='false'>{$o['title']}</span>
+            <input type="hidden" name="thumb_{$o['id']}" id="thumb_{$o['id']}" value="{php echo tomedia($o['thumb'])}" />
+            {/loop}
+            </span>
+    	{/loop}
+    	<div class="gpdiv">
+    	{if $goods['one_limit']>1}
+    	<span style="float:left;margin-left:8px;" class='spec_items options' id="in1">
+            <span style="margin-left: 10px;"><font color="#000000" size="2">选择数量</font></span>
+			<div class="w-number" id="pro-view-7" style="float: right;">
+				<input class="w-number-input" type="tel" id="num" name="num" value="1">
+				<a class="w-number-btn w-number-btn-plus" id="up">
+					+
+				</a>
+				<a class="w-number-btn w-number-btn-minus" id="down">
+					-
+				</a>
+			</div>
+        </span>
+       
+        {/if}
+    	</div>
+    	<div class="opdiv">
+    	{if $goods['op_one_limit']>1 }
+        <span style="float:left;margin-left:8px;" class='spec_items options' id="in">
+            <span style="margin-left: 10px;"><font color="#000000" size="2">选择数量</font></span>
+			<div class="w-number" id="pro-view-7" style="float: right;">
+				<input class="w-number-input" type="tel" id="num1" name="num1" value="1">
+				<a class="w-number-btn w-number-btn-plus" id="up1">
+					+
+				</a>
+				<a class="w-number-btn w-number-btn-minus" id="down1">
+					-
+				</a>
+			</div>
+        </span>
+       
+        {/if}	
+    	</div>
+    </div>
+    <div class="close" onclick="closechoose()"><i class="fa fa-times-circle-o"></i></div>
+    <div class="sub" onclick="buy1();" id="gnowbuy">确认</div>
+    <div class="sub" onclick="buy2();" id="onowbuy">确认</div>
+</div>
+<script>
+	var options = {php echo json_encode($options)};
+    var specs = {php echo json_encode($specs)};
+    var hasoption = {php echo $goods['hasoption'] == '1' ? 'true' : 'false'};
+	
+    var selected = [];
+    function option_selected() {
+        var ret = {
+            no: "",
+            all: []
+        };
+        if (!hasoption) {
+            return ret;
+        }
+        $(".optionid").each(function () {
+            ret.all.push($(this).val());
+            if ($(this).val() == '') {
+                ret.no = $(this).attr("title");
+                return false;
+            }
+        })
+        return ret;
+    }
+	function choose(act){
+		$('.good_choose_layer').fadeIn(200);
+		$('.good_choose').fadeIn(200); 
+		if (act == 1) {
+			$("#buytype").val(1);
+			$("#option_gpricee").hide();
+            $("#option_opricee").show();
+            $("#gnowbuy").hide();
+            $("#onowbuy").show();
+            $(".gpdiv").hide();
+            $(".opdiv").show();
+            
+		}
+		if (act == 2) {
+			var thisgroupnum = "{$goods['groupnum']}";
+			$("#buytype").val(thisgroupnum);
+			$("#option_gpricee").show();
+            $("#option_opricee").hide();
+            $("#gnowbuy").show();
+            $("#onowbuy").hide();
+            $(".opdiv").hide();
+            $(".gpdiv").show();
+		}
+	}
+	
+	$(function () {
+        $('.other-detail .detail-group:last').css("border-bottom", "0");
+        $(".option,.optionimg").click(function () {
+            var specid = $(this).attr("specid");
+            var oid = $(this).attr("oid");
+            var thumb = $("#thumb_"+oid).val();
+            if(thumb){
+            	$("#chooser_img").attr("src",thumb);
+            }
+            $(".optionid_" + specid).val(oid);
+            $(".options_" + specid + "  span").removeClass("current").attr("sel", "false");
+            $(this).addClass("current").attr("sel", "true");
+            var optionid = "";
+            var stock = 0;
+            var marketprice = 0;
+            var productprice = 0;
+            var buytype = $("#buytype").val();
+            var ret = option_selected();
+
+            if (ret.no == '') {
+                var len = options.length;
+                for (var i = 0; i < len; i++) {
+                    var o = options[i];
+                    var ids = ret.all.join("_");
+                    if (o.specs == ids) {
+                        optionid = o.id;
+                        stock = o.stock;
+                        marketprice = o.marketprice;
+                        productprice = o.productprice;
+                        
+                        break;
+                    }
+                }
+                $("#optionid").val(optionid);
+                $(".stock").html("库存："+stock);
+                $("#stockval").val(stock);
+                $("#option_gprice").html(marketprice);
+                $("#option_oprice").html(productprice);
+                $("#in").show();
+                $("#num").val(1);
+                if (buytype == 1) {
+                	$("#option_gpricee").hide();
+                    $("#option_opricee").show();
+                } else {
+                    $("#option_gpricee").show();
+                    $("#option_opricee").hide();
+                }
+            }
+        });
+    });
+	$("#num").blur(function(){
+		var inputnum=$("#num").val();
+		var marketprice = 0;
+	    var productprice = 0;
+		var options = {php echo json_encode($options)};
+		var ret = option_selected();
+	    var len = options.length;
+	        for (var i = 0; i < len; i++) {
+	            var o = options[i];
+	            var ids = ret.all.join("_");
+	            if (o.specs == ids) {
+	                optionid = o.id;
+	                stock = o.stock;
+	                marketprice = o.marketprice;
+	                productprice = o.productprice;
+	                break;
+	            }
+	        }
+	        //判断库存
+	        if(inputnum>stock){
+	        		$.toast('库存不足!');
+					return false;
+	        	}
+	    if(marketprice==0){
+	     	marketprice = "{php echo $goods['gprice']}";
+	    }
+		var goodsPrice=marketprice;
+		var totalPrice = goodsPrice*inputnum;
+		totalPrice = totalPrice.toFixed(2);
+		$("#option_gprice").html(totalPrice);
+		if(productprice==0){
+	     	productprice = "{php echo $goods['oprice']}";
+	    }
+		var goodsPrice=productprice;
+		var totalPrice = goodsPrice*inputnum;
+		totalPrice = totalPrice.toFixed(2);
+		$("#option_oprice").html(totalPrice);
+	
+	
+	});
+	
+	$("#up").bind('click',function(){
+		var num = $('#num').val();
+			num = parseInt(num)+1;
+			$('#num').val(num);
+		var marketprice = 0;
+	    var productprice = 0;
+		var options = {php echo json_encode($options)};
+		var ret = option_selected();
+	    var len = options.length;
+	        for (var i = 0; i < len; i++) {
+	            var o = options[i];
+	            var ids = ret.all.join("_");
+	            if (o.specs == ids) {
+	                optionid = o.id;
+	                stock = o.stock;
+	                marketprice = o.marketprice;
+	                productprice = o.productprice;
+	                break;
+	            }
+	        }
+	     if(marketprice==0){
+	     	marketprice = "{php echo $goods['gprice']}";
+	     }
+		var goodsPrice=marketprice;
+		var inputnum=num;
+		var totalPrice = goodsPrice*inputnum;
+		totalPrice = totalPrice.toFixed(2);
+		$("#option_gprice").html(totalPrice);
+		if(productprice==0){
+	     	productprice = "{php echo $goods['oprice']}";
+	     }
+		var goodsPrice=productprice;
+		var inputnum=num;
+		var totalPrice = goodsPrice*inputnum;
+		totalPrice = totalPrice.toFixed(2);
+		$("#option_oprice").html(totalPrice);
+	
+	
+	
+	});
+	
+	$("#down").bind('click',function(){
+		var num = $('#num').val();
+		num = parseInt(num)-1;
+		if(num<=0){
+			num=1;
+		}
+		$('#num').val(num);
+		var marketprice = 0;
+	    var productprice = 0;
+		var options = {php echo json_encode($options)};
+		var ret = option_selected();
+	    var len = options.length;
+	        for (var i = 0; i < len; i++) {
+	            var o = options[i];
+	            var ids = ret.all.join("_");
+	            if (o.specs == ids) {
+	                optionid = o.id;
+	                stock = o.stock;
+	                marketprice = o.marketprice;
+	                productprice = o.productprice;
+	                break;
+	            }
+	        }
+	     if(marketprice==0){
+	     	marketprice = "{php echo $goods['gprice']}";
+	     }
+		var goodsPrice=marketprice;
+		var inputnum=num;
+		var totalPrice = goodsPrice*inputnum;
+		totalPrice = totalPrice.toFixed(2);
+		$("#option_gprice").html(totalPrice);
+		if(productprice==0){
+	     	productprice = "{php echo $goods['oprice']}";
+	     }
+		var goodsPrice=productprice;
+		var inputnum=num;
+		var totalPrice = goodsPrice*inputnum;
+		totalPrice = totalPrice.toFixed(2);
+		$("#option_oprice").html(totalPrice);
+	});
+		$("#num1").blur(function(){
+		var inputnum=$("#num1").val();
+		var marketprice = 0;
+	    var productprice = 0;
+		var options = {php echo json_encode($options)};
+		var ret = option_selected();
+	    var len = options.length;
+	        for (var i = 0; i < len; i++) {
+	            var o = options[i];
+	            var ids = ret.all.join("_");
+	            if (o.specs == ids) {
+	                optionid = o.id;
+	                stock = o.stock;
+	                marketprice = o.marketprice;
+	                productprice = o.productprice;
+	                break;
+	            }
+	        }
+	        if(inputnum>stock){
+	        		$.toast('库存不足!');
+					return false;
+	        	}
+	    if(marketprice==0){
+	     	marketprice = "{php echo $goods['gprice']}";
+	    }
+		var goodsPrice=marketprice;
+		var totalPrice = goodsPrice*inputnum;
+		totalPrice = totalPrice.toFixed(2);
+		$("#option_gprice").html(totalPrice);
+		if(productprice==0){
+	     	productprice = "{php echo $goods['oprice']}";
+	    }
+		var goodsPrice=productprice;
+		var totalPrice = goodsPrice*inputnum;
+		totalPrice = totalPrice.toFixed(2);
+		$("#option_oprice").html(totalPrice);
+	
+	
+	});
+	
+	$("#up1").bind('click',function(){
+		var num = $('#num1').val();
+			num = parseInt(num)+1;
+			$('#num1').val(num);
+		var marketprice = 0;
+	    var productprice = 0;
+		var options = {php echo json_encode($options)};
+		var ret = option_selected();
+	    var len = options.length;
+	        for (var i = 0; i < len; i++) {
+	            var o = options[i];
+	            var ids = ret.all.join("_");
+	            if (o.specs == ids) {
+	                optionid = o.id;
+	                stock = o.stock;
+	                marketprice = o.marketprice;
+	                productprice = o.productprice;
+	                break;
+	            }
+	        }
+	     if(marketprice==0){
+	     	marketprice = "{php echo $goods['gprice']}";
+	     }
+		var goodsPrice=marketprice;
+		var inputnum=num;
+		var totalPrice = goodsPrice*inputnum;
+		totalPrice = totalPrice.toFixed(2);
+		$("#option_gprice").html(totalPrice);
+		if(productprice==0){
+	     	productprice = "{php echo $goods['oprice']}";
+	     }
+		var goodsPrice=productprice;
+		var inputnum=num;
+		var totalPrice = goodsPrice*inputnum;
+		totalPrice = totalPrice.toFixed(2);
+		$("#option_oprice").html(totalPrice);
+	
+	
+	
+	});
+	
+	$("#down1").bind('click',function(){
+		var num = $('#num1').val();
+		num = parseInt(num)-1;
+		if(num<=0){
+			num=1;
+		}
+		$('#num1').val(num);
+		var marketprice = 0;
+	    var productprice = 0;
+		var options = {php echo json_encode($options)};
+		var ret = option_selected();
+	    var len = options.length;
+	        for (var i = 0; i < len; i++) {
+	            var o = options[i];
+	            var ids = ret.all.join("_");
+	            if (o.specs == ids) {
+	                optionid = o.id;
+	                stock = o.stock;
+	                marketprice = o.marketprice;
+	                productprice = o.productprice;
+	                break;
+	            }
+	        }
+	     if(marketprice==0){
+	     	marketprice = "{php echo $goods['gprice']}";
+	     }
+		var goodsPrice=marketprice;
+		var inputnum=num;
+		var totalPrice = goodsPrice*inputnum;
+		totalPrice = totalPrice.toFixed(2);
+		$("#option_gprice").html(totalPrice);
+		if(productprice==0){
+	     	productprice = "{php echo $goods['oprice']}";
+	     }
+		var goodsPrice=productprice;
+		var inputnum=num;
+		var totalPrice = goodsPrice*inputnum;
+		totalPrice = totalPrice.toFixed(2);
+		$("#option_oprice").html(totalPrice);
+	});
+    function buy1(){
+        var ret = option_selected();
+        if (ret.no != '') {
+            $.toast('请选择'+ret.no + "!");
+            return;
+        }
+        {if $share_group_flag}
+        	var goodsid = {$goods['id']};
+        	$.post("{php echo app_url('goods/detail/ajax')}",{goodsid:goodsid},function(d){
+				if(d){
+					$.modal({
+				      	text: '附近有小伙伴正在组团，是否参加？',
+				      	buttons: [
+				        {
+				          	text: '不，去开团!',
+				          	onClick: function() {
+				            buybuy(0);
+				          	}
+				        },
+				        {
+				          	text: '好，去参团!',
+				          	onClick: function() {
+				           	buybuy(d);
+				          	}
+				        },
+				      ]
+				    });
+				}else{
+					buybuy(0);
+				}
+			},"json");
+		    return;
+        {/if}
+		buybuy(0);
+    }
+     function buybuy(act){
+     	{if $goods['one_limit']>1}
+		var inputnum = $("#num").val();
+		{else}
+		var inputnum = 1;
+		{/if}
+        var num = "{php echo $goods['gnum']}";
+        var many_limit = $("#many_limit").val();
+        var one_limit = $("#one_limit").val();
+        var times = $("#times").val();
+        inputnum = parseInt(inputnum);
+        num = parseInt(num);
+        many_limit = parseInt(many_limit);
+        one_limit = parseInt(one_limit);
+        times = parseInt(times);
+        var stock = $("#stockval").val();
+        	stock = parseInt(stock);
+        	if(inputnum>stock){
+        		$.toast('库存不足!');
+				return false;
+        	}
+        {if $goods['one_limit']>1}
+	        if(isNaN(inputnum)){
+	        	$.toast('数量错误!');
+				return false;
+	        }else{
+	        	if(inputnum<0){
+	        		$.toast('数量错误!');
+					return false;
+	        	}
+	        	if(inputnum > num){
+	        		$.toast('库存不足!');
+					return false;
+	        	}
+	        	if(one_limit>=1){
+	        		if(inputnum > one_limit){
+		        		$.toast('单次购买上限为：'+one_limit);
+						return false;
+		        	}
+	        	}
+	        }
+        {/if}
+        if(many_limit>=1){
+    		if(inputnum+times > many_limit){
+        		$.toast('单人购买上限为：'+many_limit+'已买: '+times);
+				return false;
+        	}
+    	}
+        var groupnum = $("#buytype").val();
+        if(act == 0){
+       		location.href = "{php echo app_url('order/orderconfirm',array('id'=>$goods['id'],'tuan_id'=>$_GPC['tuan_id']))}" + "&optionid=" + $("#optionid").val() + "&groupnum=" + groupnum+"&num=" + inputnum;
+        }else{
+       		location.href = "{php echo app_url('goods/detail/grouplist',array('id'=>$goods['id']))}";
+        }
+     }
+    
+     function buy2() {
+        var ret = option_selected();
+        if (ret.no != '') {
+            $.toast('请选择'+ret.no + "!");
+            return;
+        }
+        {if $goods['op_one_limit']>1}
+		var inputnum = $("#num1").val();
+		{else}
+		var inputnum = 1;
+		{/if}
+        var num = "{php echo $goods['gnum']}";
+        var many_limit = $("#many_limit").val();
+        var one_limit = $("#op_one_limit").val();
+        var times = $("#times").val();
+        inputnum = parseInt(inputnum);
+        num = parseInt(num);
+        many_limit = parseInt(many_limit);
+        one_limit = parseInt(one_limit);
+        times = parseInt(times);
+        var stock = $("#stockval").val();
+        	stock = parseInt(stock);
+        	if(inputnum>stock){
+        		$.toast('库存不足!');
+				return false;
+        	}
+        {if $goods['op_one_limit']>1}
+	        if(isNaN(inputnum)){
+	        	$.toast('数量错误!');
+				return false;
+	        }else{
+	        	if(inputnum<0){
+	        		$.toast('数量错误!');
+					return false;
+	        	}
+	        	if(inputnum > num){
+	        		$.toast('库存不足!');
+					return false;
+	        	}
+	        	if(one_limit>=1){
+	        		if(inputnum > one_limit){
+		        		$.toast('单次购买上限为：'+one_limit);
+						return false;
+		        	}
+	        	}
+	        }
+        {/if}
+        if(many_limit>=1){
+    		if(inputnum+times > many_limit){
+        		$.toast('单人购买上限为：'+many_limit+'已买: '+times);
+				return false;
+        	}
+    	}
+        var groupnum = $("#buytype").val();
+        location.href = "{php echo app_url('order/orderconfirm',array('id'=>$goods['id'],'tuan_id'=>$_GPC['tuan_id']))}" + "&optionid=" + $("#optionid").val() + "&groupnum=" + groupnum+"&num=" + inputnum;
+    }
+</script>

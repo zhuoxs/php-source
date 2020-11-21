@@ -1,0 +1,411 @@
+{template '_header'}
+<style>
+    .cashier_info{
+        border:1px solid #efefef;
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+    }
+    .cashier_info .flex1{
+        -webkit-box-flex: 1;
+        -webkit-flex: 1;
+        -ms-flex: 1;
+        flex: 1;
+    }
+    .cashier_info .flex1 em{
+        display: inline-block;
+        width:80px;
+        text-align: right;
+    }
+    .cashier_info .flex1 h6{
+        font-weight: bold;
+        font-size:14px;
+    }
+    .cashier_info>div{
+        padding:30px 20px;
+        border-right:1px solid #efefef;
+    }
+    .col-sm{
+        text-align: right;
+    }
+    .pay_info{
+        border:1px solid #efefef;
+        padding: 10px;
+    }
+    .pay_info i{
+        display: inline-block;
+        width:120px;
+        text-align: right;
+    }
+    .pay_info span{
+        margin-left: 10px;
+    }
+    .trorder td{
+        border-right:1px solid #efefef ;
+        padding:20px 10px !important;
+    }
+    .ui-step-3 li{
+        width: 33%;
+    }
+</style>
+<div class="page-header">
+    <span class='pull-right'>
+        {if $status==1 && cv('commission.apply.check')}
+        <a href="javascript:;" onclick="checkall(true)" class="btn btn-success btn-sm">批量审核通过</a>
+        <a href="javascript:;" onclick="checkall(false)" class="btn btn-danger btn-sm">批量审核不通过</a>
+        {/if}
+    </span>
+    当前位置：<span class="text-primary">提现申请信息</span>
+        <small> 共计 <span style="color:red; ">{$totalcount}</span> 个订单 , 金额共计 <span style="color:red; ">{$totalmoney}</span> 元 分红总计 <span style="color:red; ">{$totaldividend}</span> 元
+        </small>
+</div>
+<div class="page-content">
+<div class="step-region" >
+
+    <ul class="ui-step {if $status == 3}ui-step-3{else}ui-step-4 {/if}" >
+        <li {if $apply['status']>=1}class="ui-step-done"{/if}>
+            <div class="ui-step-number" >1</div>
+            <div class="ui-step-title" >申请中</div>
+            <div class="ui-step-meta" >{if 1<=$apply['status']}{php echo date('Y-m-d',$apply['applytime'])}<br/>{php echo date('H:i:s',$apply['applytime'])}{/if}</div>
+        </li>
+        <li  {if $apply['status']>=2}class="ui-step-done"{/if}>
+            <div class="ui-step-number">2</div>
+            <div class="ui-step-title">商家审核</div>
+            <div class="ui-step-meta">{if 2<=$apply['status']}{php echo date('Y-m-d',$apply['checktime'])}<br/>{php echo date('H:i:s',$apply['checktime'])}{/if}</div>
+        </li>
+        <li {if $apply['status']>=3}class="ui-step-done"{/if}>
+            <div class="ui-step-number" >3</div>
+             <div class="ui-step-title">商家打款</div>
+            <div class="ui-step-meta" >{if 3<=$apply['status']}{php echo date('Y-m-d',$apply['paytime'])}<br/>{php echo date('H:i:s',$apply['paytime'])}{/if}</div>
+        </li>
+        {if $status !=3}
+        <li {if $apply['status']==-1}class="ui-step-done"{/if}>
+            <div class="ui-step-number" >!</div>
+            <div class="ui-step-title">无效</div>
+            <div class="ui-step-meta" >{if -1==$apply['status']}{php echo date('Y-m-d',$apply['invalidtime'])}<br/>{php echo date('H:i:s',$apply['invalidtime'])}{/if}</div>
+        </li>
+        {/if}
+    </ul>
+</div>
+
+<form {ifp 'commission.apply.check|commission.apply.pay|commission.apply.cancel'}action="" method='post'{/if} class='form-horizontal form-validate'>
+
+    <input type="hidden" name="c" value="site" />
+    <input type="hidden" name="a" value="entry" />
+    <input type="hidden" name="m" value="ewei_shopv2" />
+    <input type="hidden" name="do" value="web" />
+    <input type="hidden" name="r" value="commission.apply" />
+    <input type="hidden" name="id" value="{$apply['id']}" />
+
+
+
+        <div class="cashier_info">
+            <div style='width: 700px; ' >
+                <h6 style="font-weight: bold;font-size: 14px"> 提现者信息</h6>
+                <div class="flex">
+                    <img class="radius50" src='{$member['avatar']}' style='width:100px;height:100px;border:1px solid #ccc;padding:1px' onerror="this.src='../addons/ewei_shopv2/static/images/noface.png'"/>
+                    <div >
+                        <p style="overflow: hidden;text-overflow:ellipsis;white-space: nowrap;"><span class="col-sm">昵称：</span> {$member['nickname']}</p>
+                        <p><span class="col-sm">姓名：</span> {$member['realname']} </p>
+                        <p><span class="col-sm">手机号：</span>{$member['mobile']}</p>
+                        <p><span class="col-sm">微信号：</span>{$member['weixin']}</p>
+                    </div>
+                </div>
+                <!--<p><b>昵称:</b> {$member['nickname']}    <b>姓名:</b> {$member['realname']}  <b>手机号:</b> {$member['mobile']}    <b>微信号:</b> {$member['weixin']}</p>-->
+            </div>
+            <div style="width: 450px;">
+                <h6>分红</h6>
+                <div>
+                    <p><em>累计分红：</em><span class="text-danger">{$member['dividend_total']}</span> 元</p>
+                    <p><em>待审核分红： </em><span class="text-danger">{$member['dividend_apply']}</span> 元</p>
+                    <p><em>待打款分红：</em><span class="text-danger">{$member['dividend_check']}</span> 元</p>
+                    <p><em>结算期分红：</em> <span class="text-danger">{$member['dividend_lock']}</span> 元</p>
+                    <p><em>申请分红:：</em><span class="text-danger">{$apply['dividend']}</span> 元</p>
+
+                    {if (float)$apply['sendmoney']}
+                   <p>已打款(红包才有)：<span style='color:red'>{$apply['sendmoney']}</span> 元</p>
+                    {/if}
+                </div>
+            </div>
+                <div style="width: 20%;">
+                    <div>
+                        <h6>打款方式</h6>
+                        <p>
+                            {if empty($apply['type'])}
+                            <i class="icow icow-yue text-warning"></i> {$apply_type[$apply['type']]}
+                        {else if $apply['type'] == 1}
+                            <i class="icow icow-weixinzhifu text-success"></i>{$apply_type[$apply['type']]}
+                        {else if $apply['type'] == 2}
+                            <i class="icow icow-zhifubaozhifu text-primary"></i>{$apply_type[$apply['type']]}
+                        </p>
+                        <p>姓名: <span style='color:red' id="realname">{$apply['realname']}</span></p>
+                        <p>支付宝帐号:<span style='color:red' id="alipay">{$apply['alipay']}</span></p>
+                        {else if $apply['type'] == 3}
+                        <p><span class='label label-danger'>{$apply_type[$apply['type']]}</span></p>
+                        <p>姓名: <span style='color:red' id="realname">{$apply['realname']}</span></p>
+                        <p>银行: <span style='color:red' id="bankname">{$apply['bankname']}</span></p>
+                        <p>卡号: <span style='color:red' id="bankcard">{$apply['bankcard']}</span></p>
+                        {/if}
+                    </div>
+                </div>
+        </div>
+
+        <div >
+            <p style="font-size: 16px;line-height: 67px;font-weight: bold">订单信息</p>
+            <table class="table">
+                <thead class="navbar-inner">
+                    <tr style="background: #f7f7f7">
+                        <th style="width: 50px;">商品</th>
+                        <th></th>
+                        <th style="width: 100px;"></th>
+                        <th  style="width: 100px;text-align: center">金额</th>
+                        <th style="width: 100px;text-align: center">付款方式</th>
+                        <th style="width: 530px;text-align: center">分红</th>
+                    </tr>
+                     <tr></tr>
+                </thead>
+                <tbody>
+                    {loop $list $row}
+                    <tr class="" style="background: #f7f7f7;border: 1px solid #efefef;">
+                        <td colspan="6">
+                            <span style="font-weight: bold"> {php echo date('Y-m-d H:i',$row['createtime'])} </span>
+                            {$row['ordersn']}
+                        </td>
+                    </tr>
+                    {loop $row['goods'] $index $g}
+
+                    <tr  class="trorder">
+                        <td style="border-right:none;" >
+                            <img class="pull-left" src="{php echo tomedia($g['thumb'])}" style="width: 30px; height: 30px;border:1px solid #ccc;padding:1px;" onerror="this.src='../addons/ewei_shopv2/static/images/nopic.png'"/>
+                        </td>
+                        <td style="border-right:none;">
+                               <span>{$g['title']}</span><br/><span>{$g['optionname']}</span>
+                        </td>
+
+                        <td  style="border-right: 1px solid #efefef;text-align: right"><span>  {php echo number_format($g['price']/$g['total'],2)}<br/>x{$g['total']}</span></td>
+
+                        {if $index==0}
+                            <td style="text-align: center" rowspan="{php echo count($row['goods'])}" >
+                                <span class="text-danger">{$row['price']}</span> <a ><i class="fa fa-question-circle"  data-toggle='popover' data-placement='right' data-html='true' data-trigger='hover'
+                                                           data-content="<table class='table table-hover'>
+                                                           <tr><th>总金额</th><td>{$row['price']}</td></tr>
+                                                           <tr><th>商品小计</th><td>{$row['goodsprice']}</td></tr>
+                                                           <tr><th>运费</th><td>{$row['dispatchprice']}</td></tr>
+                                                           <tr><th>会员折扣</th><td>{if $row['discountprice']>0}-{$row['discountprice']}{/if}</td></tr>
+                                                           <tr><th>积分抵扣</th><td>{if $row['deductprice']>0}-{$row['deductprice']}{/if}</td></tr>
+                                                           <tr><th>余额抵扣</th><td>{if $row['deductcredit2']>0}-{$row['deductcredit2']}{/if}</td></tr>
+                                                           <tr><th>满额立减</th><td>{if $row['deductenough']>0}-{$row['deductenough']}{/if}</td></tr>
+                                                           <tr><th>优惠券优惠</th><td>{if $row['couponprice']>0}-{$row['couponprice']}{/if}</td></tr>
+                                                           <tr><th>卖家改价</th><td>{if 0<$item['changeprice']}+{else}-{/if}{php echo number_format(abs($item['changeprice']),2)}</td></tr>
+                                                           <tr><th>卖家改运费</th><td>{if 0<$item['changedipatchpriceprice']}+{else}-{/if}{php echo number_format(abs($item['changedipatchpriceprice']),2)}</td></tr>
+                                                           </table>"></i></a>
+                            </td>
+
+                            <td style="text-align: center" rowspan="{php echo count($row['goods'])}" >
+                            {if $row['paytype'] == 1}
+                                <i class="icow icow-yue text-warning"></i>余额支付
+                            {elseif $row['paytype'] == 11}
+                                <i class="icow icow-kuajingzhifuiconfukuan text-danger" style="font-size: 17px"></i>后台付款
+                            {elseif $row['paytype'] == 21}
+                                 <i class="icow icow-weixin text-success" style="font-size: 17px"></i> 微信支付
+                            {elseif $row['paytype'] == 22}
+                                <i class="icow icow-zhifubao text-primary" style="font-size: 17px"></i>支付宝支付
+                            {elseif $row['paytype'] == 22}
+                            <i class="icow icow-iconzhizuomoban text-info" style="font-size: 17px"></i>银联支付
+                            {elseif $row['paytype'] == 3}
+                                <i class="text-primary icow icow-icon" style="font-size: 17px"></i> 货到付款
+                            {/if}
+                        </td>
+
+                            <td style="text-align: center;justify-content: space-around;-webkit-justify-content: space-around"  rowspan="{php echo count($row['goods'])}">
+
+
+                            <div class='input-group'>
+                                <span class='input-group-addon'>分红</span>
+                                <span class='input-group-addon' style='width:80px;'>{$row['dividend_price']}</span>
+
+                                                <span class='input-group-addon'>
+                                                    {if $row['dividend_status']==-1}
+                                                    <span class='label label-default'>未通过</span>
+                                                    {elseif $row['dividend_status']==1}
+
+                                                    <label class='radio-inline' style='margin-top:-7px;'><input type='radio'  class='status' value='-1'  name="status[{$row['id']}]" /> 不通过</label>
+                                                    <label class='radio-inline'  style='margin-top:-7px;'><input type='radio'  value='2'   name="status[{$row['id']}]"  /> 通过</label>
+
+
+                                                    {elseif $row['dividend_status']==2}
+                                                    <span class='text-success'>通过</span>
+                                                    {elseif $row['dividend_status']==3}
+                                                    <span class='text-warning'>已打款</span>
+                                                    {/if}
+                                                </span>
+                                <span class='input-group-addon'>备注</span>
+                                <input type='text' class='form-control' name='content[{$row['id']}]' style='width:150px;' value="{$row['dividend_content']}"/>
+                            </div>
+
+
+                        </td>
+                        {/if}
+                    </tr>
+                    {if $index==count($row['goods'])-1}
+                        <tr></tr>
+                    {/if}
+                    {/loop}
+                {/loop}
+            </table>
+        </div>
+
+        {if $apply['status']==2}
+        <p style="font-size: 16px;line-height: 67px;font-weight: bold">
+            打款信息
+        </p>
+        <div class='pay_info' style="border: 1px solid #efefef;padding: 10px">
+           <p> <i>此次分红总额：</i><span style="font-weight: bold;">{$totaldividend}</span> 元</p>
+            <p><i> 应该打款：</i><span class="text-danger">{$totalpay}</span> 元</p>
+            <p>
+                <i>实际分红：</i><span class="text-danger">
+                {if $deductionmoney > 0}
+                {$realmoney}
+                {else}
+                {$totalpay}
+                {/if}
+            </span> 元
+            </p>
+            <p><i>提现手续费金额：</i><span class="text-danger">{$deductionmoney}</span> 元</p>
+            <p><i>提现手续费：</i><span class="text-danger">{$charge}%</span></p>
+
+
+        </div>
+        {/if}
+
+        {if $apply['status']==3}
+        <p style="font-size: 16px;line-height: 67px;font-weight: bold">
+            打款信息
+        </p>
+        <div class="pay_info" style="border: 1px solid #efefef;padding: 10px">
+            <p><i> 此次分红总额：</i>  <span style="font-weight: bold;">{$totaldividend}元</span> </p>
+            <p><i>实际打款：</i><span class="text-danger" style="font-weight: bold;">{$totalpay}</span> 元</p>
+              <p>
+                 <i> 实际到账：</i><span class="text-danger">
+                    {if $deductionmoney > 0}
+                    {$realmoney}
+                    {else}
+                    {$totalpay}
+                    {/if}
+                </span> 元
+              </p>
+           <p><i> 提现手续费金额：</i><span>{$deductionmoney}</span> 元</p>
+           <p> <i>提现手续费：</i><span class="text-danger">{$charge}%</span></p>
+        </div>
+        {/if}
+
+    <div class="form-group col-sm-12" style="margin-top: 20px">
+                {if $apply['status']==1}
+                {ifp 'dividend.apply.refuse'}
+                <input type="submit" name="submit_refuse" value="驳回申请" class="btn btn-danger" onclick='return refuse()'/>
+                {/if}
+                {ifp 'dividend.apply.check'}
+                <input type="submit" name="submit_check" value="提交审核" class="btn btn-primary" onclick='return check()'/>
+                {/if}
+                {/if}
+
+                {if $apply['status']==2}
+
+                {ifp 'dividend.apply.cancel'}
+                <input type="submit" name="submit_cancel" value="重新审核" class="btn btn-default"  onclick='return cancel()'/>
+                {/if}
+                {ifp 'dividend.apply.pay'}
+                {if empty($apply['type'])}
+                <input type="submit" name="submit_pay" value="打款到余额账户" class="btn btn-primary"  style='margin-left:10px;' onclick='return pay_credit()'/>
+                {else if $apply['type'] == 1}
+                <input type="submit" name="submit_pay" value="打款到微信钱包" class="btn btn-primary" style='margin-left:10px;' onclick='return pay_weixin()'/>
+                {else if $apply['type'] == 2}
+                <input type="submit" name="submit_pay" value="确认打款到支付宝" class="btn btn-primary" style='margin-left:10px;' onclick='return pay_alipay()'/>
+                {else if $apply['type'] == 3}
+                <input type="submit" name="submit_pay" value="确认打款到银行卡" class="btn btn-primary" style='margin-left:10px;' onclick='return pay_bank()'/>
+
+                {/if}
+                <input type="submit" name="submit_pay" value="手动处理" class="btn btn-warning" style='margin-left:10px;' onclick='return payed()'/>
+                {/if}
+                {/if}
+                {if $apply['status']==-1}
+                {ifp 'dividend.apply.cancel'}
+                <input type="submit" name="submit_cancel" value="重新审核" class="btn btn-default"  onclick='return cancel()'/>
+                {/if}
+
+                {/if}
+
+                <input type="button" class="btn btn-default" name="submit" onclick="history.go(-1)" value="返回" style='margin-left:10px;' />
+
+            </div>
+            </form>
+        </div>
+
+    </div>  
+
+<script language='javascript'>
+    function checkall(ischeck) {
+        var val = ischeck ? 2 : -1;
+
+        $('.status').each(function () {
+            $(this).closest('.input-group-addon').find(":radio[value='" + val + "']").get(0).checked = true;
+        });
+    }
+    function check() {
+        var pass = true;
+        $('.status').each(function () {
+            if (!$(this).get(0).checked && !$(this).parent().next().find(':radio').get(0).checked) {
+                tip.msgbox.err('请选择审核状态!');
+                $(this).closest('.input-group-addon').popover({
+                    container: $(document.body),
+                    placement: 'top',
+                    html: true,
+                    content: "<span class='text-danger'>请选择审核状态</span>"
+                }).popover('show');
+                $(this).focus();
+                pass = false;
+                return false;
+            } else {
+                $(this).closest('.input-group-addon').popover('destroy');
+            }
+        });
+        if (!pass) {
+            return false;
+        }
+        $(':input[name=r]').val('dividend.apply.check');
+        return confirm('确认已核实成功并要提交?\r\n(提交后还可以撤销审核状态, 申请将恢复到申请状态)');
+    }
+    function refuse() {
+        $(':input[name=r]').val('dividend.apply.refuse');
+        return confirm('确认驳回申请?\r\n( 队长可以重新提交提现申请)');
+    }
+    function cancel() {
+       $(':input[name=r]').val('dividend.apply.cancel');
+        return confirm('确认撤销审核?\r\n( 所有状态恢复到申请状态)');
+    }
+    function pay_credit() {
+        $(':input[name=r]').val('dividend.apply.pay');
+        return confirm('确认打款到此用户的余额账户?');
+    }
+    function pay_weixin() {
+        $(':input[name=r]').val('dividend.apply.pay');
+        return confirm('确认打款到此用户的微信钱包?');
+    }
+    function pay_alipay() {
+        $(':input[name=r]').val('dividend.apply.pay');
+        return confirm('确认打款到此用户的支付宝? 姓名:' + $("#realname").html() + ' 支付宝帐号:' + $("#alipay").html());
+    }
+
+    function pay_bank() {
+        $(':input[name=r]').val('dividend.apply.pay');
+        return confirm('确认打款到此用户的银行卡? ' + $("#bankname").html() + ' 姓名: 卡号:' + $("#bankcard").html());
+    }
+
+    function payed() {
+        $(':input[name=r]').val('dividend.apply.payed');
+        return confirm('选择手动处理 , 系统不进行任何打款操作!\r\n请确认你已通过线下方式为用户打款!!!\r\n是否进行手动处理 ');
+    }
+</script>
+
+{template '_footer'}

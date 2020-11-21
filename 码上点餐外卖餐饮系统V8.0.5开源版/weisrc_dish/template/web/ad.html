@@ -1,0 +1,172 @@
+{template 'public/header'}
+{template 'public/comhead'}
+
+<ul class="nav nav-tabs">
+	<li {if $operation == 'display' || empty($operation)}class="active"{/if}><a href="{php echo $this->createWebUrl('ad', array('op' => 'display'))}">管理广告</a></li>
+    <li {if $operation == 'post'}class="active"{/if}><a href="{php echo $this->createWebUrl('ad', array('op' => 'post'))}">添加广告</a></li>
+</ul>
+{if $operation == 'display'}
+<div class="main">
+    <div class="panel panel-default">
+        <form action="" method="post" class="form-horizontal form">
+        <div class="table-responsive panel-body">
+                <table class="table table-hover">
+                    <thead class="navbar-inner">
+                    <tr>
+                        <th style="width:5%;">排序</th>
+                        <th style="width:10%;text-align: center;">位置</th>
+                        <th style="width:15%;text-align: center;">时间段</th>
+                        <th style="width:12%;text-align: center;">状态(点击可切换)</th>
+                        <th style="width:15%;text-align: center;">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {loop $list $item}
+                    <tr>
+                        <td><input type="text" class="form-control" name="displayorder[{$item['id']}]" value="{$item['displayorder']}"></td>
+                        <td style="text-align: left;">
+                            {if $item['position'] == 2 || $item['position'] == 3}
+                            <img  width="150px" height="50px" src="{php echo tomedia($item['thumb']);}" onerror="this.src='../addons/weisrc_icity/template/themes/images/nopic.jpeg'" style="border: 1px solid #ddd;border-radius: 4px;"/>
+                            <br>
+                            {/if}
+                            <label class='label label-info'>
+                            {if $item['position'] == 1}全屏倒计时{elseif $item['position'] == 2}首页幻灯片{elseif
+                                $item['position'] == 3}首页横幅广告{/if}
+                            </label>
+                        </td>
+                        <td style="text-align: center;">
+                            {if TIMESTAMP>$item['endtime']}
+                            <label class='label label-danger' >已过期</label>
+                            {else}
+                            {php echo date('Y-m-d H:i', $item['starttime'])}<br/>
+                            {php echo date('Y-m-d H:i', $item['endtime'])}
+                            {/if}
+                        </td>
+                        <td style="text-align: center;">
+                            <label data='{$item['status']}' class='label label-default {if $item['status']==1}label-success{/if}' onclick="setProperty(this,{$item['id']},'status')">启用</label>
+                        </td>
+                        <td style="text-align: center;">
+                            <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('ad', array('op' => 'post', 'id' => $item['id']))}" title="编辑">改</a>
+                            <a class="btn btn-default btn-sm" onclick="return confirm('确认删除吗？');return false;" href="{php echo $this->createWebUrl('ad', array('op' => 'delete', 'id' => $item['id']))}" title="删除">删</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>链接地址:</td>
+                        <td colspan="4">{$item['url']}</td>
+                    </tr>
+                    {/loop}
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <td colspan="5">
+                            <input name="submit" type="submit" class="btn btn-primary" value="批量排序">
+                            <input type="hidden" name="token" value="{$_W['token']}" />
+                        </td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </form>
+    </div>
+    {$pager}
+</div>
+<script type="text/javascript">
+    <!--
+    function setProperty(obj,id,type){
+        $(obj).html($(obj).html() + "...");
+        $.post("{php echo $this->createWebUrl('setadproperty')}"
+                ,{id:id,type:type, data: obj.getAttribute("data")}
+                ,function(d){
+                    $(obj).html($(obj).html().replace("...",""));
+                    $(obj).attr("data",d.data)
+                    if(d.result==1){
+                        $(obj).toggleClass("label-success");
+                    }
+                },"json"
+        );
+    }
+    //-->
+</script>
+{elseif $operation == 'post'}
+<div class="main">
+	<form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+		<input type="hidden" name="id" value="{$item['id']}" />
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                广告信息
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">位置</label>
+                    <div class="col-sm-9">
+                        <select class="form-control" id="position" name="position" autocomplete="off">
+                            <option value="1" {if $item['position'] == 1}selected="selected"{/if}>全屏倒计时(800*1370)</option>
+                            <option value="2" {if $item['position'] == 2}selected="selected"{/if}>首页幻灯片</option>
+                            <option value="3" {if $item['position'] == 3}selected="selected"{/if}>首页横幅广告</option>
+                        </select>
+                    </div>
+                </div>
+                {if $setting['is_school'] == 1}
+                {if $_W['role'] == 'founder' || $_W['role'] == 'manager'}
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">所属分站</label>
+                    <div class="col-sm-10 col-lg-9">
+                        <select class="form-control" name="schoolid" id="schoolid">
+                            <option value="0">请选择分站</option>
+                            {loop $school $row}
+                            <option value="{$row['id']}" {if $item['schoolid']==$row['id'] }selected{/if}>{$row['title']}</option>
+                            {/loop}
+                        </select>
+                    </div>
+                </div>
+                {/if}
+                {/if}
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">广告图片</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_form_field_image('thumb', $thumb, '', array('width' => 480, 'height' => 200))}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label"><span style='color:red'>*</span> 时间段</label>
+                    <div class="col-sm-9 col-xs-12">
+                        {php echo tpl_form_field_daterange('datelimit', array('starttime'=>date('Y-m-d H:i',$item['starttime']),'endtime'=>date('Y-m-d H:i',$item['endtime'])), true)}
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">链接地址</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="url" class="form-control" value="{if empty($item['url'])}#{else}{$item['url']}{/if}" placeholder="请填写链接地址"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">状态</label>
+                    <div class="col-sm-9">
+                        <label for="status" class="checkbox-inline">
+                            <input type="checkbox" name="status" value="1" id="status" {if $item['status'] == 1}checked="true"{/if} /> 是否启用
+                        </label>
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">排序</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="displayorder" class="form-control" value="{if empty($item) || empty($item['displayorder'])}0{else}{$item['displayorder']}{/if}" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group col-sm-12">
+            <input type="submit" name="submit" value="保存设置" class="btn btn-primary col-lg-3" />
+            <input type="hidden" name="token" value="{$_W['token']}" />
+        </div>
+	</form>
+    </div>
+</div>
+{/if}
+{if $_W['isfounder']}
+{template 'common/footer'}
+{else}
+{template 'public/footer'}
+{/if}

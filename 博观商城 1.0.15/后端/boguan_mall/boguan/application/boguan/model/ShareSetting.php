@@ -1,0 +1,2 @@
+<?php
+ namespace app\boguan\model; class ShareSetting extends BaseModel { public function getWithdrawTypeAttr($value) { goto U9i8H; lbn6h: return json_decode($value, true); goto D02gG; U9i8H: if (!empty($value)) { goto D9f1T; } goto WF15Q; WF15Q: return null; goto yeXrh; yeXrh: D9f1T: goto lbn6h; D02gG: } }

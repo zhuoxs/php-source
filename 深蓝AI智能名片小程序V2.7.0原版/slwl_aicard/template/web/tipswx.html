@@ -1,0 +1,178 @@
+{template 'common/header'}
+
+<style type="text/css">
+    .not-padding { padding: 0; }
+    .none { display: none; }
+</style>
+
+<ul class="we7-page-tab">
+    <li><a href="{php echo webUrl('tips',array('op' =>'display'))}">短信通知</a></li>
+    <li class="active"><a href="{php echo webUrl('tipswx',array('op' =>'display'))}">微信消息通知</a></li>
+</ul>
+
+<div class="main">
+    <form action="" method="post" class="form-horizontal form">
+        <div class="panel panel-default">
+            <div class="panel-heading">基本设置(此功能还有问题)</div>
+            <div class="panel-body">
+
+                <div class="form-group" id="account">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">微信消息通知</label>
+                    <div class="col-sm-9 col-xs-12">
+                        {php $support_msgs = array("Close"=>'关闭', "Wechat"=>'微信模板消息'); }
+                        <select name="options[type]" class="form-control">
+                            {loop $support_msgs $index $item}
+                                {php $type_selected = ($tips['type'] == $index) ? 'selected' : ''; }
+                            <option value="{$index}" {php echo $type_selected; }>{$item}</option>
+                            {/loop}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">选择通知人-预约通知</label>
+                    <div class="col-sm-9 col-xs-12">
+
+                        <table class="table we7-table table-hover">
+                            <colgroup>
+                                <col width="230px" />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>头像</th>
+                                    <th>用户名</th>
+                                    <th class="we7-padding-right text-right">
+                                        <div class="link-group">
+                                            <span class="btn btn-link color-default not-padding" data-toggle="modal" data-target="#user-modal">添加使用者</span>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="box-tbody">
+                            </tbody>
+                        </table>
+
+                        <div class="help-block">预约后生成后以模板消息的方式通知，可以指定多个人，如果不填写则不通知</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">测试短信发送</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" name="test" value="1" checked />保存后测试短信
+                        </label>
+                        <div class="help-block">你可以指定一个电话, 系统将在保存参数成功后尝试发送一条测试性的短信, 来检测短信通知是否正常工作</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-3 col-md-2 control-label"></label>
+                <div class="col-sm-9 col-xs-12">
+                    <p>
+                        <input name="submit" type="submit" value="提交" class="btn btn-primary span3" />
+                        <input type="hidden" name="token" value="{$_W['token']}" />
+                    </p>
+                </div>
+            </div>
+        </div>
+    </form>
+
+
+    <!-- 添加户名模态框 -->
+    <div class="modal" id="user-modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h3 class="modal-title">添加户名</h3>
+                </div>
+                <div class="modal-body we7-form">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">用户名</label>
+                        <div class="col-sm-10">
+                            <input id="add-username" type="text" class="form-control">
+                            <span class="help-block">请输入完整的微信昵称</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="add-user">确认</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table class="box-table-panel none">
+        <tr class="box-tr-one">
+            <td>
+                <img class="box-img" src="" width="30" height="30">
+            </td>
+            <td><span class="box-span">testhwm</span></td>
+            <td class="we7-padding-right text-right">
+                <div class="link-group">
+                    <input type="hidden" name="options[users][]" class="box-id" value="0">
+                    <a href="javascript:;">删除</a>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <script type="text/javascript">
+        $(function () {
+            $(document).on('click', '#add-user', function () {
+                $_this = $(this);
+                $.ajax({
+                    type: "POST",
+                    dataType: "json",
+                    url: "{php echo webUrl('func', array('op' =>'add'))}",
+                    data: {
+                        name: $('#add-username').val()
+                    },
+                    success: function (data) {
+                        $("#user-modal").modal("hide");
+                        // console.log(data);
+
+                        if (data.status == 1) {
+                            $is_not = false;
+
+                            $('.box-id').each(function(i, item) {
+                                if ($(item).val() == data.result.id) {
+                                    util.message("用户已存在！");
+                                    $is_not = true;
+                                    return false;
+                                }
+                            });
+
+                            if ($is_not == true) {
+                                return;
+                            }
+
+                            $ghost = $('.box-table-panel .box-tr-one').clone(true);
+                            $ghost.find('.box-img').attr('src', data.result.avatar);
+                            $ghost.find('.box-span').text(data.result.nicename);
+                            $ghost.find('.box-id').val(data.result.id);
+
+                            $('#box-tbody').append($ghost);
+
+                        } else {
+                            util.message("用户不存在或已被删除！");
+                        }
+                    },
+                    error: function () {
+                        util.message("提交过程发生错误，请与管理员联系！");
+                    }
+                });
+            });
+
+            $(document).on('click', '.del-user', function () {
+                util.message("用户不存在或已被删除！");
+            });
+        });
+    </script>
+
+
+</div>
+{template 'common/footer'}

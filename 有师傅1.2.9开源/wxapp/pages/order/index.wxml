@@ -1,0 +1,184 @@
+<scroll-view scrollX class="bg-white nav solid-top">
+    <view class="flex text-center">
+        <item bindtap="tabSelect" class="flex-sub {{TabCur==0?'text-tabbar cur':''}}" data-id="0">
+      接单中
+    </item>
+        <item bindtap="tabSelect" class="flex-sub {{TabCur==1?'text-tabbar cur':''}}" data-id="1">
+      服务中
+    </item>
+        <item bindtap="tabSelect" class="flex-sub {{TabCur==2?'text-tabbar cur':''}}" data-id="2">
+      已取消
+    </item>
+        <item bindtap="tabSelect" class="flex-sub {{TabCur==3?'text-tabbar cur':''}}" data-id="3">
+      已完成
+    </item>
+    </view>
+</scroll-view>
+<view wx:if="{{list.length!=0}}" wx:for="{{list}}">
+    <bar class="solid-bottom margin-top padding" style="height: 80rpx;">
+        <view class="text-sm" wx:if="{{item.status=='0'}}">接单中</view>
+        <view class="text-sm" wx:if="{{item.status=='1'}}">服务中</view>
+        <view class="text-sm" wx:if="{{item.status=='2'}}">已取消</view>
+        <view class="text-sm" wx:if="{{item.status=='3'}}">已完成</view>
+        <view class="text-sm" wx:if="{{item.status=='4'}}">退款中</view>
+        <view class="text-sm" wx:if="{{item.status=='5'}}">退款成功</view>
+        <view class="action text-gray" style="margin-right:0rpx">
+            <form bindsubmit="deleteOrder" data-orderid="{{item.id}}" reportSubmit="true">
+                <button class="cu-btn  line-gray shadow sm" formType="submit" wx:if="{{item.status=='2'}}">删除</button>
+            </form>
+            <form bindsubmit="cancel" data-orderid="{{item.id}}" reportSubmit="true">
+                <button class="cu-btn  line-red shadow sm" formType="submit" wx:if="{{item.status=='0'}}">取消</button>
+            </form>
+            <form bindsubmit="flowShot" data-orderid="{{item.id}}" reportSubmit="true">
+                <button class="cu-btn  line-blue shadow sm" formType="submit" style="margin-left:20rpx" wx:if="{{item.num>'0'&&item.status=='0'}}">换一批</button>
+            </form>
+            <form bindsubmit="confirm" data-orderid="{{item.id}}" reportSubmit="true">
+                <button class="cu-btn  line-blue shadow sm" formType="submit" wx:if="{{item.status=='1'}}">确认完成</button>
+            </form>
+            <button bindtap="showModal" class="cu-btn line-green shadow sm" data-orderid="{{item.id}}" data-target="refundModel" style="margin-left:20rpx" wx:if="{{item.status=='1'}}">申请退款</button>
+            <form bindsubmit="appraise" data-orderid="{{item.id}}" reportSubmit="true">
+                <button class="cu-btn  line-blue shadow sm" formType="submit" wx:if="{{item.status=='3'&&item.appraise!='1'}}">评价</button>
+            </form>
+            <form bindsubmit="appraise" data-orderid="{{item.id}}" reportSubmit="true">
+                <button class="cu-btn  line-blue shadow sm" formType="submit" wx:if="{{item.appraise=='1'}}">查看评价</button>
+            </form>
+        </view>
+    </bar>
+    <view class="padding bg-white">
+        <navigator url="/pages/order/detail/index?orderid={{item.id}}">
+            <view class="flex flex-wrap">
+                <view class="basis-xl text-xl text-black text-bold">{{item.type_name}}</view>
+                <view class="basis-xl text-gray text-xs padding-top-sm">发布时间：{{item.create_time}}</view>
+                <view class="basis-ql text-df padding-top">
+                    <view class="title">订单编号:
+            <text class="text-black"> {{item.o_sn}}</text>
+                    </view>
+                </view>
+                <view class="basis-ql text-df padding-top-sm">
+                    <view class="title">联系电话:
+            <text class="text-black"> {{item.phone}}</text>
+                    </view>
+                </view>
+                <view class="basis-ql text-df padding-top-sm">
+                    <view class="title">上门地址:
+            <text class="text-black text-content"> {{item.address}}</text>
+                    </view>
+                </view>
+                <view class="basis-ql text-df padding-top-sm">
+                    <view class="title">详细地址:
+            <text class="text-black"> {{item.address_detail}}</text>
+                    </view>
+                </view>
+            </view>
+        </navigator>
+    </view>
+    <view>
+        <bar class="solid-bottom solid-top padding-left" style="height: 80rpx;">
+            <view class="text-sm text-olive" wx:if="{{item.num==0&&item.status==0}}">
+        正在为您寻找服务人员
+      </view>
+            <view bindtap="viewOrder" class="text-sm text-olive" data-orderid="{{item.id}}" wx:if="{{item.num>0&&item.status<1}}">
+        已有{{item.num}}位师傅竞标请点击详情查看
+      </view>
+            <view bindtap="viewOrder" class="text-sm text-olive" data-orderid="{{item.id}}" wx:if="{{item.status==1}}">
+        查看师傅详情
+      </view>
+            <view class="text-sm text-olive" wx:if="{{item.status==2}}">
+        订单已取消
+      </view>
+            <view class="text-sm text-olive" wx:if="{{item.status==3}}">
+        订单已完成
+      </view>
+            <view class="text-sm text-olive" wx:if="{{item.status==4}}">
+        正在申请退款中
+      </view>
+            <view class="text-sm text-olive" wx:if="{{item.status==5}}">
+        退款成功
+      </view>
+            <view class="action text-gray" wx:if="{{item.status>=1}}">
+                <tag bindtap="viewOrder" class="text-gray" data-orderid="{{item.id}}">查看 </tag>
+                <view class="arrow-right"></view>
+            </view>
+            <view class="action text-gray" wx:if="{{item.num>0&&item.status<1}}">
+                <form bindsubmit="selectReapir" data-orderid="{{item.id}}" data-target="bottomModal" reportSubmit="true">
+                    <button class="cu-btn  line-red shadow sm" formType="submit">选择师傅</button>
+                </form>
+            </view>
+        </bar>
+    </view>
+</view>
+<view class="text-sm text-gray text-center padding" wx:if="{{is_last}}">
+  没有更多了......
+</view>
+<view wx:if="{{list.length==0}}">
+    <view class="zanwushuju_border">
+        <image class="zanwushuju_border_img" src="/pages/images/none_message.png"></image>
+        <view class="zanwushuju_border_title">暂无订单记录</view>
+        <view class="margin-tb text-center">
+            <form bindsubmit="gofabu" reportSubmit="true">
+                <button class="cu-btn  bg-blue shadow" formType="submit">发布需求</button>
+            </form>
+        </view>
+    </view>
+</view>
+<view bindtap="hideModal" class="cu-modal bottom-modal {{modalName=='bottomModal'?'show':''}}">
+    <view catchtap class="cu-dialog">
+        <view class="cu-list menu">
+            <view class="cu-item" wx:for="{{reapirlist}}">
+                <view class="content padding-tb-sm">
+                    <view class="pg-left">
+            {{item.name}} 出价
+            <text class="slprice icon-moneybag lg text-gray">{{item.price}}</text>
+                    </view>
+                    <view class="text-gray text-sm pg-left">
+                        <text class="icon-infofill"></text> {{item.address}}{{item.address_detail=='undefined'?'':item.address_detail}}</view>
+                </view>
+                <view class="action">
+                    <button bindtap="call" class="cu-btn sm bg-blue shadow" data-rid="{{item.reapir_uid}}" style="margin-right:20rpx">详情</button>
+                    <button bindtap="selPay" class="cu-btn sm bg-green shadow" data-bid="{{item.bid}}" data-orderid="{{item.order_id}}" data-price="{{item.price}}" data-rid="{{item.reapir_uid}}" data-target="gridModal">选他</button>
+                </view>
+            </view>
+        </view>
+    </view>
+</view>
+<view bindtap="hideModal" class="cu-modal refundModel {{modalName=='refundModel'?'show':''}}">
+    <view class="cu-dialog">
+        <view class="cu-bar bg-white justify-end">
+            <view class="content">退款申请</view>
+            <view bindtap="hideModal" class="action">
+                <text class="icon-close text-red"></text>
+            </view>
+        </view>
+        <form bindsubmit="refund">
+            <textarea bindinput="refundInput" class="reason" hidden="{{modalName=='refundModel'?false:true}}" maxlength="-1" name="reason" placeholder="填写退款原因" value="{{refundval}}"></textarea>
+            <input hidden="true" name="orderid" value="{{orderid}}"></input>
+            <view class="cu-bar bg-white justify-end">
+                <view class="action">
+                    <button bindtap="hideModal" class="cu-btn line-green text-green">取消</button>
+                    <button class="cu-btn bg-green margin-left" formType="submit">确定</button>
+                </view>
+            </view>
+        </form>
+    </view>
+</view>
+<view class="cu-modal {{querenid>0?'show':''}}">
+    <view class="cu-dialog">
+        <view class="cu-bar bg-white justify-end">
+            <view class="content">确定师傅完工</view>
+            <view bindtap="hideModal" class="action">
+                <text class="icon-close text-red"></text>
+            </view>
+        </view>
+        <view class="padding-xl">
+      确认之后平台将把佣金结算到师傅钱包
+    </view>
+        <view class="cu-bar bg-white justify-end">
+            <view class="action">
+                <button bindtap="quxiaoconfirm" class="cu-btn line-green text-green">取消</button>
+                <button bindtap="confirmsub" class="cu-btn bg-green margin-left">确定</button>
+            </view>
+        </view>
+    </view>
+</view>
+<import src="/pages/template/login.wxml"></import>
+<template is="login" data="{{isShow:isShow}}"></template>

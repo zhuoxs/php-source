@@ -1,0 +1,251 @@
+{template 'common/header-gw'}
+{template 'extension/service-tabs'}
+<div class="main">
+	<form class="form-horizontal form" action="" method="post" enctype="multipart/form-data" onsubmit="return formcheck(this)">
+		<h5 class="page-header">添加服务 <small>服务是最常用的一类回复, 如天气预报, 笑话, 百科, 翻译等简单功能</small></h5>
+		<div class="form-group">
+			<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">服务名称</label>
+			<div class="col-sm-10 col-xs-12">
+				<input type="text" class="form-control" placeholder="" name="service" value="{$rule['rule']['name']}">	
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">功能介绍</label>
+			<div class="col-sm-10 col-xs-12">
+				<input type="text" class="form-control" placeholder="" name="description" value="{php echo htmlspecialchars($row['description']);}"/>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">状态</label>
+			<div class="col-sm-10 col-xs-12">
+					<label for="status_1" class="radio-inline"><input type="radio" name="status" id="status_1" value="1" {if $rule['rule']['status'] == 1 || empty($rule['rule']['status'])} checked="checked"{/if} /> 启用</label>
+					<label for="status_0" class="radio-inline"><input type="radio" name="status" id="status_0" value="0" {if !empty($rule) && $rule['rule']['status'] == 0} checked="checked"{/if} /> 禁用</label>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">触发关键字</label>
+			<div class="col-sm-10 col-xs-12">
+					<input type="text" class="form-control" placeholder="" name="keywords" value="{$rule['keywords']}" /> &nbsp;
+					<label for="adv-keyword" class="checkbox-inline">
+						<input type="checkbox" id="adv-keyword" /> 高级触发
+					</label>
+					<span class="help-block">当用户的对话内容符合以上的关键字定义时，会触发这个回复定义。多个关键字请使用逗号隔开。</span>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">回复</label>
+			<div class="col-sm-10 col-xs-12">
+					<div class="alert alert-warning">
+						<div><span style="display:inline-block; width:150px; font-weight:600;">[from]</span>粉丝用户的OpenID</div>
+						<div><span style="display:inline-block; width:150px; font-weight:600;">[to]</span>当前公众号的OpenID</div>
+						<div><span style="display:inline-block; width:150px; font-weight:600;">[rule]</span>当前回复的回复编号</div>
+					</div>
+					<span class="help-block" style="margin:5px 0;">可在回复内容的任何地方使用预定义标记来表示特定内容</span>
+					<div id="module-form">
+						<div class="alert alert-info">
+							<a class="close" data-dismiss="alert">×</a>
+							<h5 class="alert-heading">添加处理接口</h5>
+							<div class="form-group">
+								<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">接口类型：</label>
+								<div class="col-sm-10 col-xs-12">
+										<label for="radio_1" class="radio-inline"><input type="radio" name="type" id="radio_1" onclick="$('#remote').show();$('#location').hide();" value="1" {if strexists($row['apiurl'], 'http://')} checked="checked"{/if} /> 远程地址</label>
+										<label for="radio_0" class="radio-inline"><input type="radio" name="type" id="radio_0" onclick="$('#remote').hide();$('#location').show();" value="0" {if !strexists($row['apiurl'], 'http://')} checked="checked"{/if} /> 本地文件</label>
+								</div>
+							</div>
+							<div id="remote" {if !strexists($row['apiurl'], 'http://')}style="display:none;"{/if}>	
+								<div class="form-group">
+									<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">远程地址：</label>
+									<div class="col-sm-10 col-xs-12">
+										<input type="text" id="" class="form-control" placeholder="" name="apiurl" value="{$row['apiurl']}">
+										<div class="help-block" style="margin-top:10px;">
+											<ol style="margin-top:10px;">
+												<li>使用远程地址接口，你可以兼容其他的微信公众平台管理工具。</li>
+												<li>你应该填写其他平台提供给你保存至公众平台的URL和Token</li>
+												<li>添加此模块的规则后，只针对于单个规则定义有效，如果需要全部路由给接口处理，则修改该模块的优先级顺序。</li>
+												<li>具体请<a href="http://www.we7.cc/docs/#api" target="_blank">查看“自定义接口回复”文档</a></li>
+											</ol>
+										</div>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="color:red">Token：</label>
+									<div class="col-sm-10 col-xs-12">
+										<input type="text" name="wetoken" class="form-control" value="{$row['token']}" />
+										<div class="help-block">与目标平台接入设置值一致，必须为英文或者数字，长度为3到32个字符.</div>
+									</div>
+								</div>
+							</div>	
+							<div id="location" {if strexists($row['apiurl'], 'http://')} style="display:none;"{/if}>
+								<div class="form-group">
+									<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">文件列表：</label>
+									<div class="col-sm-10 col-xs-12">
+										<select name="apilocal" class="form-control">
+											<option value="0">请选择本地文件</option>
+											{loop $apis $file}
+											<option {if $row['apilocal'] == $file} selected="selected"{/if} value="{$file}">{$file}</option>
+											{/loop}
+										</select>
+										<div class="help-block" style="margin-top:10px;">
+											<ol style="margin-top:10px;">
+												<li>使用本地文件扩展你可以快速的扩展微擎功能。</li>
+												<li>添加此模块的规则后，只针对于单个规则定义有效，如果需要全部路由给接口处理，则修改该模块的优先级顺序。</li>
+												<li>本地文件存放在模块文件夹内（/source/modules/userapi/api）下。</li>
+												<li>具体请<a href="http://www.we7.cc/docs/#api" target="_blank">查看“自定义接口回复”文档</a></li>
+											</ol>
+										</div>
+									</div>
+								</div>
+							</div>	
+							<div class="form-group">
+								<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">默认回复文字</label>
+								<div class="col-sm-10 col-xs-12">
+										<input type="text" id="" class="form-control" placeholder="" name="default-text" value="{$row['default_text']}">
+										<div class="help-block">当接口无回复时，则返回用户此处设置的文字信息，优先级高于“默认回复URL”</div>
+								</div>
+							</div>
+							<div class="form-group">
+								<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">缓存时间</label>
+								<div class="col-sm-10 col-xs-12">
+										<input type="text" id="" class="form-control" placeholder="" name="cachetime" value="{$row['cachetime']}">
+										<div class="help-block">接口返回数据将缓存在微擎系统中的时限，默认为0不缓存。</div>								</div>
+							</div>
+							
+						</div>
+					</div>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label"></label>
+			<div class="col-sm-10">
+				<input name="submit" type="submit" value="提交" class="btn btn-primary span3" />
+				<input type="hidden" name="token" value="{$_W['token']}" />
+			</div>
+		</div>
+		
+		
+		
+		
+		<table class="tb">
+			<tr class="hide adv-keyword">
+				<th><label for="">高级触发规则</label></th>
+				<td>
+					<div class="keyword-list list" id="keyword-list">
+						{loop $rule[keyword] $item}
+						{if $item['type'] != '1'}
+						<div class="item" id="keyword-item-{$item['id']}">
+							{template 'rule/item'}
+						</div>
+						{/if}
+						{/loop}
+					</div>
+					<a href="javascript:;" onclick="keywordHandler.buildForm()" class="add-kw-button"><i class="icon-plus"></i> 添加关键字</a>
+				</td>
+			</tr>
+		</table>
+	</form>
+</div>
+<script type="text/html" id="keyword-item-html">
+{php unset($item); include template('rule/item', TEMPLATE_INCLUDEPATH);}
+</script>
+<script type="text/javascript">
+<!--
+	$(function(){
+		$('#adv-setting').click(function(){
+			if(this.checked) {
+				$('.adv-setting').show();
+			} else {
+				$('.adv-setting').hide();
+			}
+		});
+		$('#adv-keyword').click(function(){
+			if(this.checked) {
+				$('.adv-keyword').show();
+			} else {
+				$('.adv-keyword').hide();
+			}
+		});
+	{if $rule['kwd-adv']}
+		$('#adv-keyword').attr('checked', 'checked');
+		$('.adv-keyword').show();
+	{/if}
+	});
+	var keywordHandler = {
+		'buildForm' : function() {
+			var obj = buildAddForm('keyword-item-html', $('#keyword-list'));
+			obj.find('.btn-group .btn').on('click', function(){
+				$(this).parent().next().html($(this).attr('description'));
+				obj.find('#keyword-type-new').val($(this).attr('value'));
+			});
+			obj.find('#form').show();
+			obj.find('#show').hide();
+		},
+		'doAdd' : function(itemid) {
+			var parent = $('#' + itemid);
+			if ($('.keyword-name-new', parent).val() == '' && $('.keyword-type-new', parent).val() != 4) {
+				message('请输入关键字！', '', 'error');
+				return false;
+			}
+			if($('.keyword-type-new', parent).val() == 4) {
+				$('.keyword-name-new', parent).val('');
+			}
+			var typetips = $('.active', parent).html();
+			$('#show #type', parent).html(typetips);
+			$('#show #content', parent).html($('.keyword-name-new', parent).val());
+			$('#show', parent).css('display', 'block');
+			$('#form', parent).css('display', 'none');
+		},
+		'doEditItem' : function(itemid) {
+			$('#keyword-list .item').each(function(){
+				$('#form', $(this)).css('display', 'none');
+				$('#show', $(this)).css('display', 'block');
+			});
+			doEditItem(itemid);
+		}
+	};
+
+	function buildModuleForm(module) {
+		try {
+			$.ajax({
+			  url: "{php echo url('member/module', array('do' => 'form', 'id' => $rule['rule'][id]))}",
+			  type: "GET",
+			  data: {'name' : module.toLowerCase()},
+			  dataType: "html"
+			}).done(function(s) {
+				if (s && s.indexOf('"type":"error"') >= 0) {
+					message('请重新选择公众号！', '{php echo url('rule/post')}', 'error');
+					return false;
+				}
+				formCheckers = [];
+				$('#module-form').html(s);
+			});
+		}
+		catch (e) {
+		}
+	}
+
+	function formcheck(form) {
+		if (form['name'].value == '') {
+			message('抱歉，规则名称为必填项，请返回修改！', '', 'error');
+			return false;
+		}
+		if ($(':text[name="keywords"]').val() == '' && $('.keyword-name-new').val() == '' && $('.keyword-type-new').val() != 4) {
+			message('抱歉，您至少要设置一个触发关键字！', '', 'error');
+			return false;
+		}
+		$(':text[name="keywords"]').val($(':text[name="keywords"]').val().replace(/，/g, ','));
+		return true;
+	}
+
+	{if empty($rid)}
+	$(function(){
+		keywordHandler.buildForm();
+	});
+	{else}
+	$('.btn-group .btn').on('click', function(){
+		$(this).parent().next().html($(this).attr('description'));
+		$(this).parent().parent().find('#keyword-type-new').val($(this).attr('value'));
+	});
+	{/if}
+//-->
+</script>
+{template 'common/footer-gw'}

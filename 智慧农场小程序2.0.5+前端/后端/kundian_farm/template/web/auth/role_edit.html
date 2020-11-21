@@ -1,0 +1,126 @@
+{template 'web/common/common'}
+{template 'web/auth/navbar'}
+<style>
+    .layui-card-body{
+        background: white;padding-left: 50px;display: flex;
+    }
+</style>
+<div class="layui-card">
+    <form class="layui-form" action="" method="post">
+        <div class="layui-form-item">
+            <label class="layui-form-label">角色名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="rolename" value="{$data['list']['rolename']}"  placeholder="角色名称" class="layui-input">
+            </div>
+        </div>
+
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">可用权限</label>
+            <div class="layui-input-block">
+                {loop  $data['prem'] $k $v}
+                <div class="layui-col-md12" style="background: #efefef">
+                    <div class="layui-card-header">
+                        {if $v['check']}
+                        <input type="checkbox" class="prem-all prem-item prem-{$v['auth_name']}" name="auth[]" value="{$v['auth_name']}" lay-filter="checkAllItem" lay-skin="primary" title="{$v['name']}"  checked>
+                        {else}
+                        <input type="checkbox" class="prem-all prem-item prem-{$v['auth_name']}" name="auth[]" value="{$v['auth_name']}" lay-filter="checkAllItem" lay-skin="primary" title="{$v['name']}" >
+                        {/if}
+                    </div>
+                    {loop $v['auth'] $key $val}
+                    <div class="layui-card-body">
+                        <div style="width: 200px;font-weight: bold;">
+                            {if $val['check']}
+                            <input type="checkbox" class="prem-all-item perm-two-{$val['value']} all-item-{$v['auth_name']}" lay-filter="checkAll" value="{$val['value']}" lay-skin="primary" title="{$val['name']}" checked>
+                            {else}
+                            <input type="checkbox" class="prem-all-item perm-two-{$val['value']} all-item-{$v['auth_name']}" lay-filter="checkAll" value="{$val['value']}" lay-skin="primary" title="{$val['name']}" >
+                            {/if}
+                        </div>
+                        <div class="check-li" style="margin-left: 50px;">
+                            {loop $val['action'] $a $c}
+                            {if $c['check']}
+                            <input type="checkbox" class="prem-item all-item-{$v['auth_name']} item-{$val['value']}" name="auth[]" data-authname="{$v['auth_name']}" data-perm="{$val['value']}" value="{$c['ac_auth']}" lay-filter="checkItem" lay-skin="primary" title="{$c['ac_name']}" checked>
+                            {else}
+                            <input type="checkbox" class="prem-item all-item-{$v['auth_name']} item-{$val['value']}" name="auth[]" data-authname="{$v['auth_name']}" data-perm="{$val['value']}" value="{$c['ac_auth']}" lay-filter="checkItem" lay-skin="primary" title="{$c['ac_name']}" >
+                            {/if}
+                            {/loop}
+                        </div>
+                    </div>
+                    {/loop}
+                </div>
+                {/loop}
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <input type="hidden" name="id" value="{$data['list']['id']}">
+                <button class="layui-btn layui-btn-sm" type="button" lay-filter="formSubmit" lay-submit="">保存</button>
+            </div>
+        </div>
+
+    </form>
+
+</div>
+
+{template 'common/footer'}
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form,layer = layui.layer;
+        form.on('submit(formSubmit)',function (data) {
+            var formData = data.field;
+
+            var perm=[];
+            $(".layui-form-checkbox").each(function () {
+                var _taht = $(this);
+                if(_taht.is(".layui-form-checked")){
+                    if(_taht.prev("input").val() !=''){
+                        perm.push(_taht.prev("input").val());
+                    }
+                }
+            })
+            var url = "{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'role_edit','action'=>'auth')}";
+            var data = {
+                formData: formData,
+                auth:JSON.stringify(perm)
+            };
+            postData(url, data);
+            return false;
+        })
+
+        form.on("checkbox(checkAll)",function (data) {
+            var _c='.item-'+data.value;
+            if(data.elem.checked == true){
+                $(_c).prop("checked", true);
+                form.render('checkbox');
+            }else{
+                $(_c).prop("checked", false);
+                form.render('checkbox');
+            }
+        })
+        form.on("checkbox(checkAllItem)",function (data) {
+            var _c='.all-item-'+data.value;
+            if(data.elem.checked == true){
+                $(_c).prop("checked", true);
+                form.render('checkbox');
+            }else{
+                $(_c).prop("checked", false);
+                form.render('checkbox');
+            }
+        })
+        form.on("checkbox(checkItem)",function (data) {
+            var auth_name=$(this).attr("data-authname");
+            var perm=$(this).attr("data-perm");
+            var _c='.perm-two-'+perm;
+            var _p='.prem-'+auth_name;
+            if(data.elem.checked == true){
+                $(_c).prop("checked", true);
+                $(_p).prop("checked", true);
+                form.render('checkbox');
+            }else{
+            }
+        })
+
+    });
+</script>

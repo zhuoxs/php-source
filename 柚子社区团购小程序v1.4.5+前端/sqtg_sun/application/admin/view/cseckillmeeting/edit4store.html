@@ -1,0 +1,502 @@
+{extend name="common/edit_table" /}
+{block name="content"}
+<input type="hidden" name="seckilltopic_id" value="{$info.seckilltopic_id?:input('get.seckilltopic_id')}">
+<blockquote class="layui-elem-quote">【{$info.seckilltopic_name??''}】专题：【{$info.name??''}】会场</blockquote>
+<div class="tool-box">
+    <select name="hours" id="hours" style="width: 100px;" class="select2" lay-ignore>
+        {volist name="info.hours" id="vo"}
+        <option value="{$vo}">{$vo}点</option>
+        {/volist}
+    </select>
+    <a href="javascript:;" id="btnAddHour" class="layui-btn layui-btn-primary">新增时间</a>
+</div>
+<style>
+    .tool-box .row{
+        display: flex;
+        margin-right: 0px;
+        margin-left: 0px;
+        border-bottom: 1px solid #ddd;
+    }
+    .row .col-hour{
+        width: 100px;
+        text-align: right;
+        padding: 10px;
+    }
+    .row .col-o{
+        width: 100px;
+        padding: 10px;
+    }
+    .row .col-goods{
+        flex: 1;
+        padding: 10px;
+    }
+    .goods-choose{
+        display: flex;
+    }
+    .goods-choose .layui-btn{
+        /*width: 80px;*/
+    }
+    .goods-choose .goods-name{
+        flex: 1;
+        height: auto;
+    }
+    .col-goods img{
+        width: 100px;
+    }
+
+    .layui-form>.layui-form-item{
+        margin-top: 30px;
+    }
+</style>
+<div class="tool-box">
+    <div class="row">
+        <div class="col-hour">
+            时间
+        </div>
+        <div class="col-goods">
+            商品
+        </div>
+        <div class="col-o">
+            操作
+        </div>
+    </div>
+    <div id="rows">
+        <div class="row">
+            <div class="col-hour">
+                时间
+            </div>
+            <div class="col-goods">
+                商品
+            </div>
+            <div class="col-o">
+                操作
+            </div>
+        </div>
+    </div>
+
+</div>
+<script>
+    var data = {php} echo json_encode($goodses);{/php};
+
+    require(['select2'], function () {
+        $('.select2').select2();
+    })
+
+    $('#btnAddHour').click(function () {
+        var hour = $("#hours").val();
+        if (data[hour]){
+            return;
+        }
+        data[hour] = {};
+        displayData();
+    })
+
+    displayData();
+    function displayData() {
+        var trs = [];
+        for(var i in data){
+            var tr = '<div class="row">';
+
+
+            tr += '<div class="col-hour">'+i+'点</div>';
+
+            var col_goodses = '';
+            col_goodses += '<div class="row">';
+            col_goodses += '    <div class="col-goods">';
+            col_goodses += '        商品';
+            col_goodses += '    </div>';
+            col_goodses += '    <div class="col-hour">';
+            col_goodses += '        价格';
+            col_goodses += '    </div>';
+            col_goodses += '    <div class="col-o">';
+            col_goodses += '        操作';
+            col_goodses += '    </div>';
+            col_goodses += '</div>';
+
+            var goods_names = [];
+
+            col_goodses += '<div id="rows">';
+            for (var k in data[i]){
+                if (data[i][k].edit_state == -1){
+                    continue;
+                }
+                goods_names.push(data[i][k].name);
+
+                col_goodses += '    <div class="row">';
+                col_goodses += '        <div class="col-goods">';
+                col_goodses += '            <img src="{$_W['attachurl']}/'+data[i][k].pic+'">';
+                col_goodses += '            '+data[i][k].name;
+                col_goodses += '        </div>';
+                col_goodses += '        <div class="col-hour">';
+
+                col_goodses += '            <a href="javascript:;" data-hour="'+i+'" data-goods="'+k+'" class="layui-btn layui-btn-primary layui-btn-xs btnGoodsSetting">';
+                col_goodses +=                  data[i][k].price ? '￥'+data[i][k].price : '设置';
+                col_goodses += '            </a>';
+
+                col_goodses += '        </div>';
+                col_goodses += '        <div class="col-o">';
+                col_goodses += '            <a href="javascript:;" data-hour="'+i+'" data-goods="'+k+'" class="layui-btn layui-btn-danger layui-btn-xs btnGoodsDelete">删除</a>';
+                col_goodses += '        </div>';
+                col_goodses += '    </div>';
+            }
+            col_goodses += '</div>';
+
+            var col_goods_choose = '';
+            col_goods_choose = '<div class="goods-choose">';
+            col_goods_choose += '<input type="text" disabled class="layui-input goods-name" value="'+goods_names+'">';
+            col_goods_choose += '<a href="javascript:;" data-hour="'+i+'" class="layui-btn layui-btn-sm btnGoodsChoose">选择商品</a>';
+            col_goods_choose += '</div>';
+
+            tr += '<div class="col-goods">'+col_goods_choose+col_goodses+'</div>';
+
+
+            tr += '<div class="col-o"><a href="javascript:;" data-hour="'+i+'" class="layui-btn layui-btn-danger layui-btn-sm btnHourDelete">删除</a></div>';
+
+            tr += '</div>';
+            trs.push(tr);
+        }
+        $("#rows").html(trs.join(''));
+    }
+
+    $(document).on('click','.btnHourDelete',function () {
+        var hour = $(this).data('hour');
+        for(var i in data[hour]){
+            data[hour][i].edit_state = -1;
+        }
+        // delete data[hour];
+        displayData();
+    })
+
+    $(document).on('click','.btnGoodsDelete',function () {
+        var hour = $(this).data('hour');
+        var goods = $(this).data('goods');
+        data[hour][goods].edit_state = -1;
+        // delete data[hour][goods];
+        displayData();
+    })
+
+    $(document).on('click','.btnGoodsChoose',function () {
+        var hour = $(this).data('hour');
+        layer.open({
+            type: 2,
+            title: '选择商品',
+            shadeClose: true,
+            shade: false,
+            maxmin: true, //开启最大化最小化按钮
+            area: ['893px', '600px'],
+            content: "{:adminurl('choose','Cgoods2')}&meeting_id={$info.id}",
+            btn: ['确认', '取消'],
+            yes: function (index,layerObj) {
+                var win = $(layerObj).find("iframe")[0].contentWindow;
+                var checkData = win.layui.table.checkStatus('laytable');
+                for (var j in checkData.data){
+                    checkData.data[j].original_price = checkData.data[j].price;
+
+                    if (data[hour][checkData.data[j].id]){
+                        continue;
+                    }
+                    // var cdo = true;
+                    // for(var h in data){
+                    //     if (data[h][checkData.data[j].id]){
+                    //         cdo = false;
+                    //         break;
+                    //     }
+                    // }
+                    // if (!cdo){
+                    //     continue;
+                    // }
+                    var goods_id = checkData.data[j].id;
+                    checkData.data[j].edit_state = 1;
+                    checkData.data[j].goods_id = goods_id;
+                    checkData.data[j].sales_num = 0;
+                    delete checkData.data[j].id;
+                    data[hour][goods_id] = checkData.data[j];
+                }
+                layer.close(index);
+                displayData();
+            }
+        });
+    })
+
+    $(document).on('click','.btnGoodsSetting',function () {
+        var hour = $(this).data('hour');
+        var goods = $(this).data('goods');
+        if (data[hour][goods]['use_attr']){
+        //    多规格
+            updatetable(hour,goods);
+            layer.open({
+                type: 1,
+                shade: false,
+                area: ['893px', '600px'],
+                title: '商品设置', //不显示标题
+                content: $('.attr-setting'),
+                btn: ['确认', '取消'],
+                yes: function (index,layerObj) {
+                    data[hour][goods]['attrsetting'] = layui.table.data.laytable;
+                    layer.close(index);
+                    displayData();
+                }
+            });
+        }else{
+            var price = data[hour][goods]['price'];
+            var stock = data[hour][goods]['stock'];
+            var limit = data[hour][goods]['limit'] || 0;
+            //单规格
+            layer.open({
+                type: 1,
+                shade: false,
+                area: ['893px', '300px'],
+                title: '商品设置', //不显示标题
+                content: `
+                    <div style="width: 50%;margin: 20px 16%;">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">秒杀价</label>
+                            <div class="layui-input-block">
+                                <input autocomplete="off" type="text" id="edit_price" placeholder="请输入价格" class="layui-input" value="${price}">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">库存</label>
+                            <div class="layui-input-block">
+                                <input autocomplete="off" type="text" id="edit_stock" placeholder="请输入库存" class="layui-input" value="${stock}">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">限购</label>
+                            <div class="layui-input-block">
+                                <input autocomplete="off" type="text" id="edit_limit" placeholder="请输入数量" class="layui-input" value="${limit}">
+                            </div>
+                        </div>
+                    </div>
+                `,
+                btn: ['确认', '取消'],
+                yes: function (index,layerObj) {
+                    data[hour][goods]['price'] = $('#edit_price').val();
+                    data[hour][goods]['stock'] = $('#edit_stock').val();
+                    data[hour][goods]['limit'] = $('#edit_limit').val();
+                    layer.close(index);
+                    displayData();
+                }
+            });
+        }
+    })
+
+    layui.use(['table','form'],function () {
+        var table = layui.table;
+        var form = layui.form;
+
+        // 新增界面、保存、取消事件
+        form.on('submit', function(data2){
+
+            if(!$(data2.elem).is('button')){
+                return false;
+            }
+            var submit_data = {};
+            submit_data.data = data;
+            submit_data.id = {$info.id};
+            var url = "{:adminurl('goodssave')}";
+            $.post(url,submit_data,function(res){
+                if (typeof res == 'string'){
+                    res = JSON.parse(res);
+                }
+                if (res.code == 0) {
+                    var index=parent.layer.getFrameIndex(window.name);
+                    parent.layer.close(index);
+                    parent.layer.msg('保存成功',{icon: 6,anim: 6});
+                    parent.layui.table.reload('laytable',{});
+                }else{
+                    layer.msg(res.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+        });
+    });
+</script>
+
+
+<style>
+    .attr-setting{
+        padding: 20px;
+    }
+    .layui-form>.attr-setting{
+        display: none;
+    }
+</style>
+<div class="attr-setting">
+    <!--工具栏-->
+    <div class="tool-box">
+        <div class="layui-btn-group">
+            <a href="javascript:;" id="btnBatchPrice" class="layui-btn layui-btn-primary layui-btn-sm">修改价格</a>
+            <a href="javascript:;" id="btnBatchStock" class="layui-btn layui-btn-primary layui-btn-sm">修改库存</a>
+            <a href="javascript:;" id="btnBatchLimit" class="layui-btn layui-btn-primary layui-btn-sm">修改限购</a>
+        </div>
+    </div>
+    <!--数据表-->
+    <div class="table-box">
+        <table class="layui-hide" id="laytable"></table>
+    </div>
+</div>
+<script>
+    function updatetable(hour,goods) {
+        layui.use(['table'],function () {
+            var table = layui.table;
+
+            //数据
+            var table_data = [{
+                "stock":0,
+                "price":0,
+                "limit":0,
+            }];
+            //列结构
+            var col_data = [
+                {type: 'numbers', fixed: 'left'},
+                {type: 'checkbox', fixed: 'left'},
+            ];
+
+            var attr_data = data[hour][goods].attrgroups;
+            for (var i in attr_data){
+                //规格分组名称作为一列
+                col_data.push({field: attr_data[i]['name'], width: 180, title: attr_data[i]['name'], sort: true,edit:false});
+                //一组规格
+                var attrs = attr_data[i]['attrs'];
+                var data_new = [];
+                var ids = [];
+                for (var j in table_data){
+                    for(var a in attrs){
+                        var d = JSON.parse(JSON.stringify(table_data[j]));
+                        d['ids'] = d['ids'] || [];
+                        d[attr_data[i]['name']] = attrs[a]['name'];
+                        d['ids'].push(attrs[a]['id']);
+                        data_new.push(d);
+                    }
+                }
+                table_data = JSON.parse(JSON.stringify(data_new));
+            }
+
+            col_data.push({field: 'price', width: 100, title: '单价',edit:true});
+            col_data.push({field: 'stock', width: 100, title: '库存',edit:true});
+            col_data.push({field: 'limit', width: 100, title: '限购',edit:true});
+
+            var settings = data[hour][goods].attrsetting;
+
+            for(var i in table_data){
+                for(var j in settings){
+                    var attr_ids = settings[j]['attr_ids'] || (','+settings[j]['ids'].join(',')+',');
+                    if (attr_ids == ','+table_data[i]['ids'].join(',')+','){
+                        table_data[i]['stock'] = settings[j]['stock']
+                        table_data[i]['price'] = settings[j]['price']
+                        table_data[i]['limit'] = settings[j]['limit']
+                    }
+                }
+            }
+
+            table.reload('laytable', {
+                data: table_data,
+                cols:[col_data],
+            });
+        })
+    }
+    layui.use(['table','form'],function () {
+        var table = layui.table;
+        table.render({
+            elem: '#laytable'
+            , data: []
+            , cols: [[
+            {type: 'numbers', fixed: 'left'},
+            {type: 'checkbox', fixed: 'left'},
+            {field: 'stock', width: 100, title: '库存',edit:true},
+            {field: 'price', width: 100, title: '单价',edit:true},
+        ]]
+            // , page: true
+            , limit: 90
+            // , height: 'full-420',
+        });
+
+        //        批量修改单价
+        $('#btnBatchPrice').click(function () {
+            var checkdata = table.checkStatus('laytable').data;
+            var data = [];
+            data = layui.table.data.laytable;
+            var cache = layui.table.cache.laytable;
+            if (checkdata.length > 0) {
+                layer.prompt({title: '价格（支持*0.8）'}, function (value, index, elem) {
+                    var fun = function (value, value2) {
+                        return value2
+                    }
+
+                    var patt = /^\d*\.{0,1}\d*$/;
+                    if (patt.test(value)) {
+                        fun = function (value, value2) {
+                            return parseFloat(value2).toFixed(2);
+                        }
+                    }
+                    var patt2 = /^[\+\-\*\/]{1}\d*\.{0,1}\d*$/;
+                    if (patt2.test(value)) {
+                        fun = function (value, value2) {
+                            var v = eval(value + '' + value2);
+                            return parseFloat(v).toFixed(2);
+                        }
+                    }
+
+                    for (var i in cache) {
+                        if (cache[i]['LAY_CHECKED']) {
+                            data[cache[i]['LAY_TABLE_INDEX']]['price'] = fun(data[i]['price'], value);
+                        }
+                    }
+                    table.reload('laytable', {
+                        data: data,
+                    });
+                    layer.close(index);
+                });
+            } else {
+                layer.msg('请选择记录');
+            }
+        })
+        //        批量修改抢购数量
+        $('#btnBatchStock').click(function () {
+            var checkdata = table.checkStatus('laytable').data;
+            var data = [];
+            data = layui.table.data.laytable;
+            var cache = layui.table.cache.laytable;
+            if (checkdata.length > 0) {
+                layer.prompt({title: '库存'}, function (value, index, elem) {
+                    for (var i in cache) {
+                        if (cache[i]['LAY_CHECKED']) {
+                            data[cache[i]['LAY_TABLE_INDEX']]['stock'] = value;
+                        }
+                    }
+                    table.reload('laytable', {
+                        data: data,
+                    });
+                    layer.close(index);
+                });
+            } else {
+                layer.msg('请选择记录');
+            }
+        })
+
+        //        批量修改限购
+        $('#btnBatchLimit').click(function () {
+            var checkdata = table.checkStatus('laytable').data;
+            var data = [];
+            data = layui.table.data.laytable;
+            var cache = layui.table.cache.laytable;
+            if (checkdata.length > 0) {
+                layer.prompt({title: '限购'}, function (value, index, elem) {
+                    for (var i in cache) {
+                        if (cache[i]['LAY_CHECKED']) {
+                            data[cache[i]['LAY_TABLE_INDEX']]['limit'] = value;
+                        }
+                    }
+                    table.reload('laytable', {
+                        data: data,
+                    });
+                    layer.close(index);
+                });
+            } else {
+                layer.msg('请选择记录');
+            }
+        })
+    })
+</script>
+{/block}

@@ -1,0 +1,2 @@
+<?php
+ namespace GuzzleHttp\Promise; interface PromiseInterface { const PENDING = "\160\x65\x6e\144\151\x6e\147"; const FULFILLED = "\x66\x75\x6c\146\151\x6c\x6c\145\x64"; const REJECTED = "\162\145\x6a\x65\x63\164\145\x64"; public function then(callable $onFulfilled = null, callable $onRejected = null); public function otherwise(callable $onRejected); public function getState(); public function resolve($value); public function reject($reason); public function cancel(); public function wait($unwrap = true); }

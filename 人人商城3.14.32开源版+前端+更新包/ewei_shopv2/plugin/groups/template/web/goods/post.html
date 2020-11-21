@@ -1,0 +1,118 @@
+{template '_header'}
+<div class="page-heading">
+	<span class='pull-right'>
+		{ifp 'groups.goods.add'}
+        <a class="btn btn-primary btn-sm" href="{php echo webUrl('groups/goods/add')}">添加新商品</a>
+		{/if}
+		<a class="btn btn-default  btn-sm" href="{php echo webUrl('groups/goods')}">返回列表</a>
+	</span>
+	<h2>{if !empty($item['id'])}编辑{else}添加{/if}商品 <small>{if !empty($item['id'])}修改【{$item['title']}】
+        <a href='javascript:;' title='点击复制连接' class='js-clip' data-url='{php echo mobileUrl('groups/goods',array('id'=>$item['id']),true)}'>复制连接</a> {/if} </small></h2>
+</div>
+{if !$category}
+    <p style="height:30px;line-height: 30px;">暂无商品分类，请先添加商品分类</p>
+    <a class="btn btn-primary btn-sm" href="{php echo webUrl('groups/category/add')}">添加新商品分类</a>
+{else}
+<form id="dataform" action="" method="post" class="form-horizontal form-validate">
+    <input type='hidden' id='tab' name='tab' value='basic' />
+    <input type='hidden' id='gid' name='gid' value="{$item['gid']}" />
+    <ul class="nav nav-arrow-next nav-tabs" id="myTab">
+        <li {if $_GPC['tab']=='basic' || empty($_GPC['tab'])}class="active"{/if} ><a href="#tab_basic">商品</a></li>
+        <li {if $_GPC['tab']=='stock'}class="active"{/if} ><a href="#tab_stock">库存及编码</a></li>
+        <li {if $_GPC['tab']=='info'}class="active"{/if} ><a href="#tab_info">详情</a></li>
+        <li {if $_GPC['tab']=='marketing'}class="active"{/if} ><a href="#tab_marketing">营销</a></li>
+        <li {if $_GPC['tab']=='verify'}class="active"{/if}><a href="#tab_verify">线下核销</a></li>
+        <li {if $_GPC['tab']=='share'}class="active"{/if}><a href="#tab_share">关注及分享</a></li>
+    </ul>
+    <div class="tab-content">
+        <div class="tab-pane  {if $_GPC['tab']=='basic' || empty($_GPC['tab'])}active{/if}" id="tab_basic">{template 'groups/goods/basic'}</div>
+        <div class="tab-pane  {if $_GPC['tab']=='stock'}active{/if}" id="tab_stock">{template 'groups/goods/stock'}</div>
+        <div class="tab-pane  {if $_GPC['tab']=='info'}active{/if}" id="tab_info">{template 'groups/goods/info'}</div>
+        <div class="tab-pane  {if $_GPC['tab']=='marketing'}active{/if}" id="tab_marketing">{template 'groups/goods/marketing'}</div>
+        <div class="tab-pane  {if $_GPC['tab']=='verify'}active{/if}" id="tab_verify">{template 'groups/goods/verify'}</div>
+        <div class="tab-pane  {if $_GPC['tab']=='share'}active{/if}" id="tab_share">{template 'groups/goods/share'}</div>
+    </div>
+    <div class="form-group"></div>
+    <div class="form-group">
+        <label class="col-sm-2 control-label"></label>
+        <div class="col-sm-9 col-xs-12">
+            {ife 'groups.goods' $item}
+            <div class='panel-body' style='position:fixed;bottom:0;width:700px; text-align: right; '>
+                <input type="submit"  value="保存商品" class="btn btn-primary" />
+            </div>
+            {/if}
+        </div>
+    </div>
+<script language='javascript'>
+    require(['bootstrap'],function(){
+        $('#myTab a').click(function (e) {
+            e.preventDefault();
+            $('#tab').val( $(this).attr('href'));
+            $(this).tab('show');
+        })
+    });
+    $('form').submit(function(){
+        if($(':radio[name=goodstype]:checked').val()=='0'){
+            if($(':input[name=goodsid_text]').val()==''){
+            return false;
+            }
+        }
+        if($('select[name=cate]').val()==''){
+            $('#myTab a[href="#tab_basic"]').tab('show');
+            return false;
+        }
+        return true;
+    });
+    function toimgsrc(src) {
+        if(typeof src != 'string') {
+            return '';
+        }
+        if(src.indexOf('http://')==0 || src.indexOf('https://')==0 || src.indexOf('../addons')==0) {
+            return src;
+        }
+        else if(src.indexOf('images/') == 0) {
+            return "{$_W['attachurl']}" +  src;
+        }
+    }
+    function select_goods(o){
+        var $thumb = '';
+        /*商品缩略图*/
+        if(o.thumb){
+            $thumb += '<div class="multi-item"><img src="'+ toimgsrc(o.thumb)+'" ' +
+                    'onerror="this.src=\'./resource/images/nopic.jpg\'; this.title=\'图片未找到.\'" class="img-responsive img-thumbnail">' +
+                    '<input type="hidden" name="thumbs[0]" value="'+ o.thumb+'">' +
+                    '<em class="close" title="删除这张图片" onclick="deleteMultiImage(this)">×<\/em></div>';
+        }
+        /*商品幻灯片*/
+        if(o.thumb_url){
+            $.each(o.thumb_url,function(index,value){
+                var i = index++;
+                $thumb += '<div class="multi-item"><img src="'+ toimgsrc(value)+'" ' +
+                        'onerror="this.src=\'./resource/images/nopic.jpg\'; this.title=\'图片未找到.\'" class="img-responsive img-thumbnail">' +
+                        '<input type="hidden" name="thumbs['+i+']" value="'+value+'">' +
+                        '<em class="close" title="删除这张图片" onclick="deleteMultiImage(this)">×<\/em></div>';
+            });
+        }
+        $(".multi-img-details").html($thumb);
+        $(":input[name=gid]").val(o.gid);
+        $(":input[name=total]").val(o.total);
+        $(":input[name=description]").val(o.subtitle);
+        $(":input[name=price]").val(o.marketprice);
+        $(":input[name=goodssn]").val(o.goodssn);
+        $(":input[name=productsn]").val(o.productsn);
+        $("textarea[name=followtext]").val(o.followtip);
+        $("textarea[name=followurl]").val(o.followurl);
+        var ue = UE.getEditor('content', {
+            autoHeight: false
+        });
+        ue.ready(function() {
+            //设置编辑器的内容
+            ue.setContent(o.content);
+        });
+    }
+</script>
+
+    {/if}
+
+{template '_footer'}
+<!--913702023503242914-->

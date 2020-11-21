@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>语音播报</title>
+        {php echo register_jssdk(false);}
+    </head>
+    <body>
+        {if empty($sopranop['music_open'])}
+        <audio controls="controls" autoplay="autoplay" id="music_bg" src="{php echo tomedia($sopranop['music'])}" loop="loop" style="display: none"></audio>
+        {/if}
+        <audio controls="controls" autoplay="autoplay" id="music_audio" style="display: none"></audio>
+        <script src="../addons/crad_qrcode_red/template/mobile/js/jquery-3.2.1.min.js" type="text/javascript"></script>
+        <script>
+            var music = document.getElementById("music_audio"), music_bg = document.getElementById("music_bg"), musicSrc;
+            var u = navigator.userAgent;
+            var isiOS = !!u.match(/\(i[^;]+; CPU.+Mac OS X/);
+            {if empty($sopranop['music_open'])}
+            document.getElementById("music_bg").volume = "{$sopranop['bg_volume']}";
+            {/if}
+            if (isiOS) {
+            window.addEventListener('touchstart', playfun_bg, false);
+            window.addEventListener('touchstart', playfun, false);
+            }
+            function playfun() {
+            music.play();
+            window.removeEventListener('touchstart', playfun, false);
+            }
+            function playfun_bg() {
+            music_bg.play();
+            window.removeEventListener('touchstart', playfun_bg, false);
+            }
+
+            setyuyin(1);
+            $('#music_audio').on('ended', function () {
+            setTimeout(function () {setyuyin(0);
+            }, 3000);
+            });
+            function setyuyin(type) {
+            var sendurl = "{php echo $this->createMobileUrl('audio', array('id' => $id, 'token' => $token))}";
+            music.pause();
+            $.get(sendurl, {type: type}, function (ret) {
+            if (ret.sta == 1) {
+            musicSrc = ret.path;
+            music.src = musicSrc;
+            music.volume = "{$sopranop['audio_volume']}";
+            if (isiOS) {
+            document.addEventListener("WeixinJSBridgeReady", function () {
+            music.play();
+            }, false);
+            }
+            music.play();
+            } else if (ret.sta == 2) {
+            setTimeout(function () {
+            window.location.reload();
+            }, 60000);
+            } else {
+            setTimeout(function () {
+            setyuyin(0);
+            }, 5000);
+            }
+            }, 'json');
+            }
+
+
+        </script>
+    </body>
+</html>

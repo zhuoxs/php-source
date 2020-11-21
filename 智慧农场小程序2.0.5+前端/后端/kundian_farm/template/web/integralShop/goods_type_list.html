@@ -1,0 +1,144 @@
+{template 'web/common/common'}
+{template 'web/goods/navbar'}
+
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/css_1.9.0/public.css"/>
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/css_1.9.0/common.css"/>
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/css_1.9.0/user.css"/>
+<style>
+    .changeStatus{cursor: pointer}
+    .page-toolbar{width: auto;}
+
+</style>
+<blockquote class="layui-elem-quote layui-text">
+    积分商城分类
+</blockquote>
+<div class="layui-card">
+
+    <div class="user">
+        <!--搜索栏-->
+        <form  method="get" class="form_table layui-form" role="form">
+            <div class="page-toolbar">
+                    {if in_array('integralShop.goods_type_edit',$perm)}
+        			<span class="pull-left" style="margin-right:30px;">
+                		<a class="btn btn-primary" href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'goods_type_edit','action'=>'integralShop')}"><i class="iconfont icon-add"></i>新增分类</a>
+            		</span>
+                    {/if}
+                <div class="input-group">
+                    <input type="text" class="form-control " name="type_name" value="{$_GPC['type_name']}" placeholder="请输入分类名称进行搜索">
+                    <span class="input-group-btn">
+                        <button class="btn  btn-primary" type="button" lay-filter="formSubmit" lay-submit="" >搜索</button>
+                    </span>
+                </div>
+
+            </div>
+        </form>
+
+        <!--详情栏-->
+        <div class="row">
+            <div class="col-md-12">
+                <table class="table table-responsive">
+                    <thead>
+                    <tr>
+                        <!--<th style="width:25px;"></th>-->
+                        <th style="width: 55px;">ID</th>
+                        <th style="width: 55px;">图标</th>
+                        <th style="">名称</th>
+                        <th style="">添加时间</th>
+                        <th style="">状态</th>
+                        <th style="width: 55px;">排序</th>
+                        <th style="text-align: center;">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {loop $data['list'] $index $item}
+                    <tr>
+                        <td>1</td>
+                        <td style="overflow: visible;">
+                            <img class="img-40" src="{$item['icon']}" style="border-radius:50%;border:1px solid #efefef;" onerror="">
+                        </td>
+                        <td>
+                            <span class="nickname">{$item['type_name']}</span>
+                        </td>
+                        <td><?php echo date("Y-m-d H:i:s",$item['create_time']);?></td>
+                        <td>
+                            {if $item['status']==1}
+                            <span class="label label-primary changeStatus" data-auth="{php echo in_array('integralShop.change_goods_type_status',$perm)}" data-id="{$item['id']}" data-status="0" >显示</span>
+                            {else}
+                            <span class="label label-default changeStatus" data-auth="{php echo in_array('integralShop.change_goods_type_status',$perm)}" data-id="{$item['id']}" data-status="1">隐藏</span>
+                            {/if}
+                        </td>
+                        <td>{$item['rank']}</td>
+                        <td style="overflow: visible; text-align: center;">
+                            <div class="btn-group">
+                                {if in_array('integralShop.goods_type_edit',$perm)}
+                                <a class="btn  btn-op btn-operation" href="{url 'site/entry/admin',array('m'=>'kundian_farm','op'=>'goods_type_edit','id'=>$item['id'],'action'=>'integralShop')}" title="">
+                                    <span data-toggle="tooltip" data-placement="top" title="分类详情" data-original-title="分类详情">
+                                        <i class="iconfont icon-modify"></i>详情
+                                    </span>
+                                </a>
+                                {/if}
+                                {if in_array('integralShop.goods_type_delete',$perm)}
+                                <a class="btn btn-op btn-operation delete" data-id="{$item['id']}" data-toggle="ajaxRemove" href="#" >
+                                    <span data-toggle="tooltip" data-placement="top" title="删除分类" data-original-title="删除分类">
+                                        <i class="iconfont icon-el-icon-dev-delete"></i>删除
+                                    </span>
+                                </a>
+                                {/if}
+                            </div>
+                        </td>
+                    </tr>
+                    {/loop}
+                    </tbody>
+                </table>
+                <div style="text-align: right;">
+                    {$data['pager']}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{template 'common/footer'}
+<script src="../addons/kundian_farm/resource/js/main.js" charset="utf-8"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form,layer = layui.layer;
+
+        /** 删除分类 */
+        $(".delete").click(function(){
+            var that=$(this);
+            var id=$(this).attr('data-id');
+            var url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'goods_type_delete','action'=>'integralShop')}";
+            updateData(url,{id:id},'确认删除吗？')
+        });
+
+        /** 改变分类显示状态 */
+        $(".changeStatus").click(function () {
+            var id=$(this).attr('data-id');
+            var status=$(this).attr('data-status');
+            var auth=$(this).attr('data-auth');
+            if(!auth){
+                layer.msg('您暂时没有权限进行此操作！');return;
+            }
+            var status_txt='显示';
+            if(status==0){
+                status_txt='不显示';
+            }
+            var url="{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'change_goods_type_status','action'=>'integralShop')}";
+            updateData(url,{id:id,status:status},'确认要更新该分类状态为'+status_txt+'吗？')
+        })
+
+        /** 搜索查询*/
+        form.on('submit(formSubmit)',function (data) {
+            $("input[name='flag']").val('');
+
+            var formData = data.field;
+            let url = "{url 'site/entry/'.$_GPC['do'],array('m'=>'kundian_farm','op'=>'integral_goods_type','action'=>'integralShop')}";
+            if(formData['type_name']){
+                url+="&type_name="+formData['type_name'];
+            }
+            window.location.href=url;
+        })
+
+    });
+</script>

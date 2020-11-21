@@ -1,0 +1,147 @@
+{php include wl_template('common/header');}
+<div class="page-group" >
+    <div class="page page-current" id="page-index" goodsid="{$goodsId}">
+    	{php include wl_template('common/rightnav');}
+	    <div class="buttons-tab">
+	    	<a href="{php echo app_url('store/merchant/commentpage',array('status'=>'','merchantid'=>$id,'goodsid'=>$goodsId))}" class="button {if empty($status)}active{/if}">全部({$num1})</a>
+			<a href="{php echo app_url('store/merchant/commentpage',array('status'=>1,'merchantid'=>$id,'goodsid'=>$goodsId))}" class="button {if $status == 1}active{/if}">晒图({$num2})</a>
+			<a href="{php echo app_url('store/merchant/commentpage',array('status'=>2,'merchantid'=>$id,'goodsid'=>$goodsId))}" class="button {if $status == 2}active{/if}">低分({$num3})</a>
+			<a href="{php echo app_url('store/merchant/commentpage',array('status'=>3,'merchantid'=>$id,'goodsid'=>$goodsId))}" class="button {if $status == 3}active{/if}">最新({$num4})</a>
+		</div>
+		<div class="content infinite-scroll" style="margin-top: 2.2rem;">
+			<div class="allorder">
+		       <div class="shop_info-com-list">
+		            <input type="hidden" class="status" value="{$status}" />
+		            <input type="hidden" class="id" value="{$id}" />
+		       		<div class="comcontent">
+		       			<!--评论主体-->
+		       		</div>
+		       	</div>
+			</div>
+			<div class="weui-loadmore loading_more" style="display: none;">
+	            <i class="weui-loading"></i>
+	            <span class="weui-loadmore__tips">正在加载</span>
+	        </div>
+	        <div class="weui-loadmore weui-loadmore_line" style="display: none;">
+	            <span class="weui-loadmore__tips" style="background-color: #EFEFF4;">暂无更多数据</span>
+	        </div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="commentlist">
+{{# for(var i = 0, len = d.length; i < len; i++){ }}
+	<div class="shop_info-com-i">
+		<div class="shop_info-com">
+			<div class="shop_info-com-l">
+				<img src="{{d[i].headimg}}">
+			</div>
+			<div class="shop_info-com-r">
+				<h1>{{d[i].nickname}}<span>{{d[i].createtime}}</span></h1>
+				<h2>
+					<div class="star star-dark">
+						<i class="icon iconfont icon-shoucangxiao"></i>
+						<i class="icon iconfont icon-shoucangxiao"></i>
+						<i class="icon iconfont icon-shoucangxiao"></i>
+						<i class="icon iconfont icon-shoucangxiao"></i>
+						<i class="icon iconfont icon-shoucangxiao"></i>
+					</div>
+					<div class="star star-light">
+						<div class="star-width" style="width: 100%;">
+							{{# if(d[i].star > 0){ }}<i class="icon iconfont icon-shoucangxiao"></i>{{# } }}
+							{{# if(d[i].star > 1){ }}<i class="icon iconfont icon-shoucangxiao"></i>{{# } }}
+							{{# if(d[i].star > 2){ }}<i class="icon iconfont icon-shoucangxiao"></i>{{# } }}
+							{{# if(d[i].star > 3){ }}<i class="icon iconfont icon-shoucangxiao"></i>{{# } }}
+							{{# if(d[i].star > 4){ }}<i class="icon iconfont icon-shoucangxiao"></i>{{# } }}
+						</div>
+					</div>
+				</h2>
+				<p>{{d[i].text}}</p>
+				{{# if(d[i].pic){ }}
+				<h3>
+                  	<ul>
+                  		{{# for(var w = 0, lenn = d[i].pic.length; w < lenn; w++){ }}
+                  		<li class="imgloading"><img src="{{d[i].pic[w]}}"></li>
+                  		{{# } }}
+                  	</ul>
+                </h3>
+                {{# } }}
+                {{# if(d[i].replytextone){ }}
+				<h4><span>商家回复：</span>{{d[i].replytextone}}</h4>
+				{{# } }}
+			</div>
+		</div>
+	</div>
+{{# } }}
+</script>
+<script>
+	var status = $('.status').val();
+	var id = $('.id').val();
+	var pagesize = 10;
+	var page = 1;
+	var loading = false;
+	var endmark = 1;
+	addItems();
+	function asd(d){
+			var x = $(d).attr('src');
+			var xx = $(d).attr('imgs').split(",");
+			wx.previewImage({
+	   		current: x, // 当前显示图片的http链接
+	    	urls: xx // 需要预览的图片http链接列表
+		});
+	}
+	function addItems(){
+		var ajaxurl = "{php echo app_url('store/merchant/getcomment')}" + "&status=" + status + "&merchantid=" + id;
+		//存在商品id时只查询当前拼团商品的评论
+		if($("#page-index").attr('goodsid') != ''){
+            ajaxurl = ajaxurl + "&goodsid=" + $("#page-index").attr('goodsid');
+		}
+		$.ajax({
+			type: "POST",
+			url: ajaxurl,
+			dataType: 'json',
+			beforeSend: function(XMLHttpRequest) {$.showIndicator(); },
+			success: function(data) {
+				if (data.length > 0) {
+					$('.weui-loadmore_line').hide();
+					sessionStorage.setItem("demokey",JSON.stringify(data));
+					var contentdata = data.slice(0,pagesize);
+					addinfo(contentdata);
+				} else {
+					$('.weui-loadmore_line').show();
+					endmark = 0;
+				}
+			},
+			error: function() {
+				$('.weui-loadmore_line').show();
+				endmark = 0;
+			}
+		});
+	}
+	function addinfo(data){
+		if(data.length){
+		var gettpl = document.getElementById('commentlist').innerHTML;
+			laytpl(gettpl).render(data, function(html){
+			    $(".comcontent").append(html);
+			    page++;
+			});
+			loading = false;
+		}else{
+			$('.weui-loadmore_line').show();
+		}
+		$('.loading_more').hide();
+	}
+	$(document).on('infinite', '.infinite-scroll', function() {
+		if(loading) return;
+		loading = true;
+		if(endmark){
+		$('.loading_more').show();
+		setTimeout(function() {
+			var dt = JSON.parse(sessionStorage.getItem("demokey"));
+			var xxx = dt.slice((page-1)*pagesize ,(page-1)*pagesize+pagesize);
+			addinfo(xxx);
+		}, 800);}
+	});
+	$.init();
+</script>
+
+{php include wl_template('common/footer');}

@@ -1,0 +1,178 @@
+{template 'common/header'}
+<ul class="nav nav-tabs">
+    <li {if $operation=='passwdsManager' } class="active" {/if}><a href="{php echo $this->createWebUrl('passwds',array('op' =>'passwdsManager'))}">管理密码</a></li>
+    <li{if $operation=='passwdsAdd' } class="active" {/if}><a href="{php echo $this->createWebUrl('passwds',array('op' =>'passwdsAdd'))}">新增密码</a></li>
+    <li {if $operation=='passwdTypeManager' } class="active" {/if}><a href="{php echo $this->createWebUrl('passwdtype',array('op' =>'passwdTypeManager'))}">管理种类</a></li>
+    <li{if $operation=='passwdTypeAdd' } class="active" {/if}><a href="{php echo $this->createWebUrl('passwdtype',array('op' =>'passwdTypeAdd'))}">新增种类</a></li>
+</ul>
+{if $operation == 'passwdsAdd'}
+<div class="main">
+    <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data" >
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                批量上传密码
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">所属种类</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <select class="form-control" name="type">
+                          <option value="0">请选择密码种类</option>
+                          {loop $zhongleis $zhonglei}
+                          <option value="{$zhonglei['id']}">{$zhonglei['name']}</option>
+                          {/loop}
+                        </select>
+                        <span class="help-block">如果没有种类，请先添加密码种类</span>
+                    </div>
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">上传密码文档</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <input name="passwdtxt" type="file" class="form-control" value="" />
+                        <span class="help-block">请上传密码的文本文档（txt格式）其中包括密码1行1个</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group col-sm-12">
+            <input type="submit" name="passwdsAdd" value="提交" class="btn btn-primary col-lg-1" />
+            <input type="hidden" name="token" value="{$_W['token']}" />
+        </div>
+    </form>
+</div>
+{elseif $operation == 'passwdsManager'}
+<div class="main">
+    <div class="alert alert-info">
+        <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+          <span class="sr-only">注意:</span>
+          如果忘记密码，想再次发送密码，请先在“回复规则列表”中，添加关键词为：“我的卡密”的关键词，名称自己定。
+    </div>
+
+
+
+            <div class="panel panel-info">
+                <div class="panel-heading">筛选</div>
+                <div class="panel-body">
+                    <form method="post" class="form-horizontal" role="form" id="form1">
+                        <div class="form-group">
+                            <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">卡密</label>
+                            <div class="col-sm-8 col-lg-9 col-xs-12">
+                                <input class="form-control" name="keyword" id="" type="text" value="{$_GPC['keyword']}" placeholder="卡密号">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-8 col-md-offset-1">
+                                <button class="btn btn-primary"><i class="fa fa-search"></i> 搜索</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+
+
+
+    <div class="panel panel-default">
+        <div class="panel-body table-responsive">
+            <form method="post" action="{php echo $this->createWebUrl('passwds',array('op'=>'piliangDel'))}" class="form-horizontal" role="form" id="form2">
+            <table class="table table-hover">
+                <thead class="navbar-inner">
+                    <tr>
+                        <th style="width:10%;"><input type="checkbox" id="quanxuan"></th>
+                        <th style="width:15%;">所属种类</th>
+                        <th style="width:15%;">密码</th>
+                        <th style="width:20%;">用户id</th>
+                        <th style="width:5%;">状态</th>
+                        <th style="width:20%;">创建时间</th>
+                        <th style="text-align:right; width:20%;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {loop $list $item}
+                    <tr>
+                        <td><input type="checkbox" name="mid[]" value="{$item['id']}" ></td>
+                        <td>
+                            {$zhongleis[$item['type']]['name']}
+                        </td>
+                        <td>
+                            {$item['code']}
+                        </td>
+                        <td>
+                            {$item['uid']}
+                        </td>
+                        
+                        <td>
+                            <label data='{$item[' status ']}' class='label  label-default {if $item[' status ']==1}label-info{/if}'>
+                            {if $item['status']==1}
+                            已发放
+                            {else if $item['status']==2}
+                            已核销
+                            {else}
+                            未用
+                            {/if}</label>
+                        </td>
+                        <td>
+                            {php echo date('Y-m-d H:i:s',$item['createtime'])}
+                        </td>
+                        <td style="text-align:right;">
+                            <?php if($item['status']==1){?>
+                            <a data-id="{$item['id']}" href="javascript:void(0);" class="btn btn-success btn-sm check-out">核销</a>
+                            <?php } ?>
+                            <a href="{php echo $this->createWebUrl('passwds', array('id' => $item['id'], 'op' => 'passwdsDelete'))}" onclick="return confirm('此操作不可恢复，确认删除？');return false;" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="top" title="删除"><i class="fa fa-times"></i></a>
+                        </td>
+                    </tr>
+                    {/loop}
+                </tbody>
+            </table>
+            </from>
+            <a href="#" class="btn btn-info dayinbutton">批量删除</a>
+            <hr />
+            {$pager}
+        </div>
+    </div>
+    <script>
+        require(['bootstrap'],function($){
+            $('.btn').hover(function(){
+                $(this).tooltip('show');
+            },function(){
+                $(this).tooltip('hide');
+            });
+        });
+    </script>
+    <script type="text/javascript">
+        require(['jquery','util'], function ($,util){
+            $("#quanxuan").click(function(){
+                var c = this.checked;
+                if (c) {  
+                    $("input[name='mid[]']:checkbox").prop("checked", true);  
+                } else {  
+                    $("input[name='mid[]']:checkbox").prop("checked",false);  
+                }  
+            });
+            $('.dayinbutton').click(function(){
+                var ch = $("input[name='mid[]']:checked");//查找已经选中的订单
+                if(ch.length <=0){
+                    util.message('请先选中订单再点删除按钮');
+                    return;
+                }
+                $("#form2").submit();
+            });
+
+            $('.dayinbutton').click(function(){
+                var ch = $("input[name='mid[]']:checked");//查找已经选中的订单
+                if(ch.length <=0){
+                    util.message('请先选中订单再点删除按钮');
+                    return;
+                }
+                $("#form2").submit();
+            });
+
+            var check_url = "<?php echo $this->createWebUrl('passwds', ['op' => 'check']);?>";
+            $(".check-out").click(function(){
+                var id = $(this).attr('data-id');
+                $.get(check_url,{id:id},function (data) {
+                    location.reload();
+                });
+            });
+        });
+    </script>
+</div>
+{/if} {template 'common/footer'}

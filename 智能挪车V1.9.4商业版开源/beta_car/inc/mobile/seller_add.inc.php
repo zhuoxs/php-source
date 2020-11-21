@@ -1,0 +1,2 @@
+<?php
+ goto BdLSM; GnCnt: $data = array("\165\156\x69\141\x63\151\144" => uniacid, "\156\x61\x6d\x65" => $_GPC[name], "\164\x65\154" => $_GPC[tel]); goto SKEQD; Vb8eh: GAWpX: goto GnCnt; MS4r3: if ($_W[isajax]) { goto GAWpX; } goto s0tBK; SKEQD: pdo_insert(table . "\163\145\154\154\x65\162\x5f\141\144\144", $data); goto cSOKa; BdLSM: global $_GPC, $_W; goto MS4r3; s0tBK: include $this->template("\163\145\154\x6c\x65\x72\137\141\144\x64"); goto doYKZ; doYKZ: goto P4tgt; goto Vb8eh; cSOKa: P4tgt:

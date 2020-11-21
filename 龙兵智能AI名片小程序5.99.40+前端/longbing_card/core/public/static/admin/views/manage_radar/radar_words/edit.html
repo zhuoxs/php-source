@@ -1,0 +1,132 @@
+
+<title>话术管理</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>话术管理</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-header">话术管理</div>
+        <div class="layui-card-body" style="padding: 15px;">
+
+            <form class="layui-form" action="" lay-filter="component-form-group">
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">开始次数</label>
+                    <div class="layui-input-block">
+                        <input type="number" name="time_start" required  lay-verify="zzs" placeholder="" autocomplete="off" class="layui-input">
+                        <blockquote class="layui-elem-quote">最小为1，和结束次数结合使用，例如：当前填入1，结束次数填入5， 代表 1-5 次该事件所展示的话术</blockquote>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">截止次数</label>
+                    <div class="layui-input-block">
+                        <input type="number" name="time_end" required  lay-verify="zzs0" placeholder="" autocomplete="off" class="layui-input">
+                        <blockquote  class="layui-elem-quote">最小为1，和开始次数结合使用，例如：开始次数填入1，当前填入5， 代表 1-5 次该事件所展示的话术。注意当结束时间填入0时代表无限大</blockquote>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">话术</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="words" required  placeholder="" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+
+
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="LAY-filter-demo-form">立即提交</button>
+                        <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                    </div>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.use(['admin', 'form'], function(){
+        var $ = layui.$
+                ,admin = layui.admin
+                ,element = layui.element
+                ,layer = layui.layer
+                ,form = layui.form;
+
+        //id的值（判断是否编辑）
+        var router = layui.router();
+        var id=router.search.id;
+        if(typeof(id)=='undefined'){
+            id=0;//默认新增
+        }
+
+        var event_id=router.search.event_id;
+        if(typeof(event_id)=='undefined'){
+            event_id=0;
+        }
+
+        //发送请求获取数据(数据的回显)
+        admin.req({
+            type:'POST',
+            url: config.url+'manage_radar/radar_words/getOneData'//数据接口
+            ,data:{"id":id},
+            done:function(res){
+                if(res.data){
+                    //预设元素
+                    form.val("component-form-group", {
+                        "time_start": res.data.time_start,// "name": "value"
+                        "time_end": res.data.time_end,// "name": "value"
+                        "words":  res.data.words,// "name": "value"
+                    });
+                }
+            }
+        });
+
+        /* 自定义验证规则 */
+        form.verify({
+            zzs: [/^[1-9]\d*$/, '填入正整数'],//正整数
+            zzs0: [/^[+]{0,1}(\d+)$/, '填入包括0的正整数']//正整数
+        });
+
+        /* 监听提交 */
+        form.on('submit', function(data){
+
+            data.field.event_id=event_id;
+
+            //发送请求
+            admin.req({
+                type:'POST',
+                url: config.url+'manage_radar/radar_words/edit'//数据接口
+                ,data:{"id":id,"data":data.field},
+                done:function(res){
+                    if(res.data<0){
+                        layer.msg(res.msg, {
+                            offset: '15px'
+                            ,icon: 2
+                            ,time: 1000
+                        });
+                    }else{
+                        layer.msg('成功', {
+                            offset: '15px'
+                            ,icon: 1
+                            ,time: 1000
+                        }, function(){
+                            window.location.href =config.html_url+'manage_radar/radar_words/index/event_id='+event_id;
+                        });
+                    }
+
+                }
+            });
+            return  false;
+        });
+    });
+
+</script>

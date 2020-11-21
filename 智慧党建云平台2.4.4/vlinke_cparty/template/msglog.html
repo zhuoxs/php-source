@@ -1,0 +1,123 @@
+{template 'common/header'}
+<div class="we7-page-title"> &nbsp; </div>
+<ul class="we7-page-tab">
+<li><a href="{php echo $this->createWebUrl('msgtemplate')}">消息模板管理</a></li>
+<li><a href="{php echo $this->createWebUrl('msgmessage')}">消息管理</a></li>
+<li class="active"><a href="{php echo $this->createWebUrl('msglog')}">推送记录</a></li>
+</ul>
+
+<div class="alert alert-info">
+	<p><i class="fa fa-exclamation-circle"></i> 此处模板消息推送只针对公众号粉丝。</p>
+</div>
+
+<div class="btn-group we7-btn-group we7-margin-bottom">
+<a class="btn {php echo $op=='display'?'active':'';}" href="{php echo $this->createWebUrl('msglog')}">推送记录</a>
+</div>
+
+{if $op == 'display'}
+<form action="" method="get" class="form-horizontal form" enctype="multipart/form-data">
+<input type="hidden" name="c" value="site" />
+<input type="hidden" name="a" value="entry" />
+<input type="hidden" name="m" value="vlinke_cparty" />
+<input type="hidden" name="do" value="msglog" />
+<input type="hidden" name="id" value="{$id}" />
+<div class="panel we7-panel panel-default">
+<div class="panel-heading">消息推送记录</div>
+<div class="panel-body we7-padding">
+	{if !empty($message)}
+	<input type="hidden" name="messageid" value="{$messageid}" />
+	<div class="form-group">
+		<label class="col-sm-2 control-label">消息</label>
+		<div class="col-sm-10">
+			<input class="form-control" name="title" type="text" value="{$message['title']}" readonly>
+		</div>
+	</div>
+	{/if}
+	<div class="form-group">
+		<label class="col-sm-2 control-label">关键字</label>
+		<div class="col-sm-5">
+			<input class="form-control" name="keyword" id="keyword" type="text" placeholder="党员姓名或手机号..." value="{$keyword}">
+		</div>
+		<div class="col-sm-5">
+			<button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+			<button type="button" class="btn btn-default">总记录数：{$total}</button>
+		</div>
+	</div>
+</div>
+</div>
+</form>
+
+<table class="table we7-table table-hover vertical-middle">
+	<thead class="navbar-inner">
+		<tr>
+			<th style="width:15%;">ID</th>
+			<th style="width:10%;">头像</th>
+			<th style="width:25%;">姓名手机号</th>
+			<th style="width:40%;">消息</th>
+			<th style="width:10%;" class="text-right">操作</th>
+		</tr>
+	</thead>
+	<tbody>
+		{loop $list $row}
+		<tr>
+			<td><input type="checkbox" name="check" value="{$row['id']}"> {$row['id']}</td>
+			<td><img class="img-responsive" style="max-width:55px;" src="{php echo tomedia($row['headpic']);}"/></td>
+			<td><strong>{$row['realname']}-{$row['mobile']}</strong></td>
+			<td>
+				<p><strong>{$row['title']}</strong></p>
+				{$row['templatename']}
+			</td>
+			<td class="text-right">
+				<a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('msglog',array('op'=>'delete','id'=>$row['id']));}"  onclick="return confirm('删除后不可恢复,确定要删除吗?')"><i class="fa fa-times"></i> 删除</a>
+			</td>
+		</tr>
+		{/loop}
+		<tr>
+			<td colspan="6">
+				<span class="btn btn-success btn-sm checkall" id="checkall"><i class="fa fa-check-square-o"></i> 全选</span>
+				<span class="btn btn-success btn-sm uncheckall" id="uncheckall"><i class="fa fa-square-o"></i> 全不选</span>
+				<input type="button" class="btn btn-primary btn-sm deleteall" id="deleteall" name="deleteall" value="删除选择的" />
+			</td>
+		</tr>
+	</tbody>
+</table>
+<div class="text-right">{$pager}</div>
+<script>
+    $(function(){
+        $('.checkall').bind('click',function(){
+            $("input[name='check']").each(function(){
+               $(this).prop("checked","checked");
+            });
+        });
+        $('.uncheckall').bind('click',function(){
+            $("input[name='check']").each(function(){
+               $(this).prop("checked",false);
+            });
+        });
+
+        $('#deleteall').click(function(){
+            var check = $("input:checked");
+            if(check.length<1){
+                alert("请选择要删除的记录!");
+                return false;
+            }
+            if(confirm("确认要删除选择的记录?")){
+                var id = new Array();
+                check.each(function(i){ id[i] = $(this).val(); });
+                $.post("<?php echo $this->createWebUrl('msglog',array('op'=>'deleteall')); ?>",{idArr:id},         
+                    function(data){
+                        if(data == 'error'){
+                           alert('删除失败！');
+                           location.reload();
+                        }else{
+                           alert('删除成功！');
+                           location.reload();
+                        }
+                    }
+                );
+            }
+        });
+    });
+</script>
+{/if}
+{template 'common/footer'}

@@ -1,0 +1,239 @@
+<!--分类管理 -->
+<title>名片分类管理</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>分类管理</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">分类管理</div>
+                <div class="layui-card-body">
+                    <!--内容-->
+                    <button class="layui-btn layui-btn-primary up-all">全部收起</button>
+                    <button class="layui-btn layui-btn-primary down-all">全部展开</button>
+                    <button class="layui-btn layui-btn-primary get-delete">选中删除</button>
+                    <button class="layui-btn layui-btn-primary add_new">新增</button>
+                    <button class="layui-btn layui-btn-primary import_data">一键导入数据</button>
+
+                    <table class="layui-table layui-form" id="test-tree-table"></table>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    layui.config({
+        base: config.js_path,
+    })
+    var $ = layui.$
+            ,admin = layui.admin
+            ,element = layui.element
+            ,layer = layui.layer
+            ,form = layui.form;
+    layui.use(['treetable','form'],function(){
+        /*数据掉接口获取*/
+        admin.req({
+            type:'POST',
+            url: config.url+'manage_contacts/category/index'//数据接口
+            ,data:{"type":1},
+            done:function(res){
+                var  data_list=res.data;
+                var o = layui.$,treetable = layui.treetable;
+                var form = layui.form,layer = layui.layer;
+                treetable.render({
+                    elem: '#test-tree-table',
+                    data: data_list,
+                    field: 'title',
+                    is_checkbox: true,
+                    /*icon_val: {
+                     open: "&#xe619;",
+                     close: "&#xe61a;"
+                     },
+                     space: 4,*/
+                    cols: [
+                        {
+                            field: 'title',
+                            title: '标题',
+                            width: '20%',
+                        },
+                        {
+                            field: 'id',
+                            title: 'ID',
+                            width: '20%'
+                        },
+                        {
+                            title: '状态',
+                            width: '20%',
+                            template: function(item){
+                                console.log(item)
+                                var checked="";
+                                if(item['status']==1){
+                                    checked="checked"
+                                }
+                                return '<input data_id='+item['id']+' data_status='+item['status']+' type="checkbox" '+checked+' lay-skin="switch" lay-filter="status" lay-text="开启|关闭">';
+                            }
+                        },
+                        {
+                            field: 'sort',
+                            title: '排序',
+                            width: '20%',
+                        },
+                        {
+                            field: 'actions',
+                            title: '操作',
+                            width: '40%',
+                            template: function(item){
+                                var tem = [];
+                                if(item.pid == 0){
+                                    tem.push('<a class="add-child" lay-filter="add">添加子级</a>');/*新增*/
+                                }
+                                tem.push('<a lay-filter="edit">编辑</a>');
+                                if(item.pid > 0){
+                                   // tem.push('<a class="set-attr">设置属性</a>');
+                                }
+                                return tem.join(' <font>|</font> ')
+                            },
+                        },
+                    ]
+                });
+
+                //完全的新增
+                $(".add_new").click(function(){
+                   //跳转到新增页面
+                    window.location.href =config.html_url+'manage_contacts/category/edit';
+                });
+                //一键导入分类数据import_data
+                $(".import_data").click(function(){
+                    //应该有个确认的弹窗出来
+                    layer.confirm('覆盖现有分类？此操作不可撤销！确认导入初始化分类数据吗？导入后之前的数据将被覆盖！请等待5-6秒，直到导入成功', function(index){
+                        layer.close(index);//关掉提示框
+                        //调取插入数据的接口
+                        admin.req({
+                            type:'POST',
+                            url: config.url+'manage_contacts/category/importData'//数据接口
+                            ,data:{},
+                            done:function(res){
+                                console.log(res);
+                                if(res.code==0){
+                                    layer.msg('成功', {
+                                        offset: '15px'
+                                        ,icon: 1
+                                        ,time: 1000
+                                    });
+                                }else{
+                                    layer.msg('失败', {
+                                        offset: '15px'
+                                        ,icon: 2
+                                        ,time: 1000
+                                    });
+                                }
+                                //刷新一下页面 要不然 修改状态不生效
+                                window.location.reload()//刷新当前页面.
+                            }
+                        });
+                    });
+                });
+                //选中删除  get-delete
+                $(".get-delete").click(function(){
+                    //应该有个确认的弹窗出来
+                    layer.confirm('真的删除行么', function(index){
+                        layer.close(index);//关掉提示框
+                        //掉删除接口
+                        var datas=treetable.all('checked');
+                        var ids=datas.ids;
+                        admin.req({
+                            type:'POST',
+                            url: config.url+'manage_contacts/category/delete'//数据接口
+                            ,data:{"ids":ids},
+                            done:function(res){
+                                console.log(res);
+                                if(res.code==0){
+                                    layer.msg('删除成功', {
+                                        offset: '15px'
+                                        ,icon: 1
+                                        ,time: 1000
+                                    });
+                                }else{
+                                    layer.msg('删除失败', {
+                                        offset: '15px'
+                                        ,icon: 2
+                                        ,time: 1000
+                                    });
+                                }
+                                //刷新一下页面 要不然 修改状态不生效
+                                window.location.reload()//刷新当前页面.
+                            }
+                        });
+                    });
+                });
+
+                treetable.on('treetable(add)',function(data){
+                    //layer.msg('添加操作');
+                    console.dir(data);
+                    //跳转到添加页面
+                    window.location.href =config.html_url+'manage_contacts/category/edit/pid='+data.item.id;
+                })
+
+                treetable.on('treetable(edit)',function(data){
+//                    layer.msg('编辑操作');
+                    console.dir(data);
+                    //跳转到编辑页面
+                    window.location.href =config.html_url+'manage_contacts/category/edit/id='+data.item.id;
+                })
+
+                o('.up-all').click(function(){
+                    treetable.all('up');
+                })
+
+                o('.down-all').click(function(){
+                    treetable.all('down');
+                })
+
+                o('.get-checked').click(function(){
+                    console.dir(treetable.all('checked'));
+                })
+
+                //改变状态
+                form.on('switch(status)',function(obj){
+                    var id=$(this).attr('data_id')
+                    if($(this).attr('data_status')==1){
+                        var status=0;
+                    }else{
+                        var status=1;
+                    }
+                    console.log(id,status); //当前行数据
+                    //请求接口
+                    admin.req({
+                        type:'POST',
+                        url: config.url+'manage_contacts/category/edit'//数据接口
+                        ,data:{"id":id,"data":{"status":status}},
+                        done:function(res){
+                            console.log(res);
+                            layer.msg('修改状态成功', {
+                                offset: '15px'
+                                ,icon: 1
+                                ,time: 1000
+                            });
+
+                                //刷新一下页面 要不然 修改状态不生效
+                                window.location.reload()//刷新当前页面.
+                        }
+                    });
+
+
+                })
+            }
+
+        });
+
+    })
+</script>

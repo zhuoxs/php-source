@@ -1,0 +1,392 @@
+{template 'web/common/header'}
+
+<div class="page">
+
+    <div class="page_content">
+			<style>
+#sonscatas select{margin-bottom: 15px}
+</style>
+
+{if $opt == 'display'}
+
+<div style="height:55px">
+
+    <h3 style="float: left;margin-top: 0;">打印机管理</h3>
+
+    <div class="pull-right">
+
+        <a href="{php echo $this->createWebUrl('Shopset', array('op' => 'print', 'opt' => 'post', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']))}"  class="btn btn-primary we7-padding-horizontal" style="margin-bottom: 20px">添加打印机</a>
+
+    </div>
+
+</div>
+
+    <table class="table we7-table table-hover article-list vertical-middle">
+
+        <tr>
+            <td style="width: 200px;">打印机名称</td>
+            <td style="">打印商品类型</td>
+            <td style="">是否打印规格</td>
+            <td style="">打印联数</td>
+            <td style="">是否启用</td>
+            <td widtd="200px;">操作</td>
+            <td>
+                <input type="checkbox" id="all" />全选&nbsp;&nbsp;
+                <a class="btn btn-default btn-sm" onclick="delall()">批量删除</a>
+            </td>
+        </tr>
+
+        {loop $list $item}
+
+        <tr>
+
+            <td>
+                {$item['pname']}
+            </td>
+            <td>
+                <?php if(in_array(1,$item['protype'])){ ?>多规格<?php }?>
+                <?php if(in_array(2,$item['protype'])){ ?>秒杀<?php }?>
+                <?php if(in_array(3,$item['protype'])){ ?>预约预定<?php }?>
+                <?php if(in_array(4,$item['protype'])){ ?>餐饮<?php }?>
+            </td>
+            <td>
+                {if $item['spec'] == 1}打印{else}不打印{/if}
+            </td>
+            <td>
+                {$item['num']}
+            </td>
+
+            <td>
+                {if $item['flag'] == 1}
+                <button class="btn btn-success">启用</button> 
+                {else}
+                <button class="btn btn-danger">不启用</button> 
+                
+                {/if}
+            </td>
+
+            <td class="text-right" style="text-align: left!important;">
+
+                <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('Shopset', array('op' => 'print', 'opt' => 'post', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}" >编辑</a>
+
+                <a class="btn btn-default btn-sm" onclick="return confirm('此操作不可恢复，确认吗？'); return false;" href="{php echo $this->createWebUrl('Shopset', array('op' => 'print', 'opt' => 'delete', 'cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'id' => $item['id']))}">删除</a>
+
+            </td>
+            <td>
+                <input type="checkbox" name="csb" value="{$item['id']}"/>
+            </td>
+
+        </tr>
+
+        {/loop}
+
+    </table>
+
+    {$pager}
+<script>
+$('#all').on('click',function(){
+    if (this.checked) {
+        $("input[name='csb']").prop("checked", true);
+    } else {
+        $("input[name='csb']").removeAttr("checked");
+    }
+});
+function delall(){
+    var id_arr = new Array();
+    $.each($("input[name='csb']"),function(){
+        if(this.checked){
+            id_arr.push($(this).val());
+        }
+    });
+   if(id_arr.length>0){
+    $.ajax({
+
+            url : "{php echo $this->createWebUrl('Commentset',['op' => 'batchdel'])}",
+
+            type:'post',
+
+            dataType:'json',
+
+            data:{
+                id_arr:id_arr,
+                type:'showPic'
+            },
+            success:function (res) {
+
+                alert(res.message);
+       
+                if(res.code == 1){
+
+                    window.location.href="{php echo $this->createWebUrl('Commentset',['op' => 'pics','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid']])}";
+
+                }
+
+            }
+
+        });
+
+
+
+   }else{
+       alert("您未选择删除对象");
+       return false;
+   }
+}
+$("#filter").click(function(){
+    window.location.href = "{php echo $this->createWeburl('commentset', array('id' => $item['id'], 'opt' =>'display','op'=>'pics','cateid'=>$_GPC['cateid'],'chid'=>$_GPC['chid'],'page'=>$_GPC['page']))}" + "&sid=" + $('#sid').val() + '&skey=' + $('#skey').val();
+})
+$('.js-clip').each(function(){
+    util.clip(this, $(this).data('id'));
+});
+</script>
+{/if}
+
+{if $opt == 'post'}
+
+<form class="form-horizontal" action="" method="post" onsubmit="return checkinfo()">
+    <input type="hidden" name="id" value="{$item['id']}">
+    <div class="panel panel-default">
+
+        <div class="panel-heading">
+
+            <h3 class="panel-title">打印机添加/修改</h3>
+
+        </div>
+
+        <div class="panel-body">
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">是否启用</label>
+
+                <div class="form-controls col-sm-3">
+
+                    <label style="margin-right: 20px">
+
+                        <input type="radio" name="flag" value="1" {if $item['flag'] == '1'} checked{/if} />
+
+                        启用
+
+                    </label>
+
+                    <label style="margin-right: 20px">
+
+                        <input type="radio" name="flag" value="2" {if $item['flag'] == '2'} checked{/if} />
+
+                        不启用
+
+                    </label>
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">启用后生效</div>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">打印机名称</label>
+
+                <div class="form-controls col-sm-3">
+
+                    <input type="text" name="pname" id="pname" value="{$item['pname']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">只用作后台显示</div>
+
+            </div>
+            <div class="form-group" id="catelists_sons" style="display: block;">
+                <label class="control-label col-sm-2" style="margin-right:45px">打印机型号</label>
+                <div class="form-controls col-sm-3" id="sonscatas">
+                    <select name="models" class="form-control">
+                        <option value="1">易联云(K4)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">打印机终端号</label>
+                <div class="form-controls col-sm-3">
+                    <input type="text" name="nid" id="nid" value="{$item['nid']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block"></div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">终端号秘钥</label>
+                <div class="form-controls col-sm-3">
+                    <input type="text" name="nkey" id="nkey" value="{$item['nkey']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block"></div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">用户id</label>
+                <div class="form-controls col-sm-3">
+                    <input type="text" name="uid" id="uid" value="{$item['uid']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block"></div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">apikey</label>
+                <div class="form-controls col-sm-3">
+                    <input type="text" name="apikey" id="apikey" value="{$item['apikey']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block"></div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">头部标题</label>
+                <div class="form-controls col-sm-3">
+                    <input type="text" name="title" id="title" value="{$item['title']}" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">打印小票上的标题</div>
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">打印商品类型</label>
+                <div class="form-controls col-sm-3">
+                    <label class="radio" style="display: inline-block;margin-right: 10px;">
+                    <input type="checkbox" class="protype" name="protype[]" value="1" {if $item}<?php if(in_array(1,$item['protype'])){ ?> checked=checked<?php }?>{/if}/>
+                    多规格
+                    </label>
+                    <label class="radio" style="display: inline-block;margin-right: 10px;">
+                    <input type="checkbox" class="protype" name="protype[]" value="2" {if $item}<?php if(in_array(2,$item['protype'])){ ?> checked=checked<?php }?>{/if}/>
+                    秒杀
+                    </label> 
+                    <label class="radio" style="display: inline-block;margin-right: 10px;">
+                    <input type="checkbox" class="protype" name="protype[]" value="3" {if $item}<?php if(in_array(3,$item['protype'])){ ?> checked=checked<?php }?>{/if}/>
+                    预约预定
+                    </label> 
+                    <label class="radio" style="display: inline-block;margin-right: 10px;">
+                    <input type="checkbox" class="protype" name="protype[]" value="4" {if $item}<?php if(in_array(4,$item['protype'])){ ?> checked=checked<?php }?>{/if}/>
+                    餐饮
+                    </label> 
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block"></div>
+            </div>
+            <div class="form-group">
+
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">是否打印规格</label>
+
+                <div class="form-controls col-sm-3">
+
+                    <label style="margin-right: 20px">
+
+                        <input type="radio" name="spec" value="1" {if $item['spec'] == '1'} checked{/if} />
+
+                        打印
+
+                    </label>
+
+                    <label style="margin-right: 20px">
+
+                        <input type="radio" name="spec" value="2" {if $item['spec'] == '2'} checked{/if} />
+
+                        不打印
+
+                    </label>
+
+                </div>
+
+                <div class="col-sm-1"></div>
+
+                <div class="form-controls col-sm-3 help-block">多规格、预约预定规格是否打印</div>
+
+            </div>
+            <div class="form-group">
+                <label for="" class="control-label col-sm-2" style="margin-right:45px">打印联数</label>
+                <div class="form-controls col-sm-3">
+                    <input type="number" name="num" id="num" value="{$item['num']}" min="1" class="form-control ng-pristine ng-untouched ng-valid ng-empty"  placeholder="" autocomplete="off">
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="form-controls col-sm-3 help-block">同一订单打印次数</div>
+            </div>
+
+        </div>
+
+    </div>
+    
+    <div class="form-group">
+
+        <div class="col-sm-12">
+
+            <input name="token" type="hidden" value="{$_W['token']}" />
+
+            <input type="submit" class="btn btn-primary col-lg-1" name="submit" value="提交" />
+
+        </div>
+
+    </div>
+
+</form>
+<script type="text/javascript">
+        function checkinfo(){
+            var flag = $("input[name='flag']:checked").val();
+            if(flag == undefined){
+                alert("请选择是否启用");
+                return false;
+            }
+            var pname = $.trim($("input[name='pname']").val());
+            if(pname == ''){
+                alert("请输入打印机名称");
+                return false;
+            }
+            var models = $("select[name='models'] option:selected").val();
+            if(models == ''){
+                alert("请选择打印机型号");
+                return false;
+            }
+            var nid = $.trim($("input[name='nid']").val());
+            if(nid == ''){
+                alert("请输入打印机终端号");
+                return false;
+            }
+            var nkey = $.trim($("input[name='nkey']").val());
+            if(nkey == ''){
+                alert("请输入终端号秘钥");
+                return false;
+            }
+            var uid = $.trim($("input[name='uid']").val());
+            if(uid == ''){
+                alert("请输入用户id");
+                return false;
+            }
+            var apikey = $.trim($("input[name='apikey']").val());
+            if(apikey == ''){
+                alert("请输入apikey");
+                return false;
+            }
+            var title = $.trim($("input[name='title']").val());
+            if(title == ''){
+                alert("请输入头部标题");
+                return false;
+            }
+            var protype = $("input[type='checkbox']:checked").length;
+            if(protype == 0){
+                alert("请选择打印商品类型");
+                return false;
+            }
+            var spec = $("input[name='spec']:checked").val();
+            if(spec == undefined){
+                alert("请选择打印规格");
+                return false;
+            }
+            var num = $.trim($("input[name='num']").val());
+            if(num == ''){
+                alert("请输入打印联数");
+                return false;
+            }
+        }
+    </script>
+{/if}
+
+	</div>
+
+</div>

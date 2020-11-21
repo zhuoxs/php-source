@@ -1,0 +1,2 @@
+<?php
+ goto trhcj; UpGD3: $title = "\xe8\277\235\347\253\240\xe8\xae\260\345\275\225"; goto P81oT; P81oT: $list = pdo_getall(table . "\167\172\154\157\147", array("\x75\156\x69\141\x63\151\144" => uniacid, "\x73\156" => $_GPC["\x73\151\147\x6e"])); goto neE_8; trhcj: global $_GPC, $_W; goto UpGD3; neE_8: return include $this->template("\x77\x65\x69\x7a\150\141\x6e\x67\x5f\x6c\157\147");

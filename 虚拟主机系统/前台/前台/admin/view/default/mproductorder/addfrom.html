@@ -1,0 +1,152 @@
+{{include file='common/head.html'}}
+<style type='text/css'>
+.piao_msg {
+	position:absolute;
+	background-color:#104E8B;
+	border-radius: 15px;
+	
+}
+.piao_commodity {
+	margin:10px;
+	background-color:#F5DEB3;
+	height:100%;
+	color:red;
+	overflow:auto;
+	border-radius: 10px;
+	text-align:left;
+	padding-left:50px;
+}
+</style>
+
+<script language='javascript'>
+function piao_commodity(mproduct_id)
+{
+	$.ajax({
+		type:'get',
+		url :'?c=commodity&a=getByMproductid',
+		data:'mproduct_id=' + mproduct_id,
+		dataType:'json',
+		success:function(ret) {
+			if (ret['code'] != 200) {
+				return alert(ret['msg']  ? ret['msg'] : "获取数据失败");
+			}
+			if (ret['count'] <= 0) {
+				return alert("该产品没有商品");
+			}
+			var list = ret['list'];
+			var str = '';
+			var fstr = "<p><a href=javascript:close_piao('piao_commodity')>关闭</a></p>";
+			str += fstr;
+			for (var i in list) {
+				str += "<p><a href=javascript:input_commodity(" + list[i]['id'] + ",'" + encodeURIComponent(list[i]['commodity_name']) + "')>" + list[i]['commodity_name'] + '</a></p>';
+			}
+			var msg = document.getElementById('msg');
+			if (msg == null) {
+				return alert("id=msg div not found");
+			}
+			var pdiv = document.getElementById('piao_commodity');
+			var offset = $("#order_id").offset();
+			if (offset == null) {
+				return alert("id=order_id div not found");
+			}
+			pdiv.style.height = ret['count'] * 15 + 120;
+			
+			msg.style.width = 300 + 'px';
+			msg.style.height = pdiv.style.height + 80 +'px';
+			msg.style.top = offset.top;
+			msg.style.right = '0px';
+			msg.style.display = 'block';
+			document.getElementById('piao_commodity').innerHTML = str;
+		}
+	});
+}
+//decodeURIComponent
+function input_commodity(id,name)
+{
+	name = decodeURIComponent(name);
+	document.getElementById('commodity_id').value = id;
+	document.getElementById('commodity_name').value = name;
+	close_piao('piao_commodity');
+}
+
+</script>
+
+<body leftmargin="0" topmargin="0" bgcolor="#ffffff" text="#000000">
+	<div align="center">
+		<div class="wid_main mar_main" align="left">
+			<div class="block_top" align="left" >当前位置：非自动化产品 --> 订单列表 -->
+				订单更改</div>
+			<form name='nodeform'
+				action="?c=mproductorder&a=addMproductorder&id={{$mproductorder.id}}&username={{$mproductorder.username}}"
+				method="post">
+				<table class="table_main2" cellpadding="0" cellspacing="1">
+
+					<tr>
+						<td colspan="2" class="bg_main"><b>订单更改</b></td>
+					</tr>
+					<tr>
+						<td class="wid_general" id='order_id'>订单ID:</td>
+						<td>{{$mproductorder.id}}</td>
+					</tr>
+					<tr>
+						<td>用户名：</td>
+						<td><input name='username' value='{{$mproductorder.username}}'></td>
+					</tr>
+					<tr>
+						<td>客户附注：</td>
+						<td>{{$mproductorder.client_msg}}</td>
+					</tr>
+					<tr>
+						<td>回复:</td>
+						<td><textarea name='admin_msg' cols='70' rows='10'>{{$mproductorder.admin_msg}}</textarea>
+						</td>
+					</tr>
+					<tr>
+						<td>备注:</td>
+						<td><input name='admin_mem'
+							value="{{$mproductorder.admin_mem}}" size="71"></td>
+					</tr>
+					<tr>
+						<td>金额:</td>
+						<td>{{$mproductorder.price}}&nbsp;元</td>
+					</tr>
+					<tr>
+						<td>购买时限：</td>
+						<td>{{$mproductorder.month}}&nbsp;个月</td>
+					</tr>
+					<tr>
+						<td>申请时间:</td>
+						<td><input name='create_time'
+							value='{{$mproductorder.create_time}}'></td>
+					</tr>
+					<tr>
+						<td>过期时间:</td>
+						<td><input name='expire_time'
+							value='{{$mproductorder.expire_time}}'></td>
+					</tr>
+
+					<tr>
+						<td>商品ID:</td>
+						<td><input name='commodity_id'
+							value='{{$mproductorder.commodity_id}}' id='commodity_id'></td>
+					</tr>
+					<tr>
+						<td>商品名称:</td>
+						<td><input name='commodity_name'
+							value='{{$mproductorder.commodity_name}}' id='commodity_name'><input
+							type='button' onclick='piao_commodity({{$mproductorder.product_id}})' value='修改'></td>
+					</tr>
+					<tr>
+						<td>状态:</td>
+						<td>{{if $mproductorder.status==0}}等待拔付{{else}}已拔付{{/if}}</td>
+					</tr>
+					<tr>
+						<td>&nbsp;</td>
+						<td><input type="submit" value="确认提交"></td>
+					</tr>
+				</table>
+			</form>
+		</div>
+	</div>
+	<div id='msg' class='piao_msg' style='display: none'><div id='piao_commodity' class='piao_commodity'></div></div>
+	{{include file='common/foot.html'}}

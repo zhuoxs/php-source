@@ -1,0 +1,159 @@
+{php include wl_template('common/header');}
+<style>
+	.index-list-bar{display: none;}
+	#search_start{
+        margin: 0;
+        width: 100%;
+        position: relative;
+        z-index: 999;
+        padding-right: 0;
+        height: calc(44px + 0.25rem);
+        line-height: 40px;
+    }
+    #search_start .searchbar {
+    	padding: .5rem 0;
+    }
+    #search_start #keyword{
+        width: 82%;
+        margin: 0;
+    }
+    #search_start .hot-search {margin-top: .5rem;}
+    #search_start .hot-search .search-title {display: block;}
+    #search_start .hot-search .search-tips {display: block;}
+    #keyword {background-color: #fff;-webkit-border-radius: 5rem;border-radius: 5rem;}
+    #keyword:after {content: "";clear: both;display: block;}
+    #keyword i {width: 1.5rem;height: 1.5rem;color: #aaa;font-size: .8rem;text-align: center;display: block;position: relative;top: .5rem;left: 0;float: left;}
+    #keyword input {width: calc(100% - 1.5rem);height: 1.5rem;padding-left: 0;background-color: transparent;border: none;display: block;float: left;}
+    #search_start #search-form{
+        width: 18%;
+        height: 1.5rem;
+        line-height: 1.5rem;
+        margin: 0;
+        text-align: center;
+        font-size: .75rem;
+        overflow: hidden;
+        color: #333;
+    }
+</style>
+<div class="page-group">
+	<div class="page page-current" id="page-selcet-region">
+		<div class="content native-scroll select-region-all" id="scrollAll">
+			<div class="content-block" id="search_start">
+	            <div class="searchbar row">
+	                <div class="search-input col-85" id="keyword">
+	                    <i class="icon iconfont icon-search"></i>
+	                    <input type="search" placeholder="输入城市名..." name="search" value="{$search}">
+	                </div>
+	                <a class="col-15 external" id="search_form">搜索</a>
+	            </div>
+            </div>
+            {if $searchArea}
+                <div class="select-region-title" style="margin-top: .5rem;"><span>搜索结果：</span></div>
+                <div>
+                    <ul style="padding: 2px 9px 15px 9px;">
+                        {loop $searchArea $item}
+                        <li class="city-btn" onclick="location.href='{php echo app_url('dashboard/home/index',array('areaid'=>$item['areaid']));}'">{$item['name']}</li>
+                        {/loop}
+                        <div style="clear: both;"></div>
+                    </ul>
+                </div>
+            {/if}
+			<div class="my-city" id="xq">
+				<div id="toggle-select-region">
+					<span style="margin-left: 8px;">当前定位地区：</span>
+					<span id="cityinfo">定位中</span>
+				</div>
+			</div>
+			<div class="select-region-title" id="hot"><span>热门地区</span></div>
+			<div>
+				<ul style="padding: 2px 9px 15px 9px;">
+					{loop $address_tree $ishot}
+					    <li class="city-btn" onclick="location.href='{if $backurl}{php echo $backurl.'&areaid='.$ishot['areaid']} {else} {php echo app_url('dashboard/home/index',array('areaid'=>$ishot['areaid']));} {/if}'">{$ishot['name']}</li>
+					{/loop}
+					<div style="clear: both;"></div>
+				</ul>
+			</div>
+			<div class="list-block contacts-block">
+				{if $areagroup}
+				{loop $areagroup $group}
+				<div class="list-group">
+			        <ul>
+			          	<li class="list-group-title">{$group['name']}</li>
+			          	{loop $terarea $valare}
+                            {if $valare['gid'] == $group['id']}
+                                <li>
+                                    <a {if $backurl} href="{php echo $backurl.'&areaid='.$valare['areaid']}" {else} href="{php echo app_url('dashboard/home/index',array('areaid'=>$valare['areaid']));}" {/if} class="item-link item-content" >
+                                      <div class="item-inner">
+                                        <div class="item-title">{$valare['name']}</div>
+                                      </div>
+                                    </a>
+                                </li>
+                            {/if}
+			          	{/loop}
+			        </ul>
+		     	</div>
+		     	{/loop}
+				{else}
+		      	<div class="list-group">
+			        <ul>
+			          	<li class="list-group-title">所有地区</li>
+			          	{loop $terarea $valare}
+			          	<li>
+				            <a {if $backurl} href="{php echo $backurl.'&areaid='.$valare['areaid']}" {else} href="{php echo app_url('dashboard/home/index',array('areaid'=>$valare['areaid']));}" {/if} class="item-link item-content">
+				              <div class="item-inner">
+				                <div class="item-title">{$valare['name']}</div>
+				              </div>
+				            </a>
+			          	</li>
+			          	{/loop}
+			        </ul>
+		     	</div>
+		     	{/if}
+		    </div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	common.Geolocation(function(data){
+		var info;
+		$.post(common.createUrl('area/region/get_geocoder', {'lat':data.lat,'lng':data.lng}), function(res) {
+			if (res.status == 0) {
+				if(res.result.address_component.city && res.result.address_component.city != 'undefined'){
+					info = res.result.address_component.city;
+				}
+				if(res.result.address_component.district && res.result.address_component.district != 'undefined'){
+					info = info + res.result.address_component.district;
+				}
+				$('#cityinfo').html(info);
+			}
+		}, 'json');
+	},function(data){
+		common.CitySearch(function(result){
+			if (result && result.detail['name']) {
+                $('#cityinfo').html(result.detail['name']);
+            }
+		},function(result){
+			$('#cityinfo').html("{$maera['lc']}");
+		});
+	},'no');
+//	$("#toggle-select-region").click(function() {
+//	{if empty($maera['id'])}
+//		$.alert('该地区暂无代理商，请选择其他地区');
+//	{else}
+//		$.confirm("进入{$maera['lc']}地区？",function(){
+//			location.href="{php echo app_url('dashboard/home/index',array('areaid'=>$maera['id']));}";
+//		},function(){});
+//	{/if}
+//	});
+	$.init();
+	$("#search_form").on('click',function () {
+	    var url = "{$searchurl}";
+        var search = $("#keyword [name='search']").val();
+        /*if(!search){
+            $.alert('请输入搜索内容!');
+            return false;
+        }*/
+        window.location.href = url+'&search='+search;
+    });
+</script>
+{php include wl_template('common/footer');}

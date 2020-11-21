@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<title>{$setting['title']}</title>
+	<meta name="format-detection" content="telephone=no, address=no">
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-touch-fullscreen" content="yes"/>
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+	<link href="{MODULE_URL}template/mobile/xiaofweui/css/xiaofmoblieui.css" rel="stylesheet">
+	<link href="{MODULE_URL}resources/css/font-awesome.min.css" rel="stylesheet">
+	<link href="{MODULE_URL}template/mobile/xiaofweui/css/xiaoftoupiao.css?v={php echo time();}" rel="stylesheet">
+	{php echo register_jssdk(false);}
+	<script src="{$_W['siteroot']}app/resource/js/require.js"></script>
+	<style>
+		.order .cur,.group .cur,.bottom-tabbar .cur span,.grid-item .pic-box .vote,.pagination .active a{ color:{$setting['buttoncolor']};}
+		.grid-item .pic-box .vote{ border: 1px solid {$setting['buttoncolor']};}
+		.xiaof-button,.xiaof-button-small{ background:{$setting['buttoncolor']};}
+	</style>
+	<script type="text/javascript">
+        window.sysinfo.sid = "{$_GPC['sid']}";
+        window.sysinfo.gifename = "{$setting['giftname']}";
+        require.config({
+            baseUrl: '{MODULE_URL}template/mobile/xiaofweui/js',
+            //urlArgs: "v={php echo time();}",
+            paths: {
+                'css': '{$_W['siteroot']}web/resource/js/lib/css.min',
+                'jquery': 'jquery-2.2.3.min',
+                'swiper': 'swiper.jquery.min',
+                'imagesloaded': 'imagesloaded.min',
+                'masonry': 'masonry.pkgd.min',
+                'xiaof': 'xiaofmoblieui',
+                'main': 'main'
+            },
+            shim:{
+                'swiper': {
+                    exports: 'swiper',
+                    deps: ['jquery', 'css!{MODULE_URL}template/mobile/xiaofweui/css/swiper.min.css']
+                },
+                'imagesloaded': {
+                    exports: 'imagesloaded',
+                    deps: ['jquery']
+                },
+                'xiaof': {
+                    exports: 'xiaof',
+                    deps: ['jquery']
+                }
+            }
+        });
+	</script>
+</head>
+<body>
+
+<div class="head">
+	<div class="head-banner">
+		{if is_array($setting['thumb'])}
+		{if count($setting['thumb']) <=1}
+		<a href="{php echo trim($setting['thumblinkarr'][0]);}"><img src="{php echo tomedia(reset($setting['thumb']))}"></a>
+		{else}
+		<div class="swiper-container">
+			<div class="swiper-wrapper">
+				{php $ti = 0;}
+				{loop $setting['thumb'] $thumbitem}
+				<div class="swiper-slide"><a href="{php echo trim($setting['thumblinkarr'][$ti]);}"><img src="{php echo tomedia($thumbitem);}"></a></div>
+				{php $ti++;}
+				{/loop}
+			</div>
+		</div>
+		<script>
+            require(['swiper'], function(Swiper){
+                new Swiper('.swiper-container', {
+                    autoplay: {if $setting['thumbsecond']}{$setting['thumbsecond']}*1000{else}3000{/if}
+                })
+            });
+		</script>
+		{/if}
+		{else}
+		<img src="{php echo tomedia($setting['thumb'])}">
+		{/if}
+	</div>
+</div>
+
+<div class="footer-article-list wrapper">
+
+	{if empty($verificationuserinfo['vid'])}
+	<div class="footer-article-title" >
+		<h3>
+			核销登陆
+		</h3>
+	</div>
+	<div class="footer-article-content">
+		<form id="verificationlogin-form">
+			<div class="xiaof-form-group">
+				<div class="xiaof-input-group xiaof-box">
+					<div class="xiaof-form-label"><label>用户名</label></div>
+					<div class="xiaof-form-control xiaof-box-item">
+						<input class="xiaof-form-input" id="username" name="username" placeholder="请输入用户名"/>
+					</div>
+				</div>
+			</div>
+			<div class="xiaof-form-group">
+				<div class="xiaof-input-group xiaof-box">
+					<div class="xiaof-form-label"><label>密码</label></div>
+					<div class="xiaof-form-control xiaof-box-item">
+						<input class="xiaof-form-input" id="password" type="password" name="password" placeholder="请输入密码"/>
+					</div>
+				</div>
+			</div>
+			<br/>
+			<span id="verificationlogin-submit" class="xiaof-button">登陆</span>
+		</form>
+	</div>
+	{else}
+
+	<p><a href="{$verificationurl}" class="xiaof-button">确定核销</a></p>
+
+	<div class="footer-article-title" >
+		<h3>
+			待领奖品
+		</h3>
+	</div>
+
+	<div class="footer-article-content">
+		{loop $list $drawitems}
+		<div class="draw-list clearfix">
+			<div class="draw-pic fn-left">
+				<img src="{$drawitems['pic']}"/>
+			</div>
+			<div class="draw-info fn-left">
+				<h4>{$drawitems['name']}</h4>
+				<p>抽中时间 {php echo date("Y-m-d H:i:s", $drawitems['created_at']);}</p>
+				{if !empty($drawitems['bdelete_at'])}<p>发货时间 {php echo date("Y-m-d H:i:s", $drawitems['bdelete_at']);}</p>{/if}
+			</div>
+		</div>
+		<div class="head-box-hr"></div>
+		{/loop}
+	</div>
+	{/if}
+</div>
+
+{template $setting['template'].'footer'}
+
+<script type="text/javascript">
+    require(['jquery', 'xiaof'], function($){
+        $("#verificationlogin-submit").click(function(){
+            $.post("{php echo self::appUrl('verificationlogin');}", $("#verificationlogin-form").serialize(), function(data){
+                var result = $.parseJSON(data);
+                if (result.errno == 0) {
+                    location.reload();
+                }else{
+                    $.xiaof.alert(tips, result.message);
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+<script type="text/javascript">
+    wx.ready(function () {
+        wx.onMenuShareAppMessage({
+            title: '{$setting['sharetitle']}',
+            desc: '{php echo trim($setting['sharecontent']);}',
+            link: '{php echo $this->shareUrl('index')}',
+            imgUrl: '{php echo tomedia($setting['sharethumb'])}',
+            success: function(){},
+            cancel: function(){}
+        });
+
+        wx.onMenuShareTimeline({
+            title: '{$setting['sharetitle']}',
+            link: '{php echo $this->shareUrl('index')}',
+            imgUrl: '{php echo tomedia($setting['sharethumb']);}',
+            success: function () {},
+            cancel: function () {}
+        });
+    });
+</script>
+</html>

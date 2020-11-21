@@ -1,0 +1,363 @@
+{extend name="common/edit_table" /}
+{block name="content"}
+<div class="layui-form-item">
+    <label class="layui-form-label">规则名称</label>
+    <div class="layui-input-block">
+        <input autocomplete="off" type="text" name="name" lay-verify="required" placeholder="请输入名称" class="layui-input" value="{$info.name??''}">
+    </div>
+</div>
+<div class="layui-form-item">
+    <label class="layui-form-label">计费方式</label>
+    <div class="layui-input-block">
+        <input type="radio" lay-filter="type" name="type" value="1" title="按件" {php}echo (isset($info['type']) && $info['type'] == 1) ?"checked" :""{/php}>
+        <input type="radio" lay-filter="type" name="type" value="2" title="按重" {php}echo (isset($info['type']) && $info['type'] == 2) ?"checked" :""{/php}>
+    </div>
+</div>
+<div class="layui-form-item">
+    <label class="layui-form-label">备注</label>
+    <div class="layui-input-block">
+        <textarea name="memo" placeholder="请输入备注" class="layui-textarea">{$info.memo??''}</textarea>
+    </div>
+</div>
+<div class="layui-form-item">
+    <label class="layui-form-label">邮费规则类目</label>
+    <div class="layui-input-block">
+        <!--工具栏-->
+        <div class="tool-box">
+            <div class="layui-btn-group">
+                <a href="javascript:;" id="btnAdd" class="layui-btn layui-btn-primary layui-btn-sm">新增</a>
+                <!--<a href="javascript:;" id="btnChooseGoods" class="layui-btn layui-btn-primary layui-btn-sm">选择商品</a>-->
+                <!--<a href="javascript:;" id="btnBatchPrice" class="layui-btn layui-btn-primary layui-btn-sm">修改价格</a>-->
+                <!--<a href="javascript:;" id="btnBatchLimit" class="layui-btn layui-btn-primary layui-btn-sm">修改数量</a>-->
+                <a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+            </div>
+        </div>
+        <!--数据表-操作列-->
+        <script type="text/html" id="dataTool">
+            <!--<a href="javascript:;" lay-event="del" class="layui-btn layui-btn-danger layui-btn-xs">删除</a>-->
+            <a href="javascript:;" lay-event="edit" class="layui-btn layui-btn-xs">编辑</a>
+        </script>
+        <!--数据表-->
+        <div class="table-box">
+            <table class="layui-hide" id="laytable"></table>
+        </div>
+    </div>
+</div>
+<style>
+    .choose ul{
+        height: 530px;
+        overflow: auto;
+    }
+    .choose li{
+        position: relative;
+    }
+    .choose label{
+        height: 35px;
+        line-height: 35px;
+        width: 100%;
+        position: relative;
+        color: #666;
+        cursor: pointer;
+        border-bottom: 1px solid #ddd;
+        padding: 0px 30px;
+    }
+    .choose .disabled{
+        cursor: pointer;
+        color: #aaa;
+    }
+    .choose input{
+        height: 20px;
+        width: 20px;
+        position: absolute;
+        top: 4px;
+        right: 30px;
+    }
+</style>
+<script>
+    var province = {php}echo json_encode($province);{/php};
+    var city = {php}echo json_encode($city);{/php};
+
+    //点击省份展示城市
+    $(document).on('click','.province li',function () {
+        var provinceid = $(this).find('input').val();
+        $('.city li').hide();
+        $('.city li[data-parentid='+provinceid+']').show();
+    })
+    //省份选中状态改变事件
+    $(document).on('change','.province input',function () {
+        var provinceid = $(this).val();
+        $('.city li[data-parentid='+provinceid+']').find('input:not([disabled])').prop('checked',$(this).prop('checked'))
+        updateProvinceCheck(provinceid);
+    })
+    //城市选中状态改变事件-判断是否全选
+    $(document).on('change','.city input',function () {
+        var provinceid = $(this).data('parentid');
+        updateProvinceCheck(provinceid);
+    })
+            function updateProvinceCheck(provinceid) {
+                $('.province input[value='+provinceid+']').prop('checked',$('.city [data-parentid='+provinceid+']input:not(:checked)').length == 0)
+            }
+
+            //		选中逻辑
+            //		拖拉区域选中切换
+            var begin_index = 0;
+            var begin_clientX = 0;
+            var begin_clientY = 0;
+            var begin_type = "";
+            $(document).on('mousedown','.choose li', function (e) {
+                begin_index = $(this).index();
+                begin_clientX = e.clientX;
+                begin_clientY = e.clientY;
+                if($(this).parent('.province').length){
+                    begin_type = "province";
+                }
+                if($(this).parent('.city').length){
+                    begin_type = "city";
+                }
+            })
+            $(document).on('mouseup','.choose li', function (e) {
+                var end_index = $(this).index();
+                var end_clientX = e.clientX;
+                var end_clientY = e.clientY;
+                //跨区
+                if($(this).parent('.province').length){
+                    if (begin_type != 'province'){
+                        return false;
+                    }
+                }
+                if($(this).parent('.city').length){
+                    if(begin_type != "city"){
+                        return false;
+                    }
+                }
+
+                //          同一行
+                if (end_index == begin_index){
+                    return false;
+                }
+
+                if (window.getSelection){
+                    window.getSelection().removeAllRanges();
+                }else{
+                    document.selection.empty();
+                };
+
+                $('.choose .'+begin_type+' li').each(function (i,e) {
+                    var index = $(e).index();
+                    if ((index >= begin_index && index <= end_index) || (index <= begin_index && index >= end_index)){
+                        $(e).find('input').click();
+                    }
+                })
+            })
+
+    layui.use(['table','form'],function () {
+        var table = layui.table;
+        var form = layui.form;
+        table.render({
+            elem: '#laytable'
+            , data: {php}echo (isset($info['detail']) && $info['detail']) ? ($info['detail']):"[]"{/php}
+            , cols: [[
+                {type: 'numbers', fixed: 'left'},
+                {type: 'checkbox', fixed: 'left'},
+                {field: 'name', fixed: 'left', width: 100, title: '类目名称', sort: true, edit: true},
+                {field: 'first_count', width: 80, title: '首{$info.type == 1?'件':'重'}', sort: true, edit: true},
+                {field: 'first_price', width: 80, title: '首价', sort: true, edit: true},
+                {field: 'next_count', width: 80, title: '续{$info.type == 1?'件':'重'}', sort: true, edit: true},
+                {field: 'next_price', width: 80, title: '续价', sort: true, edit: true},
+                {field: 'detail', width: 600, title: '省市区'},
+                {field: 'o', fixed: 'right', width: 200, title: '操作', toolbar: '#dataTool'},
+            ]]
+            // , page: true
+            , limit: 90
+            // , height: 'full-420',
+        });
+        //监听工具条
+        table.on('tool', function (obj) {
+            if (obj.event == 'edit'){
+                //本条目选中的id
+                var ids = obj.data.ids;
+                //所有条目选中的id
+                var idss = '';
+                var data = table.data.laytable;
+                for (var i in data){
+                    if (data[i]['ids'] != ids){
+                        idss += data[i]['ids'];
+                    }
+                }
+
+                var province_html = "";
+                for (var i in province){
+                    var province_id = ','+province[i]['id']+',';
+                    if (idss.indexOf(province_id) >= 0) {
+                        province_html += '<li><label class="disabled">'+province[i]['name']+'</label><input disabled value="'+province[i]['id']+'" data-name="'+province[i]['name']+'" type="checkbox"></li>';
+                    }else if (ids.indexOf(province_id) < 0) {
+                        province_html += '<li><label>'+province[i]['name']+'</label><input value="'+province[i]['id']+'" data-name="'+province[i]['name']+'" type="checkbox"></li>';
+                    }else{
+                        province_html += '<li><label>'+province[i]['name']+'</label><input checked value="'+province[i]['id']+'" data-name="'+province[i]['name']+'" type="checkbox"></li>';
+                    }
+                }
+
+                var city_html = "";
+                for (var i in city){
+                    var province_id = ','+city[i]['parent_id']+',';
+                    var city_id = ','+city[i]['id']+',';
+                    if (idss.indexOf(province_id) >= 0 || idss.indexOf(city[i]['id']) >= 0) {
+                        city_html += '<li style="display: none;" data-parentid="'+city[i]['parent_id']+'"><label class="disabled">'+city[i]['name']+'</label><input disabled data-parentid="'+city[i]['parent_id']+'" value="'+city[i]['id']+'" data-name="'+city[i]['name']+'" type="checkbox"></li>';
+                    }else if (ids.indexOf(city_id) < 0 && ids.indexOf(province_id) < 0) {
+                        city_html += '<li style="display: none;" data-parentid="'+city[i]['parent_id']+'"><label>'+city[i]['name']+'</label><input data-parentid="'+city[i]['parent_id']+'" value="'+city[i]['id']+'" data-name="'+city[i]['name']+'" type="checkbox"></li>';
+                    }else{
+                        city_html += '<li style="display: none;" data-parentid="'+city[i]['parent_id']+'"><label>'+city[i]['name']+'</label><input checked data-parentid="'+city[i]['parent_id']+'" value="'+city[i]['id']+'" data-name="'+city[i]['name']+'" type="checkbox"></li>';
+                    }
+                }
+                var html = "";
+                html = '<div class="layui-row choose"><ul class="layui-col-md6 province">'+province_html+'</ul><ul class="layui-col-md6 city">'+city_html+'</ul></div>';
+
+                //页面层
+                layer.open({
+                    type: 1,
+                    title: "选择省市",
+                    shadeClose:true,
+                    area: ['820px', '640px'], //宽高
+                    content: html,
+                    btn: ['确认', '取消'],
+                    yes: function (index,layerObj) {
+                        var ids = [];
+                        var names = [];
+                        var checkprovinces = layerObj.find('.province input:checked');
+                        var checkcitys = layerObj.find('.city input:checked');
+                        checkprovinces.each(function (i,e) {
+                            ids.push($(e).val());
+                            names.push($(e).data('name'));
+                        })
+                        checkcitys.each(function (i,e) {
+                            var parentid = $(e).data('parentid');
+                            console.log(parentid);
+                            if(!ids.includes(parentid.toString())){
+                                ids.push($(e).val());
+                                names.push($(e).data('name'));
+                            }
+                        })
+                        obj.update({
+                            detail:names.join(','),
+                            ids:','+ids.join(',')+',',
+                        })
+                        layer.close(index);
+                    }
+                });
+            }
+        });
+        $('#btnAdd').click(function () {
+            var data = [];
+            data = layui.table.data.laytable;
+            data.push({
+                'name':'',
+                'first_count':'',
+                'first_price':'',
+                'next_count':'',
+                'next_price':'',
+                'detail':'',
+                'ids':'',
+            });
+            table.reload('laytable', {
+                data: data,
+            });
+        })
+        //        批量删除
+        $('#btnBatchDelete').click(function () {
+            var data = [];
+            data = layui.table.data.laytable;
+            if (data.length > 0) {
+                var new_data = [];
+                for (var i in data) {
+                    if (!data[i]['LAY_CHECKED']) {
+                        new_data.push(data[i]);
+                    }
+                }
+                table.reload('laytable', {
+                    data: new_data,
+                });
+            } else {
+                layer.msg('请选择记录');
+            }
+        })
+
+        // 新增界面、保存、取消事件
+        form.on('submit', function(data){
+            if(!$(data.elem).is('button')){
+                return false;
+            }
+            var data = data.field;
+            data.detail = JSON.stringify(table.data.laytable);
+            var url = "{:adminurl('save')}";
+            $.post(url,data,function(res){
+                if (typeof res == 'string'){
+                    res = $.parseJSON(res);
+                }
+                if (res.code == 0) {
+                    var index=parent.layer.getFrameIndex(window.name);
+                    parent.layer.close(index);
+                    parent.layer.msg('保存成功',{icon: 6,anim: 6});
+                    parent.layui.table.reload('laytable',{});
+                }else{
+                    layer.msg(res.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+        });
+        form.on('radio(type)', function(data){
+            var type = '重';
+            if(data.value == 1){
+                type = '件';
+            }
+            table.reload('laytable',{
+                cols: [[
+                    {type: 'numbers', fixed: 'left'},
+                    {type: 'checkbox', fixed: 'left'},
+                    {field: 'name', fixed: 'left', width: 100, title: '类目名称', sort: true, edit: true},
+                    {field: 'first_count', width: 80, title: '首'+type, sort: true, edit: true},
+                    {field: 'first_price', width: 80, title: '首价', sort: true, edit: true},
+                    {field: 'next_count', width: 80, title: '续'+type, sort: true, edit: true},
+                    {field: 'next_price', width: 80, title: '续价', sort: true, edit: true},
+                    {field: 'detail', width: 600, title: '省市区'},
+                    {field: 'o', fixed: 'right', width: 200, title: '操作', toolbar: '#dataTool'},
+                ]]
+            });
+        });
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+
+        //广告类型
+        var ret = [
+            {id:1,text:'轮播图'},
+        ];
+        ret.unshift({id: '', text: '请选择类型'});
+        ret.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            if(obj.id == "{$info.type??''}"){
+                obj.selected = true;
+            }
+            return obj;
+        });
+        $('#type').select2({
+            data: ret,
+        })
+        //连接
+        var ret2 = [
+            {id:"/sqtg_sun/pages/integral/integral",text:'链接测试'},
+        ];
+        ret2.unshift({id: '', text: '请选择页面'});
+        ret2.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            if(obj.id == "{$info.link??''}"){
+                obj.selected = true;
+            }
+            return obj;
+        });
+        $('#link').select2({
+            data: ret2,
+        })
+
+    })
+</script>
+{/block}

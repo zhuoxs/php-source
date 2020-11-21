@@ -1,0 +1,158 @@
+<!--雷达事件管理 -->
+<title>事件管理</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>事件管理</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">事件管理</div>
+                <div class="layui-card-body">
+                    <table class="layui-hide" id="test-table-autowidth" lay-filter="test-table-autowidth"></table>
+                    <!--行内操作按钮-->
+                    <script type="text/html" id="test-table-autowidth-barDemo">
+                        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                        <a class="layui-btn layui-btn-xs" lay-event="words">编辑话术</a>
+                     <!--   <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>-->
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .layui-table-cell {
+        height:auto;
+    }
+</style>
+<script>
+
+    layui.use(['admin', 'table'], function(){
+        var table = layui.table;
+        var $ = layui.$
+                ,admin = layui.admin
+                ,element = layui.element
+                ,layer = layui.layer
+                ,form = layui.form;
+
+        table.render({
+            elem: '#test-table-autowidth'
+            ,url: config.url+'manage_radar/radar_event/index'//事件列表
+        //    ,toolbar: '#test-table-toolbar-toolbarDemo'
+            ,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+            ,page:true
+            ,cols: [[
+                {field:'id', title: 'ID', sort: true},
+                {field:'title', title: '标题'},
+                {field:'name', title: '标识'},
+                    //是否需要传入基础话术
+                {field:'words', title: '是否需要传入话术',sort:true
+                    ,templet: function(d){
+                    if(d.words==1){
+                        return '需要';
+                    }
+                    if(d.words==0){
+                        return '否';
+                    }
+                }
+                },
+                {field:'sort', title: '排序',sort:true},
+                {field:'is_show', title: '展示在`雷达行为`',sort:true
+                    ,templet: function(d){
+                    if(d.is_show==1){
+                        return '是';
+                    }
+                    if(d.is_show==0){
+                        return '否';
+                    }
+                    }
+                },
+                {field:'is_show_ai', title: '展示在`AI报表`',sort:true
+                    ,templet: function(d){
+                    if(d.is_show_ai==1){
+                        return '是';
+                    }
+                    if(d.is_show_ai==0){
+                        return '否';
+                    }
+                }
+                },
+                {field:'is_system', title: '上报类型',sort:true
+                    ,templet: function(d){
+                    if(d.is_system==1){
+                        return '后端上报';
+                    }
+                    if(d.is_system==0){
+                        return '前端上报';
+                    }
+                }
+                },
+                {field:'status', title: '状态',sort:true
+                    ,templet: function(d){
+                        if(d.status==1){
+                            return '正常';
+                        }
+                        if(d.status==0){
+                            return '禁用';
+                        }
+                    }
+                },
+                {align:'center', toolbar: '#test-table-autowidth-barDemo'}
+
+            ]]
+        });
+
+   /*     //头工具栏事件
+        table.on('toolbar(test-table-autowidth)', function(obj){
+            switch(obj.event){
+                case 'addData':
+                    //跳转到新增页面
+                    window.location.href =config.html_url+'radar_event/edit';
+                    break;
+            };
+        });*/
+
+        //监听工具条
+        table.on('tool(test-table-autowidth)', function(obj){
+
+            var data = obj.data;
+            if(obj.event === 'del'){
+                layer.confirm('真的删除行么', function(index){
+                    obj.del();
+                    layer.close(index);//关掉提示框
+                    //掉删除接口
+                    admin.req({
+                        type:'POST',
+                        url: config.url+'radar_event/delete'//数据接口
+                        ,data:{"id":data.id},
+                        done:function(res){
+                            layer.msg('成功', {
+                                offset: '15px'
+                                ,icon: 1
+                                ,time: 1000
+                            }, function(){
+                                window.location.href =config.html_url+'radar_event/';
+                            });
+                        }
+                    });
+                });
+            } else if(obj.event === 'edit'){
+                //layer.alert('编辑行：<br>'+ JSON.stringify(data))
+                //跳转到编辑页面
+                window.location.href =config.html_url+'manage_radar/radar_event/edit/id='+data.id;
+            }
+            else if(obj.event === 'words'){
+                //layer.alert('编辑行：<br>'+ JSON.stringify(data))
+                //跳转到编辑页面
+                window.location.href =config.html_url+'manage_radar/radar_words/index/event_id='+data.id;
+            }
+        });
+
+    });
+</script>

@@ -1,0 +1,144 @@
+{include file="common/header"}
+    <link rel="stylesheet" href="__ROOT__/tpl/peixun/static/css/viewer.min.css">
+    <link href="__ROOT__/tpl/peixun/static/css/common.css" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0;}
+       /* #atlas { width: 1230px; margin: 0 auto; overflow: hidden;padding-bottom: 15px;background: #fff;box-shadow: 0 0 8px 1px #e4e5e6;}
+        #atlas li { display: inline-block; width: 23.7%; margin-left: 1%; margin-top: 1%;cursor: pointer;float: left;position: relative;}
+        #atlas li img { width: 100%;}
+        #atlas li span{position: absolute;bottom:5px;right:5px;background: rgba(0,0,0,.5);color:#fff;padding: 0 10px;height:20px;text-align: center;}
+        #atlas li p{position: absolute;bottom:0;right:0;left:0;background: rgba(0,0,0,.5);color:#fff;padding: 0 10px;height:30px;line-height: 30px;font-size: 14px;}*/
+        #atlas li .collect-box{position: absolute;right: 0;top:0;background: transparent;padding: 10px;color: #6d6d6d;display: none;}
+        #atlas li .collect-box i{font-size: 18px;}
+        .sort-pager{background: #fff;}
+        .novel-left{background: #fff;padding: 0 10px;}
+        .novel-left h1{height: 30px;line-height: 30px;padding: 10px 0 10px 10px;}
+        .novel-left .source var{font-style: normal;font-size: 12px;}
+        .novel-left .source{height:30px;padding-left: 10px;}
+        .novel-left .source .see{margin-left: 10px;padding: 0;background: transparent;color: #888;cursor: pointer;vertical-align: middle;}
+        .novel-left .source span{display: inline-block;padding: 2px 10px;margin-right: 5px;border-radius: 12px;color: #fff;background: #5cb7f9;}
+        .sele {
+            display: inline-block;
+            padding: 7px 11px;
+            margin-right: 19px;
+            right: 34px;
+            margin-top: 8px;
+            margin-right: 18px;
+            border-radius: 12px;
+            color: #fff;
+            background: #5cb7f9;
+        }
+        .sele:hover{
+            background:#e83131;
+
+        }
+        .select{
+            background:#e65a5a;
+        }
+        .sele a{color: #fff;text-decoration: none;cursor: pointer;}
+        .layui-form-item .layui-input-inline{width: 300px;}
+
+         .establish {
+            height: 50px;
+            /* line-height: 50px; */
+            text-align: right;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .establish a {
+            display: inline-block;
+            width: 90px;
+            height: 40px;
+            line-height: 40px;
+            border: 1px solid #eaeaea;
+            text-align: center;
+            background: #3b9eff;
+            letter-spacing: 1px;
+            border-radius: 3px;
+            margin-right: 20px;
+            color: #fff;
+            font-size: 15px;
+        }
+    </style>
+
+<div class="s-body">
+    <div class="content">
+        <div class="novel-left">
+            <h1>{$atlasInfo['title']}</h1>
+            <div class="source">
+                •发布时间: <var>{:date('Y/m/d H:i:s',$atlasInfo['add_time'])}</var> •作者 :{$atlasInfo['usernmae']|default="管理员"}<var></var> •
+                <span class="see"><i class='btn fn-zan2 {if condition="$isGooded"}isSelected{/if}' id="giveGoodBtn"></i><var id="goodNum">{$atlasInfo['good']}</var></span>
+            </div>
+            {if condition="isset($atlasTags)"}
+            <div class="source" style="padding-bottom: 10px;">
+                {volist name="atlasTags" id="item"}
+                <span>{$item.name}</span>
+                {/volist}
+            </div>
+            {/if}
+        </div>
+        {if condition="isset($list)"}
+        <ul id="atlas">
+        </ul>
+        {/if}
+    </div>
+
+    <div class="select-box layui-form" style="height:150px; display: none;">
+            <input name="collect_id" id="collect_id" type="hidden" value="">
+        <div class="form-box">
+            <div class="layui-form-item">
+                <div class="layui-inline" style="padding-left: 13px;">
+                    {volist name="atlas_list" id="vv"}
+                        <span class="sele"  data-atlas="{$vv['id']}"><a>{$vv['title']}</a></span>
+                    {/volist}
+                </div>
+            </div>
+            {if empty($atlas_list)}
+            <div class="establish album-btn">
+                <a>创建图册</a>
+            </div>
+            {else}
+            <div class="layui-layer-btn layui-layer-btn-" id="layui-layer-btn" style="    padding-top: 45px;" ><a class="layui-layer-btn0">添加图片</a></div>
+            {/if}
+        </div>
+  </div>
+
+</div>
+<script type="text/javascript" src="__ROOT__/tpl/peixun/static/js/viewer.min.js"></script>
+<script>
+    var viewer = new Viewer(document.getElementById('atlas'), {
+        url: 'data-original'
+    });
+</script>
+<script>
+    {if condition="$permit eq 0"}
+    imagespermit({$atlasInfo['gold']},{$atlasInfo['id']});
+    {/if}
+    $(function(){
+        /*鼠标 移到图片上*/
+        $("#atlas li").hover(function () {
+            $(this).find(".collect-box").show();
+        },function(){
+            $(this).find(".collect-box").hide();
+        });
+    });
+    //点赞
+    {if condition='$isGooded==false'}
+    $("#giveGoodBtn").on('click',function(){
+        var reqData={resourceType:'atlas',resourceId:{$atlasInfo['id']}};
+        $.post('{:url("api/giveGood")}',reqData,function(data){
+            //console.log(data);
+            if(data.resultCode==0){
+                $('#goodNum').html(data.data.good);
+                $('#giveGoodBtn').addClass("isSelected");
+
+                layer.msg('点赞成功',{time:1000,icon:1});
+            }else{
+                layer.msg('点赞失败，原因：'+data.error,{time:1000,icon:2});
+            }
+        },'JSON');
+    });
+    {/if}
+</script>
+{include file="common/footer"}

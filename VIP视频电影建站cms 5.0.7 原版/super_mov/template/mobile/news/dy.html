@@ -1,0 +1,267 @@
+{if $op == 'list'}
+<!DOCTYPE html>
+<html style="height:100%">
+<head lang="en">
+<meta charset="UTF-8">
+<meta name="author" content="lsl">
+<meta name="description" content="">
+<meta name="keywords" content="">
+<meta name="generator" content="webstorm">
+<!--移动端响应式-->
+<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1, user-scalable=no">
+<!--支持IE的兼容模式-->
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="referrer" content="no-referrer">
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="http://www.people.com.cn/mediafile/pic/20131029/5/2363257737241313025.jpg"> 
+<!--让部分国产浏览器默认采用高速模式渲染页面-->
+<meta name="renderer" content="webkit">
+<!--页面style css-->
+<link rel="stylesheet" href="{MODULE_URL}/weui/weuix.min.css"/>
+<link rel="stylesheet" type="text/css" href="{MODULE_URL}style/css/base.css">
+<link rel="stylesheet" type="text/css" href="{MODULE_URL}style/css/li.css">
+<link rel="stylesheet" href="{MODULE_URL}/weui/swiper.min.css"/>
+<title>{$settings['site_title']}</title>
+<!--JQ库-->
+<script src="{MODULE_URL}style/js/jquery-1.8.3.min.js"></script>
+<script src="{MODULE_URL}/weui/zepto.min.js"></script>
+<script src="{MODULE_URL}style/js/li.js"></script>
+<script src="{MODULE_URL}/weui/iscroll.js"></script>
+<script src="{MODULE_URL}/weui/swiper.min.js"></script> 
+<script src="https://cdn.staticfile.org/vue/2.2.2/vue.min.js"></script>
+
+<style type="text/css">
+  .leimu_zui{width: auto}
+  .weui-navigator-list li{font-weight: 500}
+  .weui-navigator-list li.weui-state-hover, .weui-navigator-list li.weui-state-active a:after{background-color: none}
+  .wall {
+    display: block;
+    position: relative;
+  }
+  .wall-column {
+    display: block;
+    position: relative;
+    width: 49.5%;
+    float: left;      
+    box-sizing: border-box;
+  }
+  .article {
+    display: block;
+    margin: 0 0 8% 0;
+    padding: 5%;
+    background: white;
+    border-radius: 3px;
+    box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.05);
+    transition: all 100;
+    overflow: hidden;
+    position: relative;
+    box-sizing: border-box;
+  }
+  .article:hover{ transform: scale(1.01);}
+  .article img {
+    display: block;
+    width: 100%;
+    margin: 0 0 5% 0;
+  }
+  .article a{ color: #666;}
+  .article p{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1.2em; line-height: 1.5;}
+  .article small{ font-size: 1em; color: #ff0000; line-height: 1.5;}
+  .article input{ width: 20%; padding: 0.6em; border-radius: 0.4em; font-size: 1.1em; z-index: 100; background-color: #f60; border: none; position: absolute; bottom: 3%; right: 5%; color: #fff; box-shadow: 0 0 7px #d7d7d7;}
+  /*瀑布流结束*/
+  .wrapper h3{ text-align: center; margin:0 20%; white-space: nowrap; text-overflow: ellipsis; font-weight:normal; color: #333; overflow: hidden;  font-size: 1.5em; padding: 0.7em 0;}
+  .wrapper h4{ width: 90%; margin:0 5%; text-align: justify; font-weight:normal; color: #999;  font-size: 1.2em; margin-bottom: 3%; line-height:1.5; }
+  .weui-popup-container{z-index: 9999;background: #000}
+</style>
+</head>
+<body style="height:100%">
+{template 'news/head'} 
+<input type="hidden" id="max_cursor" value="">  
+<div class="wrapper" style="width: 100%" id="app">
+  <ul class="wall" >
+      
+  </ul>
+</div>
+<div id="popup" class="weui-popup-container" style="display: none">
+<div style="margin:0px auto;width:100%;height:100%;position:absolute;">
+    <iframe id="WANG" scrolling="no" allowtransparency="true" allowfullscreen="true" frameborder="0" src=""  width="100%" height="90%"></iframe>
+    <div style="padding: 0px 10%">
+    <button href="javascript:;" class="weui_btn weui_btn_default close-popup" style="position: absolute;bottom: 10px;width: 80%">关闭</button>
+    </div>
+</div>
+</div>
+<script src="{MODULE_URL}style/js/jaliswall.js" type="text/javascript"></script>
+<script type="text/javascript"> 
+  var result = '';
+  var isbool=true;
+  var has_more=1;   
+  $(function(){   
+    var totalHeight = 0; //定义一个总高度变量
+      
+    // console.log(parseFloat( $(document).height() ))
+    // console.log(totalHeight)
+    function ata(){ //loa动态加载数据 
+        totalHeight =  parseFloat( $(window).height() ) +  parseFloat( $(window).scrollTop() );
+        if ( $(document).height() < totalHeight + 50 && isbool==true) {
+            ajax()            
+        }
+    }
+    $(window).scroll(function(){       
+        ata();
+    }) 
+    ajax() 
+    $('div').on('click',"a",function(){
+        var u = $(this).data('url');  
+        if (u) {
+          $("#popup").show()
+          {if $_GPC['do'] == 'dy'}
+          $('iframe').attr('src','http://jx.itaoju.top/player.php?url='+u);
+          {else}
+          $('iframe').attr('src','{php echo link_url('xiaopin',array('op'=>'frame'))}&url='+u);
+          {/if}
+        }
+    }) 
+    $('.close-popup').on('click',function(){ 
+        $('iframe').attr('src','');       
+        $(".weui-popup-container").hide() 
+    })    
+    function ajax() {
+      var max_cursor = $("#max_cursor").val(); 
+      if (!max_cursor) {
+      	var max_cursor = 0
+      }
+      $.showLoading();
+      isbool=false; 
+      {if $_GPC['do'] == 'dy'}
+      $.ajax({
+          type:"post",
+          url:"{php echo link_url('dy',array('op'=>'json','action'=>'getjs'))}",
+          data:{
+            userid:'http://v.douyin.com/8Uk38o/'   
+          },
+          dataType:"script",
+          success:function(e){             
+            $.ajax({
+              type:"post",
+              url:"{php echo link_url('dy',array('op'=>'json','action'=>'getlist'))}",
+              data:{
+                max_cursor:max_cursor,
+                uid:getuid(),
+                dytk:getdytk(),
+                signature:generateSignature(getuid())
+              },
+              dataType:"json",
+              async : false,
+              success:function(data){
+                if (!has_more) {
+                    $.toast('没有了', "forbidden"); 
+                    return false                   
+                }            
+                if (data.code == 1) {
+                     $.toast(data.msg, "forbidden");
+                     // location.reload();
+                }
+                if (data) { 
+                  has_more = data.has_more
+                  $("#max_cursor").val(data.max_cursor)                  
+                  var data = data.data;             
+                  var arrLen = data.length;
+                  $.hideLoading();                      
+                  // var html = '<li class="article"><a href="#"> <img src="https://static.sucaihuo.com/jquery/13/1334/demo/images/7.jpg" /><p>'+ data.data.share_info.share_desc +'</p><small>10000000票</small></a></li>'
+                  for(var i=0; i<arrLen; i++){
+                      result +=   '<div class="article" ><a href="javascript:;" data-url="'+data[i].video.play_addr.url_list[1]+'">'
+                                      +'<img src="'+data[i].video.cover.url_list[0]+'" alt="">'
+                                      +'<p>'+data[i].share_info.share_desc+'</p>'
+                                      +'<small>'+ data[i].share_info.share_title +'</small>' 
+                                  +'</a></div>';
+                  }
+                  $('.wall').append(result);
+                  isbool=true; 
+                  $('.wall').jaliswall({ item: '.article' });                  
+                }            
+              }
+            });
+          }
+        });
+        {else}                     
+        $.ajax({
+          type:"post",
+          url:"{php echo link_url('xiaopin',array('op'=>'json'))}",
+          data:{
+            max_cursor:max_cursor,            
+          },
+          dataType:"json",
+          async : false,
+          success:function(data){
+            if (!data) {
+                $.toast('没有了', "forbidden"); 
+                return false                   
+            }
+            if (data) { 
+              console.log(max_cursor)
+              var arrLen = data.length;
+              $("#max_cursor").val(max_cursor*1+1)    
+              $.hideLoading();                      
+              // var html = '<li class="article"><a href="#"> <img src="https://static.sucaihuo.com/jquery/13/1334/demo/images/7.jpg" /><p>'+ data.data.share_info.share_desc +'</p><small>10000000票</small></a></li>'
+              for(var i=0; i<arrLen; i++){
+                  result +=   '<div class="article" ><a href="javascript:;" data-url="'+data[i].url+'">'
+                  // result +=   '<div class="article" ><a href="{php echo link_url('xiaopin',array('op'=>'frame'))}&url='+data[i].url+'">'
+                                  +'<img src="'+data[i].imgv_url+'" alt="">'
+                                  // +'<p>'+data[i].title+'</p>' 
+                                  +'<small>'+ data[i].title +'</small>' 
+                              +'</a></div>';
+              }
+              $('.wall').append(result);
+              isbool=true; 
+              $('.wall').jaliswall({ item: '.article' });                  
+            }            
+          }
+        });          
+        {/if}
+    }
+  });
+</script>
+<div style="clear: both;"></div>
+{template 'jilu'} 
+{template 'news/footer'}
+</body>
+</html>
+{/if}
+{if $op == 'frame'}
+<?php
+$url = $_GPC['url'];
+        $url = parse_url($url);
+        $url = 'http://m.v.baidu.com'.$url['path'];
+
+        $html = ihttp_request($url, '', array('CURLOPT_REFERER' => 'http://m.v.baidu.com'));
+
+        $html = explode('source: {"mp4":"',$html['content']);
+        $html = explode('","ori',$html['1']);
+        $html = $html['0'];
+?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head> 
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"/>
+<body oncontextmenu=self.event.returnValue=false onselectstart="return false">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>播放</title>
+<link href="http://jx.hezeshi.net/vip/pucms.css" rel="stylesheet">
+<script src="http://jx.hezeshi.net/vip/jquery.min.js" type="text/javascript"></script>
+<script src="http://jx.hezeshi.net/vip/pucms.js"type="text/javascript"></script>
+    </head>
+  </p>
+
+
+<body style="overflow-y:hidden;">
+
+<div style="margin:0px auto;width:100%;height:100%;position:absolute;">
+
+    <iframe id="WANG" scrolling="no" allowtransparency="true" allowfullscreen="true" frameborder="0" src="{$html}"
+
+          width="100%" height="100%"></iframe>
+</div>
+
+</body>
+
+</html>
+<!-- <iframe scrolling="no" allowtransparency="true" allowfullscreen="true" frameborder="0" src="http://jx.itaoju.top/player.php?url={$url}" width="100%" height="100%"></iframe> -->
+{/if}
+

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/css/main.css" media="all">
+</head>
+<body>
+
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">话术分类列表</div>
+
+                <div class="layui-card-body">
+
+                    <div class="div-search-body">
+
+                        <a class="layui-btn btn-add" href="javascript:;">
+                            <i class="layui-icon">&#xe608;</i> 添加话术分类
+                        </a>
+
+                        <form class="form-inline">
+                            <div class="form-group" style="display: inline-block;width: 50%">
+                                <label class="sr-only"></label>
+                                <div class="input-group">
+                                    <input type="text" name="title" required lay-verify="required" placeholder="请输入搜索内容" autocomplete="off" class="layui-input" id="inputSearch" value="{$keyword}">
+                                </div>
+                            </div>
+                            <button class="layui-btn layui-btn-normal btn-search" type="button">
+                                搜索
+                            </button>
+                        </form>
+
+                    </div>
+
+                    <table class="layui-table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>分类名</th>
+                            <th>创建时间</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {loop $reply $item}
+                        <tr>
+                            <td>{$item['id']}</td>
+                            <td>{$item['title']}</td>
+                            <td>{php echo date('Y-m-d H:i:s', $item['create_time'])}</td>
+                            <td>
+                                {if $item['status'] == 1}
+                                <span class="layui-badge layui-bg-blue">启用</span>
+                                {else}
+                                <span class="layui-badge">禁用</span>
+                                {/if}
+                            </td>
+                            <td>
+                                {if $item['status'] == 1}
+                                <button type="button" class="layui-btn layui-btn-xs layui-btn-warm btn-disable-item"
+                                        itemId="{$item['id']}">
+                                    禁用
+                                </button>
+                                {else}
+                                <button type="button" class="layui-btn layui-btn-xs layui-btn-normal btn-enable-item"
+                                        itemId="{$item['id']}">
+                                    启用
+                                </button>
+                                {/if}
+                                <button type="button" class="layui-btn layui-btn-xs layui-btn-danger btn-delete-item"
+                                        itemId="{$item['id']}">
+                                    删除
+                                </button>
+                                <button type="button" class="layui-btn layui-btn-xs btn-edit-item"
+                                        itemId="{$item['id']}" itemTop="{$item['top']}" itemContent="{$item['title']}" data-toggle="modal" data-target="#editItem">
+                                    编辑
+                                </button>
+
+                            </td>
+                        </tr>
+                        {/loop}
+                        </tbody>
+                    </table>
+
+                    <div id="dataTable"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{template 'common/footer'}
+
+<style>
+    .friend-link{
+        text-align: center;
+    }
+    .copyright{
+        text-align: center;
+        padding-bottom: 20px;
+    }
+</style>
+
+<input type="hidden" name="itemId" id="itemId" value="0">
+<script src="../../../addons/{$module_name}/images/layuiadmin/layui/layui.js"></script>
+<script src="../../../addons/{$module_name}/images/js/jquery.min.js"></script>
+<script>
+    var keyword = $('#inputSearch').val();
+    layui.use(['layer', 'laypage'], function () {
+        var layer = layui.layer
+            , laypage = layui.laypage;
+
+        //执行一个laypage实例
+        laypage.render({
+            elem: 'dataTable' //注意，这里的 test1 是 ID，不用加 # 号
+            , count: {$count} //数据总数，从服务端得到
+            , curr: {$curr}
+            , limit: {$perPage} //每页显示的条数
+            ,layout: ['count', 'prev', 'page', 'next', 'refresh', 'skip']
+            , jump: function (obj, first) {
+                //obj包含了当前分页的所有参数，比如：
+                console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+
+                //首次不执行
+                if (!first) {
+                    //do something
+                    layer.load();
+                    window.location.href = "{php echo $this->createWebUrl('manage/replyType')}" + "&page=" + obj.curr + "&keyword=" + keyword;
+                    // window.location.href = "{php echo $this->createWebUrl('cards')}" + "&page=" + obj.curr;
+                }
+            }
+        });
+    });
+
+    //  搜索内容
+    $('.btn-search').click(function () {
+        var keyword = $('#inputSearch').val();
+        if (!keyword) {
+            window.location.href = "{php echo $this->createWebUrl('manage/replyType')}";
+            return false;
+        }
+        layer.load();
+        window.location.href = "{php echo $this->createWebUrl('manage/replyType')}" + "&keyword=" + keyword;
+        return false;
+    });
+
+    //  禁用职位
+    $('.btn-disable-item').click(function () {
+        var id = $(this).attr('itemId');
+        if (!id) {
+            layer.msg('获取参数失败!');
+            return false;
+        }
+        layer.open({
+            content: '是否禁用该内容?',
+            yes: function (index, layero) {
+                layer.close(index); //如果设定了yes回调，需进行手工关闭
+                layer.load();
+                var url = "{php echo $this->createWebUrl('manage/replyType')}";
+                var data = {
+                    action: 'disable',
+                    id: id
+                };
+
+                postDataReload(url, data);
+            }
+        });
+    });
+
+    //  启用职位
+    $('.btn-enable-item').click(function () {
+        var id = $(this).attr('itemId');
+        if (!id) {
+            layer.msg('获取参数失败!');
+            return false;
+        }
+        layer.open({
+            content: '是否启用该内容?',
+            yes: function (index, layero) {
+                layer.close(index); //如果设定了yes回调，需进行手工关闭
+                layer.load();
+                var url = "{php echo $this->createWebUrl('manage/replyType')}";
+                var data = {
+                    action: 'enable',
+                    id: id
+                };
+
+                postDataReload(url, data);
+            }
+        });
+    });
+
+    //  删除职位
+    $('.btn-delete-item').click(function () {
+        var id = $(this).attr('itemId');
+        if (!id) {
+            layer.msg('获取参数失败!');
+            return false;
+        }
+        layer.open({
+            content: '是否删除该内容?',
+            yes: function (index, layero) {
+                layer.close(index); //如果设定了yes回调，需进行手工关闭
+                layer.load();
+                var url = "{php echo $this->createWebUrl('manage/replyType')}";
+                var data = {
+                    action: 'delete',
+                    id: id
+                };
+
+                postDataReload(url, data);
+            }
+        });
+    });
+
+    $('.btn-add').click(function () {
+        $('#itemId').val(0);
+        layer.open({
+            type: 1,
+            title: '新增分类',
+            closeBtn: 0,
+            shadeClose: true,
+            skin: 'yourClass',
+            content: '<div style="padding: 20px; width: 260px; height: 160px;">' +
+            '<input type="text" autocomplete="off" class="layui-input" value="" id="typeTitle" placeholder="分类名">' +
+            '<input type="text" autocomplete="off" class="layui-input" value="" id="typeTop" placeholder="排序值" style="margin-top: 20px">' +
+            '<button class="layui-btn" required  lay-verify="required" style="margin-top: 30px" onclick="btnSub()">立即提交</button>' +
+            '</div>'
+        });
+    });
+
+    //  本页编辑
+    $('.btn-edit-item').click(function () {
+        var id = $(this).attr('itemId');
+        var itemContent = $(this).attr('itemContent');
+        var itemTop = $(this).attr('itemTop');
+        if (!id || !itemContent || !itemTop) {
+            layer.msg('获取参数失败!');
+            return false;
+        }
+
+        $('#itemId').val(id);
+        layer.open({
+            type: 1,
+            title: '编辑话术分类',
+            closeBtn: 0,
+            shadeClose: true,
+            skin: 'yourClass',
+            content: '<div style="padding: 20px; width: 260px; height: 160px;">' +
+            '<input type="text" autocomplete="off" class="layui-input" value="' + itemContent + '" id="typeTitle" placeholder="分类名">' +
+            '<input type="text" autocomplete="off" class="layui-input" value="' + itemTop + '" id="typeTop" placeholder="排序值" style="margin-top: 20px">' +
+            '<button class="layui-btn" required  lay-verify="required" style="margin-top: 30px" onclick="btnSub()">立即提交</button>' +
+            '</div>'
+        });
+    });
+
+    //  提交
+    function btnSub ()
+    {
+        layer.load();
+        var typeTitle = $('#typeTitle').val();
+        var typeTop = $('#typeTop').val();
+        var itemId = $('#itemId').val();
+
+        if (itemId == 0)
+        {
+            var action = 'add';
+            itemId = 0;
+        }
+        else
+        {
+            var action = 'edit';
+        }
+
+        if (!typeTitle || typeTitle == '')
+        {
+            layer.closeAll();
+            return false;
+        }
+
+        var url = "{php echo $this->createWebUrl('manage/replyType')}";
+
+        var id = itemId;
+        var data = {
+            action: action,
+            id: id,
+            typeTitle: typeTitle,
+            typeTop: typeTop
+        };
+        if (id > 0) {
+            data.id = id;
+        }
+        postDataReload(url, data);
+
+    }
+
+</script>
+<script src="../../../addons/{$module_name}/images/js/main.js"></script>
+</body>
+</html>

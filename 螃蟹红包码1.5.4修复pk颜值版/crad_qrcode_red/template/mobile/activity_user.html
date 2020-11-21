@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>用户管理-{$activity['name']}</title>
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/mui.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/examine.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/receive.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/bootstrap.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/font-awesome.css" />
+        <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/jquery-3.2.1.min.js" ></script>
+
+    </head>
+    <body>
+{if $check_shop['power']>1}
+        <div class="excels">
+            <div class="excels_an" id="excel">
+                导出excel
+            </div>
+        </div>
+        {/if}
+        <div  id="container">
+
+        </div>
+        <div class="load">
+            加载更多
+        </div>
+        {template 'shop_footer'}
+    </body>
+</html>
+<script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/mui.min.js" ></script>
+
+
+<script type="text/javascript">
+    var activity_other_field = "{$activity['other_field']}";
+    var loading = $(".load").data("on", false);
+    var g = 2;
+    ajax_get_data();
+    $(window).scroll(function () {
+
+        if (loading.data("on"))
+            return;
+        if ($(document).scrollTop() + 100 >
+                $(document).height() - $(window).height()) {
+            $(".load").html("正在加载中. . .");
+            loading.data("on", true).fadeIn();
+
+            $.get(
+                    "{php echo $this->createMobileUrl('ajax_shop', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid))}",
+                    {"op": "activity_user", "p": g},
+                    function (data) {
+                        loading.data("on", false);
+                        if (data.sta == 0) {
+                            $(".load").html(data.error);
+                            loading.data("on", true);
+                            setTimeout("loading.fadeOut();", 3000);
+                        } else {
+                            var html = "";
+                            for (i = 0; i < data.length; i++) {
+                                html += "<div class='listsb'><div class='li_left'>";
+                                html += "<img src='" + data[i]['headimgurl'] + "' /></div>";
+                                html += "<div class='li_right'><div class='right_topsb'><div class='weixin'>" + data[i]['realname'] + "</div>";
+                                html += "<div class='time'>" + data[i]['tel'] + "</div>";
+                                if (activity_other_field != '') {
+                                    html += "<div class='time'>" + data[i]['other_info'] + "</div>";
+                                }
+                                html += "</div>";
+                               {if empty($activity['white_check'])}
+            if (data[i]['is_white'] == 1) {
+                html += " <div class='right_bottmo' id='op" + data[i]['id'] + "'><div class='clicksb adopt' onclick='check_user(" + data[i]['id'] + "," + data[i]['is_white'] + ")'>取消白名单</div></div>";
+
+            } else {
+                html += " <div class='right_bottmo' id='op" + data[i]['id'] + "'><div class='clicksb adopt' onclick='check_user(" + data[i]['id'] + "," + data[i]['is_white'] + ")'>加入白名单</div></div>";
+            }
+            {/if}
+            html += "</div></div>";
+
+                            }
+                            $('#container').append(html);
+                            g++;
+                            loading.fadeOut();
+                        }
+                    },
+                    "json"
+                    );
+        }
+
+
+    });
+
+
+
+    function ajax_get_data() {
+        $('#container').html("");
+        $(".load").html("正在加载中. . .");
+        loading.data("on", true).fadeIn();
+        $.get(
+                "{php echo $this->createMobileUrl('ajax_shop', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid))}",
+                {"op": "activity_user", "p": 1},
+                function (data) {
+                    loading.data("on", false);
+                    if (data.sta == 0) {
+                        $(".load").html(data.error);
+                        setTimeout("loading.fadeOut();", 3000);
+                    } else {
+                        get_html(data);
+                        loading.fadeOut();
+                    }
+                },
+                "json"
+                );
+    }
+
+
+    function get_html(data) {
+        var html = "";
+        for (i = 0; i < data.length; i++) {
+            html += "<div class='listsb'><div class='li_left'>";
+            html += "<img src='" + data[i]['headimgurl'] + "' /></div>";
+            html += "<div class='li_right'><div class='right_topsb'><div class='weixin'>" + data[i]['realname'] + "</div>";
+            html += "<div class='time'>" + data[i]['tel'] + "</div>";
+            if (activity_other_field != '') {
+                html += "<div class='time'>" + data[i]['other_info'] + "</div>";
+            }
+            html += "</div>";
+            {if empty($activity['white_check'])}
+            if (data[i]['is_white'] == 1) {
+                html += " <div class='right_bottmo' id='op" + data[i]['id'] + "'><div class='clicksb adopt' onclick='check_user(" + data[i]['id'] + "," + data[i]['is_white'] + ")'>取消白名单</div></div>";
+
+            } else {
+                html += " <div class='right_bottmo' id='op" + data[i]['id'] + "'><div class='clicksb adopt' onclick='check_user(" + data[i]['id'] + "," + data[i]['is_white'] + ")'>加入白名单</div></div>";
+            }
+            {/if}
+            html += "</div></div>";
+        }
+        $('#container').html(html);
+    }
+
+
+    function check_user(id, is_white) {
+        var btnArray = ['确定', '取消'];
+        if (is_white == 1) {
+            var tip_str = "你确定要取消白名单吗？";
+        } else {
+            var tip_str = "你确定要将该用户加入白名单吗？";
+        }
+        var run_confim = false;
+
+        mui.confirm(tip_str, '白名单提示', btnArray, function (e) {
+            if (e.index == 0 && !run_confim) {
+                run_confim = true;
+                $.get(
+                        "{php echo $this->createMobileUrl('ajax_shop', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid))}",
+                        {"op": "check_white", "id": id, "is_white": is_white},
+                        function (data) {
+                            if (data.sta == 1) {
+                                if (is_white == 1) {
+                                    var html_res = "<div class='clicksb adopt' onclick='check_user(" + id + ",0)'>加入白名单</div>";
+                                    $('#op' + id).html(html_res);
+                                    show_message(1, '已成功取消白名单', 3000, 1);
+                                } else {
+                                    var html_res = "<div class='clicksb adopt' onclick='check_user(" + id + ",1)'>取消白名单</div>";
+                                    $('#op' + id).html(html_res);
+                                    show_message(1, '已成功加入白名单', 3000, 1);
+                                }
+                                return;
+                            }
+                            show_message(0, data.error, 3000, 1);
+                        },
+                        "json"
+                        );
+            }
+        })
+
+    }
+    
+    
+     $('#excel').on('click', function() {
+        location.href = "{php echo $this->createMobileUrl('activity_user', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid))}" + '&op=excel';
+    });
+
+</script>

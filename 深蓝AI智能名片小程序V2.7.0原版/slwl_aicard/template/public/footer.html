@@ -1,0 +1,214 @@
+<div id="view-img"><img src=""></div>
+<script>
+	var my_laypage = '';
+	var my_layer = '';
+	var my_table = '';
+	var my_form = '';
+	var my_element = '';
+	var table_list = '';
+
+	var url_add = '';
+	var url_list = '';
+	var url_delete = '';
+
+	//JavaScript代码区域
+	layui.use(['element', 'laypage', 'layer', 'table', 'form'], function(){
+		my_element = layui.element;
+		my_laypage = layui.laypage;
+		my_layer = layui.layer;
+		my_table = layui.table;
+		my_form = layui.form;
+
+		var windowHeight = $(window).height();
+
+		// 编辑商品页面的基本信息，商品描述， 自定义属性， 商品规格四个标签切换时根据内容高度设置保存按钮是否浮动
+		my_element.on('tab(goods)', function(a,b){
+			var thisHeight = $(this).parent().next().find('.layui-tab-item').eq(a.index).height();
+			var offsetTop = $(this).parent().next().offset().top;
+			if(thisHeight > windowHeight-offsetTop ){
+				$('#data-submit').addClass('fixed');
+				$('#goodDataForm').addClass('fixed');
+			}else{
+				$('#data-submit').removeClass('fixed');
+				$('#goodDataForm').removeClass('fixed');
+			}
+		});
+
+		// 显示img
+		$(document).on("click", '.box-table-img img', function () {
+			var $obj = $(this);
+			var url = $obj.data('url');
+
+			$('#view-img').find('img').attr('src', url);
+
+			layer.open({
+				offset: '20%',
+				area: ['400px','400px'],
+				title: '预览',
+				type: 1,
+				shift: 2,
+				shadeClose: true, //开启遮罩关闭
+				content: $('#view-img')
+			});
+		});
+
+		//回车-搜索
+		$('.box-search').bind('keypress', function (event) {
+			if (event.keyCode == 13) {
+				$('#table-search').click();
+			}
+		});
+		//搜索
+		my_form.on('submit(table-search)', function(data){
+			table_list.reload({
+				where: data.field
+			});
+			return false;
+		});
+
+		//头工具栏事件
+		my_table.on('toolbar(sl-table)', function (obj)
+		{
+			var checkStatus = my_table.checkStatus(obj.config.id);
+			switch (obj.event) {
+				case 'add':
+					window.location.href = url_post;
+					break;
+				case 'delete':
+					var obj_data = checkStatus.data;
+
+					if (obj_data == '') {
+						layer.msg('至少也得选一个吧', {offset: '20%'});
+						return false;
+					}
+					var ids = [];
+					if (obj_data.length > 0) {
+						$.each(obj_data, function (i, e) {
+							ids.push(e.id);
+						});
+
+						funDelete(url_delete, ids, function(rst) {
+							if (rst && rst['code']=='0') {
+								table_list.reload(); // 表格重载
+								layer.msg('成功删除', {
+									offset: '20%',
+								});
+							} else {
+								if (rst) {
+									layer.msg(rst['msg'], {
+										offset: '20%',
+									});
+								} else {
+									layer.msg('未知错误', {
+										offset: '20%',
+									});
+								}
+							}
+						});
+					} else {
+						console.log(obj_data)
+						layer.msg('对象为空', {icon: 2});
+						return false;
+					}
+					break;
+				case 'isAll':
+					layer.msg(checkStatus.isAll ? '全选' : '未全选');
+					break;
+			};
+		});
+
+		//监听行工具事件
+		my_table.on('tool(sl-table)', function (obj)
+		{
+			var obj_data = obj.data;
+			if (obj.event === 'del') {
+				var ids = [];
+				ids.push(obj_data.id);
+
+				funDelete(url_delete, ids, function(rst) {
+					if (rst && rst['code']=='0') {
+						obj.del();
+						layer.msg('成功删除', {
+							offset: '20%',
+						});
+					} else {
+						if (rst) {
+							layer.msg(rst['msg'], {
+								offset: '20%',
+							});
+						} else {
+							layer.msg('未知错误', {
+								offset: '20%',
+							});
+						}
+					}
+				});
+			} else if(obj.event === 'edit'){
+				window.location.href = url_post + '&id=' + obj_data.id;
+			}
+		});
+	});
+
+</script>
+{if $_W['role']=='founder' && $_W['isfounder'] && $_GPC['do']!='auth' && $_GPC['do']!='upgrade'}
+<script type="text/javascript">
+	layui.use('layer', function(){
+		var layer = layui.layer
+
+		function check_slwl_aicard_upgrade() {
+			if ($.cookie('check_slwl_aicard_upgrade_sys')) {
+				return false;
+			}
+
+			let $url = "{php echo webUrl('', ['do'=>'other/upgrade','op'=>'check'])}";
+
+			$.ajax({
+				type: "POST",
+				url: $url,
+				dataType: 'json',
+				success: function (rst) {
+					// console.log(rst);
+					if (rst && rst.code == '0' && rst.data.isNew == true) {
+						let res = rst.data;
+						let tips_title = '新版本 ' + res.file_version + ' RELEASE ' + res.file_release;
+
+						layer.open({
+							type: 1,
+							move: false,
+							time: 0,
+							shade: 0,
+							closeBtn: 0,
+							area: '300px',
+							title: '更新提醒',
+							content: tips_title,
+							btn: ['了解详情', '朕不想听'],
+							skin: 'layui-layer-notice',
+							yes: function (i) {
+								window.location.href = "{php echo webUrl('', ['do'=>'other/upgrade'])}";
+								layer.close(i);
+							},
+							btn2: function (i) {
+								check_slwl_aicard_upgrade_hide();
+							}
+						});
+					} else {
+						console.log(rst);
+					}
+				},
+				error: function (e) {
+					console.log(e);
+				}
+			});
+		}
+		function check_slwl_aicard_upgrade_hide() {
+			var expiresDate = new Date();
+			expiresDate.setTime(expiresDate.getTime() + (60 * 60 * 1000)); // 每小时一次
+			$.cookie('check_slwl_aicard_upgrade_sys', '1', { expires: expiresDate });
+		}
+
+		setTimeout( function() {
+			check_slwl_aicard_upgrade();
+		},4000);
+	});
+</script>
+{/if}

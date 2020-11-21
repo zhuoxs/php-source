@@ -1,0 +1,193 @@
+{template 'web/common/common'}
+{template 'web/common/navbar'}
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/swal/dist/sweetalert2.min.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/layui.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/new-common.css" />
+<script src="../addons/kundian_farm/resource/layui.js" charset="utf-8"></script>
+<style>
+    .layui-form-label{width: 170px;}
+    .layui-input-block{margin-left: 170px;}
+    .layui-form-checkbox i{height: 30px;}
+</style>
+<blockquote class="layui-elem-quote layui-text">
+    任务订单
+</blockquote>
+
+<div class="new-style">
+    <div class="layui-form">
+        <table class="layui-table">
+            <colgroup>
+                <col width="50">
+                <col width="150">
+                <col width="200">
+                <col>
+            </colgroup>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>订单编号</th>
+                <th>用户信息</th>
+                <th>订单总价</th>
+                <th>面积（单位：㎡）</th>
+                <th>实际支付金额</th>
+                <th>下单时间</th>
+                <th>是否支付</th>
+                <th>说明</th>
+                <th>是否操作</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $data['list'] $key $item}
+            <tr>
+                <td>{$item['id']}</td>
+                <td>{$item['order_number']}</td>
+                <td>{$item['nickname']}（UID:{$item['uid']}）</td>
+                <td>{$item['total_price']}</td>
+                <td>{$item['area']} ㎡</td>
+                <td>{$item['pay_price']}</td>
+                <td>{php echo date("Y-m-d H:i:s",$item['create_time'])}</td>
+                <td>
+                    {if $item['is_pay']==1}
+                    <span class="layui-badge layui-bg-green">已支付</span>
+                    {else}
+                    <span class="layui-badge layui-bg-gray">未支付</span>
+                    {/if}
+                </td>
+                <td>{$item['body']}</td>
+                <td>
+                    {if $item['operation_type']==1}
+                        {if $item['is_operation']==0}
+                        <span class="layui-badge layui-bg-gray">未施肥</span>
+                        {elseif $item['is_operation']==1}
+                        <span class="layui-badge layui-bg-green">已施肥</span>
+                        {elseif $item['is_operation']==2}
+                        <span class="layui-badge layui-bg-orange">已退款</span>
+                        {/if}
+                    {elseif $item['operation_type']==2}
+                        {if $item['is_operation']==0}
+                        <span class="layui-badge layui-bg-gray">未除草</span>
+                        {elseif $item['is_operation']==1}
+                        <span class="layui-badge layui-bg-green">已除草</span>
+                        {elseif $item['is_operation']==2}
+                        <span class="layui-badge layui-bg-orange">已退款</span>
+                        {/if}
+                    {elseif $item['operation_type']==3}
+                        {if $item['is_operation']==0}
+                        <span class="layui-badge layui-bg-gray">未捉虫</span>
+                        {elseif $item['is_operation']==1}
+                        <span class="layui-badge layui-bg-green">已捉虫</span>
+                        {elseif $item['is_operation']==2}
+                        <span class="layui-badge layui-bg-orange">已退款</span>
+                        {/if}
+                    {/if}
+                </td>
+                <td>
+                    {if $item['is_pay']==1 && $item['is_operation']==0}
+                        {if $item['operation_type']==1}
+                        <button class="layui-btn layui-btn-xs operation_land" data-id="{$item['id']}"><i class="layui-icon">&#xe642;</i>施肥</button>
+                        {elseif $item['operation_type']==2}
+                        <button class="layui-btn layui-btn-xs operation_land" data-id="{$item['id']}"><i class="layui-icon">&#xe642;</i>除草</button>
+                        {elseif $item['operation_type']==3}
+                        <button class="layui-btn layui-btn-xs operation_land" data-id="{$item['id']}"><i class="layui-icon">&#xe642;</i>捉虫</button>
+                        {/if}
+
+                    <!--<a href="{url 'site/entry/refund',array('m'=>'kundian_farm','op'=>'playOperationRefund','id'=>$item['id'],'version_id'=>$_GPC['version_id'])}">-->
+                        <button class="layui-btn layui-btn-xs layui-btn-warm operationRefund" data-id="{$item['id']}"><i class="layui-icon">&#xe65e;</i>退款</button>
+                    <!--</a>-->
+
+                    {/if}
+                    {if $item['is_pay']==0}
+                    <button class="layui-btn layui-btn-xs layui-btn-danger delOperation" data-id="{$item['id']}"><i class="layui-icon">&#xe640;</i>删除</button>
+                    {/if}
+
+                </td>
+
+            </tr>
+            {/loop}
+
+            </tbody>
+        </table>
+        <div style="text-align: right;">
+            {$data['pager']}
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.use(['form','layer'], function(){
+        $ = layui.jquery;
+        var form = layui.form
+            ,layer = layui.layer;
+
+        /**删除操作*/
+        $(".delOperation").click(function () {
+            var that=$(this);
+            var id=$(this).attr("data-id");
+            layer.confirm('确认删除吗', {icon: 3, title:'确认'}, function(index){
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/admin',['m'=>$_GPC['m'],'op'=>'delOperation','action'=>'land']}",
+                    data:{id:id},
+                    dataType:'json',
+                    success:function(res){
+                        if(res.status==0){
+                            layer.alert(res.msg);
+                            that.parent().parent().remove();
+                        }else{
+                            layer.alert(res.msg);
+                        }
+                        layer.close(index);
+                    }
+                })
+            });
+        })
+
+        /**确认已除草、杀虫、施肥操作*/
+        $(".operation_land").click(function () {
+            var that=$(this);
+            var id=$(this).attr("data-id");
+            layer.confirm('确认进行此操作吗？', {icon: 3, title:'确认'}, function(index){
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/admin',['m'=>$_GPC['m'],'op'=>'operation_land','action'=>'land']}",
+                    data:{id:id},
+                    dataType:'json',
+                    success:function(res){
+                        if(res.status==0){
+                            layer.alert(res.msg,function () {
+                                window.location.reload();
+                            });
+                        }else{
+                            layer.alert(res.msg);
+                        }
+                        layer.close(index);
+                    }
+                })
+            });
+        })
+
+        /**退款操作*/
+        $(".operationRefund").click(function () {
+            var that=$(this);
+            var id=$(this).attr("data-id");
+            layer.confirm('确认对该订单进行退款操作吗？', {icon: 3, title:'确认'}, function(index){
+                var load_index = layer.load();
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/admin',['m'=>'kundian_farm','op'=>'playOperationRefund','action'=>'land']}",
+                    data:{id:id},
+                    dataType:'json',
+                    success:function(res){
+                        layer.close(load_index);
+                        layer.alert(res.msg,function () {
+                            window.location.reload();
+                            layer.close(index);
+                        });
+
+                    }
+                })
+            });
+        })
+    });
+</script>

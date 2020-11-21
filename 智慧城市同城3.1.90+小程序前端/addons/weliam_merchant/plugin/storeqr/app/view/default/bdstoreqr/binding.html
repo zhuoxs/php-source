@@ -1,0 +1,64 @@
+{php include wl_template('common/header');}
+<div class="page-group" >
+    <div class="page page-current" id="page-index">
+		<div class="content native-scroll">
+			<div class="card">
+		      <div class="card-content">
+		        <div class="card-content-inner">请选择您想绑定的店铺，已经绑定过二维码的店铺会显示已绑定，未绑定的店铺会显示未绑定</div>
+		      </div>
+		    </div>
+			<div class="weui-cells__title">选择绑定的店铺</div>
+	        <div class="list-block media-list">
+		      <ul>
+		      	{loop $stores $merc}
+		        <li>
+		          <label class="label-checkbox item-content">
+		            <input type="radio" name="storeid" checked="true" value="{$merc['id']}">
+		            <div class="item-media"><i class="icon icon-form-checkbox"></i></div>
+		            <div class="item-inner">
+		              <div class="item-title-row">
+		                <div class="item-title">{$merc['storename']}</div>
+		                <div class="item-after">{if $merc['cardsn']}已绑定{else}未绑定{/if}</div>
+		              </div>
+		            </div>
+		          </label>
+		        </li>
+		        {/loop}
+		      </ul>
+		    </div>
+	        <div class="weui-btn-area">
+	            <a class="weui-btn weui-btn_primary external" href="javascript:;" id="showTooltips">确认绑定</a>
+	        </div>
+		</div>
+	</div>
+</div>
+<script>
+$(function() {
+	$(document).on('click','#showTooltips',function () {
+		var storeid = $("input[type='radio']:checked").val();;
+		if(!storeid){
+		 	$.toast("请选择绑定的店铺");
+		 	return false;
+		}
+		
+		$.post("{php echo app_url('storeqr/bdstoreqr/binding',array('cardsn'=>$_GPC['cardsn'],'salt'=>$_GPC['salt']))}",{storeid:storeid},function(d){
+			if(d.result == 1){
+			    $.confirm('二维码绑定成功，去查看二维码？', '确认信息',
+			        function () {
+			          location.href="{php echo app_url('store/supervise/storelist');}";
+			        },
+			        function () {
+			          wx.closeWindow();
+			        }
+			    );
+			}else if(d.result == 2){
+				$.toast(d.msg);
+			}else{
+				$.toast("未知错误");
+			}
+		},"json");
+	});
+	$.init();
+});
+</script>
+{php include wl_template('common/footer');}

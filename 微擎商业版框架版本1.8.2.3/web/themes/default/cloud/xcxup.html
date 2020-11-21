@@ -1,0 +1,99 @@
+{template 'common/header'}
+{if $step == 'files'}
+<ol class="breadcrumb we7-breadcrumb">
+	<a href="./index.php?c=platform&amp;a=reply&amp;m=keyword"><i class="fa fa-chevron-circle-left"></i> </a>
+	<li>
+		<a href="./index.php?c=platform&amp;a=reply&amp;m=keyword">模块更新</a>
+	</li>
+	<li>
+		<a href="./index.php?c=platform&amp;a=reply&amp;do=post&amp;m=keyword">升级处理</a>
+	</li>
+</ol>
+
+	<div class="alert alert-warning">
+		正在更新模块文件, 请不要关闭窗口.
+	</div>
+	<div class="alert alert-warning">
+		如果下载文件失败，可能造成的原因：写入失败，请仔细检查写入权限是否正确。(也可以再次检测更新)
+	</div>
+	<div class="alert alert-info form-horizontal ng-cloak" ng-controller="processor">
+		<dl class="dl-horizontal">
+			<dt>马上进入更新</dt>
+		</dl>
+	</div>
+{/if}
+{if $step == 'filespro'}
+<ol class="breadcrumb we7-breadcrumb">
+	<a href="./index.php?c=platform&amp;a=reply&amp;m=keyword"><i class="fa fa-chevron-circle-left"></i> </a>
+	<li>
+		<a href="./index.php?c=platform&amp;a=reply&amp;m=keyword">模块更新</a>
+	</li>
+	<li>
+		<a href="./index.php?c=platform&amp;a=reply&amp;do=post&amp;m=keyword">升级处理</a>
+	</li>
+</ol>
+
+	<div class="alert alert-warning">
+		正在更新模块文件, 请不要关闭窗口.
+	</div>
+	<div class="alert alert-warning">
+		如果下载文件失败，可能造成的原因：写入失败，请仔细检查写入权限是否正确。(也可以再次检测更新)
+	</div>
+	<div class="alert alert-info form-horizontal ng-cloak" ng-controller="processor">
+		<dl class="dl-horizontal">
+			<dt>整体进度</dt>
+			<dd>{{pragress}}</dd>
+			<dt>正在下载文件</dt>
+			<dd>{{file}}</dd>
+		</dl>
+		<dl class="dl-horizontal" ng-show="fails.length > 0">
+			<dt>下载失败的文件</dt>
+			<dd>
+				<p class="text-danger" ng-repeat="file in fails" style="margin:0;">{{file}}</p>
+			</dd>
+		</dl>
+	</div>
+<script>
+  require(['angular'], function(angular){
+    angular.module('app', []).controller('processor', function($scope, $http){
+      $scope.files = {php echo json_encode($packet['D']);};
+      $scope.modname = {php echo json_encode($modname);};
+      $scope.fails = [];
+      var total = $scope.files.length;
+      var modname = $scope.modname;
+      var i = 1;
+      var proc = function() {
+        var path = $scope.files.pop();
+        if(!path) {
+          if($scope.fails.length == 0 || confirm('有部分文件未成功更新, 是否进行下一步操作.')) {
+            setTimeout(function(){
+			  		location.href = "{php echo url('cloud/xcxinstall')}";
+            }, 2000);
+          }
+          return;
+        }
+        $scope.file = path;
+        $scope.pragress = i + '/' + total;
+        var params = {path: path};
+        
+        $http.post('/web/source/cloud/path.php?&m={$m}&path='+path+'&type=module&mname='+modname,params).success(function(dat){
+          i++;
+          
+          if(dat == 1111) {            
+          	$scope.fails.push(path);
+          }
+          proc();
+        }).error(function(){
+          i++;
+          $scope.fails.push(path);
+          proc();
+        });
+      }
+      proc();
+    });
+    angular.bootstrap(document, ['app']);
+  });
+</script>
+{/if}
+
+{template 'common/footer'}

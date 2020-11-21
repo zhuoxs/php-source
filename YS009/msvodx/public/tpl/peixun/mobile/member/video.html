@@ -1,0 +1,179 @@
+{include file="common/head"}
+<!--<link rel="stylesheet" href="__ROOT__/tpl/peixun/mobile/static/css/member.css">
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/static/js/layui/css/layui.css">
+
+<script type="text/javascript" src="__ROOT__/tpl/peixun/mobile/static/js/layer_mobile/layer.js"></script>
+<script type="text/javascript" charset="utf-8" src="__ROOT__/tpl/peixun/static/js/layui/layui.js"></script>-->
+
+    <ul class="content-list">
+        {notempty name="list"}
+        {volist name="list" id="vo"}
+        <li class="v">
+            <a href="{:url('video/play',array('id'=>$vo['id']))}">
+                <div class="v-thumb">
+                    <div class="v-pic-real" style="background-image:url('{$vo['thumbnail']}');"></div>
+                    <div class="v-tagrb"><span class="v-time">{$vo['play_time']}</span></div>
+                    {if condition="$vo['status'] neq 1"}
+                        <span class="btn fn-jiaobiao"><i>已禁用</i></span>
+                    {else/}
+                        {if condition="$vo['is_check'] eq 0"}<span class="btn fn-jiaobiao aspect"><i>审核中</i></span> {/if}
+                        {if condition="$vo['is_check'] eq 2"}<span class="btn fn-jiaobiao"><i>已拒绝</i></span> {/if}
+                    {/if}
+                    <!-- -->
+                </div>
+            </a>
+            <div class="edit-box">
+                <i class="btn fn-down-bold"></i>
+                <div class="editBox" style="display: none;">
+                    <span><a href="{:url('member/editVideo',['id'=>$vo['id']])}"><i class="btn fn-bianji1"></i>编辑</a></span>
+                    <span class="del_video" id="del_{$vo['id']}"><i class="btn fn-shanchu"></i>删除</span>
+                </div>
+            </div>
+            <div class="v-metadata">
+                <div class="v-title">{$vo['title']}</div>
+                <div class="v-desc">
+                    <i class="btn fn-bofang" title="播放"></i>
+                    <span class="v-num">{$vo['click']}</span>&nbsp;
+                    <var style="float: right;margin-right: 20px;">
+                        <i class="btn fn-jinbi1" title="金币"></i>
+                        <span class="v-num">{$vo['gold']}</span>
+                    </var>
+                    <var style="display: block;">
+                        <i style="font-size: 13px;" class="btn fn-time" title="上传时间"></i>
+                        <span class="v-num">{$vo['add_time']|date='Y/m/d',###}</span>
+                    </var>
+                </div>
+            </div>
+        </li>
+        {/volist}
+        {else/}
+        <span class="not-comment">您还未上传过视频哦 ~</span>
+        {/notempty}
+    </ul>
+    <a href="{:url('member/addVideo')}" target="_self" class="upload"><i class="btn fn-shangchuan1"></i>上传</a>
+</div>
+
+<script>
+    function del(id){
+        var reqData={table:'video',id:id};
+        layer.open({
+            content:'确定要删除吗？',
+            btn: ['确定', '取消'],
+            yes:function () {
+                $.ajax({
+                    type: 'POST',
+                    url: "{:url('api/del')}",
+                    data: reqData,
+                    dataType : "json",
+                    success: function(data){
+                        console.log(data);
+                        if(data.resultCode==0){
+                            layer.open({content:'已成功删除', time:2,skin:'msg',end:function () {
+                                window.location.reload();
+                            }});
+                        }else{
+                            layer.open({content:'删除失败，原因：'+data.error, time:2,skin:'msg'});
+                        }
+                    },
+                });
+            }
+        });
+    }
+    $(function () {
+        /*点击视频上按钮效果*/
+        $(".edit-box .fn-down-bold").on('click',function(){
+            $(this).siblings().stop().slideToggle();
+        });
+        /*我的视频、删除视频*/
+        $(".del_video").click(function () {
+            var id = $(this).attr('id').substring(4);
+            del(id);
+        });
+
+    });
+
+    var status = 1;
+    var page  = 0;
+    var user_id = "{$user_id}";
+    $(window).scroll(function(){
+        var srollPos = $(window).scrollTop();
+        var data = {
+            "page" : page ,
+            "type" : 'video',
+            "offset" : 10,
+            "where" :  'user_id = '+user_id,
+        };
+        if(srollPos+$(window).height() > $(document).height() - 80){
+            if(status == 1) {
+                status = 0;
+                $.ajax({
+                    type: "POST",
+                    data: data,
+                    dataType: "JSON",
+                    url: "{:url('Api/moreData')}",
+                    success: function (data) {
+                        if(data.resultCode == 0){
+                            var datas = data.data.list;
+                            if(datas){
+                                var html = '';
+                                datas.forEach(function(item) {
+                                    var  url =  '/video/play/'+item['id'];
+                                    var update_time = item['update_time'];
+                                    var newDate = new Date(update_time * 1000);
+
+                                     html += '<li class="v">';
+                                     html += '    <a href="'+url+'">';
+                                     html += '    <div class="v-thumb">';
+                                     html += '    <div class="v-pic-real" style="background-image:url('+item['thumbnail']+');"></div>';
+                                     html += '    <div class="v-tagrb"><span class="v-time">'+item['play_time']+'</span></div>';
+                                     html += '    </div>';
+                                     html += '    </a>';
+                                     html += '    <div class="edit-box">';
+                                     html += '    <i class="btn fn-down-bold"></i>';
+                                     html += '    <div class="editBox" style="display: none;">';
+                                     html += '    <span><a href="/member/editVideo/id/'+item['id']+'"><i class="btn fn-bianji1"></i>编辑</a></span>';
+                                     html += '    <span class="del_video" id="del_'+item['id']+'"><i class="btn fn-shanchu"></i>删除</span>';
+                                     html += '    </div>';
+                                     html += '    </div>';
+                                     html += '    <div class="v-metadata">';
+                                     html += '    <div class="v-title">'+item['title']+'</div>';
+                                     html += '    <div class="v-desc">';
+                                     html += '    <i class="btn fn-bofang" title="播放"></i>';
+                                     html += '    <span class="v-num">'+item['click']+'</span>&nbsp;';
+                                     html += '<i class="btn fn-jinbi1" title="金币"></i>';
+                                     html += '    <span class="v-num">'+item['gold']+'</span>';
+                                     html += '    <var style="float: right;">';
+                                     html += '    <i class="btn fn-time" title="上传时间"></i>';
+                                     html += '    <span class="v-num">'+(newDate.getMonth() + 1)+'/'+newDate.getDate()+'</span>';
+                                     html += '</var>';
+                                     html += '</div>';
+                                     html += '</div>';
+                                     html += '</li>';
+                                });
+                                $('.not-comment').remove();
+                                $('.content-list').append(html);
+                                $(".edit-box .fn-down-bold").unbind();
+                                $(".edit-box .fn-down-bold").on('click',function(){
+                                    $(this).siblings().stop().slideToggle();
+                                });
+                                $(".del_video").click(function () {
+                                    var id = $(this).attr('id').substring(4);
+                                    del(id);
+                                });
+                                page++;
+                                status = 1;
+                            }else{
+                                console.log('没有更多数据了！');
+                            }
+                        }else{
+                            console.log('没有更多数据了！');
+                        }
+                    }
+                });
+            }
+        }
+    })
+</script>
+
+
+{include file="common/footer"}

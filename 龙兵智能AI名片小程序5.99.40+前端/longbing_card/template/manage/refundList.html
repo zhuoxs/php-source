@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/css/main.css" media="all">
+</head>
+<body>
+<style>
+    .layui-body {
+        overflow-x: scroll;
+    }
+</style>
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">退款管理</div>
+                <div class="layui-card-body">
+                    <!--搜索-->
+                    <div class="test-table-reload-btn layui-inline" style="margin-bottom: 10px;">
+                        <form class="layui-form" action="" onsubmit="return false">
+
+                            订单付款订单号：
+                            <div class="layui-inline">
+                                <input class="layui-input" name="transaction_id" id="test-table-demoReload2"
+                                       autocomplete="off">
+                            </div>
+
+                            <button class="layui-btn" data-type="reload">搜索</button>
+                        </form>
+                    </div>
+
+                    <table class="layui-hide" id="test-table-autowidth" lay-filter="test-table-autowidth"></table>
+                    <!--行内操作按钮  设置为会员   禁用   删除（测试用）-->
+                    <script type="text/html" id="test-table-autowidth-barDemo">
+
+
+                        {{#  if(d.status == 1){ }}
+
+                        <button type="button" class="layui-btn layui-btn-xs btn-self-item layui-btn-normal"
+                                itemId="{$item['id']}" lay-event="refund">
+                            立即退款
+                        </button>
+
+                        <button type="button" class="layui-btn layui-btn-xs btn-send-item"
+                                itemId="{$item['id']}" lay-event="refuse">
+                            拒绝退款
+                        </button>
+
+
+                        {{#  } }}
+
+
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{template 'common/footer'}
+
+<style>
+    .friend-link{
+        text-align: center;
+    }
+    .copyright{
+        text-align: center;
+        padding-bottom: 20px;
+    }
+</style>
+
+<input type="hidden" name="itemId">
+
+<script src="../../../addons/{$module_name}/images/layuiadmin/layui/layui.js"></script>
+<script>
+    var src = '{$src}';
+    var g_$ = '';
+    var $ = '';
+    layui.use(['table', 'form'], function () {
+        g_$ = layui.$;
+        $ = layui.$;
+        var table = layui.table;
+        var layer = layui.layer
+            , admin = layui.admin
+            , form = layui.form;
+
+        //获取参数group_id
+
+        layer.load();
+        table.render({
+            elem: '#test-table-autowidth'
+            // ,url: 'manage_base/company/index'//数据接口
+            , url: src//数据接口
+            // ,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+            , page: true
+            // , toolbar: true
+            , cols: [[
+                {field: 'goods', title: '商品名', width: 260},
+                {field: 'user_id', title: '下单用户id', width: 100},
+                {field: 'nickName', title: '下单用户微信昵称', width: 160},
+                {field: 'name', title: '员工', width: 100},
+                {field: 'price', title: '总金额', width: 100},
+                {field: 'total_price', title: '实际支付金额', width: 100},
+                {field: 'address_total', title: '收货地址', width: 260},
+                {field: 'transaction_id', title: '订单付款订单号', width: 260},
+                {field: 'out_refund_no', title: '订单退款订单号', width: 260},
+                {field: 'number', title: '数量', width: 100},
+                {field: 'create_time', title: '申请时间', width: 180},
+                {field: 'status_text', title: '状态', width: 100},
+                {align: 'center', width: 180, toolbar: '#test-table-autowidth-barDemo', title: '操作'}
+
+            ]]
+            , done: function (res, curr, count) {
+                layer.closeAll();
+            }
+        });
+        form.render();
+
+
+        //监听工具条
+        table.on('tool(test-table-autowidth)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'refund') {
+                var id = data.id;
+                var total_price = data.total_price;
+                if (!id) {
+                    layer.msg('获取信息失败!');
+                    return false;
+                }
+                //禁用（
+                layer.open({
+                    type: 1,
+                    title: '请核对信息后输入需要退款的金额',
+                    closeBtn: 0,
+                    shadeClose: true,
+                    skin: 'yourClass',
+                    content: '<div style="padding: 20px; width: 260px; height: 160px;">' +
+                        '<input type="text" autocomplete="off" class="layui-input" value="" id="typeRefundMoney" placeholder="退款金额">' +
+                        '<input type="hidden" value="' + id + '" id="typeRefundId">' +
+                        '<div style="margin-top: 10px">实际支付金额: <span style="color: red;">¥' + total_price + '</span></div>' +
+                        '<div style="margin-top: 10px">退款金额不能大于订单实际支付金额</div>' +
+                        '<button class="layui-btn" type="button" style="margin-top: 30px" onclick="btnSub(0)">立即提交</button>' +
+                        '<button class="layui-btn" type="button" style="margin-top: 30px" onclick="btnSub(1)">全额退款</button>' +
+                        '</div>'
+                });
+            } else if (obj.event === 'refuse') {
+                var id = data.id;
+                if (!id) {
+                    layer.msg('获取信息失败!');
+                    return false;
+                }
+                //禁用（
+                layer.confirm('是否确认拒绝退款?拒绝退款后用户无法重新提交', function (index) {
+                    var url = "{php echo $this->createWebUrl('manage/refundlist')}";
+                    var data = {
+                        action: 'refuse',
+                        id: id,
+                    };
+                    $.post(url, data, function (data) {
+                        layer.closeAll();
+                        data = JSON.parse(data);
+                        if (!data.type) {
+                            layer.msg('服务器错误!');
+                            return false;
+                        }
+                        if (data.type == 'success') {
+                            layer.msg(data.message);
+                        }
+                        setTimeout(function () {
+                            $(".layui-laypage-btn").click()
+                        }, 1500)
+                    });
+                });
+            }
+
+        });
+
+
+        var active = {
+            reload: function () {
+                var keyword = $('#test-table-demoReload2');
+
+                //执行重载
+                table.reload('test-table-autowidth', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    , where: {
+                        key: {
+                            keyword: keyword.val(),//传入input里面的值
+                        }
+                    }
+                });
+            }
+        };
+
+        $('.test-table-reload-btn .layui-btn').on('click', function () {
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+
+    });
+
+
+    //  提交
+    function btnSub(typeRefundAll) {
+        layer.load();
+        var typeRefundMoney = $('#typeRefundMoney').val();
+        var typeRefundId = $('#typeRefundId').val();
+        var typeRefundAll = typeRefundAll;
+
+        var url = "{php echo $this->createWebUrl('manage/refundlist')}";
+
+        var data = {
+            action: 'refund',
+            typeRefundMoney: typeRefundMoney,
+            typeRefundId: typeRefundId,
+            typeRefundAll: typeRefundAll,
+        };
+
+        $.post(url, data, function (data) {
+            layer.closeAll();
+            data = JSON.parse(data);
+            if (!data.type) {
+                layer.msg('服务器错误!');
+                return false;
+            }
+            layer.msg(data.message);
+            setTimeout(function () {
+                $(".layui-laypage-btn").click()
+            }, 1500)
+        });
+
+        return false;
+    }
+
+</script>
+<!--<script src="../../../addons/{$module_name}/images/js/jquery.min.js"></script>-->
+</body>
+</html>

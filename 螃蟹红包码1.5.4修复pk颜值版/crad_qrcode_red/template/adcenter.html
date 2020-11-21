@@ -1,0 +1,624 @@
+{template 'common/header'}
+<div class='container' style='padding: 0 5px 10px; margin: 0; width: 100%'>
+
+    <ul class="nav nav-tabs">
+        <li {if $op== 'display'}class="active"{/if}><a href="{php echo $this->createWebUrl('adcenter')}">广告中心</a></li>
+        <li {if $op== 'post'}class="active"{/if}>
+            {if empty($id)}
+            <a href="{php echo $this->createWebUrl('adcenter',array('op'=>'post'))}">添加广告</a>
+            {else}
+            <a href="{php echo $this->createWebUrl('adcenter',array('op'=>'post','id'=>$id))}">编辑广告</a>
+            {/if}
+        </li> 
+    </ul>
+    {if $op=='display'}
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="crad_qrcode_red" />
+                <input type="hidden" name="do" value="adcenter" />
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">展示位置</label>
+                    <div class="col-xs-6 col-sm-4 col-lg-4">
+                        <select name="position" id="position" class="form-control">
+                            <option value="0" {if empty($position)}selected{/if} >所有</option>
+                            <option value="1" {if $position==1}selected{/if}>进入网页后语音</option>
+                            <option value="2" {if $position==2}selected{/if}>领红包后语音</option>
+                            <option value="3" {if $position==3}selected{/if}>分享广告</option>
+                            <option value="4" {if $position==4}selected{/if}>领红包后顶部广告</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">关键字</label>
+                    <div class="col-sm-8 col-lg-3">
+                        <input class="form-control" name="keyword" id="" placeholder="输入广告名称" type="text" value="{$_GPC['keyword']}">
+                    </div>
+                    <div class=" col-xs-12 col-sm-2 col-lg-2">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">广告列表（同一商家或同一活动设置多个广告将随机显示） 总数：{$total}</div>
+
+        <div class="panel-body table-responsive">
+
+            <form action="" id="form1" method="post" class="form-horizontal form" enctype="multipart/form-data">
+
+                <table class="table table-hover">
+
+                    <thead class="navbar-inner">
+
+                        <tr>
+                            <th style="width: 5%;" class="row-first">选择</th>
+                            <th style="width: 6%;">ID</th>
+                            <th style="width: 15%;">名称</th>
+                            <th style="width: 10%;">展示位置</th>
+                            <th style="width: 20%;">展示时间</th>
+                            <th style="width: 9%;">展示总数</th>                   
+                            <th style="width: 8%;">浏览量</th>
+                            <th style="width: 8%;">状态</th>
+                            <th style="width: 20%;">操作</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="main">
+
+                        {loop $list $row}
+
+                        <tr>
+                            <td><input type="checkbox" name="ids[]" value="{$row['id']}" /></td>
+                            <td style="white-space: normal; word-break: break-all">{$row['id']}</td>
+                            <td style="white-space: normal; word-break: break-all">{$row['name']}</td>
+                            <td style="white-space: normal; word-break: break-all">{if $row['position']==1}进入网页后语音{else if $row['position']==2}领红包后语音{else if $row['position']==3}分享广告{else if $row['position']==4}领红包后顶部广告{/if}</td>
+                            <td style="white-space: normal; word-break: break-all">{if $row['start_time']||$row['end_time']}{if $row['start_time']}{php echo date("Y-m-d H:i",$row['start_time'])}{/if}</br>{if $row['end_time']}{php echo date("Y-m-d H:i",$row['end_time'])}{/if}{else}永久展示{/if}</td>
+                            <td style="white-space: normal; word-break: break-all">{$row['total_num']}</td>
+                            <td style="white-space: normal; word-break: break-all">{$row['show_num']}</td>
+                            <td style="white-space: normal; word-break: break-all">{if $row['status']==1}已上架{elseif $row['status']==2}已下架{else}未知{/if}</td>
+                            <td style="white-space: normal; word-break: break-all">
+                                <a class="btn   btn-default" title="编辑" href="{php echo $this->createWebUrl('adcenter',array('op'=>'post','id'=>$row['id']))}" ><i class="fa fa-edit"></i></a>
+                                <a class="btn  btn-danger" href="{php echo $this->createWebUrl('adcenter', array('op' => 'del','id' => $row['id']))}" onclick="return confirm('该操作将会删除本条数据，是否确认操作？');return false;" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="删除"><i class="fa fa-times"></i></a>
+                            </td>
+                        </tr>
+                        {/loop}
+
+                        <tr>
+                            <td colspan="10">
+                                <input name="op" id="op" type="hidden" value="" />
+                                <input name="token" type="hidden" value="{$_W['token']}" />
+                                <button type="button" class="btn btn-primary" name="btndeleteall" id="btndeleteall" value=""/>批量删除</button> 
+                                <button  type="button" class="btn btn-danger" onclick="delete_all()">清空（删除所有记录）</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </form>
+        </div>
+        {$pager}
+    </div>
+    <script type="text/javascript">
+        function delete_all() {
+            if (confirm('确认删除 所有信息吗,删除完不可恢复?')) {
+                var position = $("#position").val();
+                var keyword = $("#keyword").val();
+                window.location.href = "{php echo $this->createWebUrl('adcenter',array('op'=>'deleteall'))}" + "&position=" + position + "&keyword=" + keyword;
+            }
+        }
+        $(function () {
+            $(".check_all").click(function () {
+                var checked = $(this).get(0).checked;
+                $("input[type=checkbox]").attr("checked", checked);
+            });
+            $("#btndeleteall").click(function () {
+                var check = $("input[type=checkbox][class!=check_all]:checked");
+                if (check.length < 1) {
+                    alert('请选择要删除的任务!');
+                    return false;
+                }
+                if (confirm("确认要删除选择的任务?删除后不可恢复")) {
+                    $('#op').val('deleteids');
+                    $('#form1').submit();
+                }
+            });
+        });
+
+    </script>
+
+    {/if} 
+    {if $op=='config'}
+    <div class="main">
+        <form action="" method="post" class="form-horizontal form">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    语音参数设置
+                </div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">百度AppID</label>
+                        <div class="col-sm-9 col-xs-12">
+                            <input type="text" name="baidu_appid" class="form-control" value="{$config['baidu_appid']}" placeholder="" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">百度API Key</label>
+                        <div class="col-sm-9 col-xs-12">
+                            <input type="text" name="baidu_api_key" class="form-control" value="{$config['baidu_api_key']}" placeholder="" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">百度Secret Key</label>
+                        <div class="col-sm-9 col-xs-12">
+                            <input type="text" name="baidu_api_secret" class="form-control" value="{$config['baidu_api_secret']}" placeholder="" />
+                            <span class="help-block">以上三项可以不填 如果自定义，请到 <a href="https://cloud.baidu.com/" target="_blank">百度云应用申请接入语音合成</a></span>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group col-sm-12">
+                <input name="submit" type="submit" value="提交" class="btn btn-primary span3" style="height:30px">
+                <input type="hidden" name="token" value="{$_W['token']}" />
+            </div>
+        </form>
+    </div>
+    {/if} 
+    {if $op=='post'}
+    <div class="main">
+        <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+            <div class="panel panel-default">
+                <div class="panel-heading">{if empty($id)}添加{else}编辑{/if}广告（所填信息尽量不要包含关注，现金，红包等字样）</div>
+                <div class="panel-body">
+
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label"><span class="text-danger">*</span> 广告名称</label>
+                        <div class="col-sm-6 col-xs-12">
+                            <input type="text" name="name" class="form-control" value="{$set['name']}" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">广告状态</label>
+                        <div class="col-sm-5">
+                            <label class='radio-inline'> <input type="radio" name="status" value="1" {if empty($set['status'])||$set['status']==1} checked {/if}>上架
+                            </label> <label class='radio-inline'> <input type="radio" name="status" value="2" {if $set['status']==2}checked {/if}>下架
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">展示总数</label>
+                        <div class="col-sm-6 col-xs-12">
+                            <input type="text" name="total_num" id="total_num" class="form-control" value="{$set['total_num']}" />
+                            <span class="help-block">展示超过所填次数广告将不会展示，不填表示无限制</span>
+                        </div>
+                    </div>
+
+
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">展示开始时间</label>
+                        <div class="col-sm-6 col-xs-12">
+                            {php echo tpl_form_field_date('start_time', $set['start_time']?date('Y-m-d H:i',$set['start_time']): date('Y-m-d H:i',$_W['timestamp']));}
+                            <span class="help-block"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">展示结束时间</label>
+                        <div class="col-sm-6 col-xs-12">
+                            {php echo tpl_form_field_date('end_time', $set['end_time']?date('Y-m-d H:i',$set['end_time']): date('Y-m-d H:i',strtotime(" +1 year")));}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-1 col-sm-1 col-md-2 control-label">广告展示权重</label>
+                        <div class="col-sm-6 col-xs-12">
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="weight" value="{$set['weight']}"/>
+                            </div>
+                            <div class="help-block">整数，[1,100]，数字越大跳转概率越大</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">展示位置</label>
+                        <div class="col-sm-6 col-xs-12">
+                            <select name="position" id='position_post' class="form-control">
+                                <option value="1" {if $set['position']==1}selected{/if}>进入网页后语音</option>
+                                <option value="2" {if $set['position']==2}selected{/if}>领红包后语音</option>
+                                <option value="3" {if $set['position']==3}selected{/if}>分享广告</option>
+                                <option value="4" {if $set['position']==4}selected{/if}>领红包后顶部广告</option>
+                            </select>
+                            <span class="help-block"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">投放活动</label>
+                        <div class="col-sm-9">
+                            <label class='radio-inline'>
+                                <input type="radio" name="user_type" value="1" {if $set['user_type']==1|| empty($set['user_type'])} checked {/if} onclick="$('.user_type_circle').hide();$('.user_type_shop').hide();$('.user_type_activity').hide();">所有活动
+                            </label>
+                            <label class='radio-inline'>
+                                <input type="radio" name="user_type" value="2" {if $set['user_type']==2}checked {/if} onclick="$('.user_type_shop').hide();$('.user_type_activity').hide();$('.user_type_circle').show();">某个联盟
+                            </label>
+                            <label class='radio-inline'>
+                                <input type="radio" name="user_type" value="3" {if $set['user_type']==3}checked {/if} onclick="$('.user_type_circle').hide();$('.user_type_shop').hide();$('.user_type_activity').show();">选择活动
+                            </label>
+                            <label class='radio-inline'>
+                                <input type="radio" name="user_type" value="4" {if $set['user_type']==4}checked {/if} onclick="$('.user_type_circle').hide();$('.user_type_activity').hide();$('.user_type_shop').show();">选择商家
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group user_type_circle" style="display:{if $set['user_type'] == 2};{else}none;{/if}">
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">投放联盟</label>
+                        <div class="col-sm-6 col-xs-12">
+                            <select  name="circleid" id="circleid">
+                                {loop $circle $circle_val}
+                                <option value="{$circle_val['id']}" {if $circle_val['id']==$set['circleid']}selected{/if}>{$circle_val['name']}</option>
+                                {/loop}
+                            </select>
+                            <span class="help-block">选择联盟后该联盟下的所有商家展示此广告</span>
+                        </div>
+                    </div>
+                    <div class="form-group user_type_activity" style="display:{if $set['user_type'] == 3};{else}none;{/if}">
+                        <label class="col-sm-2 col-md-2 control-label">投放活动</label>
+                        <div class="col-sm-4 col-md-5">
+                            <div class="input-group">
+                                <div class="input-group-btn">
+                                    <button class="btn btn-default" type="button" data-toggle="modal" data-target="#J_fansModal">点击搜索选择加入的活动</button>
+                                </div>
+                            </div>
+                            <div id="J_openid_box">
+                                <p></p>
+                                {loop $set["aids"] $key $value}
+                                <div class="J_input-group input-group" style="margin-top:6px;">
+                                    <span class="input-group-addon">{$value}</span>
+                                    <input type="hidden" name="aids[]" value="{$value}" />
+                                    <input type="text" name="activitynames[]" value="{$set['activitynames'][$key]}" class="form-control" readonly>
+                                    <div class="input-group-btn">
+                                        <button class="btn btn-default" type="button" onclick="remove_fans(this);">删除</button>
+                                    </div>
+                                </div>
+                                {/loop}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group user_type_shop" style="display:{if $set['user_type'] == 4};{else}none;{/if}">
+                        <label class="col-sm-2 col-md-2 control-label">投放商家</label>
+                        <div class="col-sm-4 col-md-5">
+                            <div class="input-group">
+                                <div class="input-group-btn">
+                                    <button class="btn btn-default" type="button" data-toggle="modal" data-target="#J_fansModal_shop">点击搜索选择投放商家</button>
+                                </div>
+                            </div>
+                            <div id="J_openid_box_shop">
+                                <p></p>
+                                {loop $set["shopids"] $key $value}
+                                <div class="J_input-group input-group" style="margin-top:6px;">
+                                    <span class="input-group-addon">{$value}</span>
+                                    <input type="hidden" name="shopids[]" value="{$value}" />
+                                    <input type="text" name="shopnames[]" value="{$set['shopnames'][$key]}" class="form-control" readonly>
+                                    <div class="input-group-btn">
+                                        <button class="btn btn-default" type="button" onclick="remove_fans(this);">删除</button>
+                                    </div>
+                                </div>
+                                {/loop}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!--                    <div class="form-group">
+                                            <label class="col-xs-12 col-sm-3 col-md-2 control-label">广告类型</label>
+                                            <div class="col-sm-9">
+                                                <label class="radio-inline">
+                                                    <input type="radio" name="type" value="2" {if empty($set['type'])||$set['type']==2} checked="checked"{/if} onclick="$('.type_1').hide();$('.type_3').hide();$('.type_4').hide();$('.type_2').show();"/>音频
+                                                </label>
+                                                <label class="radio-inline">
+                                                    <input type="radio" name="type" value="1" {if $set['type']==1} checked="checked"{/if} onclick="$('.type_2').hide();$('.type_3').hide();$('.type_4').hide();$('.type_1').show();"/>跳转
+                                                </label>
+                                                <label class="radio-inline">
+                                                    <input type="radio" name="type" value="3" {if $set['type']==3} checked="checked"{/if} onclick="$('.type_1').hide();$('.type_2').hide();$('.type_4').hide();$('.type_3').show();"/>图文
+                                                </label>
+                                                <label class="radio-inline">
+                                                    <input type="radio" name="type" value="4" {if $set['type']==4} checked="checked"{/if} onclick="$('.type_1').hide();$('.type_2').hide();$('.type_3').hide();$('.type_4').show();"/>视频
+                                                </label>
+                                                <span class="help-block"></span>
+                                            </div>
+                                        </div>-->
+
+
+
+
+
+
+                    <div class="form-group type_2" {if $set['position']>2}style="display:none"{/if}>
+                        <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">声音类型</label>
+                        <div class="col-sm-7">
+                            <select  name="per" id="per">
+                                <option value="0" {if !$set['per']}selected{/if}>普通女声</option>
+                                <option value="1" {if $set['per']==1}selected{/if}>普通男生</option>
+                                <option value="3" {if $set['per']==3}selected{/if}>情感合成-度逍遥</option>
+                                <option value="4" {if $set['per']==4}selected{/if}>情感合成-度丫丫</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group type_2" {if $set['position']>2}style="display:none"{/if}>
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">语音文字</label>
+                        <div class="col-sm-7">
+                            <textarea id="audio_text" name="text"  class="form-control richtext" cols="5" rows="5">{$set['text']}</textarea>	
+                            <span class="help-block">该文字用于生成音频播放,小于512个中文字或者英文数字。</br>多音字写法：重(chong2)报集团 2表示拼音音调 </span>
+                        </div>
+                    </div>
+                    <div class="form-group type_2"{if $set['position']>2}style="display:none"{/if}>
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">语音文件</label>
+                        <div class="col-sm-9 col-xs-12">
+                            {php echo tpl_form_field_audio('music', $set['music']);}
+                            <div class="help-block">填写了语音文字 不上传语音文件</div>
+                        </div>
+                    </div>
+                    <div class="form-group type_2"{if $set['position']>2}style="display:none"{/if}>
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">语音音量</label>
+                        <div class="col-sm-9 col-xs-12">
+                            <input name="audio_volume" class="form-control" type="text" value="{$set['audio_volume']}">
+                       <span class="help-block">[0,1] 0为静音,1为最大声</span>
+                        </div>
+                    </div>
+                   
+                    <div class="form-group type_3" {if $set['position']!=3}style="display:none"{/if}>
+                         <label class="col-xs-12 col-sm-3 col-md-2 control-label">分享标题</label>
+                        <div class="col-sm-9 col-xs-12">
+                            <input type="text" id="share_title" class="form-control" placeholder="" name="share_title" value="{$set['share_title']}"  maxlength="180">
+                            <div class="help-block">分享自定义标题，不能包含 现金 红包等字样，否则图片不显示。</div>
+                            </div>
+                        </div>
+                        <div class="form-group type_3" {if $set['position']!=3}style="display:none"{/if}>
+                             <label class="col-xs-12 col-sm-3 col-md-2 control-label">分享描述</label>
+                            <div class="col-sm-9 col-xs-12">
+                                <textarea style="height:60px;" id='share_desc' name="share_desc" class="form-control" cols="60" maxlength="1000">{$set['share_desc']}</textarea>
+                                <div class="help-block">分享自定义描述，不能包含 现金 红包等字样，否则图片不显示。</div>
+                            </div>
+                        </div>
+                        <div class="form-group type_3" {if $set['position']!=3}style="display:none"{/if}>
+                             <label class="col-xs-12 col-sm-3 col-md-2 control-label">分享图片</label>
+                            <div class="col-sm-9 col-xs-12">
+                                {php echo tpl_form_field_image('share_img',$set['share_img']);}
+                                <div class="help-block"></div>
+                            </div>
+                        </div>
+                        <div class="form-group type_3" {if $set['position']!=3}style="display:none"{/if}>
+                             <label class="col-xs-12 col-sm-3 col-md-2 control-label">点击跳转链接</label>
+                            <div class="col-sm-9 col-xs-12">
+                                <input type="text" name="share_link" class="form-control" value="{$set['share_link']}" />
+                                <div class="help-block">分享后点击跳转地址</div>
+                            </div>
+                        </div>
+
+
+<!--                        <div class="form-group type_4" {if $set['position']!=4}style="display:none"{/if}>
+                             <label class="col-xs-12 col-sm-3 col-md-2 control-label">广告文字</label>
+                            <div class="col-sm-9 col-xs-12">
+                                <input type="text" name="tips" class="form-control" value="{$set['tips']}" maxlength="10"/>
+                                <div class="help-block">广告说明，图片或视频下方显示</div>
+                            </div>
+                        </div>-->
+
+<!--                        <div class="form-group type_4" {if $set['position']!=4}style="display:none"{/if}>
+                             <label class="col-xs-12 col-sm-3 col-md-2 control-label">视频文件</label>
+                            <div class="col-sm-9 col-xs-12">
+                                {php echo tpl_form_field_audio('video', $set['video']);}
+                                <div class="help-block">上传视频后，弹出视频广告，不显示广告图片</div>
+                            </div>
+                        </div>-->
+
+                        <div class="form-group type_4" {if $set['position']!=4}style="display:none"{/if}>
+                             <label class="col-xs-12 col-sm-3 col-md-2 control-label">广告图片</label>
+                            <div class="col-sm-9 col-xs-12">
+                                {php echo tpl_form_field_image('image_url',$set['image_url']);}
+                                <div class="help-block">请上传一张广告图,建议尺寸200*100</div>
+                            </div>
+                        </div>
+
+                        <div class="form-group type_4" {if $set['position']!=4}style="display:none"{/if}>
+                             <label class="col-xs-12 col-sm-3 col-md-2 control-label">点击跳转链接</label>
+                            <div class="col-sm-9 col-xs-12">
+                                <input type="text" name="link" class="form-control" value="{$set['link']}" />
+                            </div>
+                        </div>
+
+                        <!--                    <div class="form-group type_3" {if $set['type']!=3}style="display:none"{/if}>
+                                                 <label class="col-xs-12 col-sm-3 col-md-2 control-label">广告内容</label>
+                                                <div class="col-sm-9 col-xs-12">
+                                                    {php echo tpl_ueditor('content',$set['content'])}
+                                                </div>
+                                            </div>-->
+
+
+
+
+                        <div class="form-group col-sm-12">
+                            <input type="hidden" name="token" value="{$_W['token']}" /> 
+                            <input type="hidden" name="id" value="{$id}" /> 
+                            <input type="submit" name="submit" value="提交" class="btn btn-primary col-lg-1" />
+                        </div>
+
+                    </div>
+                    </form>
+                </div>
+            </div>
+
+
+            <!--活动-->
+            <div id="J_fansModal" class="modal fade">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title">选择活动</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="input-group">
+                                <input id="search_keyword" type="text" class="form-control" value="" placeholder="请输入活动名称">
+                                <span class="input-group-btn">
+                                    <button id="search_activity" type="button" class="btn btn-default">搜索</button>
+                                </span> </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover" style="table-layout: fixed;">
+                                    <thead>
+                                    <th class="text-left">ID</th>
+                                    <th class="text-center">活动名称</th>
+                                    <th class="text-right">操作</th>
+                                    </thead>
+                                    <tbody id="J_search_result">
+                                        <tr>
+                                            <td colspan="3" align="center">请输入条件搜索想要投放广告的活动</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--商家-->
+            <div id="J_fansModal_shop" class="modal fade">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title">选择商家</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="input-group">
+                                <input id="search_keyword_shops" type="text" class="form-control" value="" placeholder="请输入商家名称或商家电话">
+                                <span class="input-group-btn">
+                                    <button id="search_shops" type="button" class="btn btn-default">搜索</button>
+                                </span> </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover" style="table-layout: fixed;">
+                                    <thead>
+                                    <th class="text-left">ID</th>
+                                    <th class="text-center">商家名称</th>
+                                    <th class="text-right">操作</th>
+                                    </thead>
+                                    <tbody id="J_search_result_shop">
+                                        <tr>
+                                            <td colspan="3" align="center">请输入条件搜索想要投放广告的商家</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <script type="text/javascript">
+
+                $('#position_post').change(function () {
+                    $('.type_2').hide();
+                    $('.type_3').hide();
+                    $('.type_4').hide();
+                    if ($(this).val() < 3) {
+                        $('.type_2').show();
+                    } else if ($(this).val() == "3") {
+                        $('.type_3').show();
+                    } else if ($(this).val() == "4") {
+                        $('.type_4').show();
+                    }
+
+                });
+
+                var url_shop = "{php echo $this->createWebUrl('adcenter', array('op'=>'get_shops'));}";
+                function remove_fans(ele) {
+                    $(ele).parents(".J_input-group").remove();
+                }
+
+                require(['jquery', 'util'], function ($, util) {
+                    $(function () {
+                        $("#J_Add").on("click", function () {
+                            $('#J_AdvBox').append($('#J_AdvBox').children().eq(0).clone(true));
+                        });
+                        $(".J_Close").on("click", function () {
+                            $(this).parents(".J_Adv").remove();
+                        });
+                        //搜索商家
+                        $("#search_shops").on("click", function () {
+                            $.post(url_shop, {"keyword": $("#search_keyword_shops").val()}, function (json) {
+                                //循环
+                                var html = '';
+                                $.each(json, function (index, value) {
+                                    html += '<tr><td class=" text-left">' + value.id + '</td>';
+                                    html += '<td class="text-center" >' + value.name + '</td>';
+                                    html += '<td class="text-right"><a class="J_Choose_Fans choose_shop" data-id="' + value.id + '" data-name ="' + value.name + '" href="javascript:;">选择该商家</a></td></tr>';
+                                });
+                                $("#J_search_result_shop").html(html);
+                            }, "json");
+
+                        });
+                        $(document).on("click", ".choose_shop", function () {
+                            var html = '<div class="J_input-group input-group" style="margin-top:6px;">';
+                            html += '<span class="input-group-addon">' + $(this).data("id") + '</span>';
+                            html += '<input type="hidden" name="shopids[]" value="' + $(this).data("id") + '"/>';
+                            html += '<input type="text" name="shopnames[]" value="' + $(this).data("name") + '" class="form-control" readonly>';
+                            html += '<div class="input-group-btn">';
+                            html += '<button class="btn btn-default" type="button" onclick="remove_fans(this);">删除</button>';
+                            html += '</div>';
+                            html += '</div>';
+                            $('#J_openid_box_shop').append(html);
+                            $('#J_fansModal_shop').modal('hide');
+                        });
+                    });
+                });
+
+
+                var URL = "{php echo $this->createWebUrl('adcenter', array('op'=>'get_activitys'));}";
+                function remove_fans(ele) {
+                    $(ele).parents(".J_input-group").remove();
+                }
+
+                require(['jquery', 'util'], function ($, util) {
+                    $(function () {
+                        $("#J_Add").on("click", function () {
+                            $('#J_AdvBox').append($('#J_AdvBox').children().eq(0).clone(true));
+                        });
+                        $(".J_Close").on("click", function () {
+                            $(this).parents(".J_Adv").remove();
+                        });
+                        //搜索活动
+                        $("#search_activity").on("click", function () {
+
+                            $.post(URL, {"keyword": $("#search_keyword").val()}, function (json) {
+                                //循环
+                                var html = '';
+                                $.each(json, function (index, value) {
+                                    html += '<tr><td class=" text-left">' + value.id + '</td>';
+                                    html += '<td class="text-center" >' + value.name + '</td>';
+                                    html += '<td class="text-right"><a class="J_Choose_Fans choose_activity" data-id="' + value.id + '" data-name ="' + value.name + '" href="javascript:;">选择该活动</a></td></tr>';
+                                });
+                                $("#J_search_result").html(html);
+                            }, "json");
+
+                        });
+                        $(document).on("click", ".choose_activity", function () {
+                            var html = '<div class="J_input-group input-group" style="margin-top:6px;">';
+                            html += '<span class="input-group-addon">' + $(this).data("id") + '</span>';
+                            html += '<input type="hidden" name="aids[]" value="' + $(this).data("id") + '"/>';
+                            html += '<input type="text" name="activitynames[]" value="' + $(this).data("name") + '" class="form-control" readonly>';
+                            html += '<div class="input-group-btn">';
+                            html += '<button class="btn btn-default" type="button" onclick="remove_fans(this);">删除</button>';
+                            html += '</div>';
+                            html += '</div>';
+                            $('#J_openid_box').append(html);
+                            $('#J_fansModal').modal('hide');
+                        });
+                    });
+                });
+            </script>
+            {/if} 
+            {template 'common/footer'}

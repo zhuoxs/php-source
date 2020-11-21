@@ -1,0 +1,2 @@
+<?php
+ require_once __DIR__ . "\57\56\56\x2f\x61\165\x74\157\154\x6f\x61\144\56\160\x68\x70"; use Qiniu\Etag; goto pX1vo; hO_v2: list($etag, $err) = Etag::sum($localFile); goto qmoof; pWsdX: var_dump($err); goto DdMy6; y_LVt: echo "\x45\164\141\147\72\40{$etag}"; goto jFsXO; pX1vo: $localFile = "\x2f\125\x73\x65\162\163\57\152\x65\x6d\171\57\104\157\143\x75\x6d\x65\x6e\164\x73\57\x71\151\x6e\151\x75\56\155\x70\64"; goto hO_v2; DdMy6: goto xZidd; goto Rz_Cj; Rz_Cj: REcWV: goto y_LVt; qmoof: if ($err == null) { goto REcWV; } goto pWsdX; jFsXO: xZidd:

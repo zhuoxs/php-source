@@ -1,0 +1,111 @@
+{template 'public/header'}
+
+<!--标题-->
+<div class="title">
+    <blockquote class="layui-elem-quote">菜单列表</blockquote>
+</div>
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入菜单名称..." autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="menu_id" id="menu_id" style="width: 200px;" class="select2 layui-form-select" lay-ignore></select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnAdd" class="layui-btn layui-btn-primary layui-btn-sm">新增</a>
+        <a href="{php echo $this->createWebUrl('menu',array('op'=>reset));}" class="layui-btn layui-btn-danger layui-btn-sm">菜单还原</a>
+        <a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+    </div>
+</div>
+<!--数据表-->
+<div class="table-box">
+    <table class="layui-hide" id="laytable"></table>
+</div>
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnEdit">编辑</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnCopy">复制新增</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDelete">删除</a>
+    <a href="{php echo $this->createWebUrl('menubutton',array('op'=>display));}&menu_id={{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs">按钮管理</a>
+</script>
+<script type="text/html" id="dataIcon">
+    <i class="{{ d.icon }}"></i>
+</script>
+
+<script type="text/javascript">
+    layui.use('table', function () {
+        var table = layui.table;
+//        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{php echo $this->createWebUrl('menu',array('op'=>query));}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'name', width:150, title: '菜单名称',fixed:'left',sort:true},
+                {field:'icon', width:100, title: '图标',fixed:'left',templet: '#dataIcon'},
+                {field:'code', width:150, title: '菜单编号',sort:true},
+                {field:'menu_index', width:150, title: '排序',sort:true},
+                {field:'menu_name', width:180, title: '上级菜单',sort:true},
+                {field:'menu_do', width:180, title: '操作',sort:true},
+                {field:'menu_op', width:200, title: '选项',sort:true},
+                {field:'prams', width:200, title: '参数',sort:true},
+                {field:'memo', width:200, title: '备注',sort:true},
+                {field:'o',fixed:'right',width:260, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+//        搜索
+        $('#btnSearch').unbind().click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    menu_id: $('#menu_id').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        menu_id: $('#menu_id').val(),
+                    }
+                });
+            }
+        })
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        $.get("{php echo $this->createWebUrl('menu',array('op'=>select));}", function (ret) {
+            ret = JSON.parse(ret);
+            ret.unshift({id: '', text: '请选择菜单'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#menu_id').select2({
+                data: ret,
+            })
+        })
+    })
+
+</script>
+
+{template 'public/footer'}

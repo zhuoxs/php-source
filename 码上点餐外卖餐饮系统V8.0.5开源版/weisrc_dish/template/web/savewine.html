@@ -1,0 +1,500 @@
+{template 'public/header'}
+{template 'public/comhead'}
+{if $operation == 'post'}
+<div class="main">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <a class="btn btn-warning" href="{php echo $this->createWebUrl('savewine', array('op' => 'display', 'storeid' => $storeid))}">返回寄存管理
+            </a>
+        </div>
+    </div>
+	<form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+		<input type="hidden" name="id" value="{$item['id']}" />
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                存酒信息
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">状态</label>
+                    <div class="col-sm-9">
+                        <label for="status1" class="radio-inline"><input type="radio" name="status" value="1" id="status1" {if empty($item) || $item['status'] == 1}checked="true"{/if} /> 已存入</label>
+                        <label for="status2" class="radio-inline"><input type="radio" name="status" value="0" id="status2"  {if !empty($item) && $item['status'] == 0}checked="true"{/if} /> 等待存入</label>
+                        <label for="status3" class="radio-inline"><input type="radio" name="status" value="-1" id="status3"  {if !empty($item) && $item['status'] == -1}checked="true"{/if} /> 取出存物</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">存物卡号</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="savenumber" class="form-control" value="{$item['savenumber']}" {if !empty($item)}readonly{/if}/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">姓名</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="username" class="form-control" value="{$item['username']}"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">联系电话</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="tel" id="tel" value="{$item['tel']}" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">备注</label>
+                    <div class="col-sm-9">
+                        <textarea name="remark" class="form-control richtext-clone">{$item['remark']}</textarea>
+                    </div>
+                </div>
+                {if !empty($item['dateline'])}
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">申请时间</label>
+                    <div class="col-sm-9">
+                        <p class="form-control"><font color=green>{php echo date('Y-m-d H:i', $item['dateline'])}</font></p>
+                    </div>
+                </div>
+                {/if}
+                {if !empty($item['savetime'])}
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">存入时间</label>
+                    <div class="col-sm-9">
+                        <p class="form-control"><font color=green>{php echo date('Y-m-d H:i', $item['savetime'])}</font></p>
+                    </div>
+                </div>
+                {/if}
+                {if !empty($item['takeouttime'])}
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">取酒时间</label>
+                    <div class="col-sm-9">
+                        <p class="form-control"><font color=green>{php echo date('Y-m-d H:i', $item['takeouttime'])}</font></p>
+                    </div>
+                </div>
+                {/if}
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                寄存清单
+                <a class="btn btn-primary" data-toggle="modal" data-target="#addDish" >添加商品</a>
+            </div>
+            <div class="table-responsive panel-body">
+                <table class="table table-hover">
+                    <thead class="navbar-inner">
+                    <tr>
+                        <th style="width:5%;">ID</th>
+                        <th style="width:20%;">商品名称</th>
+                        <th style="width:20%;">期限</th>
+                        <th style="width:20%;">数量</th>
+                        <th style="width:15%;"></th>
+                    </tr>
+                    </thead>
+                    {if $goodslist}
+                    {php $totalprice = 0;}
+                    {loop $goodslist $row}
+                    <tr>
+                        <td>{$row['id']}</td>
+                        <td>
+                            <img src="{php echo tomedia($row['thumb']);}" width="50" /><br/>
+                            <a href="{php echo $this->createWebUrl('goods', array('id' => $row['id'], 'op' => 'post', 'storeid' => $item['storeid']))}">{$row['title']}{if $row['remark']}[{$row['remark']}]{/if}</a>
+                        </td>
+                        <td>
+                            {if $row['savetime']>0}
+                            过期时间<br/>{php echo date('Y-m-d H:i:s',$row['savetime'])}
+                            {/if}
+                            {if $row['takeouttime']>0}
+                            <div style="color: #28a267;">
+                                取出时间
+                                <br/>
+                                {php echo date('Y-m-d H:i:s',$row['takeouttime'])}
+                            </div>
+                            {/if}
+                        </td>
+                        <td>
+                            {$row['total']}
+                        </td>
+                        <td>
+                            {if $row['status'] == 1}
+                                {if $row['savetime']>0}
+                                    {if $row['savetime']>TIMESTAMP}
+                                    <a class="btn btn-warning btn-sm btn_goods_show" href="javascript:void(0);" title="取出"
+                               data-value="{$row['id']}">取出</a>
+                                    {else}
+                                    <span class="button border-red" onclick="">已过期</span>
+                                    {/if}
+                                {else}
+                                    <a class="btn btn-warning btn-sm btn_goods_show" href="javascript:void(0);" title="取出"
+                               data-value="{$row['id']}">取出</a>
+                                {/if}
+                            {elseif $row['status'] == -1}
+                            <span class="button border-green" onclick="">已取出</span>
+                            {/if}
+                        </td>
+                    </tr>
+                    {/loop}
+                    {/if}
+                    <tr>
+                        <td colspan="5">
+                            暂无记录
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                订单记录
+            </div>
+            <div class="panel-body table-responsive">
+                <table class="table table-hover table-log">
+                    <tbody>
+                    {if $loglist}
+                    {loop $loglist $logitem}
+                    <tr>
+                        <td>
+                            <p><i class="fa fa-info-circle"></i> <strong>{php echo date("Y-m-d H:i:s", $logitem['dateline'])}</strong></p>
+                            {if $logitem['type']==1}
+                            <p style="padding-left:15px;color: #f00;">
+                                取出物品：{$logitem['title']}，数量：{$logitem['total']}
+                            </p>
+                            {else}
+                            <p style="padding-left:15px;color: #28a267;">
+                            存入物品：{$logitem['title']}，数量：{$logitem['total']}
+                            </p>
+                            {/if}
+                        </td>
+                    </tr>
+                    {/loop}
+                    {else}
+                    <tr>
+                        <td>
+                            暂无记录
+                        </td>
+                    </tr>
+                    {/if}
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+        <div class="form-group col-sm-12">
+            <input type="submit" name="submit" value="保存设置" class="btn btn-primary col-lg-3" />
+            <input type="hidden" name="token" value="{$_W['token']}" />
+        </div>
+	</form>
+</div>
+<!--加菜BEGIN-->
+<div class="modal fade" id="addDish" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog" style="width:700px;max-height: 580px;overflow: scroll;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close"data-dismiss="modal" aria-hidden="true">
+                    &times;
+                </button>
+                <h4 class="modal-title" id="myModalLabel">
+                    添加商品
+                </h4>
+            </div>
+            <div class="modal-body">
+                <form class="form form-horizontal">
+                    <input type="hidden" name="id" value="{$id}">
+                    <div class="form-group ">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">商品分类</label>
+                        <div class="col-sm-8">
+                            <div class="input-append">
+                                <select name='addDishName' class="form-control addDishName">
+                                    <option value="0">请先择商品分类</option>
+                                    {loop $discount $v}
+                                    <option value="{$v['id']}">{$v['name']}</option>
+                                    {/loop}
+                                </select>
+                            </div>
+                        </div>
+                        <a href="javascript:void(0);" class="btn btn-default col-sm-1 selectDish">查询</a>
+                    </div>
+                </form>
+            </div>
+            <br/>
+            <form role="form" action="" method="post" class="form form-horizontal">
+                <input type="hidden" name="addDish" value="1">
+                <div class="table-responsive">
+                    <table class="table table-hover text-center" id="addShow" style="min-width:100%;">
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default"
+                            data-dismiss="modal">关闭
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        提交添加
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    $(".selectDish").click(function () {
+        $.ajax({
+            type: "POST",
+            url: "",
+            data: "selectDish=1&addDishName=" + $(".addDishName").val(),
+            success: function (meg) {
+                var data = eval("(" + meg + ")");
+                var string = "<tr><td>商品名称</td><td>图片</td><td>价格</td><td>备注</td><td>数量</td><td>操作</td></tr>";
+                for (var i = 0; i < data.length; i++) {
+                    string += "<tr><td>" + data[i].title + "</td><td><img class='img-responsive' style='width:50px;' src='" + data[i].thumb + "'></td>";
+                    string += "<td><input type='text' name='dish[" + data[i].id + "][price]' value='" + data[i].marketprice + "' style='width:30px;text-align:center;border:none;' readonly></td>";
+                    string += "<td><input type='text' name='dish[" + data[i].id + "][remark]' class='form-control dishremark text-center' value='' ></td>";
+                    string += "<td><div class='input-group'><span class='input-group-addon' onclick='changeMinus(this)' >-</span><input type='text' name='dish[" + data[i].id + "][num]' class='form-control dishNum text-center' value='0' ><span class='input-group-addon' onclick='changeAdd(this)'>+</span></div></td>";
+                    if (data[i].status == 1) {
+                        string += "<td><input data-value=0 name='dish[" + data[i].id + "][status]'class='btn btn-danger' style='width:70px' onclick='changeDish(this)' value='选择' readonly></td>";
+                    } else {
+                        string += "<td><input data-value=0 style='width:70px' class='btn btn-danger disabled' value='己下架' readonly></td>";
+                    }
+                }
+                string += "</tr>";
+                $("#addShow").html(string);
+            }
+        })
+    });
+    function changeDish(obj) {
+        if ($(obj).attr('data-value') == '0') {
+            $(obj).removeClass('btn-danger').addClass('btn-success').attr('data-value', '1').val("己选择");
+        } else {
+            $(obj).removeClass('btn-success').addClass('btn-danger').attr('data-value', '0').val("选择");
+        }
+    }
+    function changeMinus(obj) {
+        var num = parseInt($(obj).siblings(".dishNum").val());
+        if (num == 0) {
+            return;
+        } else {
+            $(obj).siblings(".dishNum").val(num - 1);
+        }
+    }
+    function changeAdd(obj) {
+        var num = parseInt($(obj).siblings(".dishNum").val());
+        $(obj).siblings(".dishNum").val(num + 1);
+    }
+</script>
+
+<form class="form-horizontal form" action="" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="id" value="{$item[id]}" id='id'>
+    <div style="width:400px;position:absolute;top:50%;left:30%;z-index:2;display:none;" class="table_goods">
+        <div class="panel panel-default">
+            <div class="panel-heading">取出数量</div>
+            <div class="panel-body">
+                <div class="col-md-8">
+                    <input type="text" name="goodsnum" id="goodsnum" class="form-control" value="1" />
+                </div>
+                <div class="col-md-2">
+                <button type="submit" name="confirmtable" value="ok" class="btn btn-primary discount_submit" >提交</button></div>
+                <div class="col-md-2"><a class="btn btn-danger table_close" href="javascript:void(0);">取消</a></div>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" name="goodsid" value="0" id='goodsid'>
+    <input type="hidden" name="token" value="{$_W['token']}" />
+</form>
+<script>
+    var goods = $(".table_goods");
+    $(".btn_goods_show").click(function () {
+        var id = $(this).attr('data-value');
+        goods.css("display", '');
+        $(".table_input").val("");
+        $("#goodsid").val(id);
+        setDivCenter('.table_goods');
+    });
+    $(".table_close").click(function () {
+        goods.css('display', 'none');
+    });
+
+    function setDivCenter(divName){
+        var top = ($(window).height() - $(divName).height())/2 - 100;
+        var left = ($(window).width() - $(divName).width())/2-200;
+        var scrollTop = $(document).scrollTop();
+        var scrollLeft = $(document).scrollLeft();
+        $(divName).css( { position : 'absolute', 'top' : top + scrollTop, left : left + scrollLeft } ).show();
+    }
+    
+//    $(".discount_submit").click(function () {
+//        var goodsid = $("#goodsid").val();
+//        var goodsnum = $("#goodsnum").val();
+//        var deliveryid = $("#deliveryid").val();
+//        var delivery_status = $("#delivery_status").val();
+//        if (confirm("确认要提交吗?")) {
+//            var url =
+//                    "{php echo $this->createWebUrl('retreat', array('orderid' => $id,'storeid' => $_GPC['storeid']))}" + '&goodsid=' + goodsid + '&goodsnum=' + goodsnum;
+//            window.location.href = url;
+//        }
+//    });
+
+</script>
+{elseif $operation == 'display'}
+<script>
+    var t = 10;//启动1秒定时
+    setInterval("refer()", 1000);
+    function refer(){
+        if (t == 0) {
+            location.reload();
+        }
+        document.getElementById('show').innerHTML="（"+t+"秒后刷新）"; // 显示倒计时
+        t--; // 计数器递减
+    }
+</script>
+<div class="main">
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选<span id="show"></span></div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="weisrc_dish" />
+                <input type="hidden" name="do" value="savewine" />
+                <input type="hidden" name="op" value="display" />
+                <input type="hidden" name="storeid" value="{$storeid}" />
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label" style="width: 100px;">关键字</label>
+                    <div class="col-sm-3 col-lg-4">
+                        <input class="form-control" name="keyword" id="" type="text" value="{$_GPC['keyword']}" placeholder="请输入寄存卡号/物品名称/用户名称">
+                    </div>
+                    <div class="col-sm-2 col-lg-1">
+                        <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                    </div>
+                    <!--<div class="col-sm-2 col-lg-1">-->
+                        <!--<a href="{php echo $this->createWebUrl('SaveWine', array('op' => 'post', 'storeid' => $storeid))}"-->
+                           <!--class="btn btn-success">添加寄存物品</a>-->
+                    <!--</div>-->
+                </div>
+            </form>
+        </div>
+    </div>
+    <div style="margin: 10px 0;" class="clearfix">
+        <div class="btn-group pull-left" style="margin-right: 10px;">
+            <a class="btn btn-default {if $status == -2}active{/if}" href="{php echo $this->createWebUrl('savewine', array('op' => 'display', 'storeid' => $storeid))}">
+                全部
+            </a>
+            <a class="btn btn-default {if $status == 0} active{/if}" href="{php echo $this->createWebUrl('savewine', array('op' => 'display', 'status' => 0, 'storeid' => $storeid))}">
+                待存入
+            </a>
+            <a class="btn btn-default {if $status == 1} active{/if}" href="{php echo $this->createWebUrl('savewine', array('op' => 'display', 'status' => 1, 'storeid' => $storeid))}">
+                已存入
+            </a>
+            <a class="btn btn-default {if $status == -1} active{/if}" href="{php echo $this->createWebUrl('savewine', array('op' => 'display', 'status' => -1, 'storeid' => $storeid))}">
+                已取出
+            </a>
+        </div>
+    </div>
+    <div class="panel panel-default" style="float: left;">
+        <form action="" method="post" class="form-horizontal form">
+            <div class="table-responsive panel-body">
+                <table class="table table-hover">
+                    <thead class="navbar-inner">
+                    <tr>
+                        <th style="width:7%;">编号</th>
+                        <th style="width:15%;">存物卡号</th>
+                        <th style="width:22%;">寄存物品</th>
+                        <th style="width:10%;">用户名称</th>
+                        <!--<th style="width:12%;">微信昵称</th>-->
+                        <th style="width:20%;">处理时间</th>
+                        <th style="width:10%;">状态</th>
+                        <th style="width:10%;text-align: right;">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="level-list">
+                    {loop $list $item}
+                    <tr>
+                        <td>{$item['id']}</td>
+                        <td>
+                            {$item['savenumber']}
+                        </td>
+                        <td style="white-space:normal;">
+                            {loop $item['goods'] $goods}
+                            {$goods['title']}, 数量{$goods['total']},
+                            {if $item['status']==0}
+                            <label class='label label-default' >待存入</label>
+                            {else}
+                            {if $goods['status'] == -1}
+                                <label class='label label-danger' onclick="setProperty(this,{$goods['id']})" data='{$goods['status']}'>已取出</label>
+                            {else}
+                                {if $goods['savetime']>0}
+                                    {if $goods['savetime']>TIMESTAMP}
+                                    <label class='label label-success' onclick="setProperty(this,{$goods['id']})" data='{$goods['status']}' >已存入</label>
+                                    {else}
+                                    <label class='label label-warning' >已过期</label>
+                                    {/if}
+                                {else}
+                                    <label class='label label-success' onclick="setProperty(this,{$goods['id']})" data='{$goods['status']}' >已存入</label>
+                                {/if}
+                            {/if}
+                            {/if}
+                            <br/>
+                            {/loop}
+                        </td>
+                        <td>
+                            {$item['username']}
+                        </td>
+                        <!--<td>-->
+                            <!--{if !empty($item['nickname'])}-->
+                            <!--<img src="{php echo tomedia($item['headimgurl'])}" width="50px" onerror="javascript:this.src='{RES}/images/default-headimg.jpg';" style="border-radius: 2px;"/><br/>-->
+                            <!--{$item['nickname']}-->
+                            <!--{/if}-->
+                        <!--</td>-->
+                        <td>
+                            <font color=green>申请:{php echo date('Y-m-d H:i', $item['dateline'])}</font><br/>
+                            {if !empty($item['savetime'])}<font color=green>存入:{php echo date('Y-m-d H:i', $item['savetime'])}</font><br/>{/if}
+                            {if !empty($item['takeouttime'])}<font color=red>取出:{php echo date('Y-m-d H:i', $item['takeouttime'])}</font>{/if}
+                        </td>
+                        <td>
+                            {if $item['status']==0}
+                            <label class='label label-default' >等待存入</label>
+                            {/if}
+                            {if $item['status']==1}
+                            <label class='label label-success' >已存入</label>
+                            {/if}
+                            {if $item['status']==-1}
+                            <label class='label label-danger' >已取出</label>
+                            {/if}
+                        </td>
+                        <td style="text-align: right;">
+                            <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('SaveWine', array('op' => 'post', 'id' => $item['id'], 'storeid' => $storeid))}" title="编辑">改</a>
+                            <a class="btn btn-default btn-sm" onclick="return confirm('确认删除吗？');return false;" href="{php echo $this->createWebUrl('SaveWine', array('op' => 'delete', 'id' => $item['id'], 'storeid' => $storeid))}"
+                               title="删除">删</a>
+                        </td>
+                    </tr>
+                    {/loop}
+                    </tbody>
+                </table>
+                {$pager}
+            </div>
+        </form>
+    </div>
+</div>
+<script type="text/javascript">
+    <!--
+    function setProperty(obj,id){
+//        $(obj).html($(obj).html() + "...");
+//        $.post("{php echo $this->createWebUrl('setsavewineproperty')}"
+//                ,{id:id, data: obj.getAttribute("data")}
+//                ,function(d){
+//                    $(obj).html($(obj).html().replace("...",""));
+//                    $(obj).attr("data",d.data);
+//                    if (d.data == 1) {
+//                        $(obj).addClass("label-success");
+//                        $(obj).removeClass("label-danger");
+//                        $(obj).html('已存入');
+//                    } else {
+//                        $(obj).removeClass("label-success");
+//                        $(obj).addClass("label-danger");
+//                        $(obj).html('已取出');
+//                    }
+//
+//                },"json"
+//        );
+    }
+    //-->
+</script>
+{/if}
+{template 'public/footer'}

@@ -1,0 +1,145 @@
+{extend name="common/baselist" /}
+{block name="search_box"}
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入激活码或批次查询" autocomplete="off">
+        </div>
+        <div class="layui-inline">
+            <select name="type" id="type" style="width: 200px;" class="select2" lay-ignore></select>
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+{/block}
+{block name="tool_box"}
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnAdd" class="layui-btn layui-btn-primary layui-btn-sm">新增</a>
+        <a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchEnable" class="layui-btn layui-btn-primary layui-btn-sm">启用</a>
+        <a href="javascript:;" id="btnBatchUnEnable" class="layui-btn layui-btn-primary layui-btn-sm">禁用</a>
+    </div>
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchExport" class="layui-btn layui-btn-primary layui-btn-sm">导出</a>
+    </div>
+</div>
+{/block}
+{block name="tool_template"}
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDelete">删除</a>
+</script>
+{/block}
+
+{block name="table_config"}
+<script type="text/html" id="useState">
+    {{# if(d.isuse == 0){ }}未使用{{# } }}
+    {{# if(d.isuse == 1){ }}已使用{{# } }}
+</script>
+<input type="hidden" id="modelName" value="vipcode" url_name="vipcode">
+<script>
+    layui.use('table', function () {
+        var table = layui.table;
+
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_vipcode_list')}"
+            , where: { modelName: 'Vipcard' }
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'code', width:150, title: '激活码',fixed:'left'},
+                {field:'day', width:150, title: '有效天数',sort:true},
+                {field:'batch', width:150, title: '批次',sort:true},
+                {field:'isuse', width:100, title: '使用状态',sort:true,templet: '#useState'},
+                {field:'user_id', width:100, title: '使用人uid',sort:true},
+                {field:'usetime', width:180, title: '使用时间',sort:true},
+                {field:'state',fixed:'right', width:100, title: '启用状态',sort:true,templet: '#dataState'},
+                {field:'create_time', width:200, title: '创建时间',sort:true},
+                {field:'o',fixed:'right',width:200, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+    })
+</script>
+<script>
+    layui.use(['table','form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        $('#btnSearch').unbind('click').click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                , where: {
+                    key: $('#key').val(),
+                    type: $('#type').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13) {
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    , where: {
+                        key: $('#key').val(),
+                        type: $('#type').val(),
+                    }
+                });
+            }
+        })
+
+        require(['select2'], function () {
+            $('.select2').select2();
+            var ret = [
+                {"id": 1, "text": "未使用"},
+                {"id": 2, "text": "已使用"},
+            ];
+            ret.unshift({id: '', text: '请选择使用状态'});
+            ret.map(function (obj) {
+                obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+                return obj;
+            });
+            $('#type').select2({
+                data: ret,
+            })
+        })
+        //导出
+        $(document).on('click','#btnBatchExport',function(e){
+            var id = $(this).data('id')
+            layer.confirm('是否导出所有未使用的数据', {
+                btn: ['确定','取消'] //按钮
+            }, function(){
+
+                var url = "{:adminurl('exportData')}";
+                window.open(url);
+                table.reload('laytable',{});
+                // $.post(url, {ids:id,type:2}, function(data){
+                    // if (typeof data == 'string'){
+                    //     data = $.parseJSON(data);
+                    // }
+                    // if (data.code == 0) {
+                    // layer.msg('请耐心等待',{icon: 6,anim: 6});
+                    //     table.reload('laytable',{});
+                    // }else{
+                    //     layer.msg(data.msg,{icon: 5,anim: 6});
+                    // }
+                // });
+            });
+            return false;
+        })
+    })
+
+</script>
+{/block}

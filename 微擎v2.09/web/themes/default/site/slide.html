@@ -1,0 +1,137 @@
+{template 'common/header'}
+<ul class="nav nav-tabs">
+	<li><a href="{php echo url('site/multi/display');}">返回微站管理</a></li>
+	<li {if $do == 'display'}class="active"{/if}><a href="{php echo url('site/slide/display', array('mtid' => $_GPC['mtid'], 'f' => $_GPC['f']));}">管理</a></li>
+	<li {if $do == 'post' && empty($id)}class="active"{/if}><a href="{php echo url('site/slide/post', array('mtid' => $_GPC['multiid'], 'f' => $_GPC['f']));}">添加</a></li>
+	{if $do == 'post' && $id}
+	<li {if $do == 'post' && !empty($id)}class="active"{/if}><a href="{php echo url('site/slide/post', array('id'=>$id, 'mtid' => $_GPC['multiid'], 'f' => $_GPC['f']));}">编辑</a></li>
+	{/if}
+</ul>
+<style>
+.table td span{display:inline-block;margin-top:4px;}
+.table td input{margin-bottom:0;}
+</style>
+{if $do == 'display'}
+<div class="main">
+	<div class="panel panel-info">
+		<div class="panel-heading">筛选</div>
+		<div class="panel-body">
+			<form action="./index.php" method="get" class="form-horizontal" role="form">
+			<input type="hidden" name="c" value="site">
+			<input type="hidden" name="a" value="slide">
+			<input type="hidden" name="do" value="display"/>
+			<input type="hidden" name="f" value="{$_GPC['f']}" />
+			<input type="hidden" name="mtid" value="{$_GPC['mtid']}">
+			<div class="form-group clearfix">
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">关键字</label>
+				<div class="col-sm-7 col-lg-8 col-md-8 col-xs-12">
+					<input class="form-control" name="keyword" id="" type="text" value="{$_GPC['keyword']}">
+				</div>
+				<div class="col-xs-12 col-sm-3 col-md-2 col-lg-1">
+					<button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+				</div>
+			</div>
+			</form>
+		</div>
+	</div>
+	<form class="form-horizontal" action="" method="post">
+		<div class="panel panel-default">
+			<div class="panel-body table-responsive">
+				<table class="table table-hover">
+					<thead class="navbar-inner">
+					<tr>
+						<th style="width:120px;">排序</th>
+						<th style="width:200px;">缩略图</th>
+						<th>标题</th>
+						<th style="width:100px; text-align:right;">操作</th>
+					</tr>
+					</thead>
+					<tbody>
+					{loop $list $item}
+					<tr>
+						<td style="width:100px;"><input type="text" class="form-control"  name="displayorder[{$item['id']}]" value="{$item['displayorder']}" /></td>
+						<td><img src="{php echo tomedia($item['thumb'])}" width="150" /></td>
+						<td style="vertical-align:middle">{$item['title']}</td>
+						<td style="text-align:right;">
+							<a href="{php echo url('site/slide/post', array('id' => $item['id'], 'f' => $_GPC['f'], 'mtid' => $_GPC['multiid']))}">编辑</a>&nbsp;-&nbsp;
+							<a onclick="return confirm('此操作不可恢复，确认吗？'); return false;" href="{php echo url('site/slide/delete', array('id' => $item['id'], 'f' => $_GPC['f'], 'multiid' => $_GPC['multiid']))}">删除</a>
+						</td>
+					</tr>
+					{/loop}
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-12">
+				<input name="token" type="hidden" value="{$_W['token']}" />
+				<input type="submit" class="btn btn-primary col-lg-1" name="submit" value="提交" />
+			</div>
+		</div>
+		{$pager}
+	</form>
+</div>
+<script type="text/javascript">
+<!--
+	var category = {php echo json_encode($children)};
+//-->
+</script>
+{elseif $do == 'post'}
+<div class="main">
+	<form class="form-horizontal form" action="" method="post" enctype="multipart/form-data" onsubmit="return formcheck(this)">
+		<input type="hidden" name="id" value="{$item[id]}">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				幻灯片管理
+			</div>
+			<div class="panel-body">
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">分配到微站</label>
+					<div class="col-sm-10 col-xs-12">
+						<select class="form-control" name="multiid">
+							{loop $multis $multi}
+								<option value="{$multi['id']}" {if $item['multiid'] == $multi['id'] || $_GPC['mtid'] == $multi['id']}selected{/if}>{$multi['title']}{if $multi['id'] == $default_site}[默认微站]{/if}</option>
+							{/loop}
+						</select>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">排序</label>
+					<div class="col-sm-10 col-xs-12">
+						<input type="text" class="form-control" placeholder="" name="displayorder" value="{$item['displayorder']}">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">标题</label>
+					<div class="col-sm-10 col-xs-12">
+						<input type="text" class="form-control" placeholder="" name="title" value="{$item['title']}">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">缩略图</label>
+					<div class="col-sm-10 col-xs-12">
+						{php echo tpl_form_field_image('thumb', $item['thumb'])}
+						<span class="help-block"></span>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">链接</label>
+					<div class="col-sm-10 col-xs-12">
+						{php echo tpl_form_field_link('url', $item['url'], array('css' => array('input' => ' input-sm', 'btn' => ' btn-sm')));}
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="form-group col-sm-12">
+			<button type="submit" class="btn btn-primary col-lg-1" name="submit" value="提交">提交</button>
+			<input type="hidden" name="token" value="{$_W['token']}" />
+		</div>
+	</form>
+</div>
+<script type="text/javascript">
+<!--
+	var category = {php echo json_encode($children)};
+//-->
+</script>
+{/if}
+{template 'common/footer'}

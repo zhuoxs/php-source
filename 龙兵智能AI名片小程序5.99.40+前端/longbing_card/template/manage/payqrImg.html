@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="../../../addons/{$module_name}/images/css/main.css" media="all">
+</head>
+<body>
+
+<style>
+    .layui-table-cell {
+        height: auto;
+    }
+</style>
+
+
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">支付码</div>
+                <div class="layui-card-body">
+                    <blockquote style="letter-spacing: 1px" class="layui-elem-quote">如果不能生成支付码, 请关闭后台管理页面, 点击更新缓存后重新进入此页面</blockquote>
+                    <!--搜索-->
+                    <div class="test-table-reload-btn layui-inline" style="margin-bottom: 10px;">
+                        <form class="layui-form" action="" onsubmit="return false">
+                            员工姓名：
+                            <div class="layui-inline">
+                                <input class="layui-input" name="title" id="test-table-demoReload" autocomplete="off" value="{$keyword}">
+                            </div>
+                            <button class="layui-btn" data-type="reload">搜索</button>
+                        </form>
+                    </div>
+
+                    <table class="layui-hide" id="test-table-autowidth" lay-filter="test-table-autowidth"></table>
+
+                    <!--行内操作按钮  设置为会员   禁用   删除（测试用）-->
+                    <script type="text/html" id="test-table-autowidth-barDemo">
+
+
+
+                        <button type="button" class="layui-btn layui-btn-xs btn-edit" lay-event="create">
+                            生成支付码
+                        </button>
+
+                        <button type="button" class="layui-btn layui-btn-xs layui-btn-normal" lay-event="download">
+                            下载支付码
+                        </button>
+
+
+
+
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{template 'common/footer'}
+
+<style>
+    .friend-link{
+        text-align: center;
+    }
+    .copyright{
+        text-align: center;
+        padding-bottom: 20px;
+    }
+</style>
+
+<input type="hidden" name="itemId">
+
+<script src="../../../addons/{$module_name}/images/layuiadmin/layui/layui.js"></script>
+<script>
+    var src = '{$src}';
+
+    var g_$ = '';
+    var $ = '';
+    layui.use(['table', 'form'], function(){
+        g_$ = layui.$;
+        $ = layui.$;
+        var table = layui.table;
+        var layer = layui.layer
+            ,admin = layui.admin
+            ,form = layui.form;
+
+        //获取参数group_id
+
+        layer.load();
+        table.render({
+            elem: '#test-table-autowidth'
+            // ,url: 'manage_base/company/index'//数据接口
+            ,url: src//数据接口
+            // ,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+            ,page:true
+            ,toolbar:true
+            ,cols: [[
+                {field:'name', title: '姓名'},
+                {field:'avatarUrl', title: '头像'
+                    ,style:'height:100px'
+                    ,templet: function(d){
+                        return '<img width="64px" src="'+ d.avatar+'"/>'
+                    }
+                },
+                {field:'avatarUrl', title: '支付码'
+                    ,style:'height:100px'
+                    ,templet: function(d){
+                        return '<img width="64px" src="'+ d.payqrImg+'"/>'
+                    }
+                },
+                {align:'center', width:200, toolbar: '#test-table-autowidth-barDemo', title: '操作'}
+            ]]
+            ,done: function (res, curr, count) {
+                layer.closeAll();
+            }
+        });
+        form.render();
+
+
+        //监听工具条
+        table.on('tool(test-table-autowidth)', function(obj){
+            var data = obj.data;
+            //  生成
+            if(obj.event === 'create'){
+                var id = data.fans_id;
+                if (!id) {
+                    layer.msg('获取信息失败!');
+                    return false;
+                }
+                layer.load();
+                var url = src;
+                var data = {
+                    action: 'create',
+                    id: id,
+                };
+                $.post(url, data, function (data) {
+                    layer.closeAll();
+                    data = JSON.parse(data);
+                    if (!data.type) {
+                        layer.msg('服务器错误!');
+                        return false;
+                    }
+                    if (data.type == 'success') {
+                        layer.msg(data.message);
+                    }
+                    setTimeout(function () {
+                        // layer.load();
+                        // window.location.reload();
+                        $(".layui-laypage-btn").click()
+                    }, 1500)
+                });
+            }
+            //  下载
+            else if(obj.event === 'download'){
+                var payqrImg = data.payqrImg;
+                var img = data.img;
+                //  下载
+                var alink = document.createElement("a");
+                alink.href = payqrImg;
+                alink.download = payqrImg;
+                alink.click();
+            }
+        });
+
+
+        var active = {
+            reload: function(){
+                var keyword = $('#test-table-demoReload');
+                var mark = $('#mark');
+                var deal = $("#deal");
+
+                //执行重载
+                table.reload('test-table-autowidth', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: {
+                            keyword: keyword.val(),//传入input里面的值
+                            mark: mark.val(),//传入input里面的值
+                            deal: deal.val(),//传入input里面的值
+                        }
+                    }
+                });
+            }
+        };
+
+        $('.test-table-reload-btn .layui-btn').on('click', function(){
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+
+    });
+</script>
+</body>
+</html>

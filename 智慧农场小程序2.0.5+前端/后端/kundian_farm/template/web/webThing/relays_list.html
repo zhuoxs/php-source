@@ -1,0 +1,102 @@
+{template 'web/common/common'}
+{template 'web/system/navbar'}
+{template 'web/webThing/navbar'}
+<link rel="stylesheet" type="text/css" href="../addons/{php echo $_GPC['m']}/resource/swal/dist/sweetalert2.min.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/layui.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/new-common.css" />
+<script src="../addons/kundian_farm/resource/js/jquery-1.11.1.min.js" charset="utf-8"></script>
+<script src="../addons/kundian_farm/resource/layui.js" charset="utf-8"></script>
+<div class="new-style">
+    <div class="layui-form">
+            <table class="layui-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>继电器名称</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="biuuu_city_list">
+
+                </tbody>
+            </table>
+        <div id="demo20" style="float: right;"></div>
+    </div>
+</div>
+<script>
+    layui.use(['form','laypage', 'layer'], function(){
+        var form = layui.form,
+            laypage = layui.laypage
+            ,layer = layui.layer;
+        //将一段数组分页展示
+        $.ajax({
+            type:"post",
+            url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'getRelays','action'=>'webThing')}",
+            dataType:'json',
+            success:function(res){
+                console.log(res);
+                var data = res.list;
+                laypage.render({
+                    elem: 'demo20'
+                    ,count: data.length
+                    ,jump: function(obj){
+                        //模拟渲染
+                        document.getElementById('biuuu_city_list').innerHTML = function(){
+                            var arr = []
+                                ,thisData = data.concat().splice(obj.curr*obj.limit - obj.limit, obj.limit);
+                            layui.each(thisData, function(index, item){
+                                if(item['Status']==0){
+                                    var str='<span class="layui-badge layui-bg-gray relays_'+item['ID']+'">已关闭</span>'
+                                    var str1='<button type="button" data-id="'+item['ID']+'" data-status="'+item['Status']+'" class="layui-btn layui-btn-xs controlRelays">开启</button>'
+                                }else{
+                                    var str='<span class="layui-badge layui-bg-green relays_'+item['ID']+'">已开启</span>'
+                                    var str1='<button type="button" data-id="'+item['ID']+'"  data-status="'+item['Status']+'" class="layui-btn layui-btn-xs layui-btn-danger controlRelays">关闭</button>'
+                                }
+                                arr.push('<tr> <td>'+item['ID']+'</td> <td>'+item['Name']+'</td> <td>'+str+'</td><td>'+str1+'</td> </tr>');
+                            });
+                            return arr.join('');
+                        }();
+                    }
+                });
+            }
+        })
+
+        $("#biuuu_city_list").on('click','.controlRelays',function () {
+            var that=$(this);
+            var data_id=$(this).attr("data-id");
+            var data_status=$(this).attr("data-status");
+            $.ajax({
+                type:"post",
+                url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'controlRelays','action'=>'webThing')}",
+                data:{id:data_id,status:data_status},
+                dataType:'json',
+                success:function(res){
+                    console.log(res.status);
+                    if(res.status==1){
+                        layer.alert("操作成功");
+                        if(data_status==1){
+                            that.attr('data-status',0);
+                            that.removeClass("layui-btn-danger");
+                            that.html("开启");
+                            $(".relays_"+data_id).removeClass("layui-bg-green");
+                            $(".relays_"+data_id).addClass("layui-bg-gray");
+                            $(".relays_"+data_id).html("已关闭");
+                        }else {
+                            that.attr('data-status', 1)
+                            that.addClass('layui-btn-danger');
+                            that.html("关闭");
+                            $(".relays_"+data_id).removeClass("layui-bg-gray");
+                            $(".relays_"+data_id).addClass("layui-bg-green");
+                            $(".relays_"+data_id).html("已开启");
+                        }
+                    }else{
+                        layer.alert("操作失败");
+                    }
+                }
+            })
+        })
+    });
+
+
+</script>

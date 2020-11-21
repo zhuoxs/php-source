@@ -1,0 +1,141 @@
+{template 'public/header'}
+
+<!--标题-->
+<div class="title">
+    <blockquote class="layui-elem-quote">充值金额列表</blockquote>
+</div>
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入金额..." autocomplete="off">
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnAdd" class="layui-btn layui-btn-primary layui-btn-sm">新增</a>
+        <a href="javascript:;" id="btnBatchEnable" class="layui-btn layui-btn-primary layui-btn-sm">启用</a>
+        <a href="javascript:;" id="btnBatchUnEnable" class="layui-btn layui-btn-primary layui-btn-sm">禁用</a>
+        <a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+    </div>
+</div>
+<!--数据表-->
+<div class="table-box">
+    <table class="layui-hide" id="laytable"></table>
+</div>
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnEdit">编辑</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnCopy">复制新增</a>
+    {{# if(d.used == 1) { }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnUnEnable">禁用</a>
+    {{# }else{ }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnEnable">启用</a>
+    {{# } }}
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDelete">删除</a>
+</script>
+<script type="text/html" id="dataMoney">
+    {{ d.money }}
+    {{# if(d.used == 1){ }}
+    <span class="layui-badge layui-bg-green">启用</span>
+    {{# } }}
+</script>
+
+<script type="text/javascript">
+    layui.use('table', function () {
+        var table = layui.table;
+//        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{php echo $this->createWebUrl('recharge',array('op'=>query));}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'money', width:180, title: '充值金额',sort:true,templet: '#dataMoney'},
+                {field:'give_money', width:200, title: '赠送金额',sort:true},
+//                {field:'used', width:200, title: '启用',sort:true},
+                {field:'o',fixed:'right',width:250, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+        
+        $('#btnBatchEnable').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                var url = "{php echo $this->createWebUrl('recharge',array('op'=>batchenable));}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    var data = $.parseJSON(data);
+                    if (data.code == 0) {
+                        layer.msg('启用成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+        $('#btnBatchUnEnable').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                var url = "{php echo $this->createWebUrl('recharge',array('op'=>batchunenable));}";
+                $.post(url, {ids:ids.join(',')}, function(data){
+                    var data = $.parseJSON(data);
+                    if (data.code == 0) {
+                        layer.msg('禁用成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+        $(document).on('click','.btnEnable',function(e){
+            var id = $(this).data('id')
+            var url = "{php echo $this->createWebUrl('recharge',array('op'=>batchenable));}";;
+            $.post(url, {ids:id}, function(data){
+                var data = $.parseJSON(data);
+                if (data.code == 0) {
+                    layer.msg('启用成功',{icon: 6,anim: 6});
+                    table.reload('laytable',{});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        })
+        $(document).on('click','.btnUnEnable',function(e){
+            var id = $(this).data('id')
+            var url = "{php echo $this->createWebUrl('recharge',array('op'=>batchunenable));}";;
+            $.post(url, {ids:id}, function(data){
+                var data = $.parseJSON(data);
+                if (data.code == 0) {
+                    layer.msg('禁用成功',{icon: 6,anim: 6});
+                    table.reload('laytable',{});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        })
+    })
+</script>
+
+{template 'public/footer'}

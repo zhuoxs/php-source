@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {php $web_setting = pdo_get(table.'setting',array('uniacid'=>uniacid));}
+    <meta charset="UTF-8">
+    <title>{$web_setting[site_name]}</title>
+    <meta content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0" name="viewport"/>
+    <meta content="yes" name="apple-mobile-web-app-capable"/>
+    <meta content="black" name="apple-mobile-web-app-status-bar-style"/>
+    <meta content="telephone=no" name="format-detection"/>
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{MODULE_URL}static/mobile/css/style.css">
+    <script src="{MODULE_URL}static/js/jquery.min.js"></script>
+    <script src="{MODULE_URL}/static/mobile/js/layer_mobile/layer.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js"></script>
+    {template "wxconfig"}
+</head>
+<body>
+    <!-- 模态框 -->
+    <div class="modal fade" id="myModal" >
+        <div class="modal-dialog modal-dialog-centered" >
+            <div class="modal-content">
+                <!-- 模态框头部 -->
+                <div class="modal-header">
+                    <h6 class="modal-title">请选择您要购买的套餐</h6>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <!-- 模态框主体 -->
+                <div class="modal-body" style="overflow-y: auto;height: 100vw">
+                    <div class="beta_index_scrollView" style="padding-bottom: 0">
+                        <div class="beta_index_flex-member-list" style="padding: 0">
+                            <ul class="beta_index_cho-box">
+                                <input value="" type="hidden" id="type">
+                                {loop $list $key $row}
+                                <li class="beta_index_flex" type="{$row['id']}" >
+                                    <div class="beta_index_flex-box">
+                                        <h3>{$row['name']}</h3>
+                                    </div>
+                                    <div class="beta_index_original-thj" style="position: unset;margin-left: 5px">
+                                        <i>￥</i>
+                                    </div>
+                                    <i class="beta_index_price">{$row[money]}</i><em class="beta_index_price" >元</em>
+                                </li>
+                                {/loop}
+                            </ul>
+                            <div style="display:none">
+                                <input name="" type="text" value="1" class="auiSks"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 模态框底部 -->
+                <div class="modal-footer">
+                    <p class="beta_index_total" style="padding-bottom: 0">
+                        需要支付： <span style="color: red"></span>
+                        元
+                    </p>
+                    <button type="button" class="btn btn-success" onclick="pay()">立即支付</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+<div class="beta_index_flexView">
+    {if $setting['yinsi_des']}
+    {php echo htmlspecialchars_decode($setting['yinsi_des'])}
+    {else}
+    <p>
+        <img src="{MODULE_URL}/template/res/img/yinsi_shop.gif" style="max-width: 100%"></p>
+    {/if}
+
+    <div class="beta_index_tabBar beta_index_tabBar-fixed" id="pay">
+        <button class="beta_index_tabBar-btn" id="paybutton" data-toggle="modal" data-target="#myModal">立即购买</button>
+    </div>
+</div>
+<script type="text/javascript">
+    $(document).ready(function(e) {
+        $(".beta_index_cho-box li").click(function() {
+            $(this).addClass("on").siblings().removeClass("on");
+            $("#type").val($(this).attr('type'))
+            tola();
+        });
+        $(".beta_index_cho-box li").eq(0).click();
+    });
+    function tola() {
+        var $li = $(".beta_index_cho-box").children("li.on");
+        var money = $li.children("i").text();
+        var count = $(".auiSks").val();
+        $(".beta_index_total span").text(money * count);
+    }
+    function pay() {
+        $("#pay").hide();
+        console.log(1);
+        $.post("{php echo  $this->createMobileUrl('yinsi')}",{"type":$('#type').val(),'action':'order'},function(data, status){
+
+                console.log(2);
+            if(status == 'success'){
+                util.pay({
+                    orderFee : data.free,
+                    payMethod : 'wechat',
+                    orderTitle : '订单支付' + data.free + '元',
+                    orderTid : data.order_id,
+                    module : 'beta_car',
+                    success : function(result) {
+                        layer.open({
+                            content: '支付成功，即将跳转订单页面'
+                            ,skin: 'msg'
+                            ,time: 1 //2秒后自动关闭
+                            ,end:function () {
+                                window.location.href="{php echo  $this->createMobileUrl('yinsi_info')}";
+
+                            }
+                        });
+                    },
+                    fail : function(result) {
+                        layer.open({
+                            content: '失败：'+result.message
+                            ,skin: 'msg'
+                            ,time: 1 //2秒后自动关闭
+                        });
+                    },
+                    complete : function (result) {
+                        $("#pay").show();
+                    }
+                });
+
+            }
+        },'json');
+    }
+</script>
+</body>
+</html>

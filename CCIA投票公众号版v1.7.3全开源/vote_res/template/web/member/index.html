@@ -1,0 +1,126 @@
+{template 'common/header'}
+<script src="{VOTE_RES}static/js/jquery-confirm.min.js"></script>
+<script src="{VOTE_RES}static/js/unit.js"></script>
+<link rel="stylesheet" href="{VOTE_RES}static/css/jquery-confirm.min.css">
+<link rel="stylesheet" href="{VOTE_RES}static/css/default.css">
+<div class="temporary_alert"></div>
+<div class="keyword-list-head clearfix we7-margin-bottom">
+    <form action="" method="get">
+        <input type="hidden" name="c" value="site">
+        <input type="hidden" name="a" value="entry">
+        <input type="hidden" name="do" value="member">
+        <input type="hidden" name="m" value="vote_res">
+        <div class="input-group pull-left col-sm-4" style="width: 100%;">
+            <div style="float:left;">
+            	<input type="text" name="keyword" id="" value="{$_GPC['keyword']}" class="form-control" style="z-index:0"  placeholder="搜索用户名/手机号" />
+            </div>
+            <div style="float:left;margin-left:10px;"> 
+	            <select name="type" style="float:left;">
+	            	<option value="">--选中用户类型--</option>
+                    {loop $membertype $row}
+	            	<option value="{$row['id']}" {if $_GPC['type'] == $row['id']}selected{/if}>--{$row['typename']}--</option>
+                    {/loop}
+	            </select>
+            </div>
+            <div style="float:left;margin:0px 0 0 10px;"> 
+            	<span class="input-group-btn"><button class="btn btn-default"><i class="fa fa-search"></i></button></span>
+        	</div>
+        </div>
+    </form>
+    <!-- 
+    <div class="pull-right" style="position: relative;display: table;border-collapse: separate;margin-top: -34px;">
+        <a href="{php echo $this->createwebUrl('member',array('cmd'=>'add'))}" class="btn btn-primary insertuse">+添加用户</a>
+    </div>
+     -->
+</div>
+<table class="table we7-table table-hover table-manage vertical-middle">
+    <tr>
+    	<!-- <th><input type="checkbox" id="allgoods" />全选</th> -->
+    	<th>ID</th>
+        <th>用户昵称</th>
+        <th>用户手机号</th>
+        <th>用户类型</th>
+        <th>创建时间</th>
+        <th>投票总次数</th>
+        <th>中奖总次数</th>
+        <th>操作</th>
+    </tr>
+    {if count($listall['list']) > 0}
+    {loop $listall['list'] $row}
+    <tr>
+    	<!-- <td><input type="checkbox" name='ogoods' value="{$row['mid']}"/>{$row['mid']}</td> -->
+    	<td>{$row['mid']}</td>
+        <td>{$row['realname']}</td>
+        <td>{$row['mobile']}</td>
+        <td>{$row['typename']}</td>
+        <td>{php echo date('Y-m-d H:i',$row['createtime'])}</td>
+        <td>{$row['tpnum']}</td>	
+		<td>{$row['zjnum']}</td>
+		<td>
+            <input type="button" class="btn btn-primary submit" mid="{$row['mid']}" tpnum="{$row['tpnum']}" name="submit" value="中奖"/>
+		</td>
+    </tr>
+    {/loop}
+    {else}
+    <tr>
+        <td colspan="8" class="text-center">暂无数据</td>
+    </tr>
+    {/if}
+</table>
+<div class="text-right">
+    {$pager}
+</div>
+
+
+
+
+<!-- 用户提示和弹框 -->
+<script type="text/javascript">
+    $(function () {
+    	
+        $('.submit').click(function () {
+			$mid=$(this).attr('mid');
+			$url="{php echo $this->createWebUrl('member',array('cmd'=>'add'))}";
+        	iframe({
+                title: '用户中奖',
+                width: 500,
+                height: 300,
+                content: $url+'&mid='+$mid,
+                callback: function(obj){
+                	var form = this.contentDocument.forms[0];
+                    var data = {
+                    	activid:form.activid.value,	
+                    };
+                    if(data.activid==''){
+                    	$.alert({title: '请选择活动!',content:'您还没有选中活动'});
+                		return;
+                    }
+					zjfunc($mid,data.activid);
+                }
+            })
+            
+        });
+    });
+    
+    function zjfunc(mid,acid){
+    	$.post("{php echo $this->createWebUrl('member',array('cmd'=>'add'))}", {mid:mid,acid:acid}, function (data) {
+            if (data.status > 0) {
+                $.alert({
+                    title: '成功!',
+                    content: data.result.message,
+                    buttons: {
+                        ok: function(){
+                            window.location.href = data.result.url;
+                        }
+                    }
+                });
+            } else {
+                $.alert({
+                    title: '错误!',
+                    content: data.result.message,
+                });
+            }
+        }, "json");
+    }
+</script>
+{template 'common/footer'}

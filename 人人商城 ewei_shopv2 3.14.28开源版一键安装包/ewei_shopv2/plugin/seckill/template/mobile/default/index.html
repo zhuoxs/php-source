@@ -1,0 +1,141 @@
+{template '_header'}
+<script>document.title = "{$page_title}";</script>
+<link rel="stylesheet" type="text/css" href="../addons/ewei_shopv2/static/js/dist/swiper/swiper.min.css">
+<link rel="stylesheet" type="text/css" href="../addons/ewei_shopv2/plugin/seckill/template/mobile/default/static/css/common.css">
+<div class="fui-page seckill-page">
+    {if is_h5app()}
+        <div class="fui-header">
+            <div class="fui-header-left">
+                <a class="back"></a>
+            </div>
+            <div class="title">{$page_title}</div>
+            <div class="fui-header-right"></div>
+        </div>
+    {/if}
+    <div class="fui-content navbar">
+        <input type="hidden" id="currenttime" value="{$currenttime}" />
+
+
+
+        <div class="swiper-container time-container">
+            <div class="swiper-wrapper">
+                {loop $times $key $time}
+                <div class="swiper-slide time-slide {if $time['status']==0 || $timeindex==$key}current{/if} time-slide-{$time['id']}" data-index="{$key}">
+                    <span class="time">{$time['time']}:00</span>
+                    <span class="text">
+
+                        {if $time['status']==0}
+                        抢购中
+                        {elseif $time['status']==1}
+                        即将开始
+                        {else}
+                        已结束{/if}</span>
+                </div>
+                {/loop}
+
+            </div>
+         </div>
+
+
+        <div class="swiper-container adv-container" style="margin-top:.5rem;">
+            <div class="swiper-wrapper" style="width: 100%">
+                {loop $advs $adv}
+                <div class="swiper-slide adv-slide no-swiper">
+                    <a href="{php echo empty($adv['link'])?'#':$adv['link']}">
+                        <img src="{$adv['thumb']}"/>
+                    </a>
+                </div>
+                {/loop}
+            </div>
+        </div>
+
+{if count($rooms)>1}
+        <div class="swiper-container room-container">
+            <div class="swiper-wrapper">
+                {loop $rooms $room}
+                <a class="external swiper-slide room-slide {if $roomid==$room['id']}selected{/if}" href="{php echo mobileUrl('seckill',array('roomid'=>$room['id']))}">
+                    {$room['title']}
+                </a>
+                {/loop}
+            </div>
+        </div>
+{/if}
+
+        <div class="swiper-container goods-container">
+            <div class="swiper-wrapper">
+                {loop $times $time}
+                <div class="swiper-slide goods-slide" data-timeid="{$time['id']}"
+                     data-starttime="{$time['starttime']}"
+                     data-endtime="{$time['endtime']}"
+                     data-status="{$time['status']}">
+                    <div class='infinite-loading' ><span class='fui-preloader'></span><span class='text'> 正在加载...</span></div>
+                </div>
+                {/loop}
+            </div>
+        </div>
+    </div>
+    {php $this->footerMenus()}
+
+    <script language="javascript">
+        require(['../addons/ewei_shopv2/plugin/seckill/static/js/mobile.js'], function(model){
+            model.init({taskid:{$taskid},roomid:{$roomid},timeid: {$timeid}, roomindex:{$roomindex}, roomcount: {php echo count($rooms)} , timeindex:{$timeindex},  timecount: {php echo count($times)} , advcount:{php echo count($advs)}  });
+        });
+    </script>
+
+
+</div>
+<script type="text/html" id="tpl_seckill">
+
+    <div class="fui-list-group time-group-<%time.id%>" style="margin-top:0px">
+        <div class="fui-list-group-title">
+            <%if time.status>=0%>
+             <span class="timer">
+                  <%if time.status==1%>距开始<%else%>距结束<%/if%> <span class="time-hour">-</span>:<span class="time-min">-</span>:<span class="time-sec">-</span>
+             </span>
+            <%/if%>
+            <%if time.status==-1%>还可以继续抢购哦~<%/if%>
+            <%if time.status==0%>抢购中 先下单先得哦<%/if%>
+            <%if time.status==1%>即将开始 先下单先得哦<%/if%>
+
+        </div>
+
+        <%each goods as g%>
+        <div class='fui-list align-start'>
+            <div class='fui-list-media'>
+                <a href="{php echo mobileUrl('goods/detail')}&id=<%g.goodsid%>"><img src="<%g.thumb%>" /></a>
+            </div>
+            <div class='fui-list-inner'>
+                <a class='text' href="{php echo mobileUrl('goods/detail')}&id=<%g.goodsid%>"><%g.title%></a>
+                <div class="info">
+                     <span class="button">
+                         <%if time.status==1%>
+                         <a href="{php echo mobileUrl('goods/detail')}&id=<%g.goodsid%>" class="btn btn-success btn-sm">等待抢购</a>
+
+                         <%else%>
+                                <%if g.percent>=100%>
+                                <a href="{php echo mobileUrl('goods/detail')}&id=<%g.goodsid%>" class="btn btn-default btn-sm">已抢空</a>
+                             <%else%>
+                         <a href="{php echo mobileUrl('goods/detail')}&id=<%g.goodsid%>" class="btn btn-danger btn-sm">去抢购</a>
+
+                             <%/if%>
+                          <%/if%>
+                     </span>
+                    <div class="price">&yen;<%g.price%></div>
+                </div>
+                <div class="info info1">
+                    <%if time.status!=1%>
+                        <span class="process">
+                                <div class="inner" style="width:<%g.percent%>%"></div>
+                        </span>
+                    <span class="process-text">已售 <%g.percent%>%</span>
+                    <%/if%>
+                    <div class="price1" style="<%if g.productprice==0%>color:#FFFFFF<%/if%>">&yen;<%g.productprice%></div>
+                </div>
+            </div>
+        </div>
+        <%/each%>
+ </div>
+
+</script>
+
+{template '_footer'}

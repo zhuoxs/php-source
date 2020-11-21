@@ -1,0 +1,2 @@
+<?php
+ namespace app\boguan\model; class Image extends BaseModel { protected $hidden = array("\x69\144", "\x66\162\x6f\x6d", "\x63\162\145\x61\x74\145\x5f\x74\x69\155\x65", "\x64\x65\154\145\x74\x65\x5f\x74\x69\x6d\145"); }

@@ -1,0 +1,181 @@
+{include file="common/head"}
+<script src="__ROOT__/tpl/peixun/mobile/static/js/jquery.min.js"></script>
+<script src="__ROOT__/tpl/peixun/mobile/static/js/jquery.mobile-1.3.2.min.js"></script>
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/mobile/static/css/n-list.css">
+<style>
+    .novel-list{overflow: hidden;}
+    .novel-list li{padding: 15px 10px;width: 120%;overflow: hidden;-webkit-transition:all 0.3s linear;-moz-transition:all 0.3s linear;}
+    .novel-list li:last-child{border-bottom: 1px solid #eee;}
+    .novel-list li a{width: 81%;float: left;}
+    .novel-list li .operation{display: block;float: left;width: 18%;margin-left: 0.16rem;text-align: center;text-decoration: none;}
+    .novel-list li .operation a{display: block;height: 38px;line-height: 38px;color: #fff; width: 100%;}
+    .novel-list li .operation a.remove{background: #f00;}
+    .novel-list li .operation a.edit{background: #e5b559;}
+    .novel-list li.selected{-webkit-transform: translate(-18%,0);-webkit-transition:all 0.3s linear;-moz-transition:all 0.3s linear;}
+    .ui-page{min-height: 300px !important;outline: none;}
+    .ui-loader{display: none;}
+</style>
+
+    <ul class="novel-list">
+        {notempty name="list"}
+        {volist name="list" id="vo"}
+        <li>
+            <a target="_self"  href="{:url('novel/show',array('id'=>$vo['id']))}">
+                <div class="novelPic">
+                    <img src="{:$vo['thumbnail']}">
+                    {if condition="$vo['status'] neq 1"}
+                    <span class="btn fn-jiaobiao"><i>已禁用</i></span>
+                    {else/}
+                    {if condition="$vo['is_check'] eq 0"}<span class="btn fn-jiaobiao aspect"><i>审核中</i></span> {/if}
+                    {if condition="$vo['is_check'] eq 2"}<span class="btn fn-jiaobiao"><i>已拒绝</i></span> {/if}
+                    {/if}
+                </div>
+                <div class="novel-box">
+                    <p>{:$vo['title']}</p>
+                    <span class="text">{$vo['short_info']|default="暂没短说明"}</span>
+                    <div>
+                        <div class="box-f">
+                            <span><i class="btn fn-time"></i>{:date('Y-m-d H:i:s',$vo['update_time'])}</span>
+                            <span><i class="btn fn-bofang"></i>{:$vo['click']}</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+            <div class="operation">
+                <a href="/member/editNovel/id/{:$vo['id']}" id="edit_{:$vo['id']}" target="_self" class="edit">编辑</a>
+                <a href="javascript:;" id="delete_{:$vo['id']}" class="remove">删除</a>
+            </div>
+        </li>
+        {/volist}
+        {else/}
+        <div class="not-comment not">您还没有上传过资讯哦 ~</div>
+        {/notempty}
+    </ul>
+    <a href="{:url('member/addNovel')}" target="_self" class="upload"><i class="btn fn-shangchuan1"></i>发布</a>
+</div>
+
+
+<script>
+    function del(id){
+        var reqData={table:'novel',id:id};
+        layer.open({
+            content:'确定要删除吗？',
+            btn: ['确定', '取消'],
+            yes:function () {
+                $.ajax({
+                    type: 'POST',
+                    url: "{:url('api/del')}",
+                    data: reqData,
+                    dataType : "json",
+                    success: function(data){
+                        console.log(data);
+                        if(data.resultCode==0){
+                            layer.open({content:'已成功删除', time:2,skin:'msg',end:function () {
+                                window.location.reload();
+                            }});
+                        }else{
+                            layer.open({content:'删除失败，原因：'+data.error, time:2,skin:'msg'});
+                        }
+                    },
+                });
+            }
+        });
+    }
+    $(function(){
+        $(".novel-list li").on("swipeleft",function(){
+            $(this).addClass('selected').siblings().removeClass('selected');
+            /*点击删除*/
+            $(this).find("a.remove").on("click",function(){
+                var id = $(this).attr('id').substring(7);
+                del(id);
+            });
+        }).on("swiperight",function(){
+            $(this).parents(".novel-list").find("li").removeClass('selected');
+        })
+    });
+    var status = 1;
+    var page  = 0;
+    var user_id = "{$user_id}";
+    $(window).scroll(function(){
+        var srollPos = $(window).scrollTop();
+        var data = {
+            "page" : page ,
+            "type" : 'novel',
+            "offset" : 10,
+            "where" :  'user_id = '+user_id,
+        };
+        if(srollPos+$(window).height() > $(document).height() - 80){
+            if(status == 1) {
+                status = 0;
+                $.ajax({
+                    type: "POST",
+                    data: data,
+                    dataType: "JSON",
+                    url: "{:url('Api/moreData')}",
+                    success: function (data) {
+                        if(data.resultCode == 0){
+                            var datas = data.data.list;
+                            if(datas){
+                                var html = '';
+                                datas.forEach(function(item) {
+                                    var  url =  '/novel/show/id/'+item['id'];
+                                    var update_time = item['update_time'];
+                                    var newDate = new Date(update_time * 1000);
+
+                                    html += '<li>';
+                                    html += '<a target="_self"  href="'+url+'">';
+                                    html += '    <div class="novelPic">';
+                                    html += '    <img src="'+item['thumbnail']+'">';
+                                    html += '    </div>';
+                                    html += '    <div class="novel-box">';
+                                    html += '    <p>'+item['title']+'</p>';
+                                    if(item['short_info']){
+                                        var short_info = item['short_info'];
+                                    }else{
+                                        var short_info = "暂没短说明";
+                                    }
+                                    html += '<span class="text">'+short_info+'</span>';
+                                    html += '    <div>';
+                                    html += '    <div class="box-f">';
+                                    html += '    <span><i class="btn fn-time"></i>'+(newDate.getMonth() + 1)+'/'+newDate.getDate()+'</span>';
+                                    html += '<span><i class="btn fn-see"></i>'+item['click']+'</span>';
+                                    html += '</div>';
+                                    html += '</div>';
+                                    html += '</div>';
+                                    html += '</a>';
+                                    html += '<div class="operation">';
+                                    html += '    <a href="/member/editNovel/id/'+item['id']+'" id="edit_'+item['id']+'" target="_self" class="edit">编辑</a>';
+                                    html += '    <a href="javascript:;" id="delete_'+item['id']+'" class="remove">删除</a>';
+                                    html += '</div>';
+                                    html += '</li>';
+
+                                });
+                                $('.not-comment').remove();
+                                $('.novel-list').append(html);
+                                $(".novel-list li").on("swipeleft",function(){
+                                    $(this).addClass('selected').siblings().removeClass('selected');
+                                    /*点击删除*/
+                                    $(this).find("a.remove").on("click",function(){
+                                        var id = $(this).attr('id').substring(7);
+                                        del(id);
+                                    });
+                                }).on("swiperight",function(){
+                                    $(this).parents(".novel-list").find("li").removeClass('selected');
+                                })
+                                page++;
+                                status = 1;
+                            }else{
+                                console.log('没有更多数据了！');
+                            }
+                        }else{
+                            console.log('没有更多数据了！');
+                        }
+                    }
+                });
+            }
+        }
+    })
+</script>
+
+
+{include file="common/footer"}

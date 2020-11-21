@@ -1,0 +1,94 @@
+{include file="common/head"}
+<style>
+    body{background: #F6F6F6;}
+</style>
+
+    <div class="withdrawals">
+        <ul>
+            <li class="list">
+                {notempty name="list"}
+                {volist name="list" id='v'}
+                <div class="w-details">
+                    <div class="icon-i"><i class="btn fn-zuanshi"></i></div>
+                    <div class="w-box">
+                        <p>提现-{$v['info']['title']}</p>
+                        <span>{:date('Y-m-d h:i',$v['add_time'])}</span>
+                        <span class="money"><b class="btn fn-jinbi2 vip"></b>{$v['gold']}</span>
+                    </div>
+                    <span>{$v['money']}元
+                        {if condition="$v['status'] eq 0"}
+                        <var class="wait">处理中</var>
+                           {elseif condition="$v['status'] eq 1"}
+                         <var class="success">已完成</var>
+                         {elseif condition="$v['status'] eq 2"}
+                          <var class="fail">未通过</var>
+                         {/if}
+                    </span>
+                </div>
+                {/volist}
+                {else/}
+                <div class="not-comment not" id="not-comment">你还没有过提现记录哦 ~</div>
+                {/notempty}
+            </li>
+
+        </ul>
+    </div>
+
+<script>
+    var status = 1;
+    var page  = 0;
+    $(window).scroll(function(){
+        var srollPos = $(window).scrollTop();
+        var data = {
+            "page" : page,
+            "offset" : 20,
+        };
+        if(srollPos+$(window).height() > $(document).height() - 80){
+            if(status == 1) {
+                status = 0;
+                $.ajax({
+                    type: "POST",
+                    data: data,
+                    dataType: "JSON",
+                    url: "{:url('Api/record_out_pay')}",
+                    success: function (data) {
+                        if(data.resultCode == 0){
+                            var datas = data.data.list;
+                            if(datas){
+                                var html = '';
+                                datas.forEach(function(item) {
+                                    var add_time = item['add_time'];
+                                    var newDate = new Date(add_time * 1000);
+                                 html +='  <div class="w-details">';
+                                 html +=' <div class="icon-i"><i class="btn fn-zuanshi"></i></div>';
+                                 html +=' <div class="w-box">';
+                                 html +='   <p>提现-'+item['info']['title']+'</p>';
+                                 html +=' <span>'+newDate.getFullYear()+'-'+(newDate.getMonth()+1)+'-'+newDate.getDay()+' '+newDate.getHours()+':'+newDate.getMinutes()+'</span>';
+                                 html +='      <span class="money"><b class="btn fn-jinbi2 vip"></b>'+item['gold']+'</span></div><span>'+item['money'];
+                                    if(item['status']==0){
+                                        html +=   '<var class="wait">处理中</var>';
+                                    }else if(item['status']==1) {
+                                        html +=   '<var class="success">已完成</var>';
+                                    }else if(item['status']==2){
+                                        html +=   '<var  class="fail">未通过</var>';
+                                    }
+                                 html +=   '<span></div>';
+                                });
+                                $('.list').append(html);
+                                page++;
+                                status = 1;
+                            }else{
+                                console.log('没有更多数据了！');
+                            }
+                        }else{
+                            console.log('没有更多数据了！');
+                        }
+                    }
+                });
+            }
+        }
+    })
+
+</script>
+
+{include file="common/footer"}

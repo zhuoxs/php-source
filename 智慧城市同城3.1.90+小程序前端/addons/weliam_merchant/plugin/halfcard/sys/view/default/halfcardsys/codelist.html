@@ -1,0 +1,182 @@
+{php include wl_template('common/header');}
+<ul class="nav nav-tabs">
+	<li class="active"><a href="javascript:;">激活码列表</a></li>
+</ul>
+<div class="app-content">
+	<div class="app-filter">
+		<div class="filter-action"><a href="{php echo web_url('halfcard/halfcode/add');}" class="btn btn-primary">添加激活码</a></div>
+		<div class="filter-list">
+			<form action="" method="get" class="form-horizontal" role="form" id="form1">
+				<input type="hidden" name="c" value="site" />
+				<input type="hidden" name="a" value="entry" />
+				<input type="hidden" name="m" value="weliam_merchant" />
+				<input type="hidden" name="p" value="halfcard" />
+				<input type="hidden" name="ac" value="halfcode" />
+				<input type="hidden" name="do" value="lists"/>
+				<input type="hidden" name="status" value="{$_GPC['status']}"/>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">状态</label>
+					<div class="col-sm-9">
+						<div class="btn-group">
+							<a href="{php echo filter_url('status:0');}" class="btn {if intval($_GPC['status']) == 0 || empty($_GPC['status'])}btn-primary{else}btn-default{/if}">全部</a>
+							<a href="{php echo filter_url('status:1');}" class="btn {if intval($_GPC['status']) == 1}btn-primary{else}btn-default{/if}">已使用</a>
+							<a href="{php echo filter_url('status:2');}" class="btn {if intval($_GPC['status']) == 2}btn-primary{else}btn-default{/if}">未使用</a>
+						</div>
+					</div>
+				</div>
+				<div class="form-group form-inline">
+					<label class="col-sm-2 control-label">关键字</label>
+					<div class="col-md-9">
+						<select name="keywordtype" class="form-control">
+							<option value="">关键字类型</option>
+							<option value="4" {if $_GPC['keywordtype']==4}selected="selected"{/if}>激活码</option>
+							<option value="1" {if $_GPC['keywordtype']==1}selected="selected"{/if}>时长</option>
+							<option value="2" {if $_GPC['keywordtype']==2}selected="selected"{/if}>激活人昵称</option>
+							<option value="3" {if $_GPC['keywordtype']==3}selected="selected"{/if}>备注</option>
+						</select>
+						<input type="text" name="keyword" class="form-control" value="{$_GPC['keyword']}"  placeholder="请输入关键字"/>
+                    </div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label"></label>
+					<div class="col-md-9">
+						<button class="btn btn-primary" id="search">筛选</button>
+						<button class="btn btn-default" id="output">导出</button>
+						<input type="hidden" id="outflag" name="export" value="0" >
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+	<script type="text/javascript">
+        $("#search").click(function(){
+        	$('#outflag').val(0);
+            $('#form1')[0].submit();
+        });
+        $('#output').click(function(){
+        	$('#outflag').val(1);
+            $('#form1')[0].submit();
+        });
+	</script>
+	<div class="app-table-list">
+		<div class="table-responsive">
+			<table class="table table-hover table-bordered">
+				<thead>
+				<tr>
+					<th style="width:40px;" class="text-center"><input type="checkbox" onclick="var ck = this.checked;$(':checkbox').each(function(){this.checked = ck});"  style="margin-top: 0;"/>  ID</th>
+					<th class="text-center" style="width:90px;">所属代理</th>
+					<!--电商联盟定制内容-->
+					{if file_exists(PATH_MODULE . 'lsh.log')}
+					<th class="text-center" style="width:90px;">挪车代理</th>
+					{/if}
+					<th class="text-center" style="width:90px;">激活码</th>
+					<th class="text-center" style="width:50px;">时长</th>
+					<th class="text-center" style="width:50px;">状态</th>
+					<th class="text-center" style="width:80px;">激活等级</th>
+					<th class="text-center" style="width:80px;">备注</th>
+					<th class="text-center" style="width:100px;">使用详情</th>
+					<th class="text-center" style="width:120px;">生成时间</th>
+					<th class="text-center" style="width:80px;">操作</th>
+				</tr>
+				</thead>
+				<tbody>
+				{loop $list $item}
+				<tr class="text-center" >
+					<td class="text-center" style="width:40px; height: auto;">
+						<input type="checkbox" name="checkbox[]" class="checkbox" value="{$item['id']}" style="position: absolute;margin-top: 0;" />  {$item['id']}
+					<td>{$item['agentname']}</td>
+					{if file_exists(PATH_MODULE . 'lsh.log')}
+					<td>{$item['caragentname']}</td>
+					{/if}
+					<td>{$item['number']}</td>
+					<td>
+						{$item['days']}天
+					</td>
+					<td>
+						{if $item['status']==1}
+						<span id="" class="label label-default">
+						已使用
+						</span>
+						{else if $item['status']==2}
+						<span id="" class="label label-danger">
+						已锁定
+						{else}
+						<span id="" class="label label-success">
+						未使用
+						</span>
+						{/if}
+					</td>
+					<td>
+						{$item['levelname']}
+					</td>
+					<td>
+						{$item['remark']}
+					</td>
+					<td>
+						{if !empty($item['member'])}
+						<div class="img" style="text-align: left;">
+							<img style="height: 3rem;width: 3rem;" class="scrollLoading" src="{IMAGE_PIXEL}" data-url="{php echo tomedia($item['member']['avatar'])}">
+							<span>{$item['member']['nickname']}</span>
+						</div>
+						{/if}
+					</td>
+					<td>
+						{php echo date('Y-m-d H:i:s',$item['createtime'])}
+					</td>
+					<td>
+						<a href="{php echo web_url('halfcard/halfcode/editcode',array('id'=>$item['id']))}" data-toggle="ajaxModal">
+							<button type="button" class="btn btn-primary btn-sm" title="编辑">编辑</button>
+						</a>
+						<a href="{php echo web_url('halfcard/halfcode/delcode',array('id'=>$item['id']))}" title="删除"  class="btn btn-danger btn-sm">删除</a>
+					</td>
+				</tr>
+				{/loop}
+				</tbody>
+			</table>
+		</div>
+		<div class="app-table-foot clearfix">
+			<div id="de1" class="pull-left">
+				<a href="javascript:;" class="btn btn-default min-width js-batch js-delete">删除选中记录</a>
+			</div>
+			<div class="pull-right">
+				{$pager}
+			</div>
+		</div>
+	</div>
+	<script type="text/javascript">
+        function set_remark(id){
+            var remark = $('#'+id).val();
+            $.post("{php echo web_url('halfcard/halfcode/remark')}"
+                ,{id:id,remark:remark}
+                ,function(d){
+                    layer.alert(d.message);
+                }
+                ,"json"
+            );
+        }
+        //删除用户记录
+        $('#de1').delegate('.js-delete','click',function(e){
+            e.stopPropagation();
+            var order_ids = [];
+            var $checks=$('.checkbox:checkbox:checked');
+            $checks.each(function() {
+                if (this.checked) {
+                    order_ids.push(this.value);
+                };
+            });
+            var $this = $(this);
+            var ids = order_ids;
+
+            util.nailConfirm(this, function(state) {
+                if(!state) return;
+                $.post("{php echo web_url('halfcard/halfcode/deletejihuoqr')}", { ids : ids }, function(data){
+                    if(!data.errno){
+                        util.tips("删除成功！");
+                        location.reload();
+                    };
+                }, 'json');
+            }, {html: '确认删除?'});
+        });
+	</script>
+</div>
+{php include wl_template('common/footer');}

@@ -1,0 +1,2 @@
+<?php
+ goto G63Pv; NeuXy: $sn = $_GPC["\163\151\x67\x6e"]; goto Dg7Qv; Dg7Qv: $res = pdo_delete(table . "\143\141\162", array("\163\156" => $sn)); goto e04Wc; e04Wc: if (!empty($res)) { goto YE0lk; } goto Pa9ZP; Pa9ZP: message("\xe5\210\240\xe9\231\xa4\345\xa4\261\350\264\245"); goto fn0fU; fn0fU: goto WpVXc; goto Qski8; G63Pv: global $_GPC, $_W; goto NeuXy; Qski8: YE0lk: goto ow2v9; ow2v9: $this->ok("\xe5\210\240\351\x99\244\xe6\x88\220\345\x8a\x9f"); goto jscPf; jscPf: WpVXc:

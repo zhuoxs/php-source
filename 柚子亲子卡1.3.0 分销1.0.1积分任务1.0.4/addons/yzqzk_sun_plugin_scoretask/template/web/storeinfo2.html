@@ -1,0 +1,496 @@
+{template 'public/header'}
+{template 'public/comhead'}
+<link rel="stylesheet" type="text/css" href="../addons/yzqzk_sun/template/public/ygcss.css">
+<script charset="utf-8" src="https://map.qq.com/api/js?v=2.exp"></script>
+<script>
+    var geocoder,map,defaultmarker = null,marker = null,clickmarker = null;
+    var txmap = function() {
+        var coordinates = "{$info['coordinates']}";
+        var isdefault = false;
+        if(coordinates!=''){
+            var lat = "{$info['latitude']}"; //纬度
+            var lng = "{$info['longitude']}";//经度
+        }else{
+            coordinates = "39.916527,116.397128";
+            var lat = "39.916527"; //纬度
+            var lng = "116.397128";//经度
+            isdefault = true;
+            //获取城市列表接口设置中心点 IP
+            citylocation = new qq.maps.CityService({
+                complete : function(result){
+                    map.setCenter(result.detail.latLng);
+                    //console.log(result.detail);
+                    $("#coordinates").val(result.detail.latLng);
+                    $("#address").val(result.detail.name);
+                    //设置marker标记
+                    defaultmarker = new qq.maps.Marker({
+                        map : map,
+                        position : result.detail.latLng
+                    });
+                }
+            });
+        }
+        var center = new qq.maps.LatLng(lat,lng);
+        map = new qq.maps.Map(document.getElementById('container'),{
+            center: center,
+            zoom: 15,
+        });
+        //设置marker标记
+        defaultmarker = new qq.maps.Marker({
+            map : map,
+            position : center
+        });
+        if(isdefault){
+            //调用searchLocalCity();方法    根据用户IP查询城市信息。
+            citylocation.searchLocalCity();
+        }
+
+        //调用地址解析类
+        geocoder = new qq.maps.Geocoder({
+            complete : function(result){
+                $("#coordinates").val(result.detail.location);
+                $("#address").val(result.detail.address);
+                map.setCenter(result.detail.location);
+                if(defaultmarker){
+                    defaultmarker.setMap(null);
+                }
+                if(clickmarker){
+                    clickmarker.setMap(null);
+                }
+                if(marker){
+                    marker.setMap(null);
+                }
+                marker = new qq.maps.Marker({
+                    map:map,
+                    position: result.detail.location
+                });
+
+            }
+        });
+
+        //添加监听事件   获取鼠标单击事件
+        qq.maps.event.addListener(map, 'click', function(event) {
+            //设置点击标记
+            clickmarker=new qq.maps.Marker({
+                position:event.latLng,
+                map:map
+            });
+            qq.maps.event.addListener(map, 'click', function(event) {
+                if(clickmarker){
+                    clickmarker.setMap(null);
+                }
+                if(marker){
+                    marker.setMap(null);
+                }
+            });
+            //通过经纬度获取地址名称
+            getClickAddress(event.latLng);
+        });
+    }
+
+    function codeAddress() {
+        var address = document.getElementById("address").value;
+        //通过getLocation();方法获取位置信息值
+        geocoder.getLocation(address);
+    }
+
+    function getClickAddress(latLng){
+        geocoder.getAddress(latLng);
+    }
+
+
+</script>
+
+<style type="text/css">
+  .dizhi{margin-top: 10px;color: #444444;}
+  input[type="radio"] + label::before {
+        content: "\a0"; /*不换行空格*/
+        display: inline-block;
+        vertical-align: middle;
+        font-size: 16px;
+        width: 1em;
+        height: 1em;
+        margin-right: .4em;
+        border-radius: 50%;
+        border: 2px solid #ddd;
+        text-indent: .15em;
+        line-height: 1; 
+    }
+    input[type="radio"]:checked + label::before {
+        background-color: #444444;
+        background-clip: content-box;
+        padding: .1em;
+        border: 2px solid #444444;
+    }
+    input[type="radio"] {
+        position: absolute;
+        clip: rect(0, 0, 0, 0);
+    }
+    #ygsinput{font-size: 14px;height: 33px;border-radius: 4px;border:1px solid #e7e7eb;padding-left: 10px;}
+    .searchname{font-size: 14px;color: #666;width: 220px;}
+    .searchname>a>p{color: #666;}
+</style>
+<ul class="nav nav-tabs">
+    <span class="ygxian"></span>
+    <div class="ygdangq">当前位置:</div>    
+    <li class="active"><a href="javascript:void(0);">商家信息</a></li>
+</ul>
+<div class="main">
+    <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+        <!--<input type="hidden" name="parentid" value="{$parent['id']}" />-->
+        <div class="panel panel-default ygdefault">
+            <div class="panel-heading wyheader">
+                商家管理&nbsp;&nbsp;>&nbsp;&nbsp;商家信息
+             <!--   <span style="margin-left: 130px;color: red;">*注：手动添加商家无需审核！</span>-->
+            </div>
+            <div class="panel-body">
+              <!--  <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" style="margin-right: 15px;">绑定管理员</label>
+                    <select class="col-sm-8" name="user_id">
+                        <option value="111">请选择（用户+openID）</option>
+                        {loop $sjuser $index $item}
+                            {if $info['user_id']== $item['openid']}
+                                <option value="{$item['openid']}" selected>{$item['name']} ({$item['openid']})</option>
+                            {else}
+                                <option value="{$item['openid']}">{$item['name']} ({$item['openid']})</option>
+                            {/if}
+                        {/loop}
+                    </select>
+                </div>-->
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">绑定微信号</label>
+                    <div class="col-sm-9">
+                        <input type="hidden" name="openid" id="bind_openid" value="{$info['openid']}">
+                        <span id="wx_name" style="color: red">{if $info['name']}{$info['name']}{else}暂未绑定微信号{/if}</span><span class="btn btn-sm storeblue" data-toggle="modal" data-target="#myModal1" style="margin-left: 30px;">查找</span>
+
+                        <div class="modal fade" id="myModal1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                        <h4 class="modal-title" id="myModalLabel" style="font-size: 20px;">提示</h4>
+                                    </div>
+                                    <div class="modal-body ygsearch" style="font-size: 20px;padding: 15px 30px;">
+                                        <input type="text" id="weixininput" placeholder="请输入微信名称">
+                                        <span class="btn btn-sm ygbtn storeblue" id="searchgoods">查找</span>
+                                        <div class="searchname" style="margin-top: 8px;"></div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家名称</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="store_name" class="form-control" value="{$info['store_name']}" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家电话</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="tel" class="form-control" value="{$info['tel']}" />
+                    </div>
+                </div>
+               <!-- <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家地址</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="address" class="form-control" value="{$info['address']}" />
+                    </div>
+                </div>-->
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家分类</label>
+                    <div class="col-sm-9">
+
+                        <select name="category_id"  class="form-control">
+                            {loop $category $key $item}
+                            {if $item['id']==$info['category_id']}
+                            <option value="{$item['id']}" selected="selected">{$item['title']}</option>
+                            {else}
+                            <option value="{$item['id']}" >{$item['title']}</option>
+                            {/if}
+                            {/loop}
+                        </select>
+
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商圈</label>
+                    <div class="col-sm-9">
+
+                        <select name="district_id"  class="form-control">
+                            {loop $district $key $item}
+                            {if $item['id']==$info['district_id']}
+                            <option value="{$item['id']}" selected="selected">{$item['title']}</option>
+                            {else}
+                            <option value="{$item['id']}" >{$item['title']}</option>
+                            {/if}
+                            {/loop}
+                        </select>
+
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家列表展示图</label>
+                    <div class="col-sm-9"  style="width: 780px;">
+                        {php echo tpl_form_field_image('pic', $info['pic'])}
+                        <span class="help-block">建议尺寸大小：200*200</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">使用人群</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="syrq" class="form-control" value="{$info['syrq']}" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">平台抽成比例</label>
+                    <div class="col-sm-9">
+                        <input type="number" name="ptcc_rate" class="form-control" value="{$info['ptcc_rate']}"  style="width: 200px;"/>%<br/>
+                        <span style="color: #999;">*平台抽成比率，填0 默认按全平台抽成比率抽成；例如：10%，填 10</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">标签</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="tag" class="form-control" value="{$info['tag']}" placeholder="如 冰雪世界,儿童乐园" style="width: 740px;"/>
+                        <span style="color: #999;">*多个请用英文逗号隔开</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">入驻过期时间</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="layui-input" name="rz_end_time"  value="{php if($info['rz_end_time']) echo date('Y-m-d H:i:s',$info['rz_end_time'])}" id="astime" placeholder="yyyy-MM-dd H:i:s" style="width: 150px;">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="lastname" class="col-sm-2 control-label">在营状态</label>
+                    <div class="col-sm-10">
+                        <label class="radio-inline">
+                            <input type="radio" id="rz_status1" name="rz_status" value="1" {if $info['rz_status']==1}checked{/if} />
+                            <label for="rz_status1">在营</label>
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="rz_status2" name="rz_status" value="2" {if $info['rz_status']==2}checked{/if} />
+                            <label for="rz_status2">过期(关闭)</label>
+                        </label>
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+
+
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">营业时间</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="layui-input" name="starttime" value="{if !$info['starttime']}00:00{else}{$info['starttime']}{/if}" id="starttime" placeholder="HH:mm" style="width: 150px;display: inline-block;"> -
+                        <input type="text" class="layui-input" name="endtime" value="{if !$info['endtime']}00:00{else}{$info['endtime']}{/if}" id="endtime" placeholder="HH:mm" style="width: 150px;display: inline-block;">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家地址</label>
+                    <div class="col-sm-9">
+                        <input id="address" name="address" type="textbox" value="{$info['address']}" style="height: 35px;line-height: 35px;width: 300px;">
+                        <a href="javascript:void(0);" id="searchmap" style="display: inline-block;padding: 10px 30px;background: #444444;color: #fff;" onclick="codeAddress()">定位</a>
+                        <div style="color: #f00;padding: 5px 0;">地址为空时默认通过ip定位到城市中心，输入地址之后需要点击"定位"按钮进行定位</div>
+                        <div style="width: 50%;height: 400px;" id="container"></div>
+                        <div style=" padding-top: 5px;">经纬度：<input id="coordinates" name="coordinates" type="textbox" value="{$info['coordinates']}" readonly="readonly" style="height: 35px;line-height: 35px;width: 300px;"></div>
+                    </div>
+
+                </div>
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">商家详情</label>
+                    <div class="col-sm-9">
+                        {php echo tpl_ueditor('content',$info['content']);}
+                    </div>
+                </div>
+
+
+
+              <!--  <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" style="margin-right: 15px;">选择入驻活动</label>
+                    <select class="col-sm-8" name="active_type">
+                        <option value="1">集卡</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label" style="margin-right: 15px;">选择入驻时间</label>
+                    <select class="col-sm-8" name="time_type">
+                        {if $info['time_type']==1}
+                        <option value="1" selected>一周</option>
+                        <option value="2" >一个月</option>
+                        <option value="3" >三个月</option>
+                        <option value="4" >半年</option>
+                        <option value="5" >一年</option>
+                        {elseif $info['time_type']==2}
+                        <option value="1" >一周</option>
+                        <option value="2" selected>一个月</option>
+                        <option value="3" >三个月</option>
+                        <option value="4" >半年</option>
+                        <option value="5" >一年</option>
+                        {elseif $info['time_type']==3}
+                        <option value="1" >一周</option>
+                        <option value="2" >一个月</option>
+                        <option value="3" selected>三个月</option>
+                        <option value="4">半年</option>
+                        <option value="5" >一年</option>
+                        {elseif $info['time_type']==4}
+                        <option value="1" >一周</option>
+                        <option value="2" >一个月</option>
+                        <option value="3" >三个月</option>
+                        <option value="4"selected>半年</option>
+                        <option value="5" >一年</option>
+                        {elseif $info['time_type']==5}
+                        <option value="1" >一周</option>
+                        <option value="2" >一个月</option>
+                        <option value="3" >三个月</option>
+                        <option value="4">半年</option>
+                        <option value="5" selected>一年</option>
+                        {else}
+                        <option value="1">一周</option>
+                        <option value="2">一个月</option>
+                        <option value="3">三个月</option>
+                        <option value="4">半年</option>
+                        <option value="5">一年</option>
+                        {/if}
+                    </select>
+                </div>-->
+
+            </div>
+        </div>
+        <div class="form-group">
+            <input type="submit" name="submit" value="提交" class="btn col-lg-3" style="color: white;background-color: #444444;margin-left: 30%;"/>
+            <input type="hidden" name="token" value="{$_W['token']}" />
+             <input type="hidden" name="id" value="{$info['id']}" />
+        </div>
+        <div class="modal fade" id="myModal1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                      <h4 class="modal-title" id="myModalLabel" style="font-size: 20px;">提示</h4>
+                    </div>
+                    <div class="modal-body ygsearch" style="font-size: 20px;padding: 15px 30px;">
+                        <input type="text" id="ygsinput" placeholder="请输入微信昵称">
+                        <span class="btn btn-sm ygbtn storeblue">搜索</span>
+                        <div class="searchname" style="margin-top: 8px;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    </div>
+                </div>
+            </div>
+        </div>    
+    </form>
+</div>
+<script type="text/javascript">
+    $(function(){
+        $("#frame-0").show();
+        $("#yframe-0").addClass("wyactive");
+        txmap();
+
+        $("#searchgoods").on('click',function(){
+            var name = $("#weixininput").val();
+            $.ajax({
+                type:"post",
+                url:"{php echo $this->createWebUrl('storeinfo2',array('op'=>'search'))}",
+                dataType:"json",
+                data:{name:name},
+                success:function(data){
+                    $(".searchname").html('');
+                    //var data = eval('(' + data + ')')
+                    console.log(data);
+                    $(".searchname").show();
+                    for(var i=0;i<data.length;i++){
+                        $(".searchname").append('<div class="shnbox" data-dismiss="modal" id="'+data[i].openid+'" uname="'+data[i].uname+'"><a href="javascript:void(0);"><p>'+data[i].uname+'</p></a></div>')
+                    }
+                    $(".shnbox").each(function(){
+                        $(this).click(function(){
+                            var openid = $(this).attr("id");
+                            $('#bind_openid').val(openid);
+                            var uname = $(this).attr("uname");
+                            $('#wx_name').text(uname);
+                        })
+
+                    })
+                }
+            })
+        });
+
+
+        $(".searchname").hide();
+        $(".ygbtn").on("click",function(){
+            var ygsinput = $("#ygsinput").val();
+            console.log(ygsinput)
+            if(ygsinput.length==''){
+              $(".searchname").html('');
+            }else{
+              $(".searchname").html('')  
+              var keywords = $("#ygsinput").val()
+              $.ajax({
+                  type:"post",
+                  url:"{$_W['siteroot']}/app/index.php?i={$_W['uniacid']}&c=entry&do=FindUser&m=yzqzk_sun",
+                  dataType:"text",
+                  data:{keywords:keywords},
+                  success:function(data){                    
+                      var data = eval('(' + data + ')')
+                      console.log(data);
+                      $(".searchname").show();
+                      for(var i=0;i<data.length;i++){
+                        $(".searchname").append('<div class="shnbox" data-dismiss="modal" id="'+data[i].id+'"><a href="javascript:void(0);"><p>'+data[i].name+'</p></a></div>')
+                      }
+                      $(".shnbox").each(function(){
+                        $(this).click(function(){
+                            // console.log($(this).attr("id"));
+                            // $("#username").val($(this).html())
+                            var thid = $(this).attr("id");
+                            $('#username option[value='+thid+']').attr("selected", true);
+                        })
+                        
+                      })
+                      
+                  }
+              }) 
+            }
+            
+        })
+
+        
+    })
+    layui.use('laydate', function () {
+        var laydate = layui.laydate;
+        laydate.render({
+            elem: '#starttime',
+            type: 'time',
+            format: 'HH:mm'
+        });
+        laydate.render({
+            elem: '#endtime',
+            type: 'time',
+            format: 'HH:mm'
+        });
+        laydate.render({
+            elem: '#astime',
+            type: 'datetime',
+        });
+    });
+</script>
+
+<style type="text/css">
+    .big-menu{overflow:inherit;}
+</style>

@@ -1,0 +1,187 @@
+{php include wl_template('common/header');}
+<script src="{TG_URL_WRES}js/jquery-ui-1.10.3.min.js"></script>
+<div class="panel panel-default">
+	<div class="panel-heading">拼团有礼</div>
+	<div class="panel-body">
+		<form action="" method="post" class="form-horizontal">
+			{if empty($id)}
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">选择商品</label>
+				 <div class="col-xs-12 col-sm-4 col-md-4 col-lg-8">
+					<select name="goodsid" class="form-control select select2" id="test" onchange="selectChange();">
+						<option value="" {if empty($_GPC['merchantid'])}selected="selected"{/if}>--选择--</option>
+						{loop $data $row}
+				            <option value="{$row['id']}" {if $_GPC['goodsid']==$row['id']}selected="selected"{/if} >{$row['gname']}</option>
+						{/loop}
+			        </select>
+				</div>
+			</div>
+			<div class="panel panel-default" id="show" style="display: none;">
+				<div class="table-responsive">
+					<table class="table table-hover">
+						<thead>
+						<tr>
+							<th style="width:80px;">商品图</th>
+							<th style="width:180px;">商品名</th>
+						</tr>
+						</thead>
+						<tbody>
+						<tr data-toggle="popover" data-trigger="hover" data-placement="left" class="js-goods-img">
+							<td><img class="scrollLoading2" id="img"  src=""  height="50" width="50"/></td>
+							<td class="line-feed" id="gname">
+								{php echo cutstr($goods['gname'], 30, true);}
+							</td>
+						</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+			{else}
+			<div class="panel panel-default">
+				<div class="table-responsive">
+					<table class="table table-hover">
+						<thead>
+						<tr>
+							<th style="width:80px;">商品图</th>
+							<th style="width:180px;">商品名</th>
+							<th class="text-center" style="width:120px;">所属商家</th>
+						</tr>
+						</thead>
+						<tbody>
+						<tr data-toggle="popover" data-trigger="hover" data-placement="left" class="js-goods-img">
+							<td><img class="scrollLoading" src="{IMAGE_PIXEL}" data-url="{php echo tomedia($goods['gimg'])}" onerror="this.src='{IMAGE_NOPIC_SMALL}'" height="50" width="50"/></td>
+							<td class="line-feed">
+								{php echo cutstr($goods['gname'], 30, true);}
+							</td>
+							<td class="text-center">
+								<span class="">{if empty($goods['merchant']['name'])}{$_W['account']['name']}{else}{$goods['merchant']['name']}{/if}</span>
+							</td>
+						</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<style>
+			.inner__content {background: #eee none repeat scroll 0 0;border-top: 1px solid #dcdcdc;box-sizing: border-box;color: #666;margin-top: 10px;margin-bottom:10px;min-width: 100%;padding: 10px 5px;width: auto;text-align:center;}
+			</style>
+			{/if}
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">拼团成功后操作：</label>
+				<div class="col-xs-12 col-sm-4 col-md-4 col-lg-8">
+					<label class="radio radio-inline">
+						<input type="radio" name="special_type" value="1" {if intval($goods['credits'])!=''}checked="checked"{/if} onclick="$('#special_type1').show();$('#special_type2').hide();$('#special_type3').hide();"> 赠送积分
+					</label>
+					<label class="radio radio-inline">
+						<input type="radio" name="special_type" value="2" {if intval($goods['give_coupon_id'])!=''}checked="checked"{/if} onclick="$('#special_type2').show();$('#special_type1').hide();$('#special_type3').hide();"> 赠送优惠券
+					</label>
+					<label class="radio radio-inline">
+						<input type="radio" name="special_type" value="3" {if intval($goods['give_gift_id'])!=''}checked="checked" {/if} onclick="$('#special_type3').show();$('#special_type2').hide();$('#special_type1').hide();"> 赠送赠品
+					</label>
+					<span class="help-block">拼团成功后自动执行该操作。</span>
+				</div>
+			</div>
+			<div class="form-group" id="special_type1" {if intval($goods['credits'])!=''}style="display: block;"{else}style="display: none;"{/if}>
+				<label class="col-xs-12 col-sm-3 col-md-2 col-lg-2 control-label">购买积分</label>
+				<div class="col-md-6">
+					<div class="input-group">
+						<input type="text" name="goods[credits]" class="form-control" value="{$goods['credits']}" />
+						<span class="input-group-addon">积分</span>
+					</div>
+					<span class="help-block">会员购买单个商品所获得的积分,如果不填或者填0，则默认为不奖励积分。</span>
+				</div>
+			</div>
+			<div class="form-group" id="special_type2" {if intval($goods['give_coupon_id'])!=''}style="display: block;"{else}style="display: none;"{/if}>
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">优惠券</label>
+				<div class="col-xs-12 col-sm-4 col-md-4 col-lg-8">
+					<select name="goods[coupon_id]" class="form-control select" id="test">
+						<option value="" {if empty($goods['give_coupon_id'])}selected="selected"{/if}>--选择--</option>
+						{loop $tg_coupon_templates $row}
+				            <option value="{$row['id']}" {if $goods['give_coupon_id']==$row['id']}selected="selected"{/if} >{$row['name']}</option>
+						{/loop}
+			        </select>
+				</div>
+			</div>
+			<div class="form-group" id="special_type3" {if intval($goods['give_gift_id'])!=''}style="display: block;"{else}style="display: none;"{/if}>
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">赠品</label>
+				<div class="col-xs-12 col-sm-4 col-md-4 col-lg-8">
+					<select name="goods[gift_id]" class="form-control select" id="test" >
+						<option value="" {if empty($goods['give_gift_id'])}selected="selected"{/if}>--选择--</option>
+						{loop $gift $row}
+				            <option value="{$row['id']}" {if $goods['give_gift_id']==$row['id']}selected="selected"{/if} >{$row['gname']}</option>
+						{/loop}
+			        </select>
+				</div>
+			</div>
+			<div class="form-group col-sm-12">
+				<input type="submit" name="submit" value="提交" class="btn btn-primary col-lg-1" />
+				<input type="hidden" name="token" value="{$_W['token']}" />
+			</div>
+		</form>
+	</div>
+</div>
+	<script language="javascript">
+	$(function(){
+		$("#param-items-level").sortable({handle:'.fa-move'});
+		$("#chkoption").click(function(){
+			var obj =$(this);
+			if(obj.get(0).checked){
+				$("#tboption").show();
+				$(".trp").hide();
+			}
+			else{
+				$("#tboption").hide();
+				$(".trp").show();
+			}
+		});
+	})
+	function selectChange(){
+		var s = document.getElementById("test");
+        var v = s.options[s.selectedIndex].value;
+        var ajaxurl = "{php echo web_url('application/ladder/ajax')}";
+        $.ajax({
+				type: "POST",
+				url: ajaxurl,
+				data:{id:v},
+				dataType: 'json',
+				beforeSend: function(XMLHttpRequest) {},
+				success: function(data) {
+					$('#show').show();
+					$('#img').attr("src",data.gimg);
+					$('#gname').html(data.gname);
+					
+				},
+				error:function(){alert("商品信息错误!");}
+			});
+	} 
+	$(function(){
+		$("#chkoption").click(function(){
+			var obj =$(this);
+			if(obj.get(0).checked){
+				$("#tboption").show();
+				$(".trp").hide();
+			}
+			else{
+				$("#tboption").hide();
+				$(".trp").show();
+			}
+		});
+	})
+	function addParam_level() {
+		var data = '';
+			data += '<tr>'
+						+'<td>'
+							+'<a href="javascript:;" class="fa fa-move" title="拖动调整此显示顺序"><i class="fa fa-arrows"></i></a>&nbsp;'
+							+'<a href="javascript:;" onclick="deleteParam_level(this)" style="margin-top:10px;"  title="删除"><i class="fa fa-times"></i></a>'
+						+'</td>'
+						+'<td>'
+							+'<input name="param_groupnum[]" type="text" class="form-control param_title" value=""/>'
+						+'</td>'
+						+'<td><input name="param_groupprice[]" type="text" class="form-control param_value" value=""/></td>'
+					+'</tr>';
+		$('#param-items-level').append(data);
+	}
+	function deleteParam_level(o) {
+		$(o).parent().parent().remove();
+	}
+</script>
+{php include wl_template('common/footer');}

@@ -1,0 +1,129 @@
+{template 'common/header'}
+<ul class="we7-page-tab">
+	<li {if $do == 'display'}class="active"{/if}><a href="{php echo url('message/notice/display');}">消息列表</a></li>
+	<li {if $do == 'setting'}class="active"{/if}><a href="{php echo url('message/notice/setting');}">消息设置</a></li>
+</ul>
+<div id="message-notice"  ng-controller="messageNoticeCtrl" ng-cloak>
+{if $do == 'display'}
+	<div class="btn-group we7-btn-group we7-padding-bottom">
+		<a href="{php echo url('message/notice')}" class="btn btn-default {if empty($type)} active {/if}">全部</a>
+		
+		{if $_W['isfounder'] && uni_user_see_more_info(ACCOUNT_MANAGE_NAME_VICE_FOUNDER, false)}
+		<a href="{php echo url('message/notice', array('type' => MESSAGE_ORDER_TYPE))}" class="btn btn-default {if $type == MESSAGE_ORDER_TYPE} active {/if}">订单消息</a>
+		{/if}
+		
+		<a href="{php echo url('message/notice', array('type' => MESSAGE_ACCOUNT_EXPIRE_TYPE))}" class="btn btn-default {if $type == MESSAGE_ACCOUNT_EXPIRE_TYPE} active {/if}">到期消息</a>
+		
+		{if $_W['isfounder'] && uni_user_see_more_info(ACCOUNT_MANAGE_NAME_VICE_FOUNDER, false)}
+		<a href="{php echo url('message/notice', array('type' => MESSAGE_REGISTER_TYPE))}" class="btn btn-default {if $type == MESSAGE_REGISTER_TYPE} active {/if}">注册提醒</a>
+		<a href="{php echo url('message/notice', array('type' => MESSAGE_WORKORDER_TYPE))}" class="btn btn-default {if $type == MESSAGE_WORKORDER_TYPE} active {/if}">工单提醒</a>
+		{/if}
+		
+		
+		{if user_is_founder($_W['uid'], true)}
+		<a href="{php echo url('message/notice', array('type' => MESSAGE_SYSTEM_UPGRADE))}" class="btn btn-default {if $type == MESSAGE_SYSTEM_UPGRADE} active {/if}">系统更新</a>
+		<a href="{php echo url('message/notice', array('type' => MESSAGE_OFFICIAL_DYNAMICS))}" class="btn btn-default {if $type == MESSAGE_OFFICIAL_DYNAMICS} active {/if}">官方动态</a>
+		{/if}
+	</div>
+	<div class="btn-group we7-btn-group we7-padding-bottom" style="float: right;">
+		<a href="javascript:;" ng-click="allRead()" class="btn">已读所有消息</a>
+	</div>
+	<table class="table we7-table table-hover vertical-middle" >
+		<col>
+		<col>
+		<col>
+		<tr>
+			<th colspan="{{ type==4 ? 4 : 3}}" class="text-left filter">
+				<div class="dropdown dropdown-toggle we7-dropdown">
+					<a data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+						全部消息
+						<span class="caret"></span>
+					</a>
+					<ul class="dropdown-menu" aria-labelledby="dLabel">
+						<li><a href="{php echo filter_url('is_read:');}" class="active">全部消息</a></li>
+						<li><a href="{php echo filter_url('is_read:' . MESSAGE_READ);}" class="active">已读消息</a></li>
+						<li><a href="{php echo filter_url('is_read:' . MESSAGE_NOREAD);}" class="active">未读消息</a></li>
+					</ul>
+				</div>
+			</th>
+		</tr>
+		<tr>
+			<th>标题内容</th>
+			<th class="text-center" ng-if="type==4" >来源</th>
+			<th class="text-center">时间</th>
+			<th class="text-right">操作</th>
+		</tr>
+		<tr ng-repeat="list in lists">
+			<td class="tip-before unread" ng-if ="list.is_read == 1 || list.is_read == 0">{{list.message}} {{type != 4 && list.source ? '(' + list.source + ')' : ''}}</td>
+			<td class="tip-before" ng-if ="list.is_read == 2">{{list.message}} {{type != 4 && list.source ? '(' + list.source + ')' : ''}}</td>
+			<td class="text-muted text-center" ng-if="type==4" ng-bind = "list.source"></td>
+			<td class="text-muted text-center" ng-bind = "list.create_time"></td>
+			<td>
+				<div class="link-group">
+					
+					<a ng-href="{{list.url}}" ng-if="list.type==1">查看我的订单</a>
+					
+					<a ng-href="{{list.url}}" ng-if="list.type==3">进入工单</a>
+					<a ng-href="{{list.url}}" ng-if="list.type==2">查看公众号</a>
+					<a ng-href="{{list.url}}" ng-if="list.type==5">查看小程序</a>
+					<a ng-href="{{list.url}}" ng-if="list.type==6">查看pc</a>
+					<a ng-href="{{list.url}}" ng-if="list.type==4 && list.status==1">查看我的待审核用户</a>
+					<a ng-href="{{list.url}}" ng-if="list.type==7">查看我的账号</a>
+					<a href="javascript:;" ng-if="list.type==10 || list.type==11" ng-click="getOfficialMsg(list.id, list.url)">查看</a>
+				</div>
+			</td>
+		</tr>
+	</table>
+</div>
+<div class="text-right we7-margin-top">
+{$pager}
+{/if}
+{if $do == 'setting'}
+	<div class="clearfix"></div>
+	<div class="table we7-tables we7-padding-bottom">
+		<table class="table we7-table table-hover">
+			<col width="80px"/>
+			<col width="300px"/>
+			<col width="100px"/>
+			<tr>
+				<th>消息类型</th>
+				<th>提醒说明</th>
+				<th class="text-right">操作</th>
+			</tr>
+			{loop $setting $property $property_info}
+			<tr>
+				<th>{$property_info['title']}</th>
+				<th>{$property_info['msg']}</th>
+				<th class="text-right">
+					<label>
+						<div class="switch {if empty($property_info['status']) || $property_info['status'] == MESSAGE_ENABLE} switchOn{/if}" id="key-{$property}" ng-click="changeStatus('{$property}', '{$property}')"></div>
+					</label>
+				</th>
+			</tr>
+				{loop $property_info['types'] $type $type_info}
+				<tr>
+					<td class="vertical-middle">{$type_info['title']}</td>
+					<td>{$type_info['msg']}</td>
+					<td class="text-right">
+						<label>
+							<div class="switch {if empty($type_info['status']) || $type_info['status'] == MESSAGE_ENABLE} switchOn{/if}" id="key-{$type}" ng-click="changeStatus('{$property}', {$type})"></div>
+						</label>
+					</td>
+				</tr>
+				{/loop}
+			{/loop}
+		</table>
+	</div>
+{/if}
+</div>
+<script type="text/javascript">
+	angular.module('messageApp').value('config', {
+		'type' : '{php echo $type}',
+		'lists': {php echo !empty($lists) ? json_encode($lists) : 'null'},
+		'is_read' : "{$is_read}",
+		'all_read_url' : "{php echo url('message/notice/all_read')}",
+		'mark_read_url' : "{php echo url('message/notice/read')}",
+	});
+	angular.bootstrap($('#message-notice'), ['messageApp']);
+</script>
+{template 'common/footer'}

@@ -1,0 +1,198 @@
+{php include wl_template('common/header');}
+<div class="page-group" >
+    <div class="page page-current">
+    	<header class="bar bar-nav">
+		    <a class="button button-link button-nav pull-left back" href="{php echo app_url('store/supervise/admin')}"><span class="icon icon-left"></span>返回</a>
+		    <h1 class="title">{$pagetitle}</h1>
+		</header>
+		<div class="content native-scroll">
+			<div class="weui-cells__title"><span class="dytext">核销员</span>信息</div>
+			<div class="list-block">
+		      <ul>
+		        <li>
+		          <div class="item-content">
+		            <div class="item-inner">
+		              <div class="item-title label">姓名</div>
+		              <div class="item-input">
+		                <input type="text" placeholder="请输入店员姓名" id="adminname" value="{$admin['name']}">
+		              </div>
+		            </div>
+		          </div>
+		        </li>
+		        <li>
+		          <div class="item-content">
+		            <div class="item-inner">
+		              <div class="item-title label">电话</div>
+		              <div class="item-input">
+		                <input type="tel" placeholder="请输入店员电话" id="admintel" value="{$admin['mobile']}">
+		              </div>
+		            </div>
+		          </div>
+		        </li>
+		        <li>
+		          <div class="item-content">
+		            <div class="item-inner">
+		              <div class="item-title label">账号类型</div>
+		              <div class="item-input">
+		                <select id="adminstatus" onchange="changetype(this)" >
+	        				{if $admin['ismain']==1}
+		                	<option value="1">系统管理员</option>
+		                	{else}
+		                	<option {if $admin['ismain']==2} selected="selected" {/if} value="2">核销员</option>
+		                	<option {if $admin['ismain']==3} selected="selected" {/if} value="3">管理员</option>
+		                	{/if}
+		                </select>
+		              </div>
+		            </div>
+		          </div>
+		        </li>
+		      </ul>
+		    </div>
+		    {if empty($id)}
+		    <div class="qrcodeconfig" id="adminqrocde">
+		    	<div class="qrcodeimg">
+		    		<img src="{php echo app_url('store/merchant/qrcodeimg',array('url'=>$showurl))}" />
+		    	</div>
+		    	<div class="qrcodetext">
+		    		<span>请员工扫描二维码，确认成为<span class="dytext">核销员</span></span>
+		    	</div>
+		    </div>
+		    <div class="weui-btn-area">
+	            <a class="weui-btn weui-btn_primary external" href="javascript:submitform()">创建<span class="dytext">核销员</span></a>
+	        </div>
+	        {else}
+			<div class="weui-btn-area">
+				<a class="weui-btn weui-btn_primary" {if $admin['ismain']!=1}style="width: 49%;display: inline-block"{/if}  href="javascript:submitform()">修改<span class="dytext">核销员</span></a>
+				{if $admin['ismain']!=1}
+				<a class="weui-btn weui-btn_warn"  style="width: 49%;display: inline-block"  href="{php echo app_url('store/supervise/admin',array('op'=>'del','id'=>$id))}">删除<span class="dytext">核销员</span></a>
+				{/if}
+			</div>
+	        {/if}
+		</div>
+	</div>
+</div>
+{if empty($id)}
+<style>
+.qrcodeconfig{background-color: white;}
+.qrcodeconfig .qrcodeimg{padding: 1rem 2rem 0 2rem;}
+.qrcodeconfig .qrcodeimg img{width: 100%;}
+.qrcodeconfig .qrcodetext{text-align: center;font-size: .8rem;padding: .5rem 0;}
+</style>
+<script type="text/html" id="qrcodeadmin">
+	<div class="list-block media-list" style="margin: .2rem 0 0 0;">
+      <ul>
+        <li>
+          <a href="javascript:;" class="item-link item-content">
+            <div class="item-media"><img src="{{ d.avatar }}" width="70" style="border: 1px solid #D9D9D9;border-radius: .4rem;"></div>
+            <div class="item-inner" style="padding-top: .95rem;">
+              <div class="item-title-row">
+                <div class="item-title">{{ d.nickname }}</div>
+              </div>
+              <div class="item-subtitle">已确认成为<span class="dytext">核销员</span></div>
+            </div>
+          </a>
+        </li>
+      </ul>
+    </div>
+    <input type="hidden" id="adminid" value="{{ d.id }}" />
+</script>
+<script>
+var timer=0;
+setTimeout("checkIslogin()",3000);
+function checkIslogin(){
+	timer++;
+	console.log(timer);
+	$.ajax({ 
+		url: "{php echo app_url('store/supervise/admin',array('op'=>'ajax','codes' => $qrcode))}",
+		type: "POST",
+		dataType:'json', 
+		success: function(data){
+    		if(data.success){
+				var gettpl = document.getElementById('qrcodeadmin').innerHTML;
+				laytpl(gettpl).render(data.dat, function(html){
+				  document.getElementById('adminqrocde').innerHTML = html;
+				});
+				var flag = $('#adminstatus').val();
+				if(flag == 2){
+					$(".dytext").text('核销员');
+				}else if(flag == 3){
+					$(".dytext").text('管理员');
+				}
+			}else{
+				if(data.msg){
+					$.alert(data.msg, function () {
+			            if(data.reload){
+							location.reload();
+						}
+			       	});
+				};
+				if(data.reload){
+					location.reload();
+				}
+				setTimeout("checkIslogin()",3000);
+			}
+		},
+		error:function(event,request,settings){
+    		alert("error");
+		}
+	})
+}
+
+</script>
+{else}
+<script>
+	var flag = $('#adminstatus').val();
+	if(flag == 2){
+		$(".dytext").text('核销员');
+	}else {
+		$(".dytext").text('管理员');
+	}
+</script>
+{/if}
+<script>
+	function submitform(){
+		var adminname = $('#adminname').val();
+		var admintel = $('#admintel').val();
+		var adminid = $('#adminid').val();
+		var adminstatus = $('#adminstatus').val();
+		if(!adminname){
+			$.toast("请输入店员姓名");
+			return false;
+		}
+		if(!admintel){
+			$.toast("请输入电话号码");
+			return false;
+		}
+		{if empty($id)}
+		if(!adminid){
+			$.toast("请员工扫描二维码确认成为店员");
+			return false;
+		}
+		{/if}
+		if(!adminstatus){
+			adminstatus = 2;
+		}
+		$.post("{php echo app_url('store/supervise/admin',array('op'=>'add','id'=>$id))}",{adminname:adminname,admintel:admintel,adminid:adminid,adminstatus:adminstatus},function(d){
+			if(d.result == 1){
+				$.alert(d.msg, function () {
+					location.href = "{php echo app_url('store/supervise/admin')}";
+				});
+			}else if(d.result == 2){
+				$.toast(d.msg);
+			}else{
+				$.toast("未知错误");
+			}
+		},"json");
+	}
+
+	function changetype(asd){
+		var flag = $(asd).val();
+		if(flag == 2){
+			$(".dytext").text('核销员');
+		}else if(flag == 3){
+			$(".dytext").text('管理员');
+		}
+	}
+</script>
+
+{php include wl_template('common/footer');}

@@ -1,0 +1,246 @@
+<table class="yg5_tabel col-md-7"  id="goods_spec_table1" >
+    <tr class="yg5_tr2" style="height: 50px;"><td colspan="2"><b>商品规格:</b></td></tr>
+    {loop $attr_arr $vo1}
+   <tr class="yg5_tr2" style="height: 50px;">
+         <td >{$vo1['name']}:</td>
+       {loop $vo1['values'] $vo2}
+         <td ><button type="button"  data-attr-id="{$vo1['id']}" data-gav-id="{$vo2['id']}"  class="btn {if isset($attr_value_ids)&&in_array($vo2['id'],$attr_value_ids)}btn-success{else}btn-default{/if}">{$vo2['value']}</button></td>
+       {/loop}
+   </tr>
+    {/loop}
+
+</table>
+<div id="goods_spec_table2"> <!--ajax 返回 规格对应的库存--> </div>
+
+<script>
+    ajaxGetSpecInput();
+    // console.log(11111);
+    // 规格按钮切换 class
+    $("#ajax_spec_data button").click(function(){
+        if($(this).hasClass('btn-success'))
+        {
+            $(this).removeClass('btn-success');
+            $(this).addClass('btn-default');
+        }else{
+            $(this).removeClass('btn-default');
+            $(this).addClass('btn-success');
+        }
+       ajaxGetSpecInput();
+    });
+
+    /**
+     *  点击商品规格触发下面输入框显示
+     */
+    function ajaxGetSpecInput()
+    {
+        var spec_arr = {};// 用户选择的规格数组
+        // console.log('{$attr_value_ids}')
+        // 选中了哪些属性
+        $("#goods_spec_table1  button").each(function(){
+            // console.log($(this).hasClass('btn-success'));
+            // console.log($(this).data('attr-id'));
+            // console.log($(this).data('gav-id'));
+            if($(this).hasClass('btn-success'))
+            {
+                var attr_id = $(this).data('attr-id');
+                // console.log(attr_id)
+                var gav_id = $(this).data('gav-id');
+                if(!spec_arr.hasOwnProperty(attr_id))
+                    spec_arr[attr_id] = [];
+                spec_arr[attr_id].push(gav_id);
+                // console.log(spec_arr[attr_id])
+            }
+        });
+        ajaxGetSpecInput2(spec_arr); // 显示下面的输入框
+    }
+
+    /**
+     * 根据用户选择的不同规格选项
+     * 返回 不同的输入框选项
+     */
+    function ajaxGetSpecInput2(spec_arr)
+    {
+        var goods_id = $("input[name='id']").val();
+        $.ajax({
+            type:'POST',
+            data:{spec_arr:spec_arr,goods_id:goods_id},
+            url:"{php echo $this->createWebUrl('addgoods1')}",
+            success:function(data){
+                $("#goods_spec_table2").html('').append(data);
+                hbdyg();
+            }
+        });
+    }
+    // 合并单元格
+    function hbdyg() {
+        var tab = document.getElementById("spec_input_tab"); //要合并的tableID
+        var maxCol = 2, val, count, start;  //maxCol：合并单元格作用到多少列
+        if (tab != null) {
+            for (var col = maxCol - 1; col >= 0; col--) {
+                count = 1;
+                val = "";
+                for (var i = 0; i < tab.rows.length; i++) {
+                    if (val == tab.rows[i].cells[col].innerHTML) {
+                        count++;
+                    } else {
+                        if (count > 1) { //合并
+                            start = i - count;
+                            tab.rows[start].cells[col].rowSpan = count;
+                            for (var j = start + 1; j < i; j++) {
+                                tab.rows[j].cells[col].style.display = "none";
+                            }
+                            count = 1;
+                        }
+                        val = tab.rows[i].cells[col].innerHTML;
+                    }
+                }
+                if (count > 1) { //合并，最后几行相同的情况下
+                    start = i - count;
+                    tab.rows[start].cells[col].rowSpan = count;
+                    for (var j = start + 1; j < i; j++) {
+                        tab.rows[j].cells[col].style.display = "none";
+                    }
+                }
+            }
+        }
+    }
+
+</script>
+
+
+
+
+<!--
+
+<table class="table table-bordered" id="goods_spec_table1">
+    <tr>
+        <td colspan="2"><b>商品规格:</b></td>
+    </tr>
+    <foreach name="specList" item="vo" key="k" >
+        <tr>
+            <td>{$vo[name]}:</td>
+            <td>
+                <foreach name="vo[spec_item]" item="vo2" key="k2" >
+                    <button type="button" data-spec_id='{$vo[id]}' data-item_id='{$k2}' class="btn <?php
+                             if(in_array($k2,$items_ids))
+                                    echo 'btn-success';
+                             else
+                                echo 'btn-default';
+                             ?>" >
+                        {$vo2}
+                    </button>
+
+                    <input type="hidden" name="item_img[{$k2}]" value="{$specImageList[$k2]}" />
+                    &nbsp;&nbsp;&nbsp;
+                </foreach>
+            </td>
+        </tr>
+    </foreach>
+</table>
+<div id="goods_spec_table2"> &lt;!&ndash;ajax 返回 规格对应的库存&ndash;&gt; </div>
+
+<script>
+
+    // 规格按钮切换 class
+    $("#ajax_spec_data button").click(function(){
+        if($(this).hasClass('btn-success'))
+        {
+            $(this).removeClass('btn-success');
+            $(this).addClass('btn-default');
+        }else{
+            $(this).removeClass('btn-default');
+            $(this).addClass('btn-success');
+        }
+        ajaxGetSpecInput();
+    });
+
+
+    /**
+     *  点击商品规格触发下面输入框显示
+     */
+    function ajaxGetSpecInput()
+    {
+//	  var spec_arr = {1:[1,2]};// 用户选择的规格数组
+//	  spec_arr[2] = [3,4];
+        var spec_arr = {};// 用户选择的规格数组
+        // 选中了哪些属性
+        $("#goods_spec_table1  button").each(function(){
+            if($(this).hasClass('btn-success'))
+            {
+                var spec_id = $(this).data('spec_id');
+                var item_id = $(this).data('item_id');
+                if(!spec_arr.hasOwnProperty(spec_id))
+                    spec_arr[spec_id] = [];
+                spec_arr[spec_id].push(item_id);
+                //console.log(spec_arr);
+            }
+        });
+        ajaxGetSpecInput2(spec_arr); // 显示下面的输入框
+
+    }
+
+    $(function () {
+        $(document).on("click", '.delete_item', function (e) {
+            if($(this).text() == '无效'){
+                $(this).parent().parent().find('input').attr('disabled','disabled');
+                $(this).text('有效');
+            }else{
+                $(this).text('无效');
+                $(this).parent().parent().find('input').removeAttr('disabled');
+            }
+        })
+    })
+
+    /**
+     * 根据用户选择的不同规格选项
+     * 返回 不同的输入框选项
+     */
+    function ajaxGetSpecInput2(spec_arr)
+    {
+
+        var goods_id = $("input[name='goods_id']").val();
+        $.ajax({
+            type:'POST',
+            data:{spec_arr:spec_arr,goods_id:goods_id},
+            url:"/index.php/admin/Goods/ajaxGetSpecInput",
+            success:function(data){
+                $("#goods_spec_table2").html('').append(data);
+                hbdyg();  // 合并单元格
+            }
+        });
+    }
+
+    // 合并单元格
+    function hbdyg() {
+        var tab = document.getElementById("spec_input_tab"); //要合并的tableID
+        var maxCol = 2, val, count, start;  //maxCol：合并单元格作用到多少列
+        if (tab != null) {
+            for (var col = maxCol - 1; col >= 0; col&#45;&#45;) {
+                count = 1;
+                val = "";
+                for (var i = 0; i < tab.rows.length; i++) {
+                    if (val == tab.rows[i].cells[col].innerHTML) {
+                        count++;
+                    } else {
+                        if (count > 1) { //合并
+                            start = i - count;
+                            tab.rows[start].cells[col].rowSpan = count;
+                            for (var j = start + 1; j < i; j++) {
+                                tab.rows[j].cells[col].style.display = "none";
+                            }
+                            count = 1;
+                        }
+                        val = tab.rows[i].cells[col].innerHTML;
+                    }
+                }
+                if (count > 1) { //合并，最后几行相同的情况下
+                    start = i - count;
+                    tab.rows[start].cells[col].rowSpan = count;
+                    for (var j = start + 1; j < i; j++) {
+                        tab.rows[j].cells[col].style.display = "none";
+                    }
+                }
+            }
+        }
+    }
+</script>-->

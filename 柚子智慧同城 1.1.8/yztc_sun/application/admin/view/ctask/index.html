@@ -1,0 +1,137 @@
+{extend name="common/index" /}
+{block name="search_box"}
+<style>
+    .layui-form-item .layui-form-label{
+        width: 180px;
+    }
+</style>
+<form class="layui-form">
+    <div class="layui-form-item">
+        <label class="layui-form-label">自动执行任务</label>
+        <div class="layui-input-block">
+            <input type="checkbox" name="task" lay-skin="switch" lay-text="开启|关闭" lay-filter="task" {$taskconfig.value?="checked"}>
+        </div>
+    </div>
+</form>
+
+<!--搜索栏-->
+<div class="search-box">
+    <div style="margin-top: 20px;">
+        <div class="layui-inline">
+            <input class="layui-input" name="key" id="key" placeholder="请输入关键字..." autocomplete="off">
+        </div>
+        <button class="layui-btn" id="btnSearch">搜索</button>
+    </div>
+</div>
+{/block}
+{block name="tool_box"}
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnBatchDelete" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+    </div>
+</div>
+{/block}
+{block name="tool_template"}
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDelete">删除</a>
+</script>
+{/block}
+{block name="table_config"}
+<script type="text/html" id="myState">
+    {{# if(d.state == 0){ }}
+    待执行
+    {{# } }}
+    {{# if(d.state == 1){ }}
+    已完成
+    {{# } }}
+</script>
+<script>
+    layui.use(['table','form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_list')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'type', width:180, title: '任务类型',fixed:'left',sort:true},
+                {field:'value', width:180, title: '传递值',sort:true},
+                {field:'level', width:180, title: '任务级别',sort:true},
+                {field:'memo', width:180, title: '备注',sort:true},
+                {field:'execute_time', width:200, title: '预计/执行时间',sort:true},
+                {field:'create_time', width:200, title: '创建时间',sort:true},
+                {field:'state',fixed:'right', width:100, title: '状态',sort:true,templet: '#myState'},
+                {field:'o',fixed:'right',width:200, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+        //        搜索
+        $('#btnSearch').unbind().click(function () {
+            //执行重载
+            table.reload('laytable', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                ,where: {
+                    key: $('#key').val(),
+                    type: $('#type').val(),
+                }
+            });
+        });
+        $('#key').unbind().on('keypress', function (e) {
+            if (e.keyCode == 13){
+                //执行重载
+                table.reload('laytable', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: $('#key').val(),
+                        type: $('#type').val(),
+                    }
+                });
+            }
+        })
+        //监听推荐状态切换操作
+        form.on('switch(task)', function(obj){
+            if (obj.elem.checked){
+                var url = "{:adminurl('starttask')}";
+                var msg = "开启";
+            }else{
+                var url = "{:adminurl('closetask')}";
+                var msg = "关闭";
+            }
+            $.post(url, {}, function(data){
+                if (typeof data == 'string'){
+                    data = $.parseJSON(data);
+                }
+                if (data.code == 0) {
+                    layer.msg(msg+'成功',{icon: 6,anim: 6});
+                    // table.reload('laytable',{});
+                }else{
+                    layer.msg(data.msg,{icon: 5,anim: 6});
+                }
+            });
+            return false;
+        });
+    })
+    require(['select2'], function () {
+        $('.select2').select2();
+        var ret = {php}echo \enum\AdType::getList4Select(){/php};
+
+        ret.unshift({id: '', text: '请选择类型'});
+        ret.map(function (obj) {
+            obj.keywords += obj.text.toPinYin() + obj.text.toPinYin(true);
+            return obj;
+        });
+        $('#type').select2({
+            data: ret,
+        })
+    })
+</script>
+{/block}

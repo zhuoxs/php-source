@@ -1,0 +1,125 @@
+{template '_header'}
+
+<div class="page-header" style="padding-bottom: 20px">
+    当前位置：<span class="text-primary" style="margin-top: 10px">活动列表</span>
+</div>
+
+<div class="page-content">
+    <div class="page-toolbar row m-b-sm m-t-sm">
+        <div class="col-sm-4">
+            {ifp 'friendcoupon.activity_list.add'}
+            <span class="pull-left">
+                <a class="btn btn-primary btn-sm" href="{php echo webUrl('friendcoupon.add')}"><i class="fa fa-plus"></i> 创建活动</a>
+            </span>
+            {/if}
+        </div>
+
+        <form action="{php echo webUrl('friendcoupon.add')}" type="get">
+            <input type="hidden" name="c" value="site">
+            <input type="hidden" name="a" value="entry">
+            <input type="hidden" name="m" value="ewei_shopv2">
+            <input type="hidden" name="do" value="web">
+            <input type="hidden" name="r" value="friendcoupon.activity_list">
+
+            <div class="col-sm-4 pull-right">
+                <div class="input-group">
+                    <div class="input-group-select">
+                        <select name="type" class='form-control'>
+                            <option value="1" {if $_GPC['type'] == '1'} selected{/if}>进行中</option>
+                            <option value="0" {if $_GPC['type'] == '0'} selected{/if}>未开始</option>
+                            <option value="-1" {if $_GPC['type'] == '-1'} selected{/if}>已结束</option>
+                            <option value="-2" {if $_GPC['type'] == '-2'} selected{/if}>手动停止</option>
+                        </select>
+                    </div>
+                    <input type="text" class="input-sm form-control" name="keyword" value="" placeholder="请输入活动名称"> <span class="input-group-btn">
+                    <button class="btn btn-sm btn-primary" type="submit"> 搜索</button> </span>
+                </div>
+            </div>
+        </form>
+
+    </div>
+
+    <form action="" method="post">
+        <table class="table table-hover table-responsive center-align">
+            <thead>
+            <tr>
+                <!--<th style="width:25px;text-align: center;"><input type="checkbox"></th>-->
+                <th style="width:150px;">活动名称</th>
+                <th style="width:100px;">内容</th>
+                <th style="width:150px;text-align: center;"></th>
+                <th style="width:100px;text-align: center;">活动时间</th>
+                <th style="width: 150px;text-align: center;">停止时间</th>
+                <th style="width: 100px;text-align: center;">状态</th>
+                <th style="width: 130px;text-align: center;">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {if empty($list)}
+            <tr>
+                <td colspan="7" style="text-align: center;border-bottom: 1px solid #efefef">没有任何活动</td>
+            </tr>
+            {/if}
+            {loop $list $key $activity}
+            <tr>
+                <!--<td><input type="checkbox" value="{$task['id']}"></td>-->
+                <td>
+                    <a href="javascript:;" data-href="{php echo webUrl('task.setdisplayorder',array('id'=>$task['id']));}">{$activity['title']}</a>
+                </td>
+                <td>
+                    {$activity['people_count']}人瓜分{$activity['coupon_money']}元
+                </td>
+                <td></td>
+                <td style="text-align: center;">
+                    {php echo date("Y-m-d H:i:s", $activity['activity_start_time'])} <br> {php echo date("Y-m-d H:i:s", $activity['activity_end_time'])}
+                </td>
+                <td style="text-align: center;"> {php echo $activity['stop_time']?  date("Y-m-d H:i:s", $activity['stop_time']) : "-"} </td>
+                <td style="text-align: center;">
+                    {if $activity['status']== -1}
+                        {if $activity['stop_time']}
+                            手动停止
+                        {else}
+                            已结束
+                        {/if}
+                    {elseif $activity['status'] == 0}
+                        未开始
+                    {elseif $activity['status'] == 1}
+                        进行中
+                    {/if}
+                </td>
+                <td style="text-align: center;">
+                    {ifp 'friendcoupon.activity_list.edit'}
+                    <a class="btn btn-default btn-sm" href="{php echo webUrl('friendcoupon.post',array('id'=>$activity['id']));}" title="编辑">
+                        <i class="fa fa-edit"></i></a>
+                    {/if}
+                    {ifp 'friendcoupon.activity_list.copy'}
+                    <a class="btn btn-default btn-sm" href="{php echo webUrl('friendcoupon.copy',array('cp_id'=>$activity['id']))}">
+                        <i class="fa fa-copy"></i></a>
+                    {/if}
+                    <a href="javascript:void(0)" class="btn btn-default btn-sm" data-toggle="popover" data-trigger="hover" data-html="true"
+                       data-content="<img width='130px' src='{php echo m('qrcode')->createQrcode($activity['codeUrl'])}'>"
+                       href="{php echo webUrl('friendcoupon.delete',array('id'=>$activity['id']))}"
+                       alt="链接二维码" >
+                        <i class="glyphicon glyphicon-qrcode"></i>
+                    </a>
+                    {ifp 'friendcoupon.activity_list.stop'}
+                    <a class="btn btn-default btn-sm" data-toggle="ajaxRemove"
+                       href="{php echo webUrl('friendcoupon.stop',array('id'=>$activity['id']))}" data-confirm="确定要停止该任务吗？所有进行中的活动都会停止" title="停止">
+                        <i class="fa fa-stop"></i></a>
+                    {/if}
+                    {ifp 'friendcoupon.activity_list.delete'}
+                    <a class="btn btn-default btn-sm" data-toggle="ajaxRemove"
+                       href="{php echo webUrl('friendcoupon.delete',array('id'=>$activity['id']))}" data-confirm="确定要删除该任务吗？" title="删除">
+                        <i class="fa fa-trash"></i></a>
+                    {/if}
+
+                </td>
+            </tr>
+            {/loop}
+            </tbody>
+        </table>
+        <div class="pull-right">{$pager}</div>
+
+    </form>
+</div>
+
+{template '_footer'}

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>layui</title>
+    <link rel="stylesheet" href="__STATIC__/bower_components/layui/src/css/layui.css">
+    <script src="__STATIC__/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="__STATIC__/bower_components/layui/src/layui.js"></script>
+
+    <link href="__STATIC__/bower_components/select2/dist/css/select2.css" rel="stylesheet" />
+    <script src="__STATIC__/custom/pinyin.js"></script>
+
+    <link href="__WEIQING_STATIC__/css/bootstrap.min.css" rel="stylesheet">
+    <!--<link href="__WEIQING_STATIC__/css/font-awesome.min.css" rel="stylesheet">-->
+    <link href="__WEIQING_STATIC__/css/common.css" rel="stylesheet">
+    <script>
+
+        window.sysinfo = {
+            'siteroot': '{$_W['siteroot']??''}',
+            'siteurl': '{$_W['siteurl']??''}',
+            'attachurl': '{$_W['attachurl']??''}',
+            'attachurl_local': '{$_W['attachurl_local']??''}',
+            'attachurl_remote': '{$_W['attachurl_remote']??''}',
+            'cookie' : {'pre': '{$_W['config']['cookie']['pre']??''}'},
+            'account' : {php} echo json_encode($_W['account']){/php}
+        };
+    </script>
+    <script src="__WEIQING_STATIC__/js/app/util.js"></script>
+    <script src="__WEIQING_STATIC__/js/app/common.min.js"></script>
+    <script>var require = { urlArgs: 'v=20161011' };</script>
+    <script src="__WEIQING_STATIC__/js/require.js"></script>
+    <script src="__WEIQING_STATIC__/js/app/config.js"></script>
+    <script>
+        requireConfig.baseUrl = "__WEIQING_STATIC__js/app";
+        requireConfig.paths.select2 = "__STATIC__/bower_components/select2/dist/js/select2";
+        require.config(requireConfig);
+
+        require(['select2','bootstrap'], function () {
+            $.fn.select2.defaults.set("matcher",function(params, data) {
+                if ($.trim(params.term) === '') {
+                    return data;
+                }
+                if (data.keywords && data.keywords.indexOf(params.term) > -1 || data.text.indexOf(params.term) > -1) {
+                    return data;
+                }
+                return null;
+            });
+        });
+    </script>
+    <style>
+        body{
+            min-width: 0px !important;
+        }
+        .select2{
+            width: 100%;
+        }
+        .select2 .select2-selection{
+            height: 38px;
+            border-radius: 2px;
+            /*border-color: rgb(230,230,230);*/
+        }
+        .select2 .select2-selection__rendered{
+            line-height: 38px!important;
+        }
+        .select2 .select2-selection__arrow{
+            height: 36px!important;
+        }
+
+        .layui-form-item .layui-form-label{
+            width: 180px;
+        }
+        .layui-form-item .layui-input-block{
+            margin-left: 210px;
+        }
+        /*修改表单页面样式*/
+        .layui-table-view .layui-form-checkbox{
+            margin-top: 0!important;
+        }
+        /*laytable 选中样式*/
+        .layui-table-check{
+            background-color: #e0f7de;
+        }
+        /*修改列表页面样式*/
+        .tool-box{
+            margin-top: 10px;
+            padding: 6px;
+            background: #fff;
+            border: 1px #ddd solid;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+    <div style="padding: 15px;">
+        <form class="layui-form" method="post" action="{:adminurl('save')}">
+            <input type="hidden" name="id" value="{$info.id??''}">
+            {block name="content"}内容{/block}
+            {block name="buttons"}
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button class="layui-btn" lay-submit="">立即提交</button>
+                    <button class="layui-btn layui-btn-primary" id="btnCancel">取消</button>
+                </div>
+            </div>
+            {/block}
+        </form>
+    </div>
+</div>
+<script>
+    //JavaScript代码区域
+    layui.use(['element','form','table'], function(){
+        var element = layui.element;
+        var form = layui.form;
+        var table = layui.table;
+
+        //更新选中状态
+        function updateCheckStyle() {
+            var className = "layui-table-check";//"layui-bg-green"
+            $('.layui-table .laytable-cell-checkbox .layui-form-checkbox:not(\'.layui-form-checked\')').parents('tr[data-index]').each(function (i, e) {
+                var $this = $(e);
+                var index = $this.data('index');
+                var $table = $this.parents('.layui-table-view');
+                $('tr[data-index='+index+']',$table).removeClass(className);
+            });
+            $('.layui-table .laytable-cell-checkbox .layui-form-checkbox.layui-form-checked').parents('tr[data-index]').each(function (i, e) {
+                var $this = $(e);
+                var index = $this.data('index');
+                var $table = $this.parents('.layui-table-view');
+                $('tr[data-index='+index+']',$table).addClass(className);
+            })
+        }
+        //		选中样式 - 单选
+        table.on('radio', function(obj){
+            updateCheckStyle();
+        });
+        //		选中样式 - 多选
+        table.on('checkbox', function(obj){
+            var data = obj.data;
+            updateCheckStyle();
+        });
+
+        //		选中逻辑
+        //		行点击选中
+        //		ctrl 多选
+        //		拖拉区域选中切换
+        var begin_index = 0;
+        var begin_clientX = 0;
+        var begin_clientY = 0;
+        $(document).on('mousedown','.layui-table-body tr', function (e) {
+            begin_index = $(this).data('index');
+            begin_clientX = e.clientX;
+            begin_clientY = e.clientY;
+        })
+        $(document).on('mouseup','.layui-table-body tr', function (e) {
+            var $table = $(this).parents('.layui-table-view');
+            var end_index = $(this).data('index');
+            var end_clientX = e.clientX;
+            var end_clientY = e.clientY;
+            //          同一行，点击位置不同--说明是在选择文本
+            if (end_index == begin_index && (end_clientX != begin_clientX || end_clientY != begin_clientY)){
+                return false;
+            }
+            //          同一行，点击位置一样--说明是单击
+            if (end_index == begin_index && end_clientX == begin_clientX && end_clientY == begin_clientY){
+                //              点击的是按钮/单选框/多选框/输入框
+                if ($(e.target).parents('.layui-form-switch,.laytable-cell-checkbox,.laytable-cell-radio,.layui-btn,[data-edit=true]').length || $(e.target).is('.layui-btn')){
+                    return false;
+                }
+                $('.layui-table-body tr[data-index='+end_index+'] .layui-form-radio:last',$table).click();
+            }
+
+            if (window.getSelection){
+                window.getSelection().removeAllRanges();
+            }else{
+                document.selection.empty();
+            };
+
+            // 如果没按住 ctrl 则清空其他选中
+            if (!e.ctrlKey){
+                $('tr[data-index]',$table).each(function (i, e) {
+                    var $this = $(e);
+                    $('.layui-form-checkbox.layui-form-checked:first',$this).click();
+                })
+                $('.layui-table-main .laytable-cell-checkbox .layui-form-checkbox.layui-form-checked',$table).click();
+            }
+            $('tr[data-index]',$table).each(function (i, e) {
+                var $this = $(e);
+                var index = $this.data('index');
+                if ((index>= begin_index && index<= end_index) || (index<= begin_index && index>= end_index)){
+                    $('.layui-form-checkbox:first',$this).click();
+                }
+            })
+            return false;
+        })
+        $('#btnCancel').click(function(e){
+            var index=parent.layer.getFrameIndex(window.name);
+            parent.layer.close(index);
+        })
+    })
+</script>
+<script>
+    if(self != top){
+        $(document).on('click',function () {
+            $('body',top.document).click();
+        })
+    }
+</script>
+{include file='common/copyright'/}
+</body>
+</html>

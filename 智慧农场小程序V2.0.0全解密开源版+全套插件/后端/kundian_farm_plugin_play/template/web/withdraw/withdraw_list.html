@@ -1,0 +1,124 @@
+{template 'web/common/common'}
+{template 'web/common/navbar'}
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/swal/dist/sweetalert2.min.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/layui.css" />
+<link rel="stylesheet" type="text/css" href="../addons/kundian_farm/resource/css/new-common.css" />
+<script src="../addons/kundian_farm/resource/layui.js" charset="utf-8"></script>
+<style>
+    .layui-form-label{width: 170px;}
+    .layui-input-block{margin-left: 170px;}
+    .layui-form-checkbox i{height: 30px;}
+</style>
+<blockquote class="layui-elem-quote layui-text">
+    提现记录
+</blockquote>
+
+<div class="new-style">
+    <div class="layui-form">
+        <table class="layui-table">
+            <colgroup>
+                <col width="150">
+                <col width="150">
+                <col width="200">
+                <col>
+            </colgroup>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>用户UID</th>
+                <th>用户昵称</th>
+                <th>提现金额（元）</th>
+                <th>使用金币</th>
+                <th>申请时间</th>
+                <th>是否已提现</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {loop $list $key $item}
+            <tr>
+                <td>{$item['id']}</td>
+                <td>{$item['uid']}</td>
+                <td><span class="layui-badge layui-bg-cyan">{$item['nickname']}</span></td>
+                <td>{$item['money']}</td>
+                <td>{$item['gold']}</td>
+                <td>{php echo date("Y-m-d H:i:s",$item['create_time'])}</td>
+                <td>
+                    {if $item['status']==1}
+                    <span class="layui-badge layui-bg-green">已提现</span>
+                    {elseif $item['status']==2}
+                    <span class="layui-badge layui-bg-warn">已拒绝</span>
+                    {else}
+                    <span class="layui-badge layui-bg-gray">未处理</span>
+                    {/if}
+                </td>
+
+                <td>
+                    {if $item['status']==0}
+                    <button class="layui-btn layui-btn-xs layui-btn-warm makeMoney" data-id="{$item['id']}"><i class="layui-icon">&#xe65e;</i>立即打款</button>
+                    <button class="layui-btn layui-btn-xs layui-btn-danger denyMakeMoney" data-id="{$item['id']}"><i class="layui-icon">&#xe640;</i>拒绝</button>
+                    {/if}
+                </td>
+            </tr>
+            {/loop}
+
+            </tbody>
+        </table>
+        <div style="text-align: right;">
+            {$pager}
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.use(['form','layer'], function(){
+        $ = layui.jquery;
+        var form = layui.form
+            ,layer = layui.layer;
+
+
+        /** 立即打款操作 */
+        $(".makeMoney").click(function () {
+            var that=$(this);
+            var id=$(this).attr("data-id");
+            layer.confirm('确认立即打款吗？', {icon: 3, title:'确认'}, function(index){
+                var load_index = layer.load();
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'makeMoney','version_id'=>$_GPC['version_id'])}",
+                    data:{id:id},
+                    dataType:'json',
+                    success:function(res){
+                        layer.close(load_index);
+                        layer.alert(res.msg,function () {
+                            window.location.reload();
+                        });
+                        layer.close(index);
+                    }
+                })
+            });
+        })
+
+        /** 拒绝提现操作 */
+        $(".denyMakeMoney").click(function () {
+            var that=$(this);
+            var id=$(this).attr("data-id");
+            layer.confirm('确认拒绝提现吗？', {icon: 3, title:'确认'}, function(index){
+                var load_index = layer.load();
+                $.ajax({
+                    type:"post",
+                    url:"{url 'site/entry/'.$_GPC['do'],array('m'=>$_GPC['m'],'op'=>'denyMakeMoney','version_id'=>$_GPC['version_id'])}",
+                    data:{id:id},
+                    dataType:'json',
+                    success:function(res){
+                        layer.close(load_index);
+                        layer.alert(res.msg,function () {
+                            window.location.reload();
+                        });
+                        layer.close(index);
+                    }
+                })
+            });
+        })
+    });
+</script>

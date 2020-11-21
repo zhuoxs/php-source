@@ -1,0 +1,232 @@
+{template 'common/header'}
+<div class='container' style='padding: 0 5px 10px; margin: 0; width: 100%'>
+
+    <ul class="nav nav-tabs">
+        <li><a href="{php echo $this->createWebUrl('superqrcode')}">超级活码</a></li>
+        <li {if $op== 'rules'}class="active"{/if}><a href="{php echo $this->createWebUrl('superqrcode',array('op'=>'rules','sid'=>$sid))}">跳转规则</a></li>
+        <li {if $op== 'rules_post'}class="active"{/if}>
+            {if empty($id)}
+            <a href="{php echo $this->createWebUrl('superqrcode',array('op'=>'rules_post','sid'=>$sid))}">添加跳转规则</a>
+            {else}
+            <a href="{php echo $this->createWebUrl('superqrcode',array('op'=>'rules_post','sid'=>$sid,'id'=>$id))}">编辑跳转规则</a>
+            {/if}
+        </li> 
+    </ul>
+    {if $op=='rules'}
+    <div class="panel panel-info">
+        <div class="panel-heading">筛选</div>
+        <div class="panel-body">
+            <form action="./index.php" method="get" class="form-horizontal" role="form">
+                <input type="hidden" name="c" value="site" />
+                <input type="hidden" name="a" value="entry" />
+                <input type="hidden" name="m" value="crad_qrcode_red" />
+                <input type="hidden" name="do" value="superqrcode" />
+                <div class="form-group" >
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">超级活码</label>
+                    <div class="col-sm-6 col-xs-12">
+                        <select  name="sid" id="sid">
+                            {loop $superqrcode_info $superqrcode_val}
+                            <option value="{$superqrcode_val['id']}" {if $superqrcode_val['id']==$sid}selected{/if}>{$superqrcode_val['name']}
+                                    {/loop}
+                    </select>
+                    <span class="help-block"></span></div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">关键字</label>
+                <div class="col-sm-8 col-lg-3">
+                    <input class="form-control" name="keyword" id="" placeholder="输入跳转规则名称" type="text" value="{$_GPC['keyword']}">
+                </div>
+                <div class=" col-xs-12 col-sm-2 col-lg-2">
+                    <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+                </div>
+            </div>
+        </form>
+
+    </div>
+
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading">跳转规则列表  总数：{$total}</div>
+
+    <div class="panel-body table-responsive">
+        <form action="" id="form1" method="post" class="form-horizontal form" enctype="multipart/form-data">
+            <table class="table table-hover">
+                <thead class="navbar-inner">
+                    <tr>
+                        <th style="width: 5%;" class="row-first">选择</th>
+                        <th style="width: 6%;">ID</th>
+                        <th style="width: 15%;">名称</th>
+                        <th style="width: 20%;">跳转地址</th>
+                        <th style="width: 20%;">时间</th>                   
+                        <th style="width: 8%;">状态</th>
+                        <th style="width: 20%;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="main">
+                    {loop $list $row}
+                    <tr>
+                        <td><input type="checkbox" name="ids[]" value="{$row['id']}" /></td>
+                        <td style="white-space: normal; word-break: break-all">{$row['id']}</td>
+                        <td style="white-space: normal; word-break: break-all">{$row['name']}</td>
+                        <td style="white-space: normal; word-break: break-all">{$row['aids']}</td>
+                        <td style="white-space: normal; word-break: break-all">{php echo date('Y-m-d H:i:s', $row['createtime']); }</td>
+                        <td style="white-space: normal; word-break: break-all">{if $row['status']==1}关闭{else}正常{/if}</td>
+                        <td style="white-space: normal; word-break: break-all">
+                            <a class="btn  btn-default" title="编辑" href="{php echo $this->createWebUrl('superqrcode',array('op'=>'rules_post','id'=>$row['id']))}" ><i class="fa fa-edit"></i></a>
+                            <a class="btn  btn-danger" href="{php echo $this->createWebUrl('superqrcode', array('op' => 'rules_del','id' => $row['id']))}" onclick="return confirm('该操作将会删除本条数据，是否确认操作？');return false;" class="btn btn-default btn-sm" data-toggle="tooltip" data-placement="bottom" title="删除"><i class="fa fa-times"></i></a>
+                        </td>
+                    </tr>
+                    {/loop}
+
+                    <tr>
+                        <td colspan="10">
+                            <input name="op" id="op" type="hidden" value="" />
+                            <input name="token" type="hidden" value="{$_W['token']}" />
+                            <button type="button" class="btn btn-primary" name="btndeleteall" id="btndeleteall" value=""/>批量删除</button> 
+                            <button  type="button" class="btn btn-danger" onclick="delete_all()">清空（删除所有记录）</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </form>
+    </div>
+    {$pager}
+</div>
+<script type="text/javascript">
+    function delete_all() {
+        if (confirm('确认删除 所有信息吗,删除完不可恢复?')) {
+            var sid = $("#sid").val();
+            var keyword = $("#keyword").val();
+            window.location.href = "{php echo $this->createWebUrl('soprano',array('op'=>'rules_deleteall'))}" + "&keyword=" + keyword + "&sid=" + sid;
+        }
+    }
+    $(function () {
+        $(".check_all").click(function () {
+            var checked = $(this).get(0).checked;
+            $("input[type=checkbox]").attr("checked", checked);
+        });
+        $("#btndeleteall").click(function () {
+            var check = $("input[type=checkbox][class!=check_all]:checked");
+            if (check.length < 1) {
+                alert('请选择要删除的数据!');
+                return false;
+            }
+            if (confirm("确认要删除选择的数据?删除后不可恢复")) {
+                $('#op').val('rules_deleteids');
+                $('#form1').submit();
+            }
+        });
+    });
+
+</script>
+
+{/if} 
+
+{if $op=='rules_post'}
+<div class="main">
+    <form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+        <div class="panel panel-default">
+            <div class="panel-heading">{if empty($id)}添加{else}编辑{/if}跳转规则</div>
+            <div class="panel-body">
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label"><span class="text-danger">*</span> 规则名称</label>
+                    <div class="col-sm-6 col-xs-12">
+                        <input type="text" name="name" class="form-control" value="{$set['name']}" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">状态</label>
+                    <div class="col-sm-5">
+                        <label class='radio-inline'>
+                            <input type="radio" name="status" value="0" {if empty($set['status'])} checked {/if}>开启
+                        </label>
+                        <label class='radio-inline'>
+                            <input type="radio" name="status" value="1" {if $set['status']==1}checked {/if}>关闭
+                        </label>
+                        <div class="help-block"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">跳转次数</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <div class="input-group">
+                            <div class="input-group-addon">每天最多</div>
+                            <input type="number" class="form-control" placeholder="" name="num_day" value="{$set['num_day']}">
+                            <div class="input-group-addon"></div>
+
+                            <div class="input-group-addon">次，总计最多</div>
+
+                            <input type="number" class="form-control" placeholder="" name="num" value="{$set['num']}">
+
+                            <div class="input-group-addon">次</div>
+
+                        </div>
+                        <div class="help-block">整数，不填或0表示无次数限制</div>
+                    </div>
+                </div>
+                  <div class="form-group">
+                        <label class="col-xs-12 col-sm-3 col-md-2 control-label">单用户跳转次数限制</label>
+                        <div class="col-sm-9 col-xs-12">
+                            <div class="input-group">
+                                <div class="input-group-addon">每天最多</div>
+                                <input type="number" class="form-control" placeholder="" name="num_day_user" value="{$set['num_day_user']}">
+                                <div class="input-group-addon"></div>
+
+                                <div class="input-group-addon">次，总计最多</div>
+
+                                <input type="number" class="form-control" placeholder="" name="num_user" value="{$set['num_user']}">
+
+                                <div class="input-group-addon">次</div>
+
+                            </div>
+                            <div class="help-block">整数，不填或0表示无次数限制</div>
+                        </div>
+                    </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">跳转权重</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="weight" value="{$set['weight']}"/>
+                        </div>
+                        <div class="help-block">整数，[1,100]，数字越大跳转概率越大</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-3 col-md-2 control-label">跳转到某个活动</label>
+                    <div class="col-sm-9 col-xs-12">
+                        <div class="input-group">
+                            <select  name="aid" id="aid">
+                                <option value="0" {if empty($set['aid'])}selected{/if} >选择跳转到某个活动</option>
+                                {loop $activity_list $activity_item}
+                                <option value="{$activity_item['id']}" {if $activity_item['id']==$set['aid']}selected{/if}>{$activity_item['name']}</option>
+                                {/loop}
+                            </select>
+                        </div>
+                        <div class="help-block">选择活动后 下面的跳转地址不填</div>
+                    </div>
+                </div>
+
+
+
+                <div class="form-group">
+                    <label class="col-xs-12 col-sm-2 col-md-2 col-lg-2 control-label">跳转地址</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="url" value="{$set['url']}"/>
+                        <div class="help-block">扫码后跳转的地址</div>
+                    </div>
+                </div>
+                <div class="form-group col-sm-12">
+                    <input type="hidden" name="token" value="{$_W['token']}" /> 
+                    <input type="hidden" name="id" value="{$id}" /> 
+                    <input type="submit" name="submit" value="提交" class="btn btn-primary col-lg-1" />
+                </div>
+
+            </div>
+    </form>
+</div>
+</div>
+
+{/if} 
+{template 'common/footer'}

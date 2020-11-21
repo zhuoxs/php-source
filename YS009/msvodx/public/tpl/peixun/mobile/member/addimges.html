@@ -1,0 +1,108 @@
+{include file="common/head"}
+
+<form class="layui-form" style="margin: 10px;" method="post" id="saveImgForm">
+
+    <div class="layui-form-item">
+        <div class="layui-word-aux"><b>说明</b>：可同时上传多张</div>
+        <div id="upload_proccess"></div>
+        <div style="margin-top: 20px; width:100%">
+            <div class="layui-progress" lay-showpercent="true" id="up_percent_div" style="display: none;">
+                <div class="layui-progress-bar" id="up_percent"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <div class="" style="display: inline-block;width:100%;">
+                <button type="button" name="upload" class="layui-btn layui-btn-primary layui-upload"  id="upload_img_chose_btn"">选择图片</button>
+                <button type="button"  class="layui-btn layui-btn-primary" id="upload_img_up_btn">上传</button>
+
+                <input style="float: right;background-color: grey;" id="save_btn" type="submit" disabled="disabled" value="保存" lay-submit="" lay-filter="formSubmit" class="layui-btn"/>
+            </div>
+        </div>
+    </div>
+
+    <div class="layui-form-item" id="img_list"></div>
+
+    <div id="chsoe_info"></div>
+
+</form>
+<link rel="stylesheet" href="__ROOT__/tpl/peixun/static/js/layui/css/layui.css">
+<link rel="stylesheet" href="//at.alicdn.com/t/font_485358_4ldl1uwbzj16ecdi.css">
+<script type="text/javascript" src="__ROOT__/tpl/peixun/static/js/jquery-3.2.1.min.js"></script>
+<script type="text/javascript" src="__ROOT__/tpl/peixun/static/js/layer/layer.js"></script>
+<script type="text/javascript" charset="utf-8" src="__ROOT__/tpl/peixun/static/js/layui/layui.js"></script>
+<script type="text/javascript" src="/static/plupload-2.3.6/js/plupload.full.min.js"></script>
+<script type="text/javascript" src="/static/xuploader/webServerUploader.js"></script>
+
+<style>  .layui-table td, .layui-table th{ word-break: break-all;} </style>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+
+    });
+
+    var fileCount=0;
+    var curCount=0;
+    function afterUpImg(resp){
+        var html='<div class="img_thumb"><img src="'+resp.filePath+'" /><div class="uploaded">上传完成</div></div><input type="hidden" class="upload-input" name="url[]" value="'+resp.filePath+'">';
+        $('#img_list').append(html);
+        ++curCount;
+        //var proccessInfo='上传完成:'+curCount+'/'+fileCount;
+        var percent=parseInt(curCount/fileCount*100)+"%";
+        $("#up_percent").attr('lay-percent', percent).css({"width":percent}).find('.layui-progress-text').html(percent);
+        if(percent=='100%'){
+            $('#save_btn').removeAttr('disabled').css({"background-color":"#009688"});
+            layer.msg('所有图片已全部上传完成，系统将自动保存.',{icon:1,time:2000,anim: 5});
+            setTimeout("$('#save_btn').click()",3000);
+        }
+        console.log(percent);
+    }
+
+    function aferChose(resp){
+        //console.log("--------------->",resp);
+        $("#save_btn").hide();
+        $("#up_percent_div").show('slow').find('.layui-progress-text').html('0%');
+        var html="<blockquote class=\"layui-elem-quote\">您共选择了<span class='layui-badge'>"+resp.fileCount+"</span>张图片";
+        var table="<table class='layui-table' > <thead><th width='70%' >文件名称</th><th width='30%'>文件大小</th></thead><tbody>";
+
+        for(var i=0;i<resp.fileList.length;i++){
+            //console.log(resp.fileList[i]);
+            var item=resp.fileList[i];
+            table+="<tr><td >"+item.name+"</td><td>"+item.size/1000+"kb</td></tr>";
+        }
+        table+="</tbody></table>"
+        html+=table;
+        html+='</blockquote>';
+        fileCount=resp.fileCount;
+        $("#chsoe_info").html(html);
+
+    }
+    $(function(){
+        createWebUploader('upload_img_chose_btn','upload_img_up_btn','','image',afterUpImg,true,aferChose);
+    });
+</script>
+<style>
+    .img_thumb{
+        border:1px solid #c1c1c1;
+        border-radius: 5px;
+        margin:5px;
+        width:150px;
+        overflow: hidden;
+        float:left;
+        height: 150px;
+        position: relative;
+    }
+    .img_thumb img{
+        height:100%;
+    }
+    .uploaded{
+        background-color: rgba(0, 0, 0,0.6);
+        color:#FFF;
+        position: absolute;
+        width: 150px;
+        bottom: 0px;
+        text-align: center;
+        padding:5px 0;
+    }
+</style>

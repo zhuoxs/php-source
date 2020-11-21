@@ -1,0 +1,249 @@
+{template 'common/header'}
+<div class="we7-page-title"> &nbsp; </div>
+<ul class="we7-page-tab">
+<li class="active"><a href="{php echo $this->createWebUrl('bbstopic');}">话题管理</a></li>
+<li><a href="{php echo $this->createWebUrl('bbscate');}">话题分类管理 </a></li>
+<li><a href="{php echo $this->createWebUrl('bbszan');}">点赞管理 </a></li>
+<li><a href="{php echo $this->createWebUrl('bbsreply');}">回复管理 </a></li>
+<li><a href="{php echo $this->createWebUrl('bbscollect');}">收藏管理 </a></li>
+</ul>
+
+<div class="btn-group we7-btn-group we7-margin-bottom">
+<a class="btn {php echo $op=='display'?'active':'';}" href="{php echo $this->createWebUrl('bbstopic');}">话题管理</a>
+{if $op=="post"}
+<a class="btn active" href="{php echo $this->createWebUrl('bbstopic');}">话题编辑</a>
+{/if}
+</div>
+
+{if $op == 'display'}
+<div class="panel panel-default">
+<div class="panel-heading">筛选</div>
+<div class="panel-body">
+<form action="" method="get" class="form-horizontal form" role="form">
+<input type="hidden" name="c" value="site" />
+<input type="hidden" name="a" value="entry" />
+<input type="hidden" name="m" value="vlinke_cparty" />
+<input type="hidden" name="do" value="bbstopic" />
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label"> 所属组织</label>
+        <div class="col-sm-10">
+            <div class="input-group">
+                <input type="text" class="form-control" name="branchname" id="branchname" value="{$branch['name']}" placeholder="请输入组织名称点击查询并选择...">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" onclick="javascript:checkBranch();">点击查询</button>
+                </span>
+            </div>
+            <div class="help-block" id="branchbox"></div>
+        </div>
+    </div>
+    <input type="hidden" name="branchid" id="branchid" value="{$branch['id']}" />
+    <script type="text/javascript">
+    function checkBranch() {
+        var branchname = $("#branchname").val();
+        $.post("<?php echo $this->createWebUrl('checkbranch'); ?>",{branchname:branchname},         
+            function(ret){
+                $("#branchbox").html(ret);
+            }
+        );
+    }
+    function clickBranch(branchid,branchname) {
+        $("#branchid").val(branchid);
+        $("#branchname").val(branchname);
+    }
+    </script>
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label">话题分类</label>
+        <div class="col-sm-4">
+            <select class="form-control" name="cateid">
+                <option value="0" {if $cateid==0} selected {/if}>全部分类</option>
+                {loop $bbscate $row}
+                <option value="{$row['id']}" {if $cateid==$row['id']} selected {/if}>{$row['name']}</option>
+                {/loop}
+            </select>
+        </div>
+
+        <label class="col-sm-2 control-label">党员姓名</label>
+        <div class="col-sm-4">
+            <input class="form-control" name="realname" type="text" placeholder="党员真实姓名..." value="{$realname}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-sm-2 control-label"></label>
+        <div class="col-sm-6">
+            <button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>
+            <!-- <button class="btn btn-default" name="output" value="1"><i class="fa fa-file"></i> 导出</button> -->
+            <button type="button" class="btn btn-default">总记录数：{$total}</button>
+        </div>
+    </div>
+</form>
+</div>
+</div>
+
+<table class="table we7-table table-hover vertical-middle">
+<thead class="navbar-inner">
+    <tr>
+        <th style="width:10%;">ID</th>
+        <th style="width:35%;">信息</th>
+        <th style="width:20%;">分类/时间</th>
+        <th style="width:35%; text-align:right;">
+            <a class="btn btn-success btn-sm" href="javascript:$('.trbox').show();"><i class="fa fa-eye"></i> 显示</a>
+            <a class="btn btn-success btn-sm" href="javascript:$('.trbox').hide();"><i class="fa fa-eye-slash"></i> 隐藏</a>
+        </th>
+    </tr>
+</thead>
+<tbody>
+    {loop $list $row}
+    <tr> 
+        <td><input type="checkbox" name="check" value="{$row['id']}"> {$row['id']}</td>
+        <td>
+            <p><strong>{$row['title']}</strong></p>
+            {$row['realname']}-{$row['mobile']} 
+        </td>
+        <td>
+            <p><span class="label label-default">{$bbscate[$row['cateid']]['name']}</span></p>
+            {php echo date('Y-m-d H:i',$row['createtime'])}
+        </td>
+        <td class="text-right">
+            <p>
+            <a class="btn btn-primary btn-sm" href="{php echo $this->createWebUrl('bbszan',array('topicid'=>$row['id']))}">点赞 <span class="badge">{php echo intval($zantol[$row['id']]['tol'])}</span></a>
+            <a class="btn btn-primary btn-sm" href="{php echo $this->createWebUrl('bbsreply',array('topicid'=>$row['id']))}">回复 <span class="badge">{php echo intval($replytol[$row['id']]['tol'])}</span></a>
+            <a class="btn btn-primary btn-sm" href="{php echo $this->createWebUrl('bbscollect',array('topicid'=>$row['id']))}">收藏 <span class="badge">{php echo intval($collecttol[$row['id']]['tol'])}</span></a>
+            </p>
+
+            <a class="btn btn-success btn-sm" href="javascript:$('#trbox{$row['id']}').slideToggle();"><i class="fa fa-eye"></i> 详情</a>
+            <a class="btn btn-success btn-sm" href="{php echo $this->createWebUrl('bbstopic',array('op'=>'post','id'=>$row['id']))}"><i class="fa fa-edit"></i> 编辑</a>
+            <a class="btn btn-default btn-sm" href="{php echo $this->createWebUrl('bbstopic',array('op'=>'delete','id'=>$row['id']))}" onclick="return confirm('删除话题会同时删除该话题相关的点赞、收藏、回复记录，删除后不能恢复，确定要删除吗？')"><i class="fa fa-times"></i> 删除</a>
+        </td>
+    </tr>
+
+    <tr class="trbox" id="trbox{$row['id']}" style="display: none;">
+        <td></td>
+        <td class="text-left" colspan="3">
+            <p><strong>内容详情：</strong>{$row['details']}</p>
+            <p>
+                {loop $row['picall'] $pic}
+                <a target="_brank" href="{php echo tomedia($pic);}">
+                <img width="150" style="margin: 0px 2px 5px 0px;" src="{php echo tomedia($pic);}">
+                </a>
+                {/loop}
+            </p>
+        </td>
+    </tr>
+    {/loop}
+    <tr>
+        <td class="text-left" colspan="2">
+          <span class="btn btn-success btn-sm checkall" id="checkall"><i class="icon-edit"></i>全选</span>
+          <span class="btn btn-success btn-sm uncheckall" id="uncheckall"><i class="icon-edit"></i>全不选</span>
+          <input type="button" class="btn btn-primary btn-sm deleteall" id="deleteall" name="deleteall" value="删除选择的" />
+        </td>
+        <td class="text-right" colspan="2">
+            <a class="btn btn-success btn-sm" href="javascript:$('.trbox').show();"><i class="fa fa-eye"></i> 显示</a>
+            <a class="btn btn-success btn-sm" href="javascript:$('.trbox').hide();"><i class="fa fa-eye-slash"></i> 隐藏</a>
+        </td>
+    </tr>
+</tbody>
+</table>
+<div class="pull-right">{$pager}</div>
+<script>
+    $(function(){
+        $('.checkall').bind('click',function(){
+            $("input[name='check']").each(function(){
+               $(this).prop("checked","checked");
+            });
+        });
+        $('.uncheckall').bind('click',function(){
+            $("input[name='check']").each(function(){
+               $(this).prop("checked",false);
+            });
+        });
+
+        $('#deleteall').click(function(){
+            var check = $("input:checked");
+            if(check.length<1){
+                alert("请选择要删除的记录!");
+                return false;
+            }
+            if(confirm("删除话题会同时删除该话题相关的点赞、收藏、回复记录，删除后不能恢复，确定要删除吗？")){
+                var id = new Array();
+                check.each(function(i){ id[i] = $(this).val(); });
+                $.post("<?php echo $this->createWebUrl('bbstopic',array('op'=>'deleteall')); ?>",{idArr:id},         
+                    function(data){
+                        if(data == 'error'){
+                           alert('删除失败！');
+                           location.reload();
+                        }else{
+                           alert('删除成功！');
+                           location.reload();
+                        }
+                    }
+                );
+            }
+        });
+    });
+</script>
+
+{elseif $op=="post"}
+<form action="" method="post" class="form-horizontal form" enctype="multipart/form-data">
+<input type="hidden" name="c" value="site" />
+<input type="hidden" name="a" value="entry" />
+<input type="hidden" name="m" value="vlinke_cparty" />
+<input type="hidden" name="do" value="bbstopic" />
+<input type="hidden" name="op" value="post" />
+<input type="hidden" name="id" value="{$id}" />
+<div class="panel panel-default">
+    <div class="panel-heading">
+        信息设置
+    </div>
+    <div class="panel-body">
+        <div class="form-group">
+            <label class="col-sm-2 control-label">文章分类</label>
+            <div class="col-sm-10">
+                <select name="cateid" class="form-control">
+                    {loop $bbscate $row}
+                    <option value="{$row['id']}" {if $row['id']==$bbstopic['cateid']}selected{/if}>{$row['name']}</option>
+                    {/loop}
+                </select>
+                <div class="help-block">请选择话题分类......</div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">发表用户</label>
+            <div class="col-sm-10">
+                <input type="text" name="userinfo" class="form-control" value="{$user['realname']}-{$user['mobile']}" readonly />
+                <div class="help-block"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">标题</label>
+            <div class="col-sm-10">
+                <input type="text" name="title" class="form-control" value="{$bbstopic['title']}" />
+                <div class="help-block"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">内容</label>
+            <div class="col-sm-10">
+                <textarea name="details" class="form-control" rows="5">{$bbstopic['details']}</textarea>
+                <div class="help-block"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">图片</label>
+            <div class="col-sm-10">
+                {php echo tpl_form_field_multi_image('picall', $bbstopic['picall']);}
+                <div class="help-block"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<div class="form-group col-sm-12">
+    <input type="hidden" name="token" value="{$_W['token']}" />
+    <input type="submit" name="submit" value="提交" class="btn btn-primary btn-submit" />
+</div>
+</form>
+
+{/if}
+{template 'common/footer'}

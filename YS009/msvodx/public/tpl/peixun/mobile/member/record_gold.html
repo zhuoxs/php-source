@@ -1,0 +1,69 @@
+{include file="common/head"}
+
+<div class="sheet">
+    <ul class="list">
+        {notempty name="list"}
+        {volist name='list' id='v'}
+        <li>
+            <!--订单状态-->
+            <p>订单号：{$v['id']}</p>
+            <span>金币：<var>{$v['gold']}</var></span>
+            <span style="float: right;"> {$v['explain']}</span>
+            <p>{:date('Y-m-d h:i:s',$v['add_time'])}</p>
+        </li>
+        {/volist}
+        {else/}
+        <li><div class="not-comment not" id="not-comment">你还没有金币记录哦 ~</div></li>
+        {/notempty}
+    </ul>
+</div>
+
+</div>
+<script>
+    var status = 1;
+    var page  = 0;
+    $(window).scroll(function(){
+        var srollPos = $(window).scrollTop();
+        var data = {
+            "page" : page,
+            "offset" : 20,
+        };
+        if(srollPos+$(window).height() > $(document).height() - 80){
+            if(status == 1) {
+                status = 0;
+                $.ajax({
+                    type: "POST",
+                    data: data,
+                    dataType: "JSON",
+                    url: "{:url('Api/record_gold')}",
+                    success: function (data) {
+                        if(data.resultCode == 0){
+                            var datas = data.data.list;
+                            if(datas){
+                                var html = '';
+                                datas.forEach(function(item) {
+                                    var add_time = item['add_time'];
+                                    var new_time = new Date(add_time * 1000);
+                                    html +=   '          <li>';
+                                    html +=   '            <p>订单号：'+item['id']+'</p>';
+                                    html +=   '            <span>金币：<var>'+item['gold']+'</var></span>';
+                                    html +=   '            <span style="float: right;"> '+item['explain']+'</span>';
+                                    html +=   '            <p>'+new_time.getFullYear()+'/'+(new_time.getMonth()+1)+'/'+new_time.getDay()+' '+new_time.getHours()+':'+new_time.getMinutes()+':'+new_time.getSeconds()+'</p>';
+                                    html +=    '        </li>' ;
+                                });
+                                $('.list').append(html);
+                                page++;
+                                status = 1;
+                            }else{
+                                console.log('没有更多数据了！');
+                            }
+                        }else{
+                            console.log('没有更多数据了！');
+                        }
+                    }
+                });
+            }
+        }
+    })
+</script>
+{include file="common/footer"}

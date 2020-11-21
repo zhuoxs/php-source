@@ -1,0 +1,2 @@
+<?php
+ goto d3oMT; d3oMT: global $_GPC, $_W; goto lyXyV; lyXyV: $u = pdo_get(table . "\x75\x73\x65\162", ["\x75\x6e\x69\x61\x63\x69\x64" => uniacid, "\157\160\145\x6e\x69\144" => openid]); goto twj3Y; twj3Y: include $this->template("\x79\x69\x6e\163\x69\x5f\x69\x6e\146\157");

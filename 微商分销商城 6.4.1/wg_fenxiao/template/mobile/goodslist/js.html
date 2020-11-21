@@ -1,0 +1,187 @@
+<script src="{STATIC_ROOT}/js/jquery-3.3.1.min.js"></script>
+<script>
+    function t() {
+        $(".tag_mask").removeClass("show"),
+            $(".have_down").removeClass("active2"),
+            $(".have_down .down").removeClass("up"),
+            $("html,body").css({
+                height: "auto",
+                minHeight: "100%",
+                overflow: "visible"
+            })
+    }
+    $(".tag_list .tag_item").click(function() {
+        n = $(this),
+            i = n.data("item"),
+            $(this).hasClass("have_down") ? $(this).hasClass("active2") ? t() : ($(".have_down .down").removeClass("up"),
+                $(this).addClass("active2"),
+                $(this).find(".down").addClass("up"),
+                $(".tag_mask").addClass("show"),
+                $(".tag_select_box").find("[data-item=" + i + "]").show().siblings(".select_list").hide(),
+                $("html,body").css({
+                    height: "100%",
+                    overflow: "hidden"
+                })) : (t(),
+                $(this).toggleClass("active"),
+                $(this).hasClass("active") ? $("#filter_list_gome>li[key=" + $(this).attr("key") + "]").addClass("checked") : $("#filter_list_gome>li[key=" + $(this).attr("key") + "]").removeClass("checked"));
+    });
+
+    $('.filter-all').click(function () {
+        var e = $('.filter-content');
+        asideSlideIn(e);
+    });
+
+    $('.close').click(function() {
+        var t = $('.filter-content');
+            asideSlideOut(t);
+    });
+
+    asideSlideIn = function(t) {
+        t.css("display", "block"),
+            setTimeout(function() {
+                (t.find(".bg").removeClass("fade_out"),
+                    t.find(".bg").addClass("fade_in")),
+                    t.find(".wrapper").removeClass("slide_out"),
+                    t.find(".wrapper").addClass("slide_in");
+            }, 100);
+    };
+    asideSlideOut = function(t) {
+        if (t.is(":visible")) {
+            (t.find(".bg").removeClass("fade_in"),
+                t.find(".bg").addClass("fade_out")),
+                t.find(".wrapper").removeClass("slide_in"),
+                t.find(".wrapper").addClass("slide_out");
+            t.hide(900);
+
+        }
+    };
+    </script>
+
+<script type="text/template" id="template_item">
+    <li class="gd_list">
+        <a class="a-mask" href="{url}"></a>
+        <div class="cont flexbox">
+            <span class="gd_img">
+                <img src="{image}" >
+            </span>
+            <div class="info_box flex1">
+                <h3 class="title ellipsis_two">
+                    <em style="color: red;border: 0.2px solid #F20C59;
+    border-radius: 2px;display: {display}">{label}</em>                                                        {goodsname}
+                </h3>
+                <div class="price_warp">
+                    <div class="price_box">
+                        <span class="price">
+                            <b><em class="icon-yuan">¥</em>{marketprice}</b>
+                        </span>
+
+                    </div>
+                </div>
+                <span class="cmt">
+                            <em class="cash_back">月销量{sell_total}</em>                            <em class="">{comment}人评论</em>
+                </span>
+
+                <!--<p class="mark_cmg mark_cmg_jd">比京东<em>省&yen;20</em></p>-->
+                <!--<p class="mark_cmg mark_cmg_sn">比京东<em>省&yen;20</em></p>-->
+            </div>
+        </div>
+    </li>
+    </script>
+<script type="text/template" id="template_items">
+    <li class="gd_list">
+    <a href="{url}"></a>
+    <div class="cont flexbox">
+        <a href="{url}">
+            <span class="gd_img"><img src="{image}"></span>
+            <div class="info_box flex1">
+                <strong class="title ellipsis_two">
+                    <span class="discount_suit" style="display: {display}">{label}</span>
+                    {goodsname}
+                </strong>
+                <span class="discount_suit_none"></span>
+                <div class="price_warp">
+                    <span class="price">
+                    <b>¥{marketprice}</b>
+                    </span>
+                </div>
+                <span class="cmt"><em class="">月销量{sell_total}</em></span>
+            </div>
+        </a>
+    </div>
+    </li>
+</script>
+<script>
+    var template_item = $('#template_item').html()
+    function formatTemplate(dta, tmpl) {
+        var format = {
+            name: function(x) {
+                return x
+            }
+        };
+        return tmpl.replace(/{([a-zA-Z_0-9]+)}/g, function(m1, m2) {
+            if (!m2) {
+                return "";
+            }
+            return (format && format[m2]) ? format[m2](dta[m2]) : dta[m2];
+        });
+    }
+    var more_url = "{php echo $this->createMobileUrl('goodslist',['op' => 'more'])}";
+    var page = 1;
+    function moreData() {
+        if (totalheight = parseFloat($(window).height()) + parseFloat($(window).scrollTop()),
+            $(document).height() <= totalheight + max) {
+            if (loading) {
+                return;
+            }else {
+                loading = true;
+                loadingdata();
+            }
+
+
+        }
+    }
+    function loadingdata() {
+        $("#loading").show(),
+            $.get(more_url,
+                {
+                    <?php if($kw){?>
+                    kw:"{$kw}",
+                    <?php }?>
+                    page: page,
+                    order:"{$order}",
+                    cate_id:"{$cate_id}"
+                },
+                function(data) {
+                    data = data.data;
+                    $("#loading").hide();
+                    page = data.page;
+                    $.each(data.list, function (key, dat) {
+                        $('#goods_list').append(formatTemplate(dat,template_item));
+                    });
+                    loading= false;
+                    if(!data.more) {
+                        $("#no_more").show();
+                        loading = true;
+                    }
+                },'JSON');
+    }
+    var max = 70, loading= false;
+    window.addEventListener("scroll", moreData);
+
+    $("#search_input").keypress(function(e) {
+        var keycode = e.keyCode;
+        var searchName = $(this).val();
+        if(searchName == '') {
+            showNotice('请输入搜索词');
+            return false;
+        }
+        if(keycode=='13') {
+            e.preventDefault();
+            location = "{php echo $this->createMobileUrl('goodslist')}"+"&kw="+searchName;
+        }
+    });
+    loadingdata();
+    $('#nav_return').click(function () {
+        history.back();
+    });
+</script>

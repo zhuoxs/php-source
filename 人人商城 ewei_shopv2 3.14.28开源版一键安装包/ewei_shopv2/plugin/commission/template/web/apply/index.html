@@ -1,0 +1,152 @@
+ {template '_header'}
+
+
+<div class="page-heading"> <h2>{$applytitle}提现申请 总数：{$total} {if $status == 3}发送总额 : {$realmoney_total}{/if}</h2> </div>
+
+
+<form action="./index.php" method="get" class="form-horizontal  table-search" role="form" id="form1">
+    <input type="hidden" name="c" value="site" />
+    <input type="hidden" name="a" value="entry" />
+    <input type="hidden" name="m" value="ewei_shopv2" />
+    <input type="hidden" name="do" value="web" />
+    <input type="hidden" name="r" value="commission.apply" />
+    <input type="hidden" name="status" value="{$status}" />
+    <div class="page-toolbar row m-b-sm m-t-sm">
+        <div class="col-sm-6">
+
+            <div class="btn-group btn-group-sm" style='float:left'>
+                <button class="btn btn-default btn-sm"  type="button" data-toggle='refresh'><i class='fa fa-refresh'></i></button>
+
+            </div>
+
+
+            <div class='input-group input-group-sm'   >
+
+
+                <select name='timetype'   class='form-control  input-sm select-md'   style="width:95px;"  >
+                    <option value=''>不按时间</option>
+                    {if $status>=1}<option value='applytime' {if $_GPC['timetype']=='applytime'}selected{/if}>申请时间</option>{/if}
+                    {if $status>=2}<option value='checktime' {if $_GPC['timetype']=='checktime'}selected{/if}>审核时间</option>{/if}
+                    {if $status>=3}<option value='paytime' {if $_GPC['timetype']=='paytime'}selected{/if}>打款时间</option>{/if}
+                </select>
+
+
+                {php echo tpl_form_field_eweishop_daterange('time', array('starttime'=>date('Y-m-d H:i', $starttime),'endtime'=>date('Y-m-d H:i', $endtime)),true);}
+
+            </div>
+        </div>
+
+        <div class="col-sm-6 pull-right">
+            <select name='agentlevel' class='form-control  input-sm select-md' style="width:100px;">
+                <option value=''>等级</option>
+                {loop $agentlevels $level}
+                <option value='{$level['id']}' {if $_GPC['agentlevel']==$level['id']}selected{/if}>{$level['levelname']}</option>
+                {/loop}
+            </select>
+            <select name='searchfield'  class='form-control  input-sm select-md'   style="width:110px;"  >
+                <option value='member' {if $_GPC['searchfield']=='member'}selected{/if}>会员信息</option>
+                <option value='applyno' {if $_GPC['searchfield']=='applyno'}selected{/if}>提现单号</option>
+            </select>
+            <div class="input-group">
+                <input type="text" class="form-control input-sm"  name="keyword" value="{$_GPC['keyword']}" placeholder="请输入关键词"/>
+				<span class="input-group-btn">
+					<button class="btn btn-sm btn-primary" type="submit"> 搜索</button>
+					   {ifp 'commission.agent.export'}
+							<button type="submit" name="export" value="1" class="btn btn-success btn-sm">导出</button>
+							{/if}
+				</span>
+            </div>
+
+        </div>
+    </div>
+</form>
+
+{if count($list)>0}
+
+<table class="table table-hover">
+    <thead class="navbar-inner">
+    <tr>
+        <th style='width:200px;'>提现单号</th>
+
+        <th style='width:90px;'>分销等级</th>
+        <th style='width:90px;'>提现方式</th>
+        <th style='width:100px;'>申请佣金<br>{if $status==3}实际到账{else}实际佣金{/if}<br>提现手续费
+        </th>
+        <th style='width:90px;'>已发送金额 <br/>(微信红包)</th>
+        {if $status==-1}
+        <th style='width:100px;'>无效时间</th>
+
+        {elseif $status>=3}
+        <th style='width:100px;'>打款时间</th>
+
+        {elseif $status>=2}
+        <th style='width:100px;'>审核时间</th>
+
+        {elseif $status>=1}
+        <th style='width:100px;'>申请时间</th>
+
+        {/if}
+
+        <th>操作</th>
+    </tr>
+    </thead>
+    <tbody>
+    {loop $list $row}
+    <tr>
+        <td>{$row['applyno']}<br>
+            {ifp 'member.list.view'}
+            <a  href="{php echo webUrl('member/list/detail',array('id' => $row['mid']));}" target='_blank'>
+                <img src='{php echo tomedia($row['avatar'])}' style='width:30px;height:30px;padding1px;border:1px solid #ccc' /> {$row['nickname']}
+            </a>
+            {else}
+            <img src='{php echo tomedia($row['avatar'])}' style='width:30px;height:30px;padding1px;border:1px solid #ccc' /> {$row['nickname']}
+            {/if}
+            <br/>
+            {$row['realname']}/{$row['mobile']}
+        </td>
+        <td>{$row['levelname']}</td>
+        <td>{$row['typestr']}</td>
+        <td>{$row['commission']}
+            <br>
+            {$row['realmoney']}
+            <br>
+            {$row['charge']}%</td>
+        <td>{if (float)$row['sendmoney'] != 0}{$row['sendmoney']}{else}-{/if}</td>
+        <td >
+            {if $row['status']!=1}<a data-toggle='popover' data-content="
+                         {if $status>=1 && $row['status']!=1}申请时间: <br/>{php echo date('Y-m-d',$row['applytime'])}<br/>{php echo date('H:i',$row['applytime'])}{/if}
+                         {if $status>=2 && $row['status']!=2}<br/>审核时间: <br/>{php echo date('Y-m-d',$row['checktime'])}<br/>{php echo date('H:i',$row['checktime'])}{/if}
+                         {if $status>=3 && $row['status']!=3}<br/>付款时间: <br/>{php echo date('Y-m-d',$row['paytime'])}<br/>{php echo date('H:i',$row['paytime'])}{/if}
+                         {if $status==-1}<br/>无效时间: <br/>{php echo date('Y-m-d',$row['invalidtime'])}<br/>{php echo date('H:i',$row['invalidtime'])}{/if}
+                         
+                            " data-html="true" data-trigger="hover">{/if}
+            {if $status==1}
+            {php echo date('Y-m-d',$row['applytime'])}<br/>{php echo date('H:i',$row['applytime'])}
+            {elseif $status==2}
+            {php echo date('Y-m-d',$row['checktime'])}<br/>{php echo date('H:i',$row['checktime'])}
+            {elseif $status==3}
+            {php echo date('Y-m-d',$row['paytime'])}<br/>{php echo date('H:i',$row['paytime'])}
+            {elseif $status==-1}
+            {php echo date('Y-m-d',$row['invalidtime'])}<br/>{php echo date('H:i',$row['invalidtime'])}
+            {/if}
+            {if $row['status']!=1}<i class="fa fa-question-circle"></i></a>{/if}
+        </td>
+        <td>
+        	{ifp 'commission.apply.detail'}
+            	<a class='btn btn-default btn-sm' href="{php echo webUrl('commission/apply/detail',array('id' => $row['id'],'status'=>$row['status']))}">详情</a>
+            {/if}
+        </td>
+    </tr>
+    {/loop}
+    </tbody>
+</table>
+{$pager}
+{else}
+<div class='panel panel-default'>
+    <div class='panel-body' style='text-align: center;padding:30px;'>
+        暂时没有任何{$applytitle}提现申请!
+    </div>
+</div>
+{/if}
+
+{template '_footer'}

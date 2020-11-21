@@ -1,0 +1,150 @@
+{{include file='common/head.html'}}
+<body leftmargin="0" topmargin="0" bgcolor="#ffffff" text="#000000">
+
+<div align="center">
+	<div class="wid_main mar_main" align="left">
+		<div class="block_top" align="left">当前位置：邮件群发--> 群发邮件</div>
+		<div id='con' style="display:none"></div>
+		<table class="table_main2" cellpadding="0" cellspacing="1">
+			<tr><td colspan="2" class="bg_main"><b>群发邮件</b></td></tr>
+
+			<tr><td class="wid_general">发送邮箱：</td>
+				<td><textarea name='mail_address' id='address' rows='4' cols='60' ></textarea><font color='red'>(注：多个邮箱用逗号分割,留空为所有注册账户)</font></td></tr>
+						
+			<tr><td>邮件标题：</td>
+				<td><input name='mail_subject' id='subject' style="height:28px" type='text' value="" size="48"></td></tr>
+				
+			<tr><td id="body-lable">邮件内容：</td>
+				<td id="result"> 
+				<span >
+				<textarea name='mail_body'  id='body' rows='10' cols='60'></textarea>
+				</span>
+				
+				</td></tr>
+			<tr><td>&nbsp;</td>
+				<td >
+				<input type='button' onClick="send();" style="width:100px;height:35px;color:blue" id="send" value="发送">
+				<input type='button' onClick="ajaxSend();" style="width:100px;height:35px;color:green" id="ajaxsend" value="循环单个发">	
+				<span style="margin-left:30px;"><a href="?c=mail&a=sendMailFrom">刷新</a></span>
+				</td></tr>
+				
+		</table>
+	</div>
+</div> 	
+<script type='text/javascript'>
+function send()
+{
+	var subject = $("#subject").val();
+	var body = $("#body").val();
+	if (!subject) {
+		alert('标题不能为空');
+		return;
+	}
+	if (!body) {
+		alert('内容不能为空');
+		return;
+	}
+	$("#con").css("display","block");
+	$("#con").html('<font color="red">正在发送中......</font>');
+	var url = "?c=mail&a=send";
+	var address = $("#address").val();
+	if (address !="" && address != null) {
+		$.post(url,{address:address,mail_body:body,mail_subject:subject},function(msg){
+			alert(msg);
+			$("#con").css("display","none");
+			$("#con").html("");
+			});
+	}else{
+		$.post(url,{mail_body:body,mail_subject:subject},function(msg){
+			alert(msg);
+			$("#con").css("display","none");
+			$("#con").html("");
+			});
+	}
+}
+var container = [];
+function ajaxSend()
+{
+	container = [];
+	var subject = $("#subject").val();
+	var body = $("#body").val();
+	if (!subject) {
+		alert('标题不能为空');
+		return;
+	}
+	if (!body) {
+		alert('内容不能为空');
+		return;
+	}
+	var address = $("#address").val();
+	if (!address) {
+		$.ajax({
+			url:'?c=mail&a=getAllMail',
+			dataType:'json',
+			async:false,
+			success:function(a){
+				if (!a.sum) {
+					alert('没有找到邮箱账户');
+					return;
+				}
+				for ( var i in a.rows) {
+					var row = [];
+					row['mail'] = a.rows[i];
+					row['title'] = subject;
+					row['body'] = body;
+					container.push(row);
+				}
+			},
+			error:function(e) {
+				alert('服务器数据出错,请重试');
+				return;
+			}
+		});
+	}else {
+		var mails = address.split(',');
+		for ( var i in mails) {
+			var row = [];
+			row['mail'] = mails[i];
+			row['title'] = subject;
+			row['body'] = body;
+			container.push(row);
+		}
+	}
+	$("#result").html('<h4>正在发送...</h4>');
+	deferrSend(0);
+}
+function deferrSend(key)
+{
+	if (key == container.length) {
+		$("#result").append("<div>发送完成</div>");
+		return;
+	}
+	deferrSendOne(key);
+}
+function deferrSendOne(key) 
+{
+	var row = container[key];
+	$("#result").append('<span>发送 ' + row['mail'] + '... ');
+	$.ajax({
+		url:'?c=mail&a=ajaxSend',
+		data:{
+			address:row['mail'],mail_body:row['body'],mail_subject:row['title']
+		},
+		dataType:'json',
+		success:function(a) {
+			if (a.code != 1) {
+				$("#result").append("<b style='color:red'>" +  a.message + "</b> </span><br>");
+			}else {
+				$("#result").append(" 发送成功</span><br>");
+			}
+			deferrSend(key+1);
+		},
+		error:function(e) {
+			$("#result").append(" <b style='color:red'>服务器出错</b></span><br>");
+			deferrSend(key+1);
+		}
+	});	
+}
+
+</script>
+	

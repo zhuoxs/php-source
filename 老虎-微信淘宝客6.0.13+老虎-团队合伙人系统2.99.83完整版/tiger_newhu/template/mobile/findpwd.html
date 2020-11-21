@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+    <meta name="renderer" content="webkit" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>找回密码</title>
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <link rel="stylesheet" href="{$_W['siteroot']}addons/tiger_wxdaili/template/mobile/public/css/style.css" />
+</head>
+
+<body class="">
+    <div class="header  ">
+        <p></p>
+        <h3 class="tit">修改密码</h3>
+        <a href="javascript:void(0)" class="return"  onClick="javascript:history.back()"></a>
+        <div class="m-select">
+            <!-- <a href="javascript:void;" class="all">全部</a>
+            <div class="con">
+                <a href="">111</a>
+                <a href="">222</a>
+            </div> -->
+        </div>
+        <div class="m-calendar"></div>
+    </div>
+    <div class="m-alter">
+        <form>
+            
+            <div class="desc">
+                <span class="sp1">手机号码</span>
+                <input class="inp js-inp" type="text" id="pcuser" name="pcuser" placeholder="请输入您的手机号" value="" onkeyup="(this.v=function(){this.value=this.value.replace(/[^0-9-]+/,'');}).call(this)" onblur="this.v();" />
+				<i class="del js-del"></i>
+            </div>
+			<div class="desc">
+				<span class="sp1">修改密码</span>
+				<input class="inp js-inp" type="text" id="password" name="password" placeholder="请输入新的密码" value="" />
+				<i class="del js-del"></i>
+			</div>
+            <div class="desc">
+                <span class="sp1">验证码</span>
+                <input class="inp" type="text" id="code" name="code" placeholder="请输入验证码" />
+                <input class="inp2" id="btnSendCode" type="button"  value="获取验证码" onClick="sendMessage()" />
+            </div>
+        </form>
+    </div>
+    <a href="javascript:void(0)" class="btn-alter" id="findreg">立即修改</a>
+    <script src="{$_W['siteroot']}addons/tiger_wxdaili/template/mobile/public/js/jquery.min.js"></script>
+    <script src="{$_W['siteroot']}addons/tiger_wxdaili/template/mobile/public/js/lib.js"></script>
+	<script type="text/javascript" src="{$_W['siteroot']}addons/tiger_newhu/template/mobile/js/layer_mobile/layer.js"></script>
+    <script>
+        // 点击删除 清空输入框的内容
+        $('.js-del').click(function() {
+            $(this).parents('.desc').find('.js-inp').val('');
+        });
+    </script>
+    <script>
+        // 验证码倒计时
+        var InterValObj; //timer变量，控制时间
+        var count = 30; //间隔函数，1秒执行
+        var curCount; //当前剩余秒数
+        var code = ""; //验证码
+        var codeLength = 6; //验证码长度
+        function sendMessage() {
+            curCount = count;
+            var dealType; //验证方式
+            var uid = $("#uid").val(); //用户uid
+            if ($("#phone").attr("checked") == true) {
+                dealType = "phone";
+            } else {
+                dealType = "email";
+            }
+            //产生验证码
+            for (var i = 0; i < codeLength; i++) {
+                code += parseInt(Math.random() * 9).toString();
+            }
+            //设置button效果，开始计时
+            $("#btnSendCode").attr("disabled", "true");
+            $("#btnSendCode").val(+curCount + "秒再获取");
+            InterValObj = window.setInterval(SetRemainTime, 1000); //启动计时器，1秒执行一次
+            //向后台发送处理数据
+			// alert($("#pcuser").val());
+            $.ajax({
+            		url:"{php echo $this->createMobileUrl('sms')}",
+            		method: 'post',
+            		data: {'tel':$("#pcuser").val(),'uid':'','type':2},
+            		success:function(res){
+            				
+            		}
+            });
+        }
+        //timer处理函数
+        function SetRemainTime() {
+            if (curCount == 0) {
+                window.clearInterval(InterValObj); //停止计时器
+                $("#btnSendCode").removeAttr("disabled"); //启用按钮
+                $("#btnSendCode").val("重新发送验证码");
+                code = ""; //清除验证码。如果不清除，过时间后，输入收到的验证码依然有效    
+            } else {
+                curCount--;
+                $("#btnSendCode").val(+curCount + "秒再获取");
+            }
+        }
+		
+		
+		
+		$('#findreg').on('click', function() {
+			var pcuser=$("#pcuser").val();
+			var password=$("#password").val();
+			var code=$("#code").val();
+
+			$.ajax({
+					type:'post',
+					url:"{php echo $this->createMobileUrl('findpwd')}",
+					dataType:'json',
+					data:{"pcuser":pcuser,"pcpasswords":password,"code":code},
+					success:function(res){
+						//alert(res);
+						if(res.status==1){
+							layer.open({
+									content: res.msg
+									,skin: 'msg'
+									,time: 6 //2秒后自动关闭
+								});
+							if(res.tzurl){
+								//alert(res.tzurl);
+								setTimeout(function() {
+									window.location.href=res.tzurl
+								}, 1000);
+							}else{
+								setTimeout(function() {
+										window.location.href="{php echo $this->createMobileUrl('index')}";
+								}, 1000);
+								
+							}
+							//alert(res.tzurl);
+							return false;
+						}else{
+							// alert(JSON.stringify(res));
+							layer.open({
+								content: res.msg
+								,skin: 'msg'
+								,time: 3 //2秒后自动关闭
+							});
+						return false;
+						}
+						
+					}
+				});
+		});
+    </script>
+</body>
+
+</html>

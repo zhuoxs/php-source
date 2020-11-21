@@ -1,0 +1,115 @@
+<view class="container" wx:if="{{completed}}">
+    <view bindtap="showPopup" class="item_wrap" wx:if="{{info}}">
+        <view class="list-item">
+            <view class="inline">
+                <image class="item-avatar" src="{{info.item.cover?info.item.cover:'../../libs/images/holder.png'}}"></image>
+            </view>
+            <view class="inline">
+                <view class="item-title" wx:if="{{info.item.credit>0||info.item.price>0}}">
+                        {{info.item.buy_type==1?info.item.credit+' '+credit_title:info.item.unit==0?info.item.price+'元':info.item.price+info.item.unit_title}}
+                    </view>
+                <view class="item-title" wx:else>
+                        价格：面议
+                    </view>
+                <view class="zan-font-14 zan-c-gray-dark">交易前先聊一聊</view>
+            </view>
+            <view catchtap="jubao" class="inline zan-btn">举报</view>
+        </view>
+    </view>
+    <view class="message_list" style="padding-bottom: {{paddingBottom}}">
+        <scroll-view scrollY scrollIntoView="last" style="height: 100%;">
+            <view class="load-more" hidden="{{hide}}">
+                <zan-loading color="black" type="circle"></zan-loading>
+            </view>
+            <view class="no-more" hidden="{{more}}">已加载全部</view>
+            <view class="cu-chat" id="{{index==msg_list.length-1?'last':''}}" wx:if="{{msg_list}}" wx:for="{{msg_list}}" wx:key="key">
+                <view class="cu-item" wx:if="{{item.from_uid==fromuid}}">
+                    <view class="cu-avatar radius" style="background-image:url({{info.from.avatar}});"></view>
+                    <view class="main">
+                        <view class="content shadow">
+                            <block wx:if="{{item.message.length==1}}">
+                                <text wx:if="{{item.message[0].node=='text'}}">{{item.message[0].text}}</text>
+                                <image class="box-emoji" src="../../libs/WxEmojiView/emojis/{{item.message[0].text}}" wx:else></image>
+                            </block>
+                            <block wx:if="{{item.message.length>1}}" wx:for="{{item.message}}" wx:for-item="li" wx:key="key">
+                                <text wx:if="{{li.node=='text'}}">{{li.text}}</text>
+                                <image class="box-emoji" src="../../libs/WxEmojiView/emojis/{{li.text}}" wx:else></image>
+                            </block>
+                        </view>
+                    </view>
+                    <view class="date">{{item.date}}</view>
+                </view>
+                <view class="cu-item self" wx:else>
+                    <view class="main">
+                        <view class="content shadow">
+                            <block wx:if="{{item.message.length==1}}">
+                                <text wx:if="{{item.message[0].node=='text'}}">{{item.message[0].text}}</text>
+                                <image class="box-emoji" src="../../libs/WxEmojiView/emojis/{{item.message[0].text}}" wx:else></image>
+                            </block>
+                            <block wx:if="{{item.message.length>1}}" wx:for="{{item.message}}" wx:for-item="li" wx:key="key">
+                                <text wx:if="{{li.node=='text'}}">{{li.text}}</text>
+                                <image class="box-emoji" src="../../libs/WxEmojiView/emojis/{{li.text}}" wx:else></image>
+                            </block>
+                        </view>
+                    </view>
+                    <view class="cu-avatar radius" style="background-image:url({{info.to.avatar}});"></view>
+                    <view class="date">{{item.date}}</view>
+                </view>
+            </view>
+        </scroll-view>
+    </view>
+    <view class="message_toolbar {{iphoneX?'iphonex-bottom':''}}" style="bottom: {{bottom}}">
+        <form bindsubmit="sendMsg" reportSubmit="true">
+            <view class="cu-bar input">
+                <input bindinput="setValue" class="solid-bottom" cursorSpacing="10" focus="{{focus}}" maxlength="300" name="msg" placeholder="输入你想说的话..." value="{{msg}}"></input>
+                <view bindtap="showEmoji" class="action">
+                    <text class="iconfont icon-smile text-grey"></text>
+                </view>
+                <button class="cu-btn bg-green shadow-blur" formType="submit">发送</button>
+            </view>
+        </form>
+        <view class="wrapper" wx:if="{{showWxEmojiView}}">
+            <view class="WxEmojiView">
+                <image bindtap="wxPreEmojiTap" class="wxPreEmoji" data-text=":{{item.title}}:" src="../../libs/WxEmojiView/emojis/{{item.url}}" wx:for="{{WxEmojiObjs.emojiArray}}" wx:key="key"></image>
+            </view>
+        </view>
+    </view>
+    <view class="back-home">
+        <navigator hoverClass="none" url="../home/index">
+            <text class="iconfont icon-index"></text>
+        </navigator>
+    </view>
+</view>
+<view class="container-loading" wx:else>
+    <image mode="widthFix" src="{{loadingImg}}"></image>
+</view>
+<zan-popup bindclose="toggleBottomPopup" show="{{showBottomPopup}}" type="bottom">
+    <view class="item-pop">
+        <view class="padding">
+            <view catchtap="toggleBottomPopup" class="pop-close">
+                <text class="iconfont icon-close"></text>
+            </view>
+            <view class="text-center zan-font-16 zan-ellipsis margin-big">{{info.item.title}}</view>
+            <view class="margin-big text-center" wx:if="{{info.item.album}}">
+                <image class="item-album" mode="aspectFill" src="{{item}}" wx:for="{{info.item.album}}" wx:key="key"></image>
+            </view>
+            <view class="zan-font-14 zan-c-gray-dark">{{info.item.description}}</view>
+        </view>
+    </view>
+</zan-popup>
+<zan-toast id="zan-toast"></zan-toast>
+<block wx:if="{{showModal}}">
+    <view class="mask"></view>
+    <view class="modal">
+        <view class="modal-title">请输入举报原因</view>
+        <form bindsubmit="formSubmit" data-itemid="{{info.item.id}}" reportSubmit="true">
+            <view class="modal-content text-left">
+                <textarea autoFocus="true" fixed="true" name="content" placeholder="在此输入内容..." showConfirmBar="{{confirmBar}}"></textarea>
+            </view>
+            <view class="modal-footer">
+                <button bindtap="closeModal" class="modal-btn">取消</button>
+                <button class="modal-btn confirm-btn" formType="submit">确定</button>
+            </view>
+        </form>
+    </view>
+</block>

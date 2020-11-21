@@ -1,0 +1,260 @@
+{template 'common/header'}
+<style>
+	.account-stat-num > div{width:25%; float:left; font-size:16px; text-align:center;}
+	.account-stat-num > div span{display:block; font-size:30px; font-weight:bold;}
+</style>
+<ul class="nav nav-tabs">
+	<li {if $do == 'index'}class="active"{/if}><a href="{php echo url('stat/paycenter')}">收款记录</a></li>
+	<li {if $do == 'chart'}class="active"{/if}><a href="{php echo url('stat/paycenter/chart')}">收款统计</a></li>
+</ul>
+{if $do == 'index'}
+<div class="panel panel-info">
+	<div class="panel-heading">筛选</div>
+	<div class="panel-body">
+		<form action="./index.php" method="get" class="form-horizontal" role="form">
+			<input type="hidden" name="c" value="stat">
+			<input type="hidden" name="a" value="paycenter">
+			<input type="hidden" name="do" value="index">
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-3 col-md-2 control-label">操作人</label>
+				<div class="col-sm-6 col-md-8 col-lg-8 col-xs-12">
+					<select class="form-control" name="clerk_id">
+						<option value="">不限</option>
+						{loop $clerks $clerk}
+						<option value="{$clerk['id']}" {if $_GPC['clerk_id'] == $clerk['id']}selected{/if}>{$clerk['name']}</option>
+						{/loop}
+					</select>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-3 col-md-2 control-label">消费门店</label>
+				<div class="col-sm-6 col-md-8 col-lg-8 col-xs-12">
+					<select class="form-control" name="store_id">
+						<option value="">不限</option>
+						{loop $stores $store}
+						<option value="{$store['id']}" {if $_GPC['store_id'] == $store['id']}selected{/if}>{$store['business_name']}</option>
+						{/loop}
+					</select>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-3 col-md-2 control-label"></label>
+				<div class="col-xs-12 col-sm-3 col-md-2 col-lg-2">
+					<button class="btn btn-default"><i class="fa fa-search"></i> 搜索</button>&nbsp;&nbsp;
+					<input type="hidden" name="token" value="{$_W['token']}"/>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="clearfix">
+	<div class="panel panel-default">
+		<div class="panel-body">
+			<table class="table table-hover table-center table-responsive">
+				<thead>
+				<tr>
+					<th style="text-align:left">编号</th>
+					<th>付款人</th>
+					<th>付款理由</th>
+					<th>应付金额(元)</th>
+					<th>实付金额(元)</th>
+					<th>操作人</th>
+					<th>消费门店</th>
+					<th>付款时间</th>
+					<th>操作</th>
+				</tr>
+				</thead>
+				{if !empty($orders)}
+				{loop $orders $order}
+				<tr>
+					<td style="text-align:left">{$order['id']}</td>
+					<td>{if !empty($order['nickname'])}{$order['nickname']}{else}{$order['openid']}{/if}</td>
+					<td>{$order['body']}</td>
+					<td>{$order['fee']}</td>
+					<td>{$order['final_fee']}</td>
+					<td>{$order['clerk_cn']}</td>
+					<td>{$order['store_cn']}</td>
+					<td>{php echo date('Y-m-d H:i', $order['paytime']);}</td>
+					<td>
+						<a href="javascript:;" class="btn btn-success btn-sm pay-info" data-id="{$order['id']}">支付详情</a>
+					</td>
+				</tr>
+				{/loop}
+				{/if}
+			</table>
+		</div>
+	</div>
+	{$pager}
+</div>
+{/if}
+
+{if $do == 'chart'}
+<div class="panel panel-default">
+	<div class="panel-heading">
+		收款统计
+	</div>
+	<div class="panel-body">
+		<div class="account-stat-num row">
+			<div>昨日收款总额<span>{$yesterday_fee}</span></div>
+			<div>今日收款总额<span>{$today_fee}</span></div>
+			<div>本月收款总额<span>{$month_fee}</span></div>
+		</div>
+	</div>
+</div>
+<div class="panel panel-default">
+	<div class="panel-heading">
+		商家支付数据统计
+	</div>
+	<div class="panel-body">
+		<div class="clearfix">
+			<div id="date" class="pull-left">
+				{php echo tpl_form_field_daterange('time', array('start' => date('Y-m-d', strtotime(date('Y-m-d')) - 30*86400),'end' => date('Y-m-d', strtotime(date('Y-m-d')) + 86399)), '')}
+			</div>
+		</div>
+		<h4>总收入: ￥<span class="text-success" id="date-total">0.00</span></h4>
+		<div style="margin-top:20px" id="canvas-date">
+			<canvas id="dateChart" width="1200" height="300"></canvas>
+		</div>
+	</div>
+</div>
+<div class="panel panel-default">
+	<div class="panel-heading">
+		商家支付数据统计(月份统计)
+	</div>
+	<div class="panel-body">
+		<div class="clearfix">
+			<div id="month" class="pull-left">
+				<div class="input-group" style="width:300px;">
+					<input type="text" class="form-control datetime" readonly name="time[start]" value="{php echo date('Y-m', strtotime('-6months'));}">
+					<span class="input-group-addon">到</span>
+					<input type="text" class="form-control datetime" readonly name="time[end]" value="{php echo date('Y-m');}">
+					<div class="input-group-btn">
+						<button class="btn btn-primary" id="search">查询</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<h4>总收入: ￥<span class="text-success" id="month-total">0.00</span></h4>
+		<div style="margin-top:20px" id="canvas-month">
+			<canvas id="monthChart" width="1200" height="300"></canvas>
+		</div>
+	</div>
+</div>
+<script>
+	require(['chart', 'daterangepicker', 'datetimepicker'], function(c) {
+		$(".datetime").each(function(){
+			var option = {
+				lang : "zh",
+				step : "10",
+				timepicker : false,
+				closeOnDateSelect : true,
+				format : "Y-m"
+			};
+			$(this).datetimepicker(option);
+		});
+
+		var chart = null;
+		var templates = {
+			flow1: {
+				label: '总收入',
+				fillColor : "rgba(149,192,0,0.1)",
+				strokeColor : "rgba(149,192,0,1)",
+				pointColor : "rgba(149,192,0,1)",
+				pointStrokeColor : "#fff",
+				pointHighlightFill : "#fff",
+				pointHighlightStroke : "rgba(149,192,0,1)"
+			}
+		};
+
+		function GetChartData(type) {
+			var start = $('#' + type + ' input[name="time[start]"]').val();
+			var end = $('#' + type + ' input[name="time[end]"]').val();
+			var params = {
+				type: type,
+				start: start,
+				end: end
+			};
+			if(type == 'date') {
+				$('#canvas-date').html('<canvas height="100" id="dateChart"></canvas>');
+				$.post("{php echo url('stat/paycenter/chart', array('type' => 'date'));}", params, function(data){
+					var data = $.parseJSON(data);
+					var ds = $.extend(true, {}, templates);
+					ds.flow1.data = data.datasets.flow1;
+					var lineChartData = {
+						labels : data.label,
+						datasets : [ds.flow1]
+					};
+					var ctx = document.getElementById("dateChart").getContext("2d");
+					chart = new Chart(ctx).Line(lineChartData, {
+						responsive: true
+					});
+					$('#date-total').html(data.total);
+				});
+			} else {
+				$('#canvas-month').html('<canvas height="100" id="monthChart"></canvas>');
+				$.post("{php echo url('stat/paycenter/chart', array('type' => 'month'));}", params, function(data){
+					var data = $.parseJSON(data);
+					var ds = $.extend(true, {}, templates);
+					ds.flow1.data = data.datasets.flow1;
+					var lineChartData = {
+						labels : data.label,
+						datasets : [ds.flow1]
+					};
+					var ctx = document.getElementById("monthChart").getContext("2d");
+					chart = new Chart(ctx).Line(lineChartData, {
+						responsive: true
+					});
+					$('#month-total').html(data.total);
+				});
+			}
+		}
+		GetChartData('date');
+		GetChartData('month');
+		$('.daterange').on('apply.daterangepicker', function(ev, picker) {
+			GetChartData('date');
+		});
+		$('#search').click(function(){
+			GetChartData('month');
+		});
+	});
+</script>
+{/if}
+
+<div class="modal fade" id="payinfo-modal">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h3 class="modal-title">支付详情</h3>
+			</div>
+			<div class="modal-body"></div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	require(['jquery.qrcode'], function(){
+		$('.pay-info').click(function(){
+			var id = $(this).data('id');
+			if(!id) {
+				util.message('订单编号错误', '', 'error');
+				return false;
+			}
+			$.post("{php echo url('stat/paycenter/detail');}", {id: id}, function(data) {
+				var data = $.parseJSON(data);
+				if(data.message.errno == -1) {
+					util.message(data.message.message, '', 'error');
+					return false;
+				} else {
+					$('#payinfo-modal .modal-body').html(data.message.message);
+					$('#payinfo-modal').modal('show');
+					return false;
+				}
+			});
+		});
+	});
+</script>
+
+{template 'common/footer'}

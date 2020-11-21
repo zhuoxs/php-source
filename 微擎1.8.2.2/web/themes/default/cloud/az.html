@@ -1,0 +1,73 @@
+{template 'common/header'}
+<ol class="breadcrumb we7-breadcrumb">
+	<a href="./index.php?c=platform&amp;a=reply&amp;m=keyword"><i class="fa fa-chevron-circle-left"></i> </a>
+	<li>
+		<a href="./index.php?c=platform&amp;a=reply&amp;m=keyword">模块安装</a>
+	</li>
+	<li>
+		<a href="./index.php?c=platform&amp;a=reply&amp;do=post&amp;m=keyword">模块下载</a>
+	</li>
+</ol>
+
+	<div class="alert alert-warning">
+		正在下载模块文件, 请不要关闭窗口.
+	</div>
+	<div class="alert alert-warning">
+		如果下载模块文件失败，可能造成的原因：写入失败，请仔细检查写入权限是否正确。
+	</div>
+	<div class="alert alert-info form-horizontal ng-cloak" ng-controller="processor">
+		<dl class="dl-horizontal">
+			<dt>模块文件下载中,请耐心等待...</dt>
+			<dd>{{pragress}}</dd></br>
+			<dt></dt>
+			<dd>{{file}}</dd>
+		</dl>
+		<dl class="dl-horizontal" ng-show="fails.length > 0">
+			<dt>下载失败的模块文件</dt>
+			<dd>
+				<p class="text-danger" ng-repeat="file in fails" style="margin:0;">{{file}}</p>
+			</dd>
+		</dl>
+	</div>
+	<script>
+		require(['angular'], function(angular){
+			angular.module('app', []).controller('processor', function($scope, $http){
+				$scope.files = {php echo json_encode($packet['files']);};
+				$scope.fails = [];
+				var total = $scope.files.length;
+				var i = 1;
+				var proc = function() {
+					var path = $scope.files.pop();
+					if(!path) {
+						if($scope.fails.length == 0 || confirm('有模块未下载成功, 是否进行下一步操作.')) {
+							setTimeout(function(){
+
+								//	location.href = "{php echo create_url('system/module/not_installed',array());}";
+								
+								location.href = "{php echo create_url('module/manage-system/not_installed',array());}";
+							}, 10000);
+						}
+						return;
+					}
+					$scope.file = path;
+					$scope.pragress = i + '/' + total;
+					var params = {path: path, type : '{php echo $packet['type']}'};
+					$http.post(location.href, params).success(function(dat){
+						i++;
+						//if(dat != 'success') {
+						//	$scope.fails.push(path);
+						//}
+						proc();
+					}).error(function(){
+						i++;
+						$scope.fails.push(path);
+						proc();
+					});
+				}
+				proc();
+			});
+			angular.bootstrap(document, ['app']);
+		});
+	</script>
+{template 'common/footer'}
+

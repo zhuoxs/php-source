@@ -1,0 +1,2 @@
+<?php
+ namespace Qiniu\Tests; use Qiniu; class Base64Test extends \PHPUnit_Framework_TestCase { public function testUrlSafe() { goto IFnQh; BEwi1: $this->assertEquals($a, \Qiniu\base64_urlSafeDecode($b)); goto Nml3w; IFnQh: $a = "\344\xbd\240\345\xa5\275"; goto SB_OR; SB_OR: $b = \Qiniu\base64_urlSafeEncode($a); goto BEwi1; Nml3w: } }

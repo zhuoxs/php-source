@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>红包记录-{$activity['name']}</title>
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/mui.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/receive.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/bootstrap.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/font-awesome.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/bootstrap-datetimepicker.min.css" />
+        <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/jquery-3.2.1.min.js" ></script>
+    </head>
+    <body>
+        <div class="cont">
+            <div class="cont_one {if empty($status)}ins{/if}" >全部</div>
+            <div class="cont_one {if $status==1}ins{/if}" data-status="1">已发送</div>
+            <div class="cont_one {if $status==3}ins{/if}" data-status="3">未发送</div>
+            <div class="cont_one {if $status==4}ins{/if}" data-status="4">已退回</div>
+            <input id="status" type="hidden" value="{$status}">
+        </div>
+        <div class="top">
+            <div class="top_two">
+                <div class="form-group">
+                    <div class="col-xs-12 input-group" style="padding: 0;">
+                        <input type="text" placeholder="不限" readonly="readonly" id="startTime" class="form-control"/>
+                        <span class="input-group-addon">至</span>
+                        <input type="text" placeholder="不限" readonly="readonly" id="endTime" class="form-control" />
+                    </div>
+                </div>
+            </div>
+            <div class="top_one">
+                <div class="one_li">
+                    查询
+                </div>
+            </div>
+        </div>
+        {if $check_shop['power']>1}
+        <div class="excels">
+            <div class="excels_an" id="excel">
+                导出excel
+            </div>
+            {if $activity['refund_open']}
+            <div class="excels_an" id="check_red">
+                校验红包数据
+            </div>
+            {/if}
+        </div>
+        {/if}
+        <div  id="container">
+
+        </div>
+        <div class="load">
+            加载更多
+        </div>
+        {template 'shop_footer'}
+    </body>
+</html>
+<script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/bootstrap-datetimepicker.js" ></script>
+<script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/mui.min.js" ></script>
+
+
+
+<script type="text/javascript">
+    var loading = $(".load").data("on", false);
+    var g = 2;
+    ajax_get_data();
+    $(window).scroll(function() {
+
+        if (loading.data("on"))
+            return;
+        if ($(document).scrollTop() + 100 >
+                $(document).height() - $(window).height()) {
+            $(".load").html("正在加载中. . .");
+            loading.data("on", true).fadeIn();
+
+            $.get(
+                    "{php echo $this->createMobileUrl('ajax_shop', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid))}",
+                    {"op": "red", "p": g, "status": $('#status').val(), "starttime": $('#startTime').val(), "endtime": $('#endTime').val()},
+            function(data) {
+                loading.data("on", false);
+                if (data.sta == 0) {
+                    $(".load").html(data.error);
+                    setTimeout("loading.fadeOut();", 3000);
+                } else {
+                    var html = "";
+                    for (i = 0; i < data.length; i++) {
+                        html += "<div class='list'><div class='li_left'>";
+                        html += "<img src='" + data[i]['headimgurl'] + "' /></div>";
+                        html += "<div class='li_right'><div class='right_top'><div class='weixin'>" + data[i]['nickname'] + "</div>";
+                        html += "<div class='time'>" + data[i]['createtime'] + "</div>";
+                        if (data[i]['status'] == 1) {
+                            html += "<div class='time'>已发送</div>";
+                        } else if (data[i]['status'] == 4) {
+                            html += "<div class='time'>已退回</div>";
+                        } else {
+                            html += "<div class='time'>未发送</div>";
+                        }
+                        html += " </div><div class='right_bottmo' >" + data[i]['money'] + "元</div></div></div>";
+                    }
+                    $('#container').append(html);
+                    g++;
+                    loading.fadeOut();
+                }
+            },
+                    "json"
+                    );
+        }
+
+
+    });
+
+
+    $(".cont_one").click(function() {
+        $(this).addClass("ins").siblings().removeClass("ins");
+        $("#status").val($(this).data("status"));
+    });
+
+    $('.one_li').on('click', function() {
+        ajax_get_data();
+    });
+
+    $('#excel').on('click', function() {
+        location.href = "{php echo $this->createMobileUrl('activity_red', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid))}" + '&op=excel&status=' + $('#status').val() + '&starttime=' + $('#startTime').val() + '&endtime=' + $('#endTime').val();
+    });
+
+
+    $('#check_red').on('click', function() {
+        var btnArray = ['确定', '取消'];
+        var run_confim = false;
+        mui.confirm('校验红包数据需要一定时间，中途请不要关闭网页，是否确认操作？', '校验红包数据提示', btnArray, function(e) {
+            if (e.index == 0 && !run_confim) {
+                run_confim = true;
+                var page = 1;
+                data_post_check("{php echo $this->createMobileUrl('ajax_shop', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid, 'op' => 'check_red'))}", page);
+            }
+        });
+    });
+
+    function data_post_check(url, page) {
+        $.post(url, {page: page}, function(ret) {
+            if (ret.sta == 1) {
+                show_message(1, "第" + page + "页校验完成", 0, 1);
+                page++;
+                data_post_download(url, page);
+            } else if (ret.sta == 2) {
+                $(".code_ok").hide();
+                show_message(1, "校验完成", 3000, 1);
+            } else {
+                show_message(0, ret.error, 3000, 1);
+            }
+        }, "json");
+    }
+    function ajax_get_data() {
+        $('#container').html("");
+        $(".load").html("正在加载中. . .");
+        loading.data("on", true).fadeIn();
+        $.get(
+                "{php echo $this->createMobileUrl('ajax_shop', array('token'=>$token, 'shopid' => $shopid, 'aid' => $aid))}",
+                {"op": "red", "p": 1, "status": $('#status').val(), "starttime": $('#startTime').val(), "endtime": $('#endTime').val()},
+        function(data) {
+            loading.data("on", false);
+            if (data.sta == 0) {
+                $(".load").html(data.error);
+                setTimeout("loading.fadeOut();", 3000);
+            } else {
+                get_html(data);
+                loading.fadeOut();
+            }
+        },
+                "json"
+                );
+    }
+
+
+    function get_html(data) {
+        var html = "";
+        for (i = 0; i < data.length; i++) {
+            html += "<div class='list'><div class='li_left'>";
+            html += "<img src='" + data[i]['headimgurl'] + "' /></div>";
+            html += "<div class='li_right'><div class='right_top'><div class='weixin'>" + data[i]['nickname'] + "</div>";
+            html += "<div class='time'>" + data[i]['createtime'] + "</div>";
+            if (data[i]['status'] == 1) {
+                html += "<div class='time'>已发送</div>";
+            } else if (data[i]['status'] == 4) {
+                html += "<div class='time'>已退回</div>";
+            } else {
+                html += "<div class='time'>未发送</div>";
+            }
+            html += " </div><div class='right_bottmo' >" + data[i]['money'] + "元</div></div></div>";
+        }
+        $('#container').html(html);
+    }
+
+    //日历
+    $("#startTime").datetimepicker({
+        language: 'zh-CN',
+        weekStart: 1,
+        todayBtn: 1,
+        autoclose: 1,
+        todayHighlight: 1,
+        startView: 2,
+        minView: "0",
+        format: 'yyyy-mm-dd hh:ii',
+        forceParse: 0
+    }).on('hide', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        var startTime = event.date;
+        $("#endTime").datetimepicker('setStartDate', startTime);
+        $("#endTime").val("");
+    });
+    $("#endTime").datetimepicker({
+        language: 'zh-CN',
+        weekStart: 1,
+        todayBtn: 1,
+        autoclose: 1,
+        todayHighlight: 1,
+        startView: 2,
+        minView: "0",
+        format: 'yyyy-mm-dd hh:ii',
+        forceParse: 0
+    }).on('hide', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        var endTime = event.date;
+        $("#startTime").datetimepicker('setEndDate', endTime);
+    });
+</script>

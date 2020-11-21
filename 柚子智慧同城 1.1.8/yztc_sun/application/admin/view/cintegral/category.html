@@ -1,0 +1,122 @@
+{extend name="common/index" /}
+{block name="search_box"}
+{/block}
+{block name="tool_box"}
+<!--工具栏-->
+<div class="tool-box">
+    <div class="layui-btn-group">
+        <a href="javascript:;" id="btnAddc" class="layui-btn layui-btn-primary layui-btn-sm">新增</a>
+        <a href="javascript:;" id="btnBatchDeletec" class="layui-btn layui-btn-danger layui-btn-sm">删除</a>
+    </div>
+</div>
+{/block}
+{block name="tool_template"}
+<!--数据表-操作列-->
+<script type="text/html" id="dataTool">
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-primary layui-btn-xs btnEditc">编辑</a>
+    <a href="javascript:;" data-id="{{ d.id }}" class="layui-btn layui-btn-danger layui-btn-xs btnDeletec">删除</a>
+</script>
+{/block}
+{block name="table_config"}
+<script>
+    layui.use(['table','form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        //        表格初始化
+        table.render({
+            elem: '#laytable'
+            ,url:"{:adminurl('get_category_list')}"
+            ,cols: [[
+                {type:'numbers',fixed:'left'},
+                {type:'checkbox',fixed:'left'},
+                {field:'name', width:180, title: '分类名称',fixed:'left'},
+                {field:'sort', width:180, title: '排序',sort:true},
+                {field:'create_time', width:200, title: '创建时间',sort:true},
+                {field:'update_time', width:200, title: '修改时间',sort:true},
+                {field:'o',fixed:'right',width:200, title: '操作',templet: '#dataTool'},
+            ]]
+            ,page: true,
+            height:'full-300',
+        });
+        // 新增
+        $('#btnAddc').click(function () {
+            var index = layer.open({
+                type: 2,
+                title: '新增',
+                shadeClose: true,
+                shade: false,
+                maxmin: true, //开启最大化最小化按钮
+                area: ['893px', '600px'],
+                content: "{:adminurl('editcategory')}",
+            });
+            layer.full(index);
+            return false;
+        })
+        // 编辑
+        $(document).on('click','.btnEditc',function(e){
+            var id = $(this).data('id')
+            var index = layer.open({
+                type: 2,
+                title: '编辑',
+                shadeClose: true,
+                shade: false,
+                maxmin: true, //开启最大化最小化按钮
+                area: ['893px', '600px'],
+                content: "{:adminurl('editcategory')}&id="+id,
+            });
+            layer.full(index);
+            return false;
+        })
+        // 批量删除
+        $('#btnBatchDeletec').click(function () {
+            var checkStatus = table.checkStatus('laytable');
+            var data = checkStatus.data;
+            var ids = [];
+            if (data.length > 0){
+                for (var i in data){
+                    ids.push(data[i].id);
+                }
+                layer.confirm('即将删除 '+data.length+' 条记录', {
+                    btn: ['确定','取消'] //按钮
+                }, function(){
+                    var url = "{:adminurl('deletecategory')}";
+                    $.post(url, {ids:ids.join(',')}, function(data){
+                        if (typeof data == 'string'){
+                            data = $.parseJSON(data);
+                        }
+                        if (data.code == 0) {
+                            layer.msg('删除成功',{icon: 6,anim: 6});
+                            table.reload('laytable',{});
+                        }else{
+                            layer.msg(data.msg,{icon: 5,anim: 6});
+                        }
+                    });
+                });
+            }else{
+                layer.msg('请选择记录');
+            }
+        })
+        // 删除
+        $(document).on('click','.btnDeletec',function(e){
+            var id = $(this).data('id')
+            layer.confirm('即将删除 1 条记录', {
+                btn: ['确定','取消'] //按钮
+            }, function(){
+                var url = "{:adminurl('deletecategory')}";
+                $.post(url, {ids:id}, function(data){
+                    if (typeof data == 'string'){
+                        data = $.parseJSON(data);
+                    }
+                    if (data.code == 0) {
+                        layer.msg('删除成功',{icon: 6,anim: 6});
+                        table.reload('laytable',{});
+                    }else{
+                        layer.msg(data.msg,{icon: 5,anim: 6});
+                    }
+                });
+            });
+            return false;
+        })
+    })
+</script>
+{/block}

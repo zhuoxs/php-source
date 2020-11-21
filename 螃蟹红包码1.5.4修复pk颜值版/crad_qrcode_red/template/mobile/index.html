@@ -1,0 +1,4210 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>{$activity['name']}-{$cfg['site_name']}</title>
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/mui.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/index.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/jigsaw.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/font-awesome.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/bootstrap.css" />
+        <link rel="stylesheet" href="../addons/crad_qrcode_red/template/mobile/css/liMarquee.css" />
+        <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/jquery-3.2.1.min.js" ></script>
+        <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/mystyle.js" ></script>
+        <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/mui.min.js" ></script>
+        <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=AWp7FI93cxFM1Nai0FWmBGvnSt0uB2bG&s=1"></script>
+        {php echo register_jssdk(false);}
+    </head>
+    <body> 
+    	<!--手机号验证弹窗-->
+                <div class="phone_code" hidden>
+                	<div class="phone_ul">
+                		<div class="modal-content wanjiao copyse_with">
+                            <div class="modal-header yanse">
+                            	 {if $activity['check_tel']==2}核销卡券前{else}领取红包{/if}前需验证手机号
+                                <button type="button" class="close" id="phone_out" onclick="$('.phone_code').hide();">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <form class="form-horizontal" id="tel_form">
+                                    <div class="phone_one">
+                                        <div class="one_mouth">
+                                            <input type="text" id="check_phone" name="check_phone" placeholder="请输入手机号码" value="{$user['tel']}">
+                                        </div>
+                                    </div>
+                                    <div class="phone_two">
+                                        <div class="two_mouth">
+                                            <input type="text"  id="check_code"  name="check_code"  maxlength="6" placeholder="请输入验证码">
+                                        </div>
+                                        <input type="button" id="btnSendCode" class="btn btn-default phbtns btnSendCode" value="获取验证码" onClick="sendMessage()"></input>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="phone_footer">
+				                <button type="button" class="btn btn-success" id="check_tel">确定</button>
+				                <button type="button" class="btn btn-default" onclick="$('.phone_code').hide();">取消</button>
+				            </div>
+                        </div>
+                	</div>
+                </div>
+                <script type="text/javascript">
+				var InterValObj; //timer变量，控制时间
+				var count = 60; //间隔函数，1秒执行
+				var curCount;//当前剩余秒数
+                                var check_tel="{$activity['check_tel']}";
+                                var is_check_tel="{$user['is_check']}";
+                                var doing = false;
+				function sendMessage() {
+                                    if (check_tel<1 || is_check_tel>0) {
+                show_message(0, "无效操作", 3000, 1);
+                return;
+            }
+            
+             if (doing == true) {
+                                    return;
+                                }
+                                {if ($activity['pattern']==4||($activity['pattern']==3&&$activity['white_check']==1))&&$activity['check_tel']==1}
+                                var tel = $("#tel").val();
+                                {else}
+                                var tel = $("#check_phone").val();
+                                {/if}
+                                if (tel == "" || tel.length != 11) {
+                                    show_message(0, "请正确填写手机号码", 5000, 1);
+                                    return;
+                                }
+                                var RegMobile = /^1[34578]\d{9}$/;
+                                if (!RegMobile.test(tel)) {
+                                    show_message(0, "请正确填写手机号码", 5000, 1);
+                                    return;
+                                }
+                                doing = true;
+                                $.ajax({
+                                    type: "POST",
+                                    dataType: "json",
+                                    url: "{php echo $this->createMobileUrl('ajax_info',array('op'=>'verification','aid'=>$aid))}",
+                                    data: {tel: tel},
+                                    success: function (ret) {
+
+                                        if (ret.sta == 1) {
+                                            curCount = count;
+                                           
+                                            //设置button效果，开始计时
+                                         $(".btnSendCode").attr("disabled", "true");
+					$(".btnSendCode").val( + curCount + "秒再获取");
+					InterValObj = window.setInterval(SetRemainTime, 1000); //启动计时器，1秒执行一次
+                                        } else {
+                                            doing = false;
+                                            show_message(0, ret.error, 5000, 1);
+                                        }
+                                    },
+                                    error: function (json) {
+                                        show_message(0, "系统繁忙，请稍后重试", 5000, 1);
+                                        doing = false;
+                                    }
+                                });
+				}
+				//timer处理函数
+				function SetRemainTime() {
+					if (curCount == 0) {   
+                                                doing = false;            
+						window.clearInterval(InterValObj);//停止计时器
+						$(".btnSendCode").removeAttr("disabled");//启用按钮
+						$(".btnSendCode").val("重新发送验证码");
+						code = ""; //清除验证码。如果不清除，过时间后，输入收到的验证码依然有效    
+					}
+					else {
+						curCount--;
+						$(".btnSendCode").val( + curCount + "秒再获取");
+					}
+				}
+                                
+                                 $('#check_tel').on('click', function () {
+                var tel = $("#check_phone").val();
+                                 
+             if (check_tel<1 || is_check_tel>0) {
+                show_message(0, "无效操作", 3000, 1);
+                return;
+            }
+            if (!tel || !$('#check_code').val()) {
+                show_message(0, "手机号和验证码不能为空", 3000, 1);
+                return;
+            }
+            if (tel.search(/^([0-9]{11})?$/) == -1) {
+                show_message(0, "手机号码格式错误", 3000, 1);
+                return false;
+            }
+            var sendurl_tel = "{php echo $this->createMobileUrl('ajax_info',array('op'=>'check_tel','aid'=>$aid))}";
+            var form_tel = $('#tel_form').serialize();
+            
+            $.post(sendurl_tel, form_tel, function (ret) {
+                if (ret.sta == 1) {
+                    is_check_tel=1;
+                    $('.phone_code').hide();
+                    show_message(2, "验证成功", 3000, 1);
+                    return;
+                }
+                show_message(0, ret.error, 3000, 1);
+            }, 'json');
+        });
+ </script>
+    	
+    	
+    	<div class="lodings" hidden>
+			<div class="lodings_li">
+				<div class="lodings_ku">
+					<i class="icon-spinner icon-spin"></i>
+				</div>
+			</div>
+		</div>
+<script type="text/javascript">
+    {if $activity['image_body']}
+    var back_image = "{php echo tomedia($activity['image_body'])}";
+    $("body").css("background-image", "url(" + back_image + ")");
+    {else}
+    $("body").css("background-image", "url(../addons/crad_qrcode_red/template/mobile/img/red_bj.png)");
+    {/if} 
+    </script>
+        <div class="zong">
+            <div class="top">
+                <div class="top_li">
+                    <span class="xiao str1">
+                        {if empty($red_info)}
+                        <span class="qufen">{$activity['top_tips']}</span>
+                        {/if}
+                        {if $red_info&&$red_list_new}
+                        {loop $red_list_new $red_new}
+                        <span class="qufen">{$red_new['top_tips_red']}</span>
+                        {/loop}	
+                        {/if}
+                    </span>
+                </div>
+            </div>
+            <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/jquery-2.1.1.min.js" ></script>
+            <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/jquery.liMarquee.js" ></script>
+            <script>
+				$(window).load(function(){
+				$('.str1').liMarquee();
+				$('.str2').liMarquee({
+					direction: 'right'	
+				});
+				var stringEl = $('.str3').liMarquee();
+				$('.speedChange').on('click',function(){
+					var speedChange = $(this);
+					var dataSpeed = speedChange.data('scrollamount');
+		
+					stringEl.trigger('mouseenter');
+					stringEl.data({scrollamount:dataSpeed});
+					stringEl.trigger('mouseleave');
+					
+					return false;	
+				});
+				$('.str4').liMarquee({
+					drag: false	
+				});
+				$('.str5').liMarquee({	
+					hoverstop: false
+				});
+				$('.str6').liMarquee();
+				$('.btnPause').on('click',function(){
+					$('.str6').liMarquee('pause');
+				});
+				$('.btnPlay').on('click',function(){
+					$('.str6').liMarquee('play');
+				})
+				});
+		    </script> 
+     
+                    
+            {if ($red_info['status']==1||($activity['pattern'] == 12 && $least_cuteface_users < 1 && $openid != $max_openid))&&$coupon_user}
+            <!--卡券模式-->
+            <div class="zhuang">
+                <div class="fugai">
+                    <div class="zhiding_two">
+
+{if $coupon_prize}
+ {if $coupon_prize['coupon_type']<3}
+<div class="lin circle_shop_show" onclick="$('#wechat_coupon_show').val({$coupon_prize['wechat_coupon']});$('#couponcode_show').val('{$coupon_prize['code']}');$('#couponid_show').val({$coupon_prize['id']}); $('#shop_name_show').val('{$coupon_prize['shop_info']['name']}'); $('#image_banner_show').val('{php echo tomedia($coupon_prize['shop_info']['image_banner'])}'); $('#description_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_prize['shop_info']['description']));}'); $('#tel_show').val('{$coupon_prize['shop_info']['tel']}'); $('#address_show').val('{$coupon_prize['shop_info']['address']}'); $('#address_urlencode_show').val('{php echo urlencode(urlencode($coupon_prize['shop_info']['address']))}'); $('#coupon_status_show').val('{$coupon_prize['status']}'); $('#consume_code_show').val('{$coupon_prize['consume_code']}'); $('#shopid_show').val('{$coupon_prize['shop_info']['id']}');$('#start_expiration').val('{$coupon_prize['start_expiration']}');$('#end_expiration').val('{$coupon_prize['end_expiration']}');$('#consume_type_show').val('{$coupon_prize['consume_type']}');$('#consume_url_show').val('{$coupon_prize['consume_url']}');$('#coupon_key_show').val('{$coupon_prize['coupon_key']}');$('#use_tip_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_prize['use_tip']));}');">
+                            <div class="lin_one">
+                                {if $coupon_prize['status']==3}
+                                <div class="ash">
+                                    <span>废</span>
+                                </div>
+                                {else}
+                                <div class="yellow">
+
+                                    <span>领</span>
+                              
+                                </div>
+                                {/if}
+                                <div class="mark">
+                                    {if $coupon_prize['use_condition']}{$coupon_prize['use_condition']}{else}无门槛{/if}
+                                </div>
+                                {if $coupon_prize['shop_info']['image_logo']}
+                                <div class="logo">
+                                    <img src="{php echo tomedia($coupon_prize['shop_info']['image_logo'])}" />
+                                </div>  
+                                {/if}
+
+                                <div class="money">
+                                    <div class="money_one">
+                                        {if $coupon_prize['coupon_type']==1}
+                                        {php echo $coupon_prize['coupon_content']['discount']/10}<span>折</span>
+                                        {elseif $coupon_prize['coupon_type'] ==2}
+                                        {$coupon_prize['coupon_content']['reduce_cost']}<span>元</span>{/if}
+                                    </div>
+                                    <div class="money_two">
+                                        <div class="zuo">
+                                            <span>{$coupon_prize['shop_info']['name']}</span>
+                                        </div>
+                                        <div class="you">
+                                            <span>{if $coupon_prize['coupon_type'] == 1}折扣{elseif $coupon_prize['coupon_type'] == 2}现金{/if}券</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {else}
+                        <div class="lin circle_shop_show" onclick="$('#wechat_coupon_show').val({$coupon_prize['wechat_coupon']});$('#couponcode_show').val('{$coupon_prize['code']}');$('#couponid_show').val({$coupon_prize['id']}); $('#shop_name_show').val('{$coupon_prize['shop_info']['name']}'); $('#image_banner_show').val('{php echo tomedia($coupon_prize['shop_info']['image_banner'])}'); $('#description_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_prize['shop_info']['description']));}'); $('#tel_show').val('{$coupon_prize['shop_info']['tel']}'); $('#address_show').val('{$coupon_prize['shop_info']['address']}'); $('#address_urlencode_show').val('{php echo urlencode(urlencode($coupon_prize['shop_info']['address']))}'); $('#coupon_status_show').val('{$coupon_prize['status']}'); $('#consume_code_show').val('{$coupon_prize['consume_code']}'); $('#shopid_show').val('{$coupon_prize['shop_info']['id']}');$('#start_expiration').val('{$coupon_prize['start_expiration']}');$('#end_expiration').val('{$coupon_prize['end_expiration']}');$('#consume_type_show').val('{$coupon_prize['consume_type']}');$('#consume_url_show').val('{$coupon_prize['consume_url']}');$('#coupon_key_show').val('{$coupon_prize['coupon_key']}');$('#use_tip_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_prize['use_tip']));}');">
+                            <div class="lin_one">
+                                {if $coupon_prize['status']==3}
+                                <div class="ash">
+                                    <span>废</span>
+                                </div>
+                                {else}
+                                <div class="yellow">
+                                 
+                                    <span>领</span>
+                                 
+                                </div>
+                                {/if}
+                                <div class="mark">
+                                    {if $coupon_prize['use_condition']}{$coupon_prize['use_condition']}{else}无门槛{/if}
+                                </div>
+
+                                <div class="money_er">
+                                    <div class="money_one_er">
+                                        {$coupon_prize['coupon_content']['gift']}
+                                    </div>
+                                    <div class="money_two">
+                                        <div class="zuo_er">
+                                            {if $coupon_prize['shop_info']['image_logo']}
+
+                                            <img src="{php echo tomedia($coupon_prize['shop_info']['image_logo'])}" />
+
+                                            {/if}
+                                            <span>{$coupon_prize['shop_info']['name']}</span>
+                                        </div>
+                                        <div class="you_er">
+                                            <span>礼品券</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {/if}
+{/if}
+                        {if $coupon_user['coupon_type']<3}
+                        <div class="lin circle_shop_show" onclick="$('#wechat_coupon_show').val({$coupon_user['wechat_coupon']});$('#couponcode_show').val('{$coupon_user['code']}');$('#couponid_show').val({$coupon_user['id']}); $('#shop_name_show').val('{$coupon_user['shop_info']['name']}'); $('#image_banner_show').val('{php echo tomedia($coupon_user['shop_info']['image_banner'])}'); $('#description_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_user['shop_info']['description']));}'); $('#tel_show').val('{$coupon_user['shop_info']['tel']}'); $('#address_show').val('{$coupon_user['shop_info']['address']}'); $('#address_urlencode_show').val('{php echo urlencode(urlencode($coupon_user['shop_info']['address']))}'); $('#coupon_status_show').val('{$coupon_user['status']}'); $('#consume_code_show').val('{$coupon_user['consume_code']}'); $('#shopid_show').val('{$coupon_user['shop_info']['id']}');$('#start_expiration').val('{$coupon_user['start_expiration']}');$('#end_expiration').val('{$coupon_user['end_expiration']}');$('#consume_type_show').val('{$coupon_user['consume_type']}');$('#consume_url_show').val('{$coupon_user['consume_url']}');$('#coupon_key_show').val('{$coupon_user['coupon_key']}');$('#use_tip_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_user['use_tip']));}');">
+                            <div class="lin_one">
+                                {if $coupon_user['status']==3}
+                                <div class="ash">
+                                     
+                                    <span>领</span>
+                                    
+                                </div>
+                                {else}
+                                <div class="yellow">
+                                    <span>领</span>
+                                </div>
+                                {/if}
+                                <div class="mark">
+                                    {if $coupon_user['use_condition']}{$coupon_user['use_condition']}{else}无门槛{/if}
+                                </div>
+                                {if $coupon_user['shop_info']['image_logo']}
+                                <div class="logo">
+                                    <img src="{php echo tomedia($coupon_user['shop_info']['image_logo'])}" />
+                                </div>  
+                                {/if}
+
+                                <div class="money">
+                                    <div class="money_one">
+                                        {if $coupon_user['coupon_type']==1}
+                                        {php echo $coupon_user['coupon_content']['discount']/10}<span>折</span>
+                                        {elseif $coupon_user['coupon_type'] ==2}
+                                        {$coupon_user['coupon_content']['reduce_cost']}<span>元</span>{/if}
+                                    </div>
+                                    <div class="money_two">
+                                        <div class="zuo">
+                                            <span>{$coupon_user['shop_info']['name']}</span>
+                                        </div>
+                                        <div class="you">
+                                            <span>{if $coupon_user['coupon_type'] == 1}折扣{elseif $coupon_user['coupon_type'] == 2}现金{/if}券</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {else}
+                        <div class="lin circle_shop_show" onclick="$('#wechat_coupon_show').val({$coupon_user['wechat_coupon']});$('#couponcode_show').val('{$coupon_user['code']}');$('#couponid_show').val({$coupon_user['id']}); $('#shop_name_show').val('{$coupon_user['shop_info']['name']}'); $('#image_banner_show').val('{php echo tomedia($coupon_user['shop_info']['image_banner'])}'); $('#description_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_user['shop_info']['description']));}'); $('#tel_show').val('{$coupon_user['shop_info']['tel']}'); $('#address_show').val('{$coupon_user['shop_info']['address']}'); $('#address_urlencode_show').val('{php echo urlencode(urlencode($coupon_user['shop_info']['address']))}'); $('#coupon_status_show').val('{$coupon_user['status']}'); $('#consume_code_show').val('{$coupon_user['consume_code']}'); $('#shopid_show').val('{$coupon_user['shop_info']['id']}');$('#start_expiration').val('{$coupon_user['start_expiration']}');$('#end_expiration').val('{$coupon_user['end_expiration']}');$('#consume_type_show').val('{$coupon_user['consume_type']}');$('#consume_url_show').val('{$coupon_user['consume_url']}');$('#coupon_key_show').val('{$coupon_user['coupon_key']}');$('#use_tip_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_user['use_tip']));}');">
+                            <div class="lin_one">
+                                {if $coupon_user['status']==3}
+                                <div class="ash">
+                                    <span>废</span>
+                                </div>
+                                {else}
+                                <div class="yellow">
+                                    
+                                    <span>领</span>
+                                   
+                                </div>
+                                {/if}
+                                <div class="mark">
+                                    {if $coupon_user['use_condition']}{$coupon_user['use_condition']}{else}无门槛{/if}
+                                </div>
+
+                                <div class="money_er">
+                                    <div class="money_one_er">
+                                        {$coupon_user['coupon_content']['gift']}
+                                    </div>
+                                    <div class="money_two">
+                                        <div class="zuo_er">
+                                            {if $coupon_user['shop_info']['image_logo']}
+
+                                            <img src="{php echo tomedia($coupon_user['shop_info']['image_logo'])}" />
+
+                                            {/if}
+                                            <span>{$coupon_user['shop_info']['name']}</span>
+                                        </div>
+                                        <div class="you_er">
+                                            <span>礼品券</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {/if}
+  {if $red_info['status']==1&&$coupon_deputy}
+  {loop $coupon_deputy $coupon_deputy_info}
+ {if $coupon_deputy_info['coupon_type']<3}
+<div class="lin circle_shop_show" onclick="$('#wechat_coupon_show').val({$coupon_deputy_info['wechat_coupon']});$('#couponcode_show').val('{$coupon_deputy_info['code']}');$('#couponid_show').val({$coupon_deputy_info['id']}); $('#shop_name_show').val('{$coupon_deputy_info['shop_info']['name']}'); $('#image_banner_show').val('{php echo tomedia($coupon_deputy_info['shop_info']['image_banner'])}'); $('#description_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_deputy_info['shop_info']['description']));}'); $('#tel_show').val('{$coupon_deputy_info['shop_info']['tel']}'); $('#address_show').val('{$coupon_deputy_info['shop_info']['address']}'); $('#address_urlencode_show').val('{php echo urlencode(urlencode($coupon_deputy_info['shop_info']['address']))}'); $('#coupon_status_show').val('{$coupon_deputy_info['status']}'); $('#consume_code_show').val('{$coupon_deputy_info['consume_code']}'); $('#shopid_show').val('{$coupon_deputy_info['shop_info']['id']}');$('#start_expiration').val('{$coupon_deputy_info['start_expiration']}');$('#end_expiration').val('{$coupon_deputy_info['end_expiration']}');$('#consume_type_show').val('{$coupon_deputy_info['consume_type']}');$('#consume_url_show').val('{$coupon_deputy_info['consume_url']}');$('#coupon_key_show').val('{$coupon_deputy_info['coupon_key']}');$('#use_tip_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_deputy_info['use_tip']));}');">
+                            <div class="lin_one">
+                                {if $coupon_deputy_info['status']==3}
+                                <div class="ash">
+                                    <span>废</span>
+                                </div>
+                                {else}
+                                <div class="yellow">
+                                    
+                                    <span>领</span>
+                                    
+                                </div>
+                                {/if}
+                                <div class="mark">
+                                    {if $coupon_deputy_info['use_condition']}{$coupon_deputy_info['use_condition']}{else}无门槛{/if}
+                                </div>
+                                {if $coupon_deputy_info['shop_info']['image_logo']}
+                                <div class="logo">
+                                    <img src="{php echo tomedia($coupon_deputy_info['shop_info']['image_logo'])}" />
+                                </div>  
+                                {/if}
+
+                                <div class="money">
+                                    <div class="money_one">
+                                        {if $coupon_deputy_info['coupon_type']==1}
+                                        {php echo $coupon_deputy_info['coupon_content']['discount']/10}<span>折</span>
+                                        {elseif $coupon_deputy_info['coupon_type'] ==2}
+                                        {$coupon_deputy_info['coupon_content']['reduce_cost']}<span>元</span>{/if}
+                                    </div>
+                                    <div class="money_two">
+                                        <div class="zuo">
+                                            <span>{$coupon_deputy_info['shop_info']['name']}</span>
+                                        </div>
+                                        <div class="you">
+                                            <span>{if $coupon_deputy_info['coupon_type'] == 1}折扣{elseif $coupon_deputy_info['coupon_type'] == 2}现金{/if}券</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {else}
+                        <div class="lin circle_shop_show" onclick="$('#wechat_coupon_show').val({$coupon_deputy_info['wechat_coupon']});$('#couponcode_show').val('{$coupon_deputy_info['code']}');$('#couponid_show').val({$coupon_deputy_info['id']}); $('#shop_name_show').val('{$coupon_deputy_info['shop_info']['name']}'); $('#image_banner_show').val('{php echo tomedia($coupon_deputy_info['shop_info']['image_banner'])}'); $('#description_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_deputy_info['shop_info']['description']));}'); $('#tel_show').val('{$coupon_deputy_info['shop_info']['tel']}'); $('#address_show').val('{$coupon_deputy_info['shop_info']['address']}'); $('#address_urlencode_show').val('{php echo urlencode(urlencode($coupon_deputy_info['shop_info']['address']))}'); $('#coupon_status_show').val('{$coupon_deputy_info['status']}'); $('#consume_code_show').val('{$coupon_deputy_info['consume_code']}'); $('#shopid_show').val('{$coupon_deputy_info['shop_info']['id']}');$('#start_expiration').val('{$coupon_deputy_info['start_expiration']}');$('#end_expiration').val('{$coupon_deputy_info['end_expiration']}');$('#consume_type_show').val('{$coupon_deputy_info['consume_type']}');$('#consume_url_show').val('{$coupon_deputy_info['consume_url']}');$('#coupon_key_show').val('{$coupon_deputy_info['coupon_key']}');$('#use_tip_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_deputy_info['use_tip']));}');">
+                            <div class="lin_one">
+                                {if $coupon_deputy_info['status']==3}
+                                <div class="ash">
+                                    <span>废</span>
+                                </div>
+                                {else}
+                                <div class="yellow">
+                                     
+                                    <span>领</span>
+                                   
+                                </div>
+                                {/if}
+                                <div class="mark">
+                                    {if $coupon_deputy_info['use_condition']}{$coupon_deputy_info['use_condition']}{else}无门槛{/if}
+                                </div>
+
+                                <div class="money_er">
+                                    <div class="money_one_er">
+                                        {$coupon_deputy_info['coupon_content']['gift']}
+                                    </div>
+                                    <div class="money_two">
+                                        <div class="zuo_er">
+                                            {if $coupon_deputy_info['shop_info']['image_logo']}
+
+                                            <img src="{php echo tomedia($coupon_deputy_info['shop_info']['image_logo'])}" />
+
+                                            {/if}
+                                            <span>{$coupon_deputy_info['shop_info']['name']}</span>
+                                        </div>
+                                        <div class="you_er">
+                                            <span>礼品券</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {/if}
+                        {/loop}
+{/if}
+                        {if $red_info['status']==1&&$coupon_circle}
+                        {loop $coupon_circle $coupon_info}
+                        {if $coupon_info['coupon_type']<3}
+                        <div class="lin circle_shop_show" onclick="$('#wechat_coupon_show').val({$coupon_info['wechat_coupon']});$('#couponcode_show').val('{$coupon_info['code']}');$('#couponid_show').val({$coupon_info['id']}); $('#shop_name_show').val('{$coupon_info['shop_info']['name']}'); $('#image_banner_show').val('{php echo tomedia($coupon_info['shop_info']['image_banner'])}'); $('#description_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_info['shop_info']['description']));}'); $('#tel_show').val('{$coupon_info['shop_info']['tel']}'); $('#address_show').val('{$coupon_info['shop_info']['address']}'); $('#address_urlencode_show').val('{php echo urlencode(urlencode($coupon_info['shop_info']['address']))}'); $('#coupon_status_show').val('{$coupon_info['status']}'); $('#consume_code_show').val('{$coupon_info['consume_code']}'); $('#shopid_show').val('{$coupon_info['shop_info']['id']}');$('#start_expiration').val('{$coupon_info['start_expiration']}');$('#end_expiration').val('{$coupon_info['end_expiration']}');$('#consume_type_show').val('{$coupon_info['consume_type']}');$('#consume_url_show').val('{$coupon_info['consume_url']}');$('#coupon_key_show').val('{$coupon_info['coupon_key']}');$('#use_tip_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_info['use_tip']));}');">
+                            <div class="lin_one">
+                                {if $coupon_info['status']==3}
+                                <div class="ash">
+                                    <span>废</span>
+                                </div>
+                                {else}
+                                <div class="yellow">
+                                     
+                                    <span>领</span>
+                                  
+                                </div>
+                                {/if}
+                                <div class="mark">
+                                    {if $coupon_info['use_condition']}{$coupon_info['use_condition']}{else}无门槛{/if}
+                                </div>
+                                {if $coupon_info['shop_info']['image_logo']}
+                                <div class="logo">
+                                    <img src="{php echo tomedia($coupon_info['shop_info']['image_logo'])}" />
+                                </div>  
+                                {/if}
+
+                                <div class="money">
+                                    <div class="money_one">
+                                        {if $coupon_info['coupon_type']==1}
+                                        {php echo $coupon_info['coupon_content']['discount']/10}<span>折</span>
+                                        {elseif $coupon_info['coupon_type'] ==2}
+                                        {$coupon_info['coupon_content']['reduce_cost']}<span>元</span>{/if}
+                                    </div>
+                                    <div class="money_two">
+                                        <div class="zuo">
+                                            <span>{$coupon_info['shop_info']['name']}</span>
+                                        </div>
+                                        <div class="you">
+                                            <span>{if $coupon_info['coupon_type'] == 1}折扣{elseif $coupon_info['coupon_type'] == 2}现金{/if}券</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {else}
+                        <div class="lin circle_shop_show" onclick="$('#wechat_coupon_show').val({$coupon_info['wechat_coupon']});$('#couponcode_show').val('{$coupon_info['code']}');$('#couponid_show').val({$coupon_info['id']}); $('#shop_name_show').val('{$coupon_info['shop_info']['name']}'); $('#image_banner_show').val('{php echo tomedia($coupon_info['shop_info']['image_banner'])}'); $('#description_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_info['shop_info']['description']));}'); $('#tel_show').val('{$coupon_info['shop_info']['tel']}'); $('#address_show').val('{$coupon_info['shop_info']['address']}'); $('#address_urlencode_show').val('{php echo urlencode(urlencode($coupon_info['shop_info']['address']))}'); $('#coupon_status_show').val('{$coupon_info['status']}'); $('#consume_code_show').val('{$coupon_info['consume_code']}'); $('#shopid_show').val('{$coupon_info['shop_info']['id']}');$('#start_expiration').val('{$coupon_info['start_expiration']}');$('#end_expiration').val('{$coupon_info['end_expiration']}');$('#consume_type_show').val('{$coupon_info['consume_type']}');$('#consume_url_show').val('{$coupon_info['consume_url']}');$('#coupon_key_show').val('{$coupon_info['coupon_key']}');$('#use_tip_show').val('{php echo str_replace("\r\n", "<br/>", trim($coupon_info['use_tip']));}');">
+                            <div class="lin_one">
+                                {if $coupon_info['status']==3}
+                                <div class="ash">
+                                    <span>废</span>
+                                </div>
+                                {else}
+                                <div class="yellow">
+                                   
+                                    <span>领</span>
+                                   
+                                </div>
+                                {/if}
+                                <div class="mark">
+                                    {if $coupon_info['use_condition']}{$coupon_info['use_condition']}{else}无门槛{/if}
+                                </div>
+
+                                <div class="money_er">
+                                    <div class="money_one_er">
+                                        {$coupon_info['coupon_content']['gift']}
+                                    </div>
+                                    <div class="money_two">
+                                        <div class="zuo_er">
+                                            {if $coupon_info['shop_info']['image_logo']}
+
+                                            <img src="{php echo tomedia($coupon_info['shop_info']['image_logo'])}" />
+
+                                            {/if}
+                                            <span>{$coupon_info['shop_info']['name']}</span>
+                                        </div>
+                                        <div class="you_er">
+                                            <span>礼品券</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {/if}
+                        {/loop}
+                        {/if}
+                    </div>
+                    {if $cfg['copyright']}
+                    <div class="yun">
+                        <span>
+                            {$cfg['copyright']}
+                        </span>
+                    </div>
+                    {/if}
+                </div>
+                <div class="kaila">
+                    <div class="banhu">
+                        {if $activity['open_coupon_wish']}{$activity['open_coupon_wish']}{else}恭喜您还获得了 <span>{$coupon_number}张卡券</span>，请到对应门店核销{/if}
+                    </div>
+                    <div class="shanguang">
+                        <img src="../addons/crad_qrcode_red/template/mobile/img/gir.png" />
+                    </div>
+                    <div class="huabu" {if $red_info['status']==1}style="height: 32vw;"{/if}>
+{if $activity['pattern']==12&&$max_cid!=$cuteface_own['id']}
+       <div class="huabu_one tarens">
+       	恭喜您获得了其他福利
+                            
+                        </div>
+                        <div class="huabu_two tarens_two">
+                            红包被他人领取了~
+                        </div>
+{else}
+       <div class="huabu_one">
+                            {if $red_info['status']==1}{$red_info['money']}<span>元</span>{/if}
+                        </div>
+                        <div class="huabu_two">
+                            {if $activity['open_tips']}{$activity['open_tips']}{else}请在微信服务通知中领取红包{/if}
+                        </div>
+{/if}
+                  
+                    </div>
+                </div>
+                <!--展示商家信息、核销、导航的弹窗-->
+                <div class="mask" style="display:none;"></div>
+                <div id="store" class="modal" style="display: none;" tabindex="3" role="dialog">
+                    <div  class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" onclick="$('#store').hide(); $('#use').hide(); $('.mask').hide();">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                                <h4 class="modal-title text-center shop_name_text">
+
+                                </h4>
+                            </div>
+                            <div class="modal-body">
+                                <div class="shanggquan_banner">
+                                    <img src="../addons/crad_qrcode_red/template/mobile/img/muwu.jpg" />
+                                </div>
+                                <div class="store_info" id="use_tip_info">
+                                    <span class="info_left">使用说明：</span>
+                                    <span class="info_right text-justify" id="info_right_use_tip">
+
+                                    </span>                                    
+                                </div>
+                                <div class="info_right_onclick" hidden>查看更多..</div>
+                                <div class="store_info" id="store_info">
+                                    <span class="info_left">商家介绍：</span>
+                                    <span class="info_right text-justify">
+
+                                    </span>
+                                </div>
+                                <div class="store_info " id="expiration_info">
+                                    <span class="info_left">有效日期：</span>
+                                    <span class="info_right text-justify">
+                                        
+                                    </span>
+                                </div>
+                                <p class="slide_line"></p>
+                                <p class="store_tel text-left"></p>  
+                                <p class="slide_line"></p>
+                                <div class="store_address">
+                                    <span class="address_left">商家地址：</span>
+                                    <span class="address_right text-justify">
+
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a class="btn btn-success store_btn map_jump" href="#">一键导航</a>
+                                <button class="btn btn-danger store_btn coupon_add_btn" >放入卡包</button>
+                                <button class="btn btn-info store_btn award_a coupon_use_btn" >立即核销</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:none">
+                    <input type="text" value="" id="couponid_show">
+                    <input type="text" value="" id="shop_name_show">
+                    <input type="text" value="" id="image_banner_show">
+                    <input type="text" value="" id="description_show">
+                    <input type="text" value="" id="tel_show">
+                    <input type="text" value="" id="address_show">
+                    <input type="text" value="" id="address_urlencode_show">
+                    <input type="text" value="" id="coupon_status_show">
+                    <input type="text" value="" id="consume_code_show">
+                      <input type="text" value="" id="consume_type_show">
+                      <input type="text" value="" id="coupon_key_show">
+                      <input type="text" value="" id="consume_url_show">
+                    <input type="text" value="" id="start_expiration">
+                    <input type="text" value="" id="end_expiration">
+                    <input type="text" value="" id="shopid_show">
+                    <input type="text" value="" id="use_tip_show">
+                     <input type="text" value="" id="wechat_coupon_show">
+                      <input type="text" value="" id="couponcode_show">
+                </div>
+                <!--立即使用的弹框-->
+                <div id="use" class="modal" style="display:none;" tabindex="3" role="dialog">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content wanjiao">
+                            <div class="modal-header yanse">
+                                <button type="button" class="close" onclick="$('#store').hide(); $('#use').hide(); $('.mask').hide();">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="text-center" id="text_info">
+                                    确认要使用吗，请确保您本人已在门店且店家知晓此操作，否则核销可能无效。
+                                </p>
+                                <form class="form-horizontal" id="text_code">
+                                    <div class="form-group">
+                                        <label class="col-xs-4 control-label text-right jiade">核销码</label>
+                                        <div class="col-xs-8">
+                                            <input type="text" class="form-control"  name="consume_code" id="consume_code" value="" placeholder="请找店员索要核销码">
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer" id="div_use">
+                                <button type="button" class="btn btn-success" id="coupon_use" >确定</button>
+                                <button type="button" class="btn btn-default" onclick="$('#store').hide(); $('#use').hide(); $('.mask').hide(); ">取消</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+               <!--  二维码核销弹窗-->
+                	<div class="codeb" hidden>
+            <div class="code_lis">
+                <div class="dialogsb">
+                    <div class="dialogs_topwts">卡券核销二维码</div>
+                    <div class="dialogs_centers">
+                        <img src="" />
+                    </div>
+                    <div class="addressb">
+                    	请将此二维码给商家扫码核销
+                    </div>
+                    <div class="dialogs_bottmos">关闭</div>
+                </div>
+            </div>
+        </div>
+               
+                <div class="copyse" hidden>
+                	<div class="copyse_li">
+                		<div class="modal-content wanjiao copyse_with">
+                            <div class="modal-header yanse">
+                            	请复制卡密到指定平台核销
+                                <button type="button" class="close" id="copyse_out">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <form class="form-horizontal">
+                                	<label class="control-label copyse_left">核销卡密：</label>
+                                    <div class="copyse_btn">
+                                        <div class="copyse_btnli">
+                                            <input type="text" class="form-control" value="" id="coupon_key"  readonly>
+                                        </div>
+                                        <button type="button" data-clipboard-action="copy" data-clipboard-target="#coupon_key" class="btn btn-default copy_btn">复制</button>
+                                    </div>
+                                    <!--二维码-->
+                                    <div class="off_code">
+                                    	<img src="../addons/crad_qrcode_red/template/mobile/img/erweima.png" />
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                	</div>
+                </div>
+       <script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/clipboard.min.js"></script> 
+       
+       
+       
+       
+       
+        <script>
+        	$(document).ready(function(){
+                    $(".coupon_add_btn").click(function(){ 
+	if ($('#couponcode_show').val()=="") {
+		$.post("{php echo $this->createMobileUrl('coupon_use', array('uuid' => $uuid, 'aid' => $aid))}", {'couponid' : $('#couponid_show').val(),'op' : 'add_coupon'}, function(ret) {
+        if (ret.sta == 1) {
+				wx.ready(function(){
+					wx.addCard({
+						cardList:[
+							{
+								cardId : ret.message.card_id,
+								cardExt : ret.message.card_ext
+							}
+						],
+						success: function (res) {
+						show_message(1, '添加到微信卡包成功，请到微信卡包查看', 3000, 1);
+						}
+					});
+				});
+			} else {
+				show_message(0, ret.error, 3000, 1);
+			}
+			return false;
+		});
+	} else {
+		$.post("{php echo $this->createMobileUrl('coupon_use', array('uuid' => $uuid, 'aid' => $aid))}",  {'couponid' : $('#couponid_show').val(), 'code' : $('#couponcode_show').val(),'op' : 'open_coupon'}, function(ret) {
+		if (ret.sta == 1) {
+                   
+			wx.ready(function(){
+				wx.openCard({
+					cardList:[
+						{
+							cardId : ret.message.card_id,
+							code : ret.message.code
+						}
+					],
+				});
+			});
+		} else {
+			show_message(0, ret.error, 3000, 1);
+		}
+
+		return false;
+	});
+	}
+});
+                    
+                    
+            		$(".dialogs_bottmos").click(function(){ 
+            			$(".codeb").hide();
+            		});
+                        
+                         $("#copyse_out").click(function(){
+			      $(".copyse").hide();
+			    });
+                            
+                         $(".copy_btn").on("click", function () {
+                    var clipboard = new Clipboard('.copy_btn');
+                            clipboard.on('success', function (e) {
+                                $(".copyse").hide();
+			 
+                            show_message(1, '复制成功，请到指定平台核销', 1000, 1);
+                            });
+                            clipboard.on('error', function (e) {
+                            show_message(0, '复制失败', 1000, 1);
+                            });
+                    });
+            	});
+        </script>
+                <script>
+                    $(document).ready(function () {
+                    $(".huabu").animate({height:"32vw"}, 1000);
+                    });
+                    
+                    $('.info_right_onclick').on('click', function () {
+                        if ($(this).html() == '查看更多..'){
+                    $("#info_right_use_tip").addClass('info_right_on');
+                    $("#info_right_use_tip").removeClass('info_right');
+                    $("#store_info").addClass('info_cloes');
+                    $("#expiration_info").addClass('info_cloes');
+                    $(".store_tel").addClass('info_cloes');
+                    $(".store_address").addClass('info_cloes');
+                    $(".slide_line").addClass('info_cloes');
+                     $(this).html("收起");
+                        }else{
+                             $("#info_right_use_tip").removeClass('info_right_on');
+                    $("#info_right_use_tip").addClass('info_right');
+                    $("#store_info").removeClass('info_cloes');
+                    $("#expiration_info").removeClass('info_cloes');
+                    $(".store_tel").removeClass('info_cloes');
+                    $(".store_address").removeClass('info_cloes');
+                    $(".slide_line").removeClass('info_cloes');
+                             $(this).html("查看更多..");
+                        }
+                    });
+              
+                    
+                    $('.circle_shop_show').on('click', function () {
+                    $('.close').click();
+                    $('.mask').show();
+                    $(".shop_name_text").html($('#shop_name_show').val());
+                    var image_banner = $('#image_banner_show').val();
+                    if (image_banner == ""){
+                    $(".shanggquan_banner img").attr("src", "../addons/crad_qrcode_red/template/mobile/img/muwu.jpg");
+                    } else{
+                    $(".shanggquan_banner img").attr("src", image_banner);
+                    }
+                    
+                    if ($('#wechat_coupon_show').val() == "1" && $('#couponcode_show').val() == ""){
+                         $(".coupon_add_btn").show();
+                    }else{
+                         $(".coupon_add_btn").hide();
+                    }
+                    var shop_use_tip = $('#use_tip_show').val();
+                    if (shop_use_tip == ""){
+                    $("#use_tip_info").hide();
+                    $(".info_right_onclick").hide();
+                    $("#info_right_use_tip").removeClass('info_right_on');
+                    $("#info_right_use_tip").addClass('info_right');
+                    $("#store_info").removeClass('info_cloes');
+                    $("#expiration_info").removeClass('info_cloes');
+                    $(".store_tel").removeClass('info_cloes');
+                    $(".store_address").removeClass('info_cloes');
+                    $(".slide_line").removeClass('info_cloes');
+                    $("#use_tip_info").show();
+                    } else{
+                    $("#use_tip_info .info_right").html(shop_use_tip);
+                    if(shop_use_tip.split("<br/>").length>2){
+                        $(".info_right_onclick").show();
+                    }else{
+                        $(".info_right_onclick").hide();
+                    }
+                    $("#info_right_use_tip").removeClass('info_right_on');
+                    $("#info_right_use_tip").addClass('info_right');
+                    $("#store_info").removeClass('info_cloes');
+                    $("#expiration_info").removeClass('info_cloes');
+                    $(".store_tel").removeClass('info_cloes');
+                    $(".store_address").removeClass('info_cloes');
+                    $(".slide_line").removeClass('info_cloes');
+                    $("#use_tip_info").show();
+                    }
+                    
+                    var shop_description = $('#description_show').val();
+                    if (shop_description == ""){
+                    $("#store_info").hide();
+                    } else{
+                    $("#store_info .info_right").html(shop_description);
+                    $("#store_info").show();
+                    }
+                    
+                     var start_expiration = $('#start_expiration').val();
+                     var end_expiration = $('#end_expiration').val();
+                    if (start_expiration == "" && end_expiration== ""){
+                    $("#expiration_info .info_right").html("永久有效");
+                    } else{
+                        if(start_expiration== ""){
+                            start_expiration="现在";
+                        }
+                         if(end_expiration== ""){
+                            start_expiration="永久";
+                        }
+                    $("#expiration_info .info_right").html(start_expiration+"到"+end_expiration);
+                    }
+                    
+                    
+
+                    var shop_tel = $('#tel_show').val();
+                    if (shop_tel == ""){
+                    $(".store_tel").hide();
+                    } else{
+                    $(".store_tel").html("<span class='address_left'>商家电话：</span><a href='tel:" + shop_tel + "' class='colorblue'>" + shop_tel + "</a>");
+                    $(".store_tel").show();
+                    }
+
+                    var shop_address = $('#address_show').val();
+                    if (shop_address == ""){
+                    $(".store_address").hide();
+                    $(".map_jump").hide();
+                    } else{
+                    $(".store_address .address_right").html(shop_address);
+                    $(".store_address").show();
+                    $(".map_jump").attr('href', 'http://map.baidu.com/mobile/webapp/place/linesearch/foo=bar/from=place&end=word%3D' + $('#address_urlencode_show').val() + '/?third_party=uri_api');
+                    $(".map_jump").show();
+                    }
+                    var coupon_status = $('#coupon_status_show').val();
+                    if (coupon_status == '1'){
+                    $(".coupon_use_btn").prop('disabled', false);
+                    $(".coupon_use_btn").addClass('award_a');
+                    $(".coupon_use_btn").html('立即核销');
+                    } else if (coupon_status == '3'){
+                    $(".coupon_use_btn").prop('disabled', true);
+                    $(".coupon_use_btn").removeClass('award_a');
+                    $(".coupon_use_btn").html('已核销');
+                    } else{
+                    $(".coupon_use_btn").prop('disabled', true);
+                    $(".coupon_use_btn").removeClass('award_a');
+                    $(".coupon_use_btn").html('卡券无效');
+                    }
+                    $('#store').show();
+                    });
+                    $('.award_a').on('click', function () {
+                    $('.award_a').prop('disabled', true);
+                    $('.close').click();
+                      if (check_tel=='2' && is_check_tel<1) {
+                $('.phone_code').show(); $('.award_a').prop('disabled', false);
+return;
+            }
+                                         if ($("#consume_type_show").val() == "1") {
+                         $(".dialogs_centers img").attr("src", $("#consume_url_show").val());
+                         $(".codeb").show();
+                                             $('.award_a').prop('disabled', false);
+return;
+                    } else  if ($("#consume_type_show").val() == "2") {
+                         $("#coupon_key").val($("#coupon_key_show").val());
+                         $(".copyse").show();
+                                             $('.award_a').prop('disabled', false);
+return;
+                    } else{
+                     $(".codeb").hide();
+                    if ($("#consume_code_show").val() == "1") {
+                    $("#text_code").removeClass("hidden");
+                    } else{
+                    $("#text_code").addClass("hidden");
+                    }
+                }
+                    $("#text_info").html("确认要使用吗，请确保您本人已在门店且店家知晓此操作，否则核销可能无效");
+                    $('.mask').show();
+                    $('#use').show();
+                    $('.award_a').prop('disabled', false);
+                    });
+                    $('#coupon_use').on('click', function () {
+                    $('.close').click();
+                    if ($("#consume_code_show").val() == "1" && $('#consume_code').val() == "") {
+
+                    show_message(0, '核销码不能为空', 3000, 1);
+                    return false;
+                    }
+                    $('#coupon_use').prop('disabled', true);
+                    var url = "{php echo $this->createMobileUrl('coupon_use', array('uuid' => $uuid, 'aid' => $aid))}";
+                    var couponid = $('#couponid_show').val();
+                    $.get(url + "&couponid=" + couponid + "&consume_code=" + $('#consume_code').val(), function (ret) {
+                    if (ret.sta == 1) {
+                    show_message(1, '卡券核销成功', 3000, 0);
+                    } else{
+                    show_message(0, ret.error, 3000, 1);
+                    }
+
+                    }, 'json');
+                    $('#coupon_use').prop('disabled', false);
+                    });
+                </script>
+            </div>
+
+            {else if $activity['pattern']==8}
+            <!--十秒模式-->
+            <div class="zhuang">
+                <div class="fugai">
+                    <div class="zhiding">
+                        <div class="ten_tips">
+                            {$activity['challenge_rule']}
+                        </div>
+                        <div class="box">
+                            <div id="showtime" class="shows">
+                                <div class="baoguo">
+                                    <span hidden>00</span>
+                                    <span hidden>:</span>
+                                    <span>00</span>
+                                    <span>:</span>
+                                    <span>00</span>
+                                </div>
+                            </div>
+                           {if $red_info['status']==1}
+                            <div class="bnt_wan">
+                                <button>已领取</button>
+                            </div>
+                            {elseif $red_info['status']==4}
+                            <div class="bnt_wan">
+                                已退回
+                            </div>
+                            {else}
+                            <div class="bnt" id="start_game">
+                                <button>开始</button>
+                            </div>
+                             
+                            <div class="surp">
+                                {if empty($red_info)}
+                                {if $challenge_num_day_surplus>0}今日剩余<span>{$challenge_num_day_surplus}次</span>
+                                {elseif $invitation_times>0}今日挑战超过最大次数,明天再来吧
+                                {elseif $invitation_content}{$invitation_content}
+                                {elseif $activity['challenge_num_day']>0&&$activity['share_open']}{php echo $activity['share_tips'] ? $activity['share_tips'] : '今日次数用完啦，根据红包码提示操作获取更多次数';}
+                                {elseif $challenge_num_surplus>0}今日次数已用完,累计剩余<span>{$challenge_num_surplus}次</span>
+                                {/if}
+                                {/if}
+                            </div>
+                            {/if}
+                        </div>	
+
+                    </div>
+                    {if $cfg['copyright']}
+                    <div class="yun">
+                        <span>
+                            {$cfg['copyright']}
+                        </span>
+                    </div>
+                    {/if}
+                </div>
+                <div class="meikai" {if $red_info['status']==1}hidden{/if}>
+                     <div class="biaoyu">
+                        {if $activity['closed_wish']}{$activity['closed_wish']}{else}新年开门大吉，财源广进！{/if}
+                    </div>
+                </div>
+                <div class="kaila" {if $red_info['status']!=1}hidden{/if}>
+                     <div class="banhu">
+                        {if $activity['open_wish']}{$activity['open_wish']}{else}恭喜发财，大吉大利！{/if}
+                    </div>
+                    <div class="shanguang">
+                        <img src="../addons/crad_qrcode_red/template/mobile/img/gir.png" />
+                    </div>
+                    <div class="huabu" {if $red_info['status']==1}style="height: 32vw;"{/if}>
+
+                         <div class="huabu_one">
+                            {if $red_info['status']==1}{$red_info['money']}<span>元</span>{/if}
+                        </div>
+                        <div class="huabu_two">
+                            {if $activity['open_tips']}{$activity['open_tips']}{else}请在微信服务通知中领取红包{/if}
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    $(function(){
+                    var min = 0;
+                    var sec = 0;
+                    var ms = 0;
+                    var timer = null;
+                    var count = 0;
+                    //点击开始按钮
+                    var red_run=false;
+                    var time_day=0;
+                    {if $challenge_num_day_surplus>0}
+                    time_day={$challenge_num_day_surplus};
+                    {/if}
+                                            var challenge_num_day=0;
+                          {if $activity['challenge_num_day']>0}
+                    challenge_num_day={$activity['challenge_num_day']};
+                    {/if}
+                    $('#start_game button').click(function(){
+                    if ($(this).html() == '开始'){
+                    if(time_day<1&&challenge_num_day>0){
+                      min = 0;
+                            sec = 0;
+                            ms = 0;
+                            count = 0;
+                            $('#showtime span:eq(0)').html('00');
+                            $('#showtime span:eq(2)').html('00');
+                            $('#showtime span:eq(4)').html('00');
+                            $('#record').html('');
+                        show_message(0, "今日次数用完了", 3000, 1);
+                        return;
+                    }
+                    if (check_tel=='1' && is_check_tel<1) {
+                $('.phone_code').show(); 
+return;
+            }
+                    $(this).html('停止');
+                    clearInterval(timer);
+                    var time_speed="{php echo $activity['time_speed']?$activity['time_speed']:10}";
+                    timer = setInterval(show, time_speed)
+                    } else{
+                    $(this).html('开始');
+                    clearInterval(timer);
+                    $.ajax({
+                    type: 'post',
+                            url: "{php echo $this->createMobileurl('ajax_red',array('op'=>'challenge_times','aid'=>$aid,'uuid'=>$uuid))}",
+                            data: {sec: sec, ms: ms},
+                            success: function (data_res) {
+                                  if (data_res.sta > 0 ) {
+                                  if(time_day>0){
+                                            time_day--;
+                                    }
+                                            $(".surp").html(data_res.content);
+                                        }
+                            if (data_res.sta == 1) {
+                            var btnArray = ['领取红包'];
+                            mui.confirm('恭喜您挑战成功！', '提示', btnArray, function(e) {
+                            if (e.index == 1) {
+                         
+                            } else {
+                              {if $activity['validate_open']==1}
+                              $(".huakuai").show();
+                               jigsaw.init(document.getElementById('captcha'),function () {
+	        $(".huakuai").hide();
+                document.getElementById('captcha').innerHTML = ''
+                {/if}
+                 if (!red_run) {
+                            red_run=true;
+                            $(".lodings").show();
+                            $.ajax({
+                            type: 'post',
+                                    url: "{php echo $this->createMobileurl('ajax_red',array('op'=>'challenge','aid'=>$aid,'uuid'=>$uuid))}",
+                                    data: {sec: sec, ms: ms, key_challenge: data_res.key_challenge,token_challenge: data_res.token_challenge},
+                                    success: function (data) {
+                                    $(".lodings").hide();
+                                    setTimeout(function () { red_run = false; }, 2000);
+                                    if (data.sta == 1) {
+                                    $(".huabu_one").html(data.money + "<span>元</span>");
+//setaudio();
+                                    var gao = $(".zong").scrollTop();
+                                    if (gao == "0") {
+                                    $(".meikai").hide();
+                                    $(".kaila").show();
+                                    $(".huabu").animate({height: "32vw"}, 1000);
+                                    } else {
+                                    $(".zong").animate({scrollTop: 0}, 500, function () {
+                                    $(".meikai").hide();
+                                    $(".kaila").show();
+                                    $(".huabu").animate({height: "32vw"}, 1000);
+                                    });
+                                    }
+//                                    show_message(1, '红包领取成功，请到微信查看', 3000, 1);
+                                    return;
+                                    } else {
+                                    if (data.nosubscribe == 1) {
+                                    $('.code_tan').show();
+                                    } else{
+                                    show_message(0, data.error, 3000, 1);
+                                    }
+                                    return;
+                                    }
+                                    }
+                            });
+                           setTimeout(function () { red_run = false; }, 2000);
+                        }
+                
+            {if $activity['validate_open']==1} 
+	    },function(){    
+	        document.getElementById('msg').innerHTML = '验证失败，请重试！'
+	    });
+            {/if}
+                          
+                            }
+                            });
+                            } else if (data_res.sta == 2) {
+                            //					    	失败
+                            var btnArray = ['再来一次', '取消'];
+                            mui.confirm('很遗憾，挑战失败！', '提示', btnArray, function(e) {
+                            min = 0;
+                            sec = 0;
+                            ms = 0;
+                            count = 0;
+                            $('#showtime span:eq(0)').html('00');
+                            $('#showtime span:eq(2)').html('00');
+                            $('#showtime span:eq(4)').html('00');
+                            $('#record').html('');
+                            
+                            if (e.index == 0) {
+                            $('#start_game button').click();
+                            }
+                            });
+                            } else {
+                            min = 0;
+                            sec = 0;
+                            ms = 0;
+                            count = 0;
+                            $('#showtime span:eq(0)').html('00');
+                            $('#showtime span:eq(2)').html('00');
+                            $('#showtime span:eq(4)').html('00');
+                            $('#record').html('');
+                            
+                            if (data_res.nosubscribe == 1) {
+                            $('.code_tan').show();
+                            } else{
+                            show_message(0, data_res.error, 3000, 1);
+                            }
+                             clearInterval(timer);
+                            return;
+                            }
+                            }
+                    });
+                    }
+                    });
+                    //生成时间
+                    function show(){
+                    ms++;
+                    if (sec == 60){
+                    min++; sec = 0;
+                    }
+                    if (ms == 100){
+                    sec++; ms = 0;
+                    }
+                    var msStr = ms;
+                    if (ms < 10){
+                    msStr = "0" + ms;
+                    }
+                    var secStr = sec;
+                    if (sec < 10){
+                    secStr = "0" + sec;
+                    }
+                    var minStr = min;
+                    if (min < 10){
+                    minStr = "0" + min;
+                    }
+                    $('#showtime span:eq(0)').html(minStr);
+                    $('#showtime span:eq(2)').html(secStr);
+                    $('#showtime span:eq(4)').html(msStr);
+                    }
+                   
+
+ {if empty($red_info)&&$activity['challenge_num_day']&&$activity['share_open']&&empty($invitation_times)}
+           var share_user_status = setInterval(function () {
+        $.get("{php echo $this->createMobileUrl('ajax_info', array('aid' => $aid, 'uuid' => $uuid))}" + "&op=share_user_count", function (ret) {
+        if (ret.sta == 1) {
+           $('.surp').html(ret.invitation_content);
+        }else if (ret.sta == 2) {
+              min = 0;
+                            sec = 0;
+                            ms = 0;
+                            count = 0;
+                            $('#showtime span:eq(0)').html('00');
+                            $('#showtime span:eq(2)').html('00');
+                            $('#showtime span:eq(4)').html('00');
+                            $('#record').html('');
+             $('.surp').html(ret.invitation_content);
+             time_day=time_day+ret.times;
+             if(time_day>0){
+             show_message(2, "恭喜您获得了"+ret.times+"次挑战机会", 3000, 1);
+         }
+             clearInterval(share_user_status);
+        }
+        }, 'json');
+        }, 3000);
+ 
+    {/if}
+
+ });
+                </script>
+            </div>
+
+
+            {else if $activity['pattern']==2}
+
+            <!--口令模式-->
+            <div class="zhuang">
+                <div class="fugai" >
+                    <div class="zhiding">
+                        {if $red_info['status']!=1&&$red_info['status']!=4}
+                        <div class="shuru">
+                            <input type="text" name="command" placeholder="请输入口令" />
+                        </div>
+                        {/if}
+                        <div class="linqu">
+                            {if $red_info['status']==1}
+                            <div class="linqu_out">
+                                已领取
+                            </div>
+                            {elseif $red_info['status']==4}
+                            <div class="linqu_out">
+                                已退回
+                            </div>
+                            {else}
+                            <div class="linqu_li">
+                                领取
+                            </div>
+                            {/if}
+                        </div>
+
+                        <div class="koulin">
+                            <span>口令提示 ></span>
+                        </div>
+                    </div>
+                    {if $cfg['copyright']}
+                    <div class="yun">
+                        <span>
+                            {$cfg['copyright']}
+                        </span>
+                    </div>
+                    {/if}
+                </div>
+                <div class="meikai" {if $red_info['status']==1}hidden{/if}>
+                     <div class="biaoyu">
+                        {if $activity['closed_wish']}{$activity['closed_wish']}{else}新年开门大吉，财源广进！{/if}
+                    </div>
+                </div>
+                <div class="kaila" {if $red_info['status']!=1}hidden{/if}>
+                     <div class="banhu">
+                        {if $activity['open_wish']}{$activity['open_wish']}{else}恭喜发财，大吉大利！{/if}
+                    </div>
+                    <div class="shanguang">
+                        <img src="../addons/crad_qrcode_red/template/mobile/img/gir.png" />
+                    </div>
+                    <div class="huabu" {if $red_info['status']==1}style="height: 32vw;"{/if}>
+                         <div class="huabu_one">
+                            {if $red_info['status']==1}{$red_info['money']}<span>元</span>{/if}
+                        </div>
+                        <div class="huabu_two">
+                            {if $activity['open_tips']}{$activity['open_tips']}{else}请在微信服务通知中领取红包{/if}
+                        </div>
+                    </div>
+                </div>
+                <div class="menban" hidden>
+                    <div class="menban_li">
+                        <div class="ditou">
+                            {if $activity['image_command']}
+                            <div class="tu">
+                                {if $activity['img_link']}
+                                <a href="{$activity['img_link']}">
+                                    <img src="{php echo tomedia($activity['image_command'])}" />
+                                </a>
+                                {else}
+                                <img src="{php echo tomedia($activity['image_command'])}" />
+                                {/if}
+                            </div>
+                            {/if}
+                            <div class="zi">
+                                {if $activity['hint']}
+                                <div class="zi_one">
+                                    {php echo str_replace("\r\n","<br/>",$activity['hint']);}
+                                </div>
+                                {else}
+                                 <div class="zi_two">
+                                    请根据以上提示获取口令！
+                                </div>
+                                {/if}
+                            </div>
+                            <div class="tuichu">
+                            
+                                <span class="glyphicon glyphicon-remove-circle tui_an"></span>
+                            
+                        </div>
+                        </div>
+                        <!--示列图，判断两者取其一-->
+                        <div class="shili">
+                            <img src="" />
+                        </div>
+                        
+                    </div>
+                </div>
+                <script>
+                            $(document).ready(function () {
+
+                    $(".koulin span").click(function () {
+                    $(".menban").show();
+                    $(".shili").hide();
+                    });
+                    $(".tui_an").click(function () {
+                    $(".menban").hide();
+                    });
+                                             var red_run=false;
+        $('.linqu_li').click(function () {
+            {if $activity['validate_open']==1}
+             $(".huakuai").show();
+             jigsaw.init(document.getElementById('captcha'),function () {
+	        $(".huakuai").hide();
+                document.getElementById('captcha').innerHTML = ''
+                {/if}
+                 if (!red_run) {
+                                                     if (check_tel=='1' && is_check_tel<1) {
+                $('.phone_code').show(); 
+return;
+            }
+           red_run=true;
+                    var command = $('input[name="command"]').val();
+                    if (!command) {
+                    show_message(0, '口令不能为空', 3000, 1);
+                    return;
+                    }
+     
+                    $(".lodings").show();
+                    $.ajax({
+                    type: 'post',
+                            url: "{php echo $this->createMobileurl('ajax_red',array('op'=>'command','aid'=>$aid,'uuid'=>$uuid))}",
+                            data: {command: command},
+                            dataType:'json',
+                            success: function (data) {
+                            $(".lodings").hide();
+                            if (data.sta == 1) {
+                            $(".huabu_one").html(data.money + "<span>元</span>");
+//setaudio();
+                            var gao = $(".zong").scrollTop();
+                            if (gao == "0") {
+                            $(".meikai").hide();
+                            $(".kaila").show();
+                            $(".huabu").animate({height: "32vw"}, 1000);
+                            } else {
+                            $(".zong").animate({scrollTop: 0}, 500, function () {
+                            $(".meikai").hide();
+                            $(".kaila").show();
+                            $(".huabu").animate({height: "32vw"}, 1000);
+                            });
+                            }
+//                            show_message(1, '红包领取成功，请到微信查看', 3000, 1);
+                            } else {
+                            if (data.nosubscribe == 1) {
+                            $('.code_tan').show();
+                            } else{
+                            show_message(0, data.error, 3000, 1);
+                            }                            }
+                            }
+                    });
+                    setTimeout(function () { red_run = false; }, 2000);
+                }
+                {if $activity['validate_open']==1}
+	    },function(){    
+	        document.getElementById('msg').innerHTML = '验证失败，请重试！'
+	    });
+            {/if}
+                    });
+                    });
+                </script>
+            </div>
+
+
+            {else if $activity['pattern']==6}
+
+            <!--颜值PK-->
+            <div class="zhuang">
+                <div class="fugai">
+                    <div class="zhiding">
+                        <div class="yanzhi">
+                            <div class="pk">
+                                <div class="pk_one">
+                                    <div class="boos">
+                                        <img src="{php echo tomedia($activity['cuteface_image'])}" />
+                                        <!--输-->
+                                        <div class="tran" id="no" {if empty($cuteface)||$cuteface['mark']<$activity['cuteface_mark']}hidden{/if}>
+                                             ×
+                                    </div>
+                                    <!--赢-->
+                                    <div class="win" {if empty($cuteface)||$cuteface['mark']>=$activity['cuteface_mark']}hidden{/if}>
+                                         WIN
+                                </div>
+                            </div>
+                            <div class="nameda">
+                                {$activity['cuteface_name']}
+                            </div>
+                            <div class="fen">
+                                {$activity['cuteface_mark']}分
+                            </div>
+                        </div>
+                        <div class="pk_two">
+                            PK
+                        </div>
+                        <!--上传图片PK-->
+                        <div class="pk_there" {if $red_info||$cuteface}hidden{/if}>
+                             <img src="../addons/crad_qrcode_red/template/mobile/img/sctp.png"/>
+                            <div class="pai_one">拍照上传</div>
+                            <div class="pai_two">立即PK</div>
+                        </div>
+                        <!--上传后PK样式-->
+                        <div class="pk_there_ch" {if empty($cuteface) && empty($red_info)}hidden{/if}>
+                             <div class="boos">
+                                <img src="{if $cuteface['image_thumb_url']}{php echo tomedia($cuteface['image_thumb_url'])}{else}../addons/crad_qrcode_red/template/mobile/img/muwu.jpg{/if}" />
+                                <!--输-->
+                                <div class="tran" {if empty($cuteface) || $cuteface['mark']>=$activity['cuteface_mark']}hidden{/if}>
+                                     X
+                            </div>
+                            <!--赢-->
+                            <div class="win" id="yes" {if empty($cuteface) || $cuteface['mark']<$activity['cuteface_mark']}hidden{/if}>
+                                 WIN
+                        </div>
+                    </div>
+                    <div class="nameda">
+                        您的颜值
+                    </div>
+                    <div class="fen" id='cuteface_mark'>
+                        {$cuteface['mark']}分
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="koulin_pk" {if $cuteface}hidden{/if}>
+             <span>温馨提示：PK胜利后可以开启红包</span>
+        </div>
+        <!--PK胜利后领取红包按钮-->
+        <div class="linqu" {if $red_info['status']==1||$cuteface['mark']<$activity['cuteface_mark']}hidden{/if}>
+             {if $red_info['status']==1}
+                            <div class="linqu_out">
+                                已领取
+                            </div>
+                            {elseif $red_info['status']==4}
+                            <div class="linqu_out">
+                                已退回
+                            </div>
+            {else}
+            <div class="linqu_li">
+                领取
+            </div>
+            {/if}
+        </div>
+        <!--PK失败后重新选择图片按钮-->
+        <div class="linqu_tr" {if $red_info||empty($cuteface)}hidden{/if}>
+             <div class="linqu_li_tr">
+                重新上传PK
+            </div>
+        </div>
+        <div class="surp">{if empty($red_info)}
+                                {if $cuteface_num_day_surplus>0}今日剩余<span>{$cuteface_num_day_surplus}次</span>
+                                {elseif $invitation_times>0}今日测颜值超过最大次数,明天再来吧
+                                {elseif $invitation_content}{$invitation_content}
+                                {elseif $activity['cuteface_num_day']>0&&$activity['share_open']}{php echo $activity['share_tips'] ? $activity['share_tips'] : '今日次数用完啦，根据红包码提示操作获取更多次数';}
+                                {elseif $cuteface_num_surplus>0}今日次数已用完,累计剩余<span>{$cuteface_num_surplus}次</span>
+                                {/if}
+                                {/if}
+        </div>
+    </div>
+    {if $cfg['copyright']}
+    <div class="yun">
+        <span>
+            {$cfg['copyright']}
+        </span>
+    </div>
+    {/if}
+</div>
+<div class="meikai" {if $red_info['status']==1}hidden{/if}>
+     <div class="biaoyu">
+        {if $activity['closed_wish']}{$activity['closed_wish']}{else}新年开门大吉，财源广进！{/if}
+    </div>
+</div>
+<div class="kaila" {if $red_info['status']!=1}hidden{/if}>
+     <div class="banhu">
+        {if $activity['open_wish']}{$activity['open_wish']}{else}恭喜发财，大吉大利！{/if}
+    </div>
+    <div class="shanguang">
+        <img src="../addons/crad_qrcode_red/template/mobile/img/gir.png" />
+    </div>
+    <div class="huabu" {if $red_info['status']==1}style="height: 32vw;"{/if}>
+
+         <div class="huabu_one">
+            {if $red_info['status']==1}{$red_info['money']}<span>元</span>{/if}
+        </div>
+        <div class="huabu_two">
+            {if $activity['open_tips']}{$activity['open_tips']}{else}请在微信服务通知中领取红包{/if}
+        </div>
+    </div>
+</div>
+<form action="{php echo $this->createmobileurl('upload', array('aid' => $aid, 'uuid' => $uuid))}" method="post" id="uploadform" enctype="multipart/form-data">
+    <div style="display:none">
+        <input name="file" id="uploadInput" type="file" accept="image/*" />
+        <input name="upload_type" id="upload_type" type="hidden" value="0" />
+    </div>
+</form>
+<script src="../addons/crad_qrcode_red/template/mobile/js/jquery.form.min.js"></script>
+<script>
+      var time_day=0;
+                    {if $cuteface_num_day_surplus>0}
+                    time_day={$cuteface_num_day_surplus};
+                    {/if}
+                                             var cuteface_num_day=0;
+                          {if $activity['cuteface_num_day']>0}
+                    cuteface_num_day={$activity['cuteface_num_day']};
+                    {/if}
+                    {if $cuteface && $cuteface['mark'] >= $activity['cuteface_mark']}
+                    $(".pk_one .tran").show().animate({fontSize: "80px"}, 300);
+                    $(".pk_there_ch .win").show().animate({fontSize:"30px"}, 300);
+                    {/if}
+                    {if $cuteface && $cuteface['mark'] < $activity['cuteface_mark']}
+                    $(".pk_one .win").show().animate({fontSize:"30px"}, 300); ;
+                    $(".pk_there_ch .tran").show().animate({fontSize: "80px"}, 300);
+                    {/if}
+                    $("#uploadInput").on("change", function () {
+                    if ($(this).val() == "") {
+                    show_message(0, "请选择一个图片文件，再点击上传。", 3000, 1);
+                    return;
+                    }
+                     $(".lodings").show();
+                    var objUrl = getObjectURL(this.files[0]);
+                    if (objUrl) {
+                    $(".pk_there img").attr("src", objUrl);
+                    }
+                    $('#uploadform').ajaxSubmit({
+                    success: function (data_res) {
+                    data_res = eval(data_res);
+                   
+                    if (data_res.sta == 1) {
+                       if(time_day>1){
+                                            time_day--;
+                                    }
+                    $(".surp").html(data_res.content);
+                    $(".pk_there_ch img").attr("src", data_res.image_thumb_url);
+//                    $("#cuteface_user").html(data_res.nickname);
+                    $("#cuteface_mark").html(data_res.mark + "分");
+                    $(".koulin_pk").hide();
+                    $(".linqu_tr").show();
+                    if (data_res.win == 1) {
+                    $(".pk_one .win").hide();
+                    $(".pk_one .tran").show().animate({fontSize: "80px"}, 300);
+                    setTimeout(function () { $(".pk_there_ch .win").show().animate({fontSize:"30px"}, 300); }, 800);
+                    $(".pk_there_ch .tran").hide();
+                    $(".linqu").show();
+                    } else {
+                    setTimeout(function () { $(".pk_one .win").show().animate({fontSize:"30px"}, 300); }, 800);
+                    $(".pk_one .tran").hide();
+                    $(".pk_there_ch .win").hide();
+                    $(".pk_there_ch .tran").show().animate({fontSize: "80px"}, 300);
+                    $(".linqu").hide();
+                    }
+                    $(".pk_there").hide();
+                    $(".pk_there_ch").show();
+                    } else {
+                    $(".pk_there img").attr("src", "../addons/crad_qrcode_red/template/mobile/img/sctp.png");
+                    if (data_res.nosubscribe == 1) {
+                    $('.code_tan').show();
+                    } else{
+                    show_message(0, data_res.error, 3000, 1);
+                    }
+                    }
+                                         $(".lodings").hide();
+
+                    },
+                            error: function (XmlHttpRequest, textStatus, errorThrown) {
+                                                  $(".lodings").hide();
+
+                            alert(errorThrown);
+                            }
+                            
+
+                    });
+                    });
+                            var red_run=false;
+        $('.linqu_li').click(function () {
+                             if (check_tel=='1' && is_check_tel<1) {
+                $('.phone_code').show(); 
+return;
+            }
+         {if $activity['validate_open']==1}
+          $(".huakuai").show();
+        jigsaw.init(document.getElementById('captcha'),function () {
+	        $(".huakuai").hide();
+                document.getElementById('captcha').innerHTML = ''
+                {/if}
+                 if (!red_run) {
+           red_run=true;
+           $(".lodings").show();
+                    $.ajax({
+                    type: 'post',
+                            url: "{php echo $this->createMobileurl('ajax_red',array('aid'=>$aid,'uuid'=>$uuid))}",
+                            data: {op: 'cuteface'},
+                            success: function (data) {
+                             $(".lodings").hide();
+                            if (data.sta == 1) {
+                            $(".huabu_one").html(data.money + "<span>元</span>");
+//setaudio();
+                            var gao = $(".zong").scrollTop();
+                            if (gao == "0") {
+                            $(".meikai").hide();
+                            $(".kaila").show();
+                            $(".huabu").animate({height: "32vw"}, 1000);
+                            } else {
+                            $(".zong").animate({scrollTop: 0}, 500, function () {
+                            $(".meikai").hide();
+                            $(".kaila").show();
+                            $(".huabu").animate({height: "32vw"}, 1000);
+                            });
+                            }
+                            $(".koulin_pk").hide();
+                            $(".linqu_tr").hide();
+                            $(".pk_there").hide();
+                            $(".pk_there_ch").show();
+//                            show_message(1, "红包领取成功，请到微信查看", 3000, 1);
+                            } else {
+                            if (data.nosubscribe == 1) {
+                            $('.code_tan').show();
+                            } else{
+                            show_message(0, data.error, 3000, 1);
+                            }
+                            }
+                            }
+                    });
+                    setTimeout(function () { red_run = false; }, 2000);
+                }
+                {if $activity['validate_open']==1}
+	    },function(){    
+	        document.getElementById('msg').innerHTML = '验证失败，请重试！'
+	    });
+            {/if}
+                    });
+                
+             
+                    $(".pk_there,.linqu_li_tr").click(function () {
+                                       if(time_day<1&&cuteface_num_day>0){
+                        show_message(0, "今日次数用完了", 3000, 1);
+                        return;
+                    }
+                    if ($("#upload_type").val() == 1) {
+                    $("#uploadInput").click();
+                    return;
+                    } else {
+                    wx.chooseImage({
+                    count: 1,
+                            sizeType: ['compressed'],
+                              {if $activity['upload_type']==1}
+    sourceType: ['album', 'camera'], 
+    {elseif $activity['upload_type']==2}
+    sourceType: ['album'], 
+    {else}
+    sourceType: ['camera'], 
+    {/if}
+                            success: function (res) {
+                            var localId_pic = res.localIds[0];
+                            $(".pk_there img").attr("src", localId_pic);
+                            wx.uploadImage({
+                            localId: localId_pic,
+                                    isShowProgressTips: 0,
+                                    success: function (res) {
+                                    var serverId_pic = res.serverId;
+                                    if (serverId_pic == "") {
+                                    show_message(0, '请选择一个图片文件', 3000, 1);
+                                    return;
+                                    }
+                                    $(".lodings").show();
+                                    $.post("{php echo $this->createmobileurl('upload', array('aid' => $aid, 'uuid' => $uuid))}", {serverid: serverId_pic}, function (data_res) {
+                                    data_res = eval(data_res);
+                                    if (data_res.sta == 1) {
+                                            if(time_day>0){
+                                            time_day--;
+                                    }
+                                     $(".surp").html(data_res.content);
+                                    $(".pk_there_ch img").attr("src", data_res.image_thumb_url);
+                                    $("#cuteface_mark").html(data_res.mark + "分");
+                                    $(".koulin_pk").hide();
+                                    $(".linqu_tr").show();
+                                    if (data_res.win == 1) {
+                                    $(".pk_one .win").hide();
+                                    $(".pk_one .tran").show().animate({fontSize: "80px"}, 300);
+                                    setTimeout(function () { $(".pk_there_ch .win").show().animate({fontSize:"30px"}, 300); }, 800);
+                                    $(".pk_there_ch .tran").hide();
+                                    $(".linqu").show();
+                                    } else {
+                                    setTimeout(function () { $(".pk_one .win").show().animate({fontSize:"30px"}, 300); }, 800);
+                                    $(".pk_one .tran").hide();
+                                    $(".pk_there_ch .win").hide();
+                                    $(".pk_there_ch .tran").show().animate({fontSize: "80px"}, 300);
+                                    $(".linqu").hide();
+                                    }
+                                    $(".pk_there").hide();
+                                    $(".pk_there_ch").show();
+                                    } else {
+                                    $(".pk_there img").attr("src", "../addons/crad_qrcode_red/template/mobile/img/sctp.png");
+                                    if (data_res.nosubscribe == 1) {
+                                    $('.code_tan').show();
+                                    } else{
+                                    show_message(0, data_res.error, 3000, 1);
+                                    }
+                                }
+                            $(".lodings").hide();
+
+                                    });
+                                    }
+                            });
+                            }
+                    });
+                    }
+                    });
+                       
+ {if empty($red_info)&&$activity['cuteface_num_day']&&$activity['share_open']&&empty($invitation_times)}
+           var share_user_status = setInterval(function () {
+        $.get("{php echo $this->createMobileUrl('ajax_info', array('aid' => $aid, 'uuid' => $uuid))}" + "&op=share_user_count", function (ret) {
+        if (ret.sta == 1) {
+           $('.surp').html(ret.invitation_content);
+        }else if (ret.sta == 2) {
+           $('.surp').html(ret.invitation_content);
+             time_day=time_day+ret.times;
+             if(time_day>0)
+            show_message(2, "恭喜您获得了"+ret.times+"次测颜值机会", 3000, 1);
+            clearInterval(share_user_status);
+        }
+        }, 'json');
+        }, 3000);
+ 
+{/if} 
+                    
+</script>
+</div>
+
+{else if $activity['pattern']==1}
+<!--任务模式-->
+<div class="zhuang">
+    <div class="fugai">
+        <div class="zhiding">
+            <form action="{php echo $this->createmobileurl('upload_task', array('aid' => $aid, 'uuid' => $uuid))}" method="post" id="uploadform" enctype="multipart/form-data">
+                <div style="display:none">
+                    <input name="file" id="uploadInput" type="file" accept="image/*"/>
+                    <input name="upload_type" id="upload_type" type="hidden" value="0" />
+                    <input name="serverid" id="serverid" type="hidden" value="" />
+                </div>
+                <div class="tupian">
+                    <div class="click_tu">
+                        <img src="../addons/crad_qrcode_red/template/mobile/img/shangchuan.png" />
+                    </div> 
+                    <!--图片放置位置-->
+
+                    <div class="chuantu">
+                        {if $shop_task['image']}
+                        <img src="{php echo tomedia($shop_task['image'])}" />
+                        {/if}
+                    </div>
+
+                </div>
+              {if $activity['content_open']!=1}
+                <div class="shuru">
+                    <textarea placeholder="请输入文字描述，如没有可不填。" name="content" id="content">{$shop_task['content']}</textarea>
+                </div>
+              {/if}
+            </form>
+            <div class="linqu">
+                {if $red_info['status']==1}
+                            <div class="linqu_out">
+                                已领取
+                            </div>
+                            {elseif $red_info['status']==4}
+                            <div class="linqu_out">
+                                已退回
+                            </div>
+                {else}
+                <div class="linqu_li">
+                    提交
+                </div>
+                {/if}
+            </div>
+            <div class="koulin">
+                <span>样例展示 ></span>
+            </div>
+        </div>
+        {if $cfg['copyright']}
+        <div class="yun">
+            <span>
+                {$cfg['copyright']}
+            </span>
+        </div>
+        {/if}
+    </div>
+    <div class="meikai" {if $red_info['status']==1}hidden{/if}>
+         <div class="biaoyu">
+            {if $activity['closed_wish']}{$activity['closed_wish']}{else}新年开门大吉，财源广进！{/if}
+        </div>
+    </div>
+    <div class="kaila" {if $red_info['status']!=1}hidden{/if}>
+         <div class="banhu">
+            {if $activity['open_wish']}{$activity['open_wish']}{else}恭喜发财，大吉大利！{/if}
+        </div>
+        <div class="shanguang">
+            <img src="../addons/crad_qrcode_red/template/mobile/img/gir.png" />
+        </div>
+        <div class="huabu" {if $red_info['status']==1}style="height: 32vw;"{/if}>
+             <div class="huabu_one">
+                {if $red_info['status']==1}{$red_info['money']}<span>元</span>{/if}
+            </div>
+            <div class="huabu_two">
+                {if $activity['open_tips']}{$activity['open_tips']}{else}请在微信服务通知中领取红包{/if}
+            </div>
+        </div>
+    </div>
+    <div class="menban" hidden>
+        <div class="menban_li">
+            <div class="ditou">
+                {if $activity['image_task']}
+                <div class="tu">
+                    <img src="{php echo tomedia($activity['image_task'])}" />
+                </div>
+                {/if}
+                <div class="zi">
+                    {if $activity['task_tips']}
+                    <div class="zi_one">
+                        {php echo str_replace("\r\n","<br/>",$activity['task_tips']);}
+                    </div>
+                    {else}
+                     <div class="zi_two">
+                        请根据以上样例提交数据，审核通过后红包会自动发送！
+                    </div>
+                    {/if}
+                </div>
+                <div class="tuichu">
+                <span class="glyphicon glyphicon-remove-circle tui_an"></span>
+            </div>
+            </div>
+            
+        </div>
+    </div>
+    <script src="../addons/crad_qrcode_red/template/mobile/js/jquery.form.min.js"></script>
+
+    <script>
+                    $(document).ready(function(){
+                    $(".koulin span").click(function(){
+                    $(".menban").show();
+                    });
+                    $(".tui_an").click(function(){
+                    $(".menban").hide();
+                    });
+                    });
+                    $("#uploadInput").on("change", function () {
+                    if ($("#uploadInput").val() == "") {
+                    show_message(0, '请选择一个图片文件', 3000, 1);
+                    return;
+                    }
+                    var objUrl = getObjectURL(this.files[0]);
+                    if (objUrl) {
+                    $(".chuantu ").html("<img src='" + objUrl + "' />");
+                    }
+                    });
+                    $(".click_tu").click(function () {
+                    if ($("#upload_type").val() == 1) {
+                    $("#uploadInput").click();
+                    } else {
+                    wx.chooseImage({
+                    count: 1,
+                            sizeType: ['compressed'],
+                              {if $activity['upload_type']==1}
+    sourceType: ['album', 'camera'], 
+    {elseif $activity['upload_type']==2}
+    sourceType: ['album'], 
+    {else}
+    sourceType: ['camera'], 
+    {/if}
+                            success: function (res) {
+                            var localId_pic = res.localIds[0];
+                            $(".chuantu ").html("<img src='" + localId_pic + "'/>");
+                            wx.uploadImage({
+                            localId: localId_pic,
+                                    isShowProgressTips: 0,
+                                    success: function (res) {
+                                    var serverId_pic = res.serverId;
+                                    if (serverId_pic == "") {
+                                    show_message(0, '请选择一个图片文件', 3000, 1);
+                                    return;
+                                    } else{
+                                    $("#serverid").val(serverId_pic);
+                                    }
+
+                                    }
+                            });
+                            }
+                    });
+                    }
+                    });
+                        var red_run=false;
+        $('.linqu_li').click(function () {
+            if (!red_run) {
+                                  if (check_tel=='1' && is_check_tel<1) {
+                $('.phone_code').show(); 
+return;
+            }
+                        red_run = true;
+                        $(".lodings").show();
+                    $('#uploadform').ajaxSubmit({
+                    success: function (data_res) {
+                    $(".lodings").hide();   
+                    data_res = eval(data_res);
+                    if (data_res.sta == 1) {
+                    if (data_res.image){
+                    $(".chuantu ").html("<img src='" + data_res.image + "'/>");
+                    }
+                    show_message(1, "数据保存成功，请等待管理员审核", 3000, 1);
+                    } else {
+                    if (data_res.nosubscribe == 1) {
+                    $('.code_tan').show();
+                    } else{
+                    show_message(0, data_res.error, 3000, 1);
+                    }
+                    }
+                    },
+                            error: function (XmlHttpRequest, textStatus, errorThrown) {
+                             $(".lodings").hide();
+                            alert(errorThrown);
+                            }
+                    });
+                    
+                    setTimeout(function () { red_run = false; }, 2000);
+                }
+                    });
+    </script>
+
+
+    {else if $activity['pattern']==4||($activity['pattern']==3&&$activity['white_check']==1)}
+    <!--白名单导入和登记审核模式-->
+    <div class="zhuang">
+        <div class="fugai">
+            <div class="zhiding">
+                <form action="" method="post" enctype="multipart/form-data" id='user_info_edit'>
+                    <div class="shuru">
+                        <input type="text" name="realname" id="realname" value="{$user['realname']}" placeholder="请输入姓名" />
+                    </div>
+                     <div class="shuru_two">
+                        <input type="text" name="tel" id="tel" value="{$user['tel']}"  placeholder="请输入电话号码" />
+                    </div>
+                   
+                    {if $activity['check_tel']==1&&empty($user['is_check'])}
+                    <div class="shuru_yan">
+					   <input type="text" id="check_code1" name="check_code" placeholder="请输入验证码" />
+					   <div class="tests_right">
+			   	  	 	<input type="button" id="btnSendCode" class="btn btn-default phbtns btnSendCode" value="获取验证码" onClick="sendMessage()"></input>
+			   	  	 </div>
+					</div>
+                    {/if}
+                    {if $activity['pattern']==3}
+                     {if $activity['other_field']}
+                <div class="shuru_two">
+                    <input type="text" name="other_info" id="other_info" value="{$user['other_info']}" placeholder="请输入{$activity['other_field']}"/>
+                </div>
+                {/if}
+                <div class="shurues">
+                    <textarea placeholder="请输入您的描述" name="comment" id="comment">{$user['comment']}</textarea>
+                </div>
+                {/if}
+                    <div class="linqu">
+                       {if $red_info['status']==1}
+                            <div class="linqu_out">
+                                已领取
+                            </div>
+                            {elseif $red_info['status']==4}
+                            <div class="linqu_out">
+                                已退回
+                            </div>
+                        {else}
+                        <div class="linqu_li">
+                            领取
+                        </div>
+                        {/if}
+                    </div>
+                </form>
+            </div>
+            {if $cfg['copyright']}
+            <div class="yun">
+                <span>
+                    {$cfg['copyright']}
+                </span>
+            </div>
+            {/if}
+        </div>
+        <div class="meikai" {if $red_info['status']==1}hidden{/if}>
+             <div class="biaoyu">
+                {if $activity['closed_wish']}{$activity['closed_wish']}{else}新年开门大吉，财源广进！{/if}
+            </div>
+        </div>
+        <div class="kaila" {if $red_info['status']!=1}hidden{/if}>
+             <div class="banhu">
+                {if $activity['open_wish']}{$activity['open_wish']}{else}恭喜发财，大吉大利！{/if}
+            </div>
+            <div class="shanguang">
+                <img src="../addons/crad_qrcode_red/template/mobile/img/gir.png" />
+            </div>
+            <div class="huabu" {if $red_info['status']==1}style="height: 32vw;"{/if}>
+
+                 <div class="huabu_one">
+                    {if $red_info['status']==1}{$red_info['money']}<span>元</span>{/if}
+                </div>
+                <div class="huabu_two">
+                    {if $activity['open_tips']}{$activity['open_tips']}{else}请在微信服务通知中领取红包{/if}
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script>
+        $(document).ready(function () {
+        var red_run=false;
+        $('.linqu_li').click(function () {
+            
+                       
+        var realname = $('#realname').val();
+        var tel = $('#tel').val();
+        if (!realname || !tel) {
+        show_message(0, "姓名和电话不能为空", 3000, 1);
+        return;
+        }
+         {if $activity['check_tel']==1}
+  if ($('#check_code1').val()=='' && is_check_tel<1) {
+        show_message(0, "验证码不能为空", 3000, 1);
+        return;
+        }
+         {/if}
+       {if $activity['validate_open']==1}
+                              $(".huakuai").show();
+                               jigsaw.init(document.getElementById('captcha'),function () {
+	        $(".huakuai").hide();
+                document.getElementById('captcha').innerHTML = ''
+                {/if}        
+if (!red_run) {
+ red_run = true;
+$(".lodings").show();
+ var form = $('#user_info_edit').serialize();
+            $.post("{php echo $this->createMobileurl('ajax_red',array('op'=>'userinfo_check','aid'=>$aid,'uuid'=>$uuid))}", form, function (data) {
+                                   $(".lodings").hide();
+                if (data.sta == 1) {
+                $(".huabu_one").html(data.money + "<span>元</span>");
+// setaudio();
+                var gao = $(".zong").scrollTop();
+                if (gao == "0") {
+                $(".meikai").hide();
+                $(".kaila").show();
+                $(".huabu").animate({height: "32vw"}, 1000);
+                } else {
+                $(".zong").animate({scrollTop: 0}, 500, function () {
+                $(".meikai").hide();
+                $(".kaila").show();
+                $(".huabu").animate({height: "32vw"}, 1000);
+                });
+                }
+//                show_message(1, '红包领取成功，请到微信查看', 3000, 1);
+                } else {
+                if (data.nosubscribe == 1) {
+                $('.code_tan').show();
+                } else{
+                show_message(0, data.error, 3000, 1);
+                }
+                }
+                setTimeout(function () { red_run = false; }, 2000);
+            }, 'json');
+    }
+      {if $activity['validate_open']==1} 
+	    },function(){    
+	        document.getElementById('msg').innerHTML = '验证失败，请重试！'
+	    });
+            {/if}
+        });
+        });
+    </script>
+    {else if $activity['pattern']==5}
+    <div class="zhuang_yq">
+        <div class="fugai">
+            <div class="zhiding_yq">
+                <div class="code">
+                    <img src="{php echo $this->createMobileurl('qr', array('url' => $invitation_jump_url))}"/>
+                </div>
+                <div class="people">
+                    {if $red_info['status']==1}
+                    红包已发送
+                    {else}
+                    {$activity['invitation_tip']}
+                    {/if}
+                </div>
+                <div class="icon_me">
+                    {loop $invitation_user $friend}
+                    <img src="{if $friend['headimgurl']}{$friend['headimgurl']}{else}../addons/crad_qrcode_red/template/mobile/img/me.png{/if}" />
+                    {/loop}	
+                </div>
+            </div>
+            {if $cfg['copyright']}
+            <div class="yun">
+                <span>
+                    {$cfg['copyright']}
+                </span>
+            </div>
+            {/if}
+        </div>
+        <div class="meikai" {if $red_info['status']==1}hidden{/if}>
+             <div class="biaoyu">
+                {if $activity['closed_wish']}{$activity['closed_wish']}{else}新年开门大吉，财源广进！{/if}
+            </div>
+        </div>
+        <div class="kaila" {if $red_info['status']!=1}hidden{/if}>
+             <div class="banhu">
+                {if $activity['open_wish']}{$activity['open_wish']}{else}恭喜发财，大吉大利！{/if}
+            </div>
+            <div class="shanguang">
+                <img src="../addons/crad_qrcode_red/template/mobile/img/gir.png" />
+            </div>
+            <div class="huabu" {if $red_info['status']==1}style="height: 32vw;"{/if}>
+
+                 <div class="huabu_one">
+                    {if $red_info['status']==1}{$red_info['money']}<span>元</span>{/if}
+                </div>
+                <div class="huabu_two">
+                    {if $activity['open_tips']}{$activity['open_tips']}{else}请在微信服务通知中领取红包{/if}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+
+                            if (check_tel=='1' && is_check_tel<1) {
+                $('.phone_code').show(); 
+            }
+            {if empty($red_info)||$count_invitation_user< $activity['invitation_num']}
+
+        var invitation_user_count = "{php echo $count_invitation_user?$count_invitation_user:0; }";
+        var red_status = setInterval(function () {
+        $.get("{php echo $this->createMobileUrl('ajax_info', array('aid' => $aid, 'uuid' => $uuid))}" + "&op=invitation_user_count", function (ret) {
+        if (ret.sta == 1) {
+        if (ret.user_count > invitation_user_count){
+            setTimeout(" window.location.href=updateUrl(window.location.href);", 1000);
+        }
+        }
+        }, 'json');
+        }, 2000);
+  
+        {/if}
+    </script>
+    
+      {else if $activity['pattern']==10}
+    <!--倒计时模式-->
+    {if $qrcode['sharetime']<1&&empty($activity['countdown_type'])}
+	<div class="zhuang_yq">
+		<div class="fugai">
+			<div class="zhiding_yq">
+			   <div class="fens">
+			   	 <div class="fens_li">
+			   	 	<img src="../addons/crad_qrcode_red/template/mobile/img/fens.png" class="fenimg_one"/>
+			   	 	<div class="fenimg_two">
+			   	 		<img src="../addons/crad_qrcode_red/template/mobile/img/fen_zi.png"/>
+			   	 	</div>
+			   	 </div>
+			   </div>
+			   <div class="fen_miao">
+			   	  {$activity['click_tip_before']}
+			   </div>
+			</div>
+                    
+    <script>
+
+        $(document).ready(function(){
+            var share_status = setInterval(function () {
+        $.get("{php echo $this->createMobileUrl('ajax_info', array('aid' => $aid, 'uuid' => $uuid))}" + "&op=get_share_status", function (ret) {
+        if (ret.sta == 1) {
+            setTimeout(" window.location.href=updateUrl(window.location.href);", 1000);
+        }
+        }, 'json');
+        }, 2000);             
+        });
+    </script>
+    {else}
+	<div class="zhuang_yq" >
+		<div class="fugai">
+			<div class="zhiding_yq">
+			
+                        {if $lack_time<1}  
+			<div class="linqu_fensb" >
+				   {if $red_info['status']==1}
+                            <div class="linqu_out_dao">
+                                已领取
+                            </div>
+                            {elseif $red_info['status']==4}
+                            <div class="linqu_out_dao">
+                                已退回
+                            </div>
+                        {else}
+                        <div class="linqu_li_dao">
+                            领取
+                        </div>
+                        {/if}
+			</div>
+                        {/if}
+                        {if empty($red_info)}
+                        <div class="time-item">
+				<!--<span id="day_show">0天</span>-->
+			
+				<strong id="hour_show">{php echo $lack_time_data['hours']?($lack_time_data['hours']<10?"0".$lack_time_data['hours']:$lack_time_data['hours']):"00";}<span>时</span></strong>
+			
+				<strong id="minute_show">{php echo $lack_time_data['minutes']?($lack_time_data['minutes']<10?"0".$lack_time_data['minutes']:$lack_time_data['minutes']):"00";}<span>分</span></strong>
+			
+				<strong id="second_show">{php echo $lack_time_data['seconds']?($lack_time_data['seconds']<10?"0".$lack_time_data['seconds']:$lack_time_data['seconds']):"00";}<span>秒</span></strong>
+			
+			</div>
+		    <div class="explains">
+		    	{$activity['countdown_tip']}
+		    </div>
+                       {/if}
+{if $invitation_user}
+<div class="tuijian">
+		    	
+		    	<div class="scrolls" id="s1">
+		    		<ul>
+                                       {loop $invitation_user $friend}
+                            <li>
+				          <div class="scrolls_top">
+				          	<div class="nichen">
+				          	<img src="{if $friend['headimgurl']}{$friend['headimgurl']}{else}../addons/crad_qrcode_red/template/mobile/img/me.png{/if}">
+				          	<span>
+				          		{$friend['nickname']}
+				          	</span>
+				          </div>
+                                              {if $friend['time_type']==1}
+				          <div class="addtimes">
+				          	 +{$friend['time_tip']}
+				          </div>
+                                              {else}
+				          <div class="addtimes_two">
+				          	 -{$friend['time_tip']}
+				          </div>
+                                              {/if}
+				          </div>
+                                           {if $activity['comment_open']==1}
+				          <div class="scrolls_liu">
+				          	 {if $friend['comment']}TA还说：<span>{php echo str_replace("\r\n","。",$friend['comment']);}{else}<span>TA甚至没有给你留下一句话～{/if}</span>
+				          </div>
+                                           {/if}
+		               </li>                 
+                    {/loop}	
+
+		    		</ul>
+		    	</div>
+		    	<script type="text/javascript">
+					function AutoScroll(obj) {
+						$(obj).find("ul:first").animate({
+							marginTop: "-64px"
+						}, 1500, function() {
+							$(this).css({
+								marginTop: "0px"
+							}).find("li:first").appendTo(this);
+						});
+					}
+					$(document).ready(function() {
+						var shu = $("#s1 ul li").length
+						if(shu>=4){
+							setInterval('AutoScroll("#s1")', 5000);
+						}
+						else{
+							
+						}
+					});
+			</script>
+		    </div>
+{/if}
+		</div>
+   <script type="text/javascript">
+
+            {if $qrcode['sharetime']&&$lack_time>0}
+             var invitation_user_count = "{php echo $count_invitation_user?$count_invitation_user:0;}";
+        var red_status = setInterval(function () {
+        $.get("{php echo $this->createMobileUrl('ajax_info', array('aid' => $aid, 'uuid' => $uuid))}" + "&op=invitation_user_count&time_check=1", function (ret) {
+        if (ret.sta == 1) {
+        if (ret.user_count > invitation_user_count){
+            setTimeout(" window.location.href=updateUrl(window.location.href);", 1000);
+        }
+        }
+        }, 'json');
+        }, 5000);
+            {/if} 
+                
+             {if $lack_time>0&&empty($red_info)}
+             var lack_time={$lack_time};
+		var intDiff = parseInt(lack_time);
+		function timer(intDiff){
+			window.setInterval(function(){
+			var day=0,
+				hour=0,
+				minute=0,
+				second=0;//时间默认值		
+			if(intDiff > 0){
+		//		day = Math.floor(intDiff / (60 * 60 * 24));
+				hour = Math.floor(intDiff / (60 * 60)) - (day * 24);
+				minute = Math.floor(intDiff / 60) - (day * 24 * 60) - (hour * 60);
+				second = Math.floor(intDiff) - (day * 24 * 60 * 60) - (hour * 60 * 60) - (minute * 60);
+                        if (hour <= 9) hour = '0' + hour;
+                        if (minute <= 9) minute = '0' + minute;
+			if (second <= 9) second = '0' + second;
+			$('#hour_show').html('<s id="h"></s>'+hour+'<span>时</span>');
+			$('#minute_show').html('<s></s>'+minute+'<span>分</span>');
+			$('#second_show').html('<s></s>'+second+'<span>秒</span>');
+			intDiff--;
+			}else{
+                            setTimeout("window.location.href=updateUrl(window.location.href);", 1000);
+                        }
+			
+			}, 1000);
+		} 
+{if ($activity['countdown_type']==2&&$qrcode['sharetime'])||$activity['countdown_type']<2}
+			timer(intDiff);
+	{/if}
+                {/if}
+                    
+                     var red_run=false;
+            $('.linqu_li_dao').click(function () {
+                                            if (check_tel=='1' && is_check_tel<1) {
+                $('.phone_code').show(); 
+return;
+            }
+                {if $activity['validate_open']==1}
+                 $(".huakuai").show();
+               jigsaw.init(document.getElementById('captcha'),function () {
+	        $(".huakuai").hide();
+                document.getElementById('captcha').innerHTML = ''
+                {/if}
+                       if (!red_run) {
+                        red_run = true;
+                        $(".lodings").show();
+            $.ajax({
+            type: 'get',
+                    url: "{php echo $this->createMobileurl('ajax_red',array('op'=>'countdown_red','aid'=>$aid,'uuid'=>$uuid))}",
+                    success: function (data) {
+                        $(".lodings").hide();
+                    if (data.sta == 1) {
+                    $(".huabu_one").html(data.money + "<span>元</span>");
+//setaudio();
+                    var gao = $(".zong").scrollTop();
+                    if (gao == "0") {
+                    $(".meikai").hide();
+                    $(".kaila").show();
+                    $(".huabu").animate({height: "32vw"}, 1000);
+                    } else {
+                    $(".zong").animate({scrollTop: 0}, 500, function () {
+                    $(".meikai").hide();
+                    $(".kaila").show();
+                    $(".huabu").animate({height: "32vw"}, 1000);
+                    });
+                    }
+//                    setTimeout("show_message(1, '红包领取成功，请到微信查看', 3000, 1);", 2000);
+                    } else {
+                    if (data.nosubscribe == 1) {
+                    $('.code_tan').show();
+                    } else{
+                    show_message(0, data.error, 3000, 1);
+                    }
+                    }
+                     setTimeout(function () { red_run = false; }, 2000);
+                    }
+                    
+            });
+        }
+        {if $activity['validate_open']==1}
+	    },function(){    
+            //	        验证失败
+	        document.getElementById('msg').innerHTML = '验证失败，请重试！'
+	    });
+            {/if}
+            });
+
+	</script>
+{/if}
+			 {if $cfg['copyright']}
+            <div class="yun">
+                <span>
+                    {$cfg['copyright']}
+                </span>
+            </div>
+                      
+            {/if}
+		</div>
+		  <div class="meikai" {if $red_info['status']==1}hidden{/if}>
+             <div class="biaoyu">
+                {if $activity['closed_wish']}{$activity['closed_wish']}{else}新年开门大吉，财源广进！{/if}
+            </div>
+        </div>
+        <div class="kaila" {if $red_info['status']!=1}hidden{/if}>
+             <div class="banhu">
+                {if $activity['open_wish']}{$activity['open_wish']}{else}恭喜发财，大吉大利！{/if}
+            </div>
+            <div class="shanguang">
+                <img src="../addons/crad_qrcode_red/template/mobile/img/gir.png" />
+            </div>
+            <div class="huabu" {if $red_info['status']==1}style="height: 32vw;"{/if}>
+
+                 <div class="huabu_one">
+                    {if $red_info['status']==1}{$red_info['money']}<span>元</span>{/if}
+                </div>
+                <div class="huabu_two">
+                    {if $activity['open_tips']}{$activity['open_tips']}{else}请在微信服务通知中领取红包{/if}
+                </div>
+            </div>
+        </div>
+	</div>
+  
+	
+	    {else if $activity['pattern']==9}
+{if $qrcode['sharetime']<1}
+	<!--分享新1-->
+	<div class="zhuang_yq">
+		<div class="fugai">
+			<div class="zhiding_yq">
+			   <div class="fens">
+			   	 <div class="fens_li">
+			   	 	<img src="../addons/crad_qrcode_red/template/mobile/img/fens.png" class="fenimg_one"/>
+			   	 	<div class="fenimg_two">
+			   	 		<img src="../addons/crad_qrcode_red/template/mobile/img/fen_zi.png"/>
+			   	 	</div>
+			   	 </div>
+			   </div>
+			   <div class="fen_miao">
+			   	  {$activity['click_tip_before']}
+			   </div>
+			</div>
+                    
+    <script>
+
+        $(document).ready(function(){
+        var share_status = setInterval(function () {
+        $.get("{php echo $this->createMobileUrl('ajax_info', array('aid' => $aid, 'uuid' => $uuid))}" + "&op=get_share_status", function (ret) {
+        if (ret.sta == 1) {
+            setTimeout(" window.location.href=updateUrl(window.location.href);", 1000);
+        }
+        }, 'json');
+        }, 2000);
+        });
+    </script>
+
+                    
+     {else}               
+			
+	
+	<!--分享新2-->
+	<div class="zhuang_yq">
+		<div class="fugai">
+			<div class="zhiding_yq" >
+                          {if $activity['click_people']<1||$least_invitation_use<1}  
+				<div class="linqu_fen" >
+				   {if $red_info['status']==1}
+                            <div class="linqu_out">
+                                已领取
+                            </div>
+                            {elseif $red_info['status']==4}
+                            <div class="linqu_out">
+                                已退回
+                            </div>
+                        {else}
+                        <div class="linqu_li">
+                            领取
+                        </div>
+                        {/if}
+			</div>
+                          {/if}
+			{if $activity['click_people'] > 0}
+			   <div class="bakong">
+                                {loop $invitation_user $friend}
+                                <div class="csnim">
+                    <img src="{if $friend['headimgurl']}{$friend['headimgurl']}{else}../addons/crad_qrcode_red/template/mobile/img/me.png{/if}" />
+                    </div>
+                    {/loop}	
+			   </div>
+                        {/if}
+                            {if empty($red_info)}
+			   <div class="fentwo_miao">
+			   	  {$activity['click_tip']}
+			   </div>
+                            {/if}
+			</div>
+           {/if}
+			 {if $cfg['copyright']}
+            <div class="yun">
+                <span>
+                    {$cfg['copyright']}
+                </span>
+            </div>
+            {/if}
+		</div>
+		  <div class="meikai" {if $red_info['status']==1}hidden{/if}>
+             <div class="biaoyu">
+                {if $activity['closed_wish']}{$activity['closed_wish']}{else}新年开门大吉，财源广进！{/if}
+            </div>
+        </div>
+        <div class="kaila" {if $red_info['status']!=1}hidden{/if}>
+             <div class="banhu">
+                {if $activity['open_wish']}{$activity['open_wish']}{else}恭喜发财，大吉大利！{/if}
+            </div>
+            <div class="shanguang">
+                <img src="../addons/crad_qrcode_red/template/mobile/img/gir.png" />
+            </div>
+            <div class="huabu" {if $red_info['status']==1}style="height: 32vw;"{/if}>
+
+                 <div class="huabu_one">
+                    {if $red_info['status']==1}{$red_info['money']}<span>元</span>{/if}
+                </div>
+                <div class="huabu_two">
+                    {if $activity['open_tips']}{$activity['open_tips']}{else}请在微信服务通知中领取红包{/if}
+                </div>
+            </div>
+        </div>
+	</div>
+         {if empty($red_info)||$count_invitation_user< $activity['click_people']}
+    <script>
+
+        $(document).ready(function(){
+        var invitation_user_count = "{php echo $count_invitation_user?$count_invitation_user:0; }";
+        var red_status = setInterval(function () {
+        $.get("{php echo $this->createMobileUrl('ajax_info', array('aid' => $aid, 'uuid' => $uuid))}" + "&op=invitation_user_count", function (ret) {
+        if (ret.sta == 1) {
+        if (ret.user_count > invitation_user_count){
+            setTimeout(" window.location.href=updateUrl(window.location.href);", 1000);
+        }
+        }
+        }, 'json');
+        }, 2000);
+        
+        
+          var red_run=false;
+            $('.linqu_li').click(function () {
+                                            if (check_tel=='1' && is_check_tel<1) {
+                $('.phone_code').show(); 
+return;
+            }
+                {if $activity['validate_open']==1}
+                 $(".huakuai").show();
+                 jigsaw.init(document.getElementById('captcha'),function () {
+	        $(".huakuai").hide();
+                document.getElementById('captcha').innerHTML = ''
+                {/if}
+                       if (!red_run) {
+                        red_run = true;
+                        $(".lodings").show();
+            $.ajax({
+            type: 'get',
+                    url: "{php echo $this->createMobileurl('ajax_red',array('op'=>'share_red','aid'=>$aid,'uuid'=>$uuid))}",
+                    success: function (data) {
+                        $(".lodings").hide();
+                    if (data.sta == 1) {
+                    $(".huabu_one").html(data.money + "<span>元</span>");
+// setaudio();
+                    var gao = $(".zong").scrollTop();
+                    if (gao == "0") {
+                    $(".meikai").hide();
+                    $(".kaila").show();
+                    $(".huabu").animate({height: "32vw"}, 1000);
+                    } else {
+                    $(".zong").animate({scrollTop: 0}, 500, function () {
+                    $(".meikai").hide();
+                    $(".kaila").show();
+                    $(".huabu").animate({height: "32vw"}, 1000);
+                    });
+                    }
+//                    setTimeout("show_message(1, '红包领取成功，请到微信查看', 3000, 1);", 2000);
+                    } else {
+                    if (data.nosubscribe == 1) {
+                    $('.code_tan').show();
+                    } else{
+                    show_message(0, data.error, 3000, 1);
+                    }
+                    }
+                     setTimeout(function () { red_run = false; }, 2000);
+                    }
+                    
+            });
+        }
+        {if $activity['validate_open']==1}
+	    },function(){    
+            //	        验证失败
+	        document.getElementById('msg').innerHTML = '验证失败，请重试！'
+	    });
+            {/if}
+            });
+            });
+
+    </script>
+    {/if}
+{else if $activity['pattern']==12}
+    <!--好友颜值pk模式-->
+	<div class="zhuang_yq">
+		<div class="fugai">
+			<div class="zhiding_yq" >
+				<!--分享前-->
+				<div class="before_sharing" {if $cuteface||$openid!=$qrcode['openid']}hidden{/if}>
+					<div class="narrows">
+						<div class="photose">
+							<img src="../addons/crad_qrcode_red/template/mobile/img/sctp.png" class="before_cuteface">
+						</div>
+						<div class="photose_des" {if $cuteface}hidden{/if}>
+							立即拍照
+						</div>
+
+						<div class="taking" {if empty($cuteface)}hidden{/if}>
+							<div class="photose_nis">
+							您的颜值
+							</div>
+							<div class="photose_yes" id='cuteface_mark'>
+                        {$cuteface['mark']}分
+							</div>
+						</div>
+
+					</div>
+				    <div class="photose_miao">
+                                         {if $red_info&&$max_cid==$cuteface_own['id']}
+                                         {if $red_info['status']!=1}
+                                         你赢啦，请联系管理员手动发放红包！
+                                         {else}
+                                         你赢啦，红包已发送至你微信钱包！
+                                         {/if}
+                                         {else}
+                                         拍照后即可与好友PK颜值，颜值高者得红包！
+                                         {/if}
+				    </div>
+			    </div>
+
+				<!--分享后-->
+				<div class="after_sharing" {if empty($cuteface)&&$openid==$qrcode['openid']}hidden{/if}>
+					<!--分享后头像排列-->
+					<div class="crown">
+                                             {loop $cuteface_all $friend}
+                                             {if $friend['id']}
+                                             <div class="crown_li">
+							<!--皇冠-->
+                                                        {if $friend['id']==$max_cid}
+							<div class="crown_first">
+								<img src="../addons/crad_qrcode_red/template/mobile/img/crown.png" />
+							</div>
+                                                        {/if}
+							<div class="crownli_img">
+								<img src="{if $friend['image_thumb_url']}{php echo tomedia($friend['image_thumb_url']);}{else}{$friend['headimgurl']}{/if}" class="" /><!--bounce-->
+							</div>
+							<div class="crownli_yes">
+								<div class="crownli_one">{if $friend['openid']==$openid}您的颜值{else}{$friend['nickname']}{/if}</div>
+								<div class="crownli_two">{$friend['mark']}分</div>
+							</div>
+						</div>
+                                             {else}
+                                             <div class="crown_li">
+							<div class="crownli_img">
+								<img src="../addons/crad_qrcode_red/template/mobile/img/me.png" />
+							</div>
+							<div class="crownli_yes">
+								<div class="crownli_one">等待加入</div>
+							</div>
+						</div>
+                                             {/if}
+
+                    {/loop}	
+						
+					</div>
+					
+					<!--分享后底部按钮文字说明状态-->
+					<div class="crown_after" {if $red_info||$least_cuteface_users<1}hidden{/if}>
+						还差<span>{$least_cuteface_users}人</span>参与PK，颜值最高者得红包！
+					</div>
+					<!--我要加入-->
+					<div class="crown_btn join_pk" {if $red_info||$cuteface_own||$least_cuteface_users<1||$openid==$qrcode['openid']}hidden{/if}>
+						我要加入PK
+					</div>
+					<!--胜利-->
+					<div class="crown_afterno join_win" {if $least_cuteface_users>0||$max_cid!=$cuteface_own['id']}hidden{/if}>
+						{if $red_info&&$red_info['status']!=1}
+                                         你赢啦，请联系管理员手动发放红包！
+                                         {else if $red_info['status']>0}
+                                         你赢啦，红包已发送至你微信钱包！
+                                         {else}
+                                         恭喜您获得红包，请点击领取
+                                         {/if}
+					</div>
+					<!--失败-->
+					<div class="crown_afterno join_lose" {if $least_cuteface_users>0||$max_cid==$cuteface_own['id']}hidden{/if}>
+                                             {if $red_info}
+						{if $cuteface_own['id']}很遗憾，{else}PK比赛已结束，{/if}红包被<span id='nickname_red'>{$max_nickname}</span>领走了~
+                                             {else}
+                                         很遗憾，红包与您擦肩而过
+                                         {/if}
+					</div>
+                                        {if $activity['loser_coupon_open']==1}
+					<!--安慰奖-->
+					<div class="crown_btn get_coupon_pk" {if $coupon_user||$least_cuteface_users>0||$max_cid==$cuteface_own['id']}hidden{/if}>
+						我要领取安慰奖
+					</div>
+					
+                                        
+                                         <!--PK胜利后领取红包按钮-->
+        <div class="linqu" {if $red_info||$least_cuteface_users>0||$max_cid!=$cuteface_own['id']}hidden{/if}>
+
+            <div class="linqu_li">
+                领取
+            </div>
+        </div>
+                                        
+                                        {/if}
+				</div>
+				
+			
+		    </div>
+			{if $cfg['copyright']}
+    <div class="yun">
+        <span>
+            {$cfg['copyright']}
+        </span>
+    </div>
+    {/if}
+		</div>
+		<div class="meikai" {if $red_info['status']==1}hidden{/if}>
+     <div class="biaoyu">
+        {if $activity['closed_wish']}{$activity['closed_wish']}{else}新年开门大吉，财源广进！{/if}
+    </div>
+</div>
+<div class="kaila" {if $red_info['status']!=1}hidden{/if}>
+     <div class="banhu">
+        {if $activity['open_wish']}{$activity['open_wish']}{else}恭喜发财，大吉大利！{/if}
+    </div>
+    <div class="shanguang">
+        <img src="../addons/crad_qrcode_red/template/mobile/img/gir.png" />
+    </div>
+    <div class="huabu" {if $red_info['status']==1}style="height: 32vw;"{/if}>
+{if $max_cid!=$cuteface_own['id']}
+         <div class="huabu_one tarens">
+            {if $activity['loser_coupon_open']==1}
+            您获得了安慰奖
+            {/if}
+        </div>
+        <div class="huabu_two tarens_two">
+        	红包被他人领取了~
+            
+        </div>
+{else}
+ <div class="huabu_one">
+            {if $red_info['status']==1}{$red_info['money']}<span>元</span>{/if}
+        </div>
+        <div class="huabu_two">
+            {if $activity['open_tips']}{$activity['open_tips']}{else}请在微信服务通知中领取红包{/if}
+        </div>
+{/if}
+    </div>
+</div>
+	</div>
+	<script>
+		$(document).ready(function(){
+			$(".effects").click(function(){
+//				分享后动画效果
+             $(".narrows").addClass("zoomerOut");
+             setInterval(function () {
+				$(".before_sharing").hide(); 
+				$(".after_sharing").show();
+			}, 1000);
+			});
+			 
+		});
+	</script>
+	<form action="{php echo $this->createmobileurl('upload', array('aid' => $aid, 'uuid' => $uuid))}" method="post" id="uploadform" enctype="multipart/form-data">
+    <div style="display:none">
+        <input name="file" id="uploadInput" type="file" accept="image/*" />
+        <input name="upload_type" id="upload_type" type="hidden" value="0" />
+    </div>
+</form>
+<script src="../addons/crad_qrcode_red/template/mobile/js/jquery.form.min.js"></script>
+<script>
+
+                    $("#uploadInput").on("change", function () {
+                    if ($(this).val() == "") {
+                    show_message(0, "请选择一个图片文件，再点击上传。", 3000, 1);
+                    return;
+                    }
+                     $(".lodings").show();
+                    var objUrl = getObjectURL(this.files[0]);
+                    if (objUrl) {
+                    $(".photose img").attr("src", objUrl);
+                    }
+                    $('#uploadform').ajaxSubmit({
+                    success: function (data_res) {
+                    data_res = eval(data_res);
+                    $(".lodings").hide();
+                    if (data_res.sta == 1) {
+                    if (data_res.cuteface_own == 1) {
+                    $(".photose").html("<img src='"+data_res.image_thumb_url+"' class='effects'/>");
+                    $("#cuteface_mark").html(data_res.mark + "分");
+                    $(".photose_des").hide();
+                    $(".taking").show();
+                    $(".photose_miao").html("喊好友来参与颜值PK，颜值高者得红包");
+                   setTimeout(function () { 
+                         $('.after_sharing').show();
+                         $('.before_sharing').hide();
+                        $(".join_pk").hide();
+                         if(data_res.tips!=""){    
+                $('.crown_after').html(data_res.tips);
+                $('.crown_after').show();
+            }else{
+                $('.crown_after').hide();
+            }
+                        $('.crown').html(data_res.content);
+    
+    }, 3000);
+                    }else{
+                        $(".taking").hide();
+                        $(".join_pk").hide();
+                 if(data_res.tips!=""){    
+                $('.crown_after').html(data_res.tips);
+                $('.crown_after').show();
+            }else{
+                $('.crown_after').hide();
+            }
+                        //$('.crown').html(data_res.content);
+                    }
+                   if (data_res.send_red == 1) {
+                     $(".huabu_one").html(data_res.money + "<span>元</span>");
+//setaudio();
+                            var gao = $(".zong").scrollTop();
+                            if (gao == "0") {
+                            $(".meikai").hide();
+                            $(".kaila").show();
+                            $(".huabu").animate({height: "32vw"}, 1000);
+                            } else {
+                            $(".zong").animate({scrollTop: 0}, 500, function () {
+                            $(".meikai").hide();
+                            $(".kaila").show();
+                            $(".huabu").animate({height: "32vw"}, 1000);
+                            });
+                            }
+                   $(".join_win").show();
+                   $('#nickname_red').html(data_res.nickname_red);
+                   $(".join_lose").hide();
+                   $(".get_coupon_pk").hide();
+            }else if (data_res.send_red == 2) {
+                   $(".join_win").hide();
+                   $(".join_lose").show();
+                   $(".get_coupon_pk").show();
+            }else if (data_res.send_red == 3) {
+                   $(".join_win").html("恭喜您获得红包，请点击领取");
+                   $(".join_win").show();
+                   $('#nickname_red').html(data_res.nickname_red);
+                   $(".join_lose").hide();
+                   $(".get_coupon_pk").hide();
+                   $(".linqu").show();
+            }
+                    } else {
+                    $(".photose img").attr("src", "../addons/crad_qrcode_red/template/mobile/img/sctp.png");
+                    $(".photose_des").show();
+                    $(".taking").hide();
+                    if (data_res.nosubscribe == 1) {
+                    $('.code_tan').show();
+                    } else{
+                    show_message(0, data_res.error, 3000, 1);
+                    }
+                    }
+                    },
+                            error: function (XmlHttpRequest, textStatus, errorThrown) {
+                                                  $(".lodings").hide();
+
+                            alert(errorThrown);
+                            }
+                            
+
+                    });
+                    });
+  
+                
+             
+                    $(".join_pk,.photose_des,.before_cuteface").click(function () {
+                     if (check_tel=='1' && is_check_tel<1) {
+                $('.phone_code').show(); 
+return;
+            }     
+                    if ($("#upload_type").val() == 1) {
+                    $("#uploadInput").click();
+                    } else {
+                    wx.chooseImage({
+                    count: 1,
+                            sizeType: ['compressed'],
+                                {if $activity['upload_type']==1}
+    sourceType: ['album', 'camera'], 
+    {elseif $activity['upload_type']==2}
+    sourceType: ['album'], 
+    {else}
+    sourceType: ['camera'], 
+    {/if}
+                            success: function (res) {
+                            var localId_pic = res.localIds[0];
+                            $(".photose img").attr("src", localId_pic);
+                            wx.uploadImage({
+                            localId: localId_pic,
+                                    isShowProgressTips: 0,
+                                    success: function (res) {
+                                    var serverId_pic = res.serverId;
+                                    if (serverId_pic == "") {
+                                    show_message(0, '请选择一个图片文件', 3000, 1);
+                                    return;
+                                    }
+                                    $(".lodings").show();
+                                    $.post("{php echo $this->createmobileurl('upload', array('aid' => $aid, 'uuid' => $uuid))}", {serverid: serverId_pic}, function (data_res) {
+                                    data_res = eval(data_res);
+                                                                $(".lodings").hide();
+                                     if (data_res.sta == 1) {
+                        
+                   
+                    if (data_res.cuteface_own == 1) {
+                    $(".photose").html("<img src='"+data_res.image_thumb_url+"' class='effects'/>");
+                    $("#cuteface_mark").html(data_res.mark + "分");
+                    $(".photose_des").hide();
+                    $(".taking").show();
+                    $(".photose_miao").html("喊好友来参与颜值PK，颜值高者得红包");
+                       setTimeout(function () { 
+                         $('.after_sharing').show();
+                         $('.before_sharing').hide();
+                        $(".join_pk").hide();
+                         if(data_res.tips!=""){    
+                $('.crown_after').html(data_res.tips);
+                $('.crown_after').show();
+            }else{
+                $('.crown_after').hide();
+            }
+                        $('.crown').html(data_res.content);
+    
+    }, 3000);
+                    }else{
+                        $(".taking").hide();
+                        $(".join_pk").hide();
+                 if(data_res.tips!=""){    
+                $('.crown_after').html(data_res.tips);
+                $('.crown_after').show();
+            }else{
+                $('.crown_after').hide();
+            }
+           //$('.crown').html(data_res.content);
+                    }
+                   if (data_res.send_red == 1) {
+                     $(".huabu_one").html(data_res.money + "<span>元</span>");
+//setaudio();
+                            var gao = $(".zong").scrollTop();
+                            if (gao == "0") {
+                            $(".meikai").hide();
+                            $(".kaila").show();
+                            $(".huabu").animate({height: "32vw"}, 1000);
+                            } else {
+                            $(".zong").animate({scrollTop: 0}, 500, function () {
+                            $(".meikai").hide();
+                            $(".kaila").show();
+                            $(".huabu").animate({height: "32vw"}, 1000);
+                            });
+                            }
+                   $(".join_win").show();
+                   $('#nickname_red').html(data_res.nickname_red);
+                   $(".join_lose").hide();
+                   $(".get_coupon_pk").hide();
+            }else if (data_res.send_red == 2) {
+                   $(".join_win").hide();
+                   $(".join_lose").show();
+                   $(".get_coupon_pk").show();
+            }else if (data_res.send_red == 3) {
+                   $(".join_win").html("恭喜您获得红包，请点击领取");
+                   $(".join_win").show();
+                   $('#nickname_red').html(data_res.nickname_red);
+                   $(".join_lose").hide();
+                   $(".get_coupon_pk").hide();
+                   $(".linqu").show();
+            }
+                    } else {
+                    $(".photose img").attr("src", "../addons/crad_qrcode_red/template/mobile/img/sctp.png");
+                    $(".photose_des").show();
+                    $(".taking").hide();
+                    if (data_res.nosubscribe == 1) {
+                    $('.code_tan').show();
+                    } else{
+                    show_message(0, data_res.error, 3000, 1);
+                    }
+                    }
+
+                                    });
+                                    }
+                            });
+                            }
+                    });
+                    }
+                    $(".lodings").hide();
+                    });
+                       
+ {if empty($red_info)&&$activity['friend_cuteface_num']>0}
+           var join_num={$least_cuteface_users};
+           var share_user_status = setInterval(function () {
+        $.get("{php echo $this->createMobileUrl('ajax_info', array('aid' => $aid, 'uuid' => $uuid))}" + "&op=share_user_count", function (ret) {
+        if (ret.sta == 1) {
+             if(ret.tips!=""){    
+                $('.crown_after').html(ret.tips);
+                $('.crown_after').show();
+            }else{
+                $('.crown_after').hide();
+            }
+           if(ret.least_user!=join_num){
+           $('.crown').html(ret.content);
+           join_num=ret.least_user
+       }
+           if(ret.is_cuteface==1){
+           $('.after_sharing').show();
+           $('.before_sharing').hide();
+           }
+           if(ret.least_user<1){
+               if(ret.is_send_red==1){
+                   $(".linqu").show();
+                    $(".join_win").html("恭喜您获得红包，请点击领取");
+                    $(".join_win").show();
+                   $(".join_lose").hide();
+                   $(".get_coupon_pk").hide();
+               }else if(ret.is_send_red==2){
+                   $(".linqu").hide();
+                    $(".join_win").hide();
+                     $(".join_lose").html("很遗憾，红包与您擦肩而过");
+                    $(".join_lose").show();
+                   $(".get_coupon_pk").show();
+               }else if(ret.is_send_red==3){
+                   $(".linqu").hide();
+                     $(".join_win").html("您赢啦，红包已发送至您微信钱包！");
+                    $(".join_win").show();
+                   $(".join_lose").hide();
+                   $(".get_coupon_pk").hide();
+               }else {
+                   $(".linqu").hide();
+                   $(".join_win").hide();
+                   $(".join_lose").hide();
+                   $(".get_coupon_pk").show();
+            }
+               clearInterval(share_user_status);
+           }
+        }
+        }, 'json');
+        }, 5000);
+ 
+ 
+ 
+ var red_run=false;
+        $('.linqu_li').click(function () {
+                             if (check_tel=='1' && is_check_tel<1) {
+                $('.phone_code').show(); 
+return;
+            }
+         {if $activity['validate_open']==1}
+          $(".huakuai").show();
+        jigsaw.init(document.getElementById('captcha'),function () {
+	        $(".huakuai").hide();
+                document.getElementById('captcha').innerHTML = ''
+                {/if}
+                 if (!red_run) {
+           red_run=true;
+           $(".lodings").show();
+                    $.ajax({
+                    type: 'post',
+                            url: "{php echo $this->createMobileurl('ajax_red',array('aid'=>$aid,'uuid'=>$uuid))}",
+                            data: {op: 'cuteface_pk'},
+                            success: function (data) {
+                             $(".lodings").hide();
+                            if (data.sta == 1) {
+                            $(".huabu_one").html(data.money + "<span>元</span>");
+//setaudio();
+                            var gao = $(".zong").scrollTop();
+                            if (gao == "0") {
+                            $(".meikai").hide();
+                            $(".kaila").show();
+                            $(".huabu").animate({height: "32vw"}, 1000);
+                            } else {
+                            $(".zong").animate({scrollTop: 0}, 500, function () {
+                            $(".meikai").hide();
+                            $(".kaila").show();
+                            $(".huabu").animate({height: "32vw"}, 1000);
+                            });
+                            }
+                            
+                            } else {
+                            if (data.nosubscribe == 1) {
+                            $('.code_tan').show();
+                            } else{
+                            show_message(0, data.error, 3000, 1);
+                            }
+                            }
+                            }
+                    });
+                    setTimeout(function () { red_run = false; }, 2000);
+                }
+                {if $activity['validate_open']==1}
+	    },function(){    
+	        document.getElementById('msg').innerHTML = '验证失败，请重试！'
+	    });
+            {/if}
+                    });
+ 
+ 
+{/if} 
+     
+      $(".get_coupon_pk").click(function () {  
+         {if ((empty($activity['sid']) || empty($activity['coupon_open']) || empty($activity['cid'])))&&$jump_link}
+            window.location.href = "{$jump_link}";
+            {else}
+            window.location.href = "{php echo $this->createMobileUrl('index',array('aid' => $aid, 'uuid' => $uuid,'is_coupon' => 1))}";
+         {/if}
+        });
+        
+</script>
+    
+    {else}
+    <!--普通模式-->
+    <div class="zhuang">
+        <div class="fugai">
+            <div class="zhiding">	
+                <div class="linqu_name">
+                   {if $red_info['status']==1}
+                            <div class="linqu_out">
+                                已领取
+                            </div>
+                            {elseif $red_info['status']==4}
+                            <div class="linqu_out">
+                                已退回
+                            </div>
+                    {else}
+                    <div class="linqu_li_name">
+                        领取
+                    </div>
+                    {/if}
+                </div>
+            </div>
+            {if $cfg['copyright']}
+            <div class="yun">
+                <span>
+                    {$cfg['copyright']}
+                </span>
+            </div>
+            {/if}
+        </div>
+        <div class="meikai" {if $red_info['status']==1}hidden{/if}>
+             <div class="biaoyu">
+                {if $activity['closed_wish']}{$activity['closed_wish']}{else}新年开门大吉，财源广进！{/if}
+            </div>
+        </div>
+        <div class="kaila" {if $red_info['status']!=1}hidden{/if}>
+             <div class="banhu">
+                {if $activity['open_wish']}{$activity['open_wish']}{else}恭喜发财，大吉大利！{/if}
+            </div>
+            <div class="shanguang">
+                <img src="../addons/crad_qrcode_red/template/mobile/img/gir.png" />
+            </div>
+            <div class="huabu" {if $red_info['status']==1}style="height: 32vw;"{/if}>
+                 <div class="huabu_one">
+                    {if $red_info['status']==1}{$red_info['money']}<span>元</span>{/if}
+                </div>
+                <div class="huabu_two">
+                    {if $activity['open_tips']}{$activity['open_tips']}{else}请在微信服务通知中领取红包{/if}
+                </div>
+            </div>
+        </div>
+        <script>
+            $(document).ready(function(){
+                var red_run=false;
+            $('.linqu_li_name').click(function () {
+                 if (check_tel=='1' && is_check_tel<1) {
+                $('.phone_code').show(); 
+return;
+            }
+                {if $activity['validate_open']==1}
+                 $(".huakuai").show();
+        jigsaw.init(document.getElementById('captcha'),function () {
+	        $(".huakuai").hide();
+                document.getElementById('captcha').innerHTML = ''
+                {/if}
+                               if (!red_run) {
+                        red_run = true;
+                        $(".lodings").show();
+            $.ajax({
+            type: 'get',
+                    url: "{php echo $this->createMobileurl('ajax_red',array('op'=>'ordinary','aid'=>$aid,'uuid'=>$uuid))}",
+                    success: function (data) {
+                        $(".lodings").hide();
+                    if (data.sta == 1) {
+                    $(".huabu_one").html(data.money + "<span>元</span>");
+//setaudio();
+                    var gao = $(".zong").scrollTop();
+                    if (gao == "0") {
+                    $(".meikai").hide();
+                    $(".kaila").show();
+                    $(".huabu").animate({height: "32vw"}, 1000);
+                    } else {
+                    $(".zong").animate({scrollTop: 0}, 500, function () {
+                    $(".meikai").hide();
+                    $(".kaila").show();
+                    $(".huabu").animate({height: "32vw"}, 1000);
+                    });
+                    }
+//                    setTimeout("show_message(1, '红包领取成功，请到微信查看', 3000, 1);", 2000);
+                    } else {
+                    if (data.nosubscribe == 1) {
+                    $('.code_tan').show();
+                    } else{
+                    show_message(0, data.error, 3000, 1);
+                    }
+                    }
+                     setTimeout(function () { red_run = false; }, 2000);
+                    }
+                    
+            });
+        }
+        {if $activity['validate_open']==1}
+	    },function(){    
+	        document.getElementById('msg').innerHTML = '验证失败，请重试！'
+	    });
+            {/if}
+            });
+            });
+        </script>
+    </div>
+    {/if}
+  	
+</div>
+
+
+{if $activity['subscribe']}
+<div class="code_tan" {if $subscribe}hidden{/if}>
+     <div class="code_li">
+        <div class="dialogs">
+            <div class="dialogs_top">
+                参加活动前需关注公众号
+                <span class="mui-icon mui-icon-close guang"></span>	
+            </div>
+            {if $activity['subscribe']==1}
+            {if $activity['sub_image']||$_W["account"]['qrcode']}
+            <div class="dialogs_center">
+                <img src="{if $activity['sub_image']}{php echo tomedia($activity['sub_image']);}{else}{$_W['account']['qrcode']}{/if}" />
+            </div>
+            {/if}
+            {else}
+            <div class="dialogs_center">
+                <img src="{if $qrcode['qrcode']}{php echo $this->createMobileurl('qr', array('url' => base64_encode($qrcode['qrcode'])));}{else if $activity['qrcode_one']&&$activity['qrcode_url']}{php echo $this->createMobileurl('qr', array('url' => base64_encode($activity['qrcode_url'])))}{else}{$_W['account']['qrcode']}{/if}" />
+            </div>
+            {/if}
+            {if $activity['subscribe']==1}
+            {if $activity['sub_tips']}
+            <div class="address">
+                <textarea readonly="readonly">{$activity['sub_tips']}</textarea>
+            </div>
+            {/if}
+            {else}
+            <div class="address">
+                <textarea readonly="readonly">请长按识别图中二维码，关注后点击推送图文消息进入参加活动</textarea>
+            </div>
+            {/if}
+        </div>
+    </div>
+</div>
+{/if}
+<div class="code_ok" hidden>
+    <div class="code_li_ok">
+        <div class="dialogs">
+            <div class="dialogs_top">
+                操作提示
+                <span class="mui-icon mui-icon-close guang"></span>	
+            </div>
+            <div class="dialogs_ok">
+                <span class="glyphicon glyphicon-ok-circle yess"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="huakuai" hidden>
+    	<div class="xuebu">
+    		<div class="huakuai_out"><span class="glyphicon glyphicon-remove-circle"></span></div>
+    	<div class="huakuai_li">
+    		<div class="container">
+			  <div id="captcha" style="position: relative"></div>
+			  <div id="msg"></div>
+			</div>
+    	</div>
+    	</div>
+   </div>
+
+{if $adinfo_red_image}
+
+				<div class="congrea_zong" hidden>
+					<div class="congrea">
+					<div class="congrea_li">
+                                            {if $adinfo_red_image['image_url']}
+                                            {if $adinfo_red_image['link']}
+                                           <a href="{$adinfo_red_image['link']}">
+                                               {/if}
+						<img src="{php echo tomedia($adinfo_red_image['image_url'])}" />
+                                               
+                                                 {if $adinfo_red_image['link']}
+                                           </a>
+                                               {/if}
+                                                {/if}   
+						<div class="congs">
+							<div class="congs_lis">
+								<span class="mui-icon mui-icon-closeempty"></span>
+							</div>
+						</div>
+					</div>
+				</div>
+				</div>
+<script type="text/javascript">
+setTimeout("$('.congrea_zong').show();", 5000);
+</script>    
+{/if}
+<script type="text/javascript" src="../addons/crad_qrcode_red/template/mobile/js/jigsaw.js" ></script>
+
+<div style="display:none">
+    <audio controls="controls" autoplay="autoplay" id="music_audio"></audio>
+    <audio controls="controls" autoplay="autoplay" id="music_ad"></audio>
+</div>
+<div class="xinx">
+    <img src="../addons/crad_qrcode_red/template/mobile/img/xin.png" />
+</div>
+<div class="xinx_t">
+    <img src="../addons/crad_qrcode_red/template/mobile/img/xin_t.png" />
+</div>
+<div class="shan">
+    <img src="../addons/crad_qrcode_red/template/mobile/img/shan.png" />
+</div>
+<div class="shan_two">
+    <img src="../addons/crad_qrcode_red/template/mobile/img/shan.png" />
+</div>
+<span class="icon-double-angle-up huadong"></span>
+<script>
+$(".congs").click(function(){
+        		  $(".congrea_zong").hide();
+        	    });                                                                                                
+                                                                                                            
+ $(".huakuai_out span").click(function(){
+                        $(".huakuai").hide();
+                        document.getElementById('captcha').innerHTML = ''
+                });
+ var error_map=1;
+{if ($activity['share_open']==1&&($activity['pattern']==6||$activity['pattern']==8||$activity['pattern']==11)) || $activity['pattern']==9||$activity['pattern']==10||$activity['pattern']==12}
+         wx.ready(function () {
+
+           wx.error(function (res) {
+               {if $activity['pattern']==6||$activity['pattern']==12}
+                 $('#upload_type').val('1');
+               {/if}
+                   error_map=0;
+                    var lo = "{$activity['statusd']}";
+    {if empty($_COOKIE['lat'][$aid]) || empty($_COOKIE['lng'][$aid])}
+    if (lo == 2){
+    distance();
+    }
+    function distance(){
+    var geolocation = new BMap.Geolocation();
+    geolocation.getCurrentPosition(function(r){
+    if (this.getStatus() == BMAP_STATUS_SUCCESS){
+     if(r.accuracy==null){
+        show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+	return;
+     }
+    var position = {
+    lng: r.point.lng,
+    lat: r.point.lat,
+    }
+    positions(position);
+    } else {
+    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+    }
+    }, {enableHighAccuracy: true});
+    }
+    function positions(position){
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {lat: position.lat,lng:position.lng}, function (data) {
+    var data = eval('(' + data + ')');
+    if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    }
+    {/if}
+    {if empty($_COOKIE['gps'][$aid])}
+    var gps = 0;
+    var place = "{$activity['site']}";
+    if (lo == 1 && place != ''){
+    var p = place.split(",");
+    var geolocation = new BMap.Geolocation();
+    geolocation.getCurrentPosition(function(r) {
+    if (this.getStatus() == BMAP_STATUS_SUCCESS) {
+     
+     var mk = new BMap.Marker(r.point);
+         if(r.accuracy==null){
+         show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+	  return;
+	 }
+    locLng = r.point.lng;
+    locLat = r.point.lat;
+    var geoc = new BMap.Geocoder();
+    geoc.getLocation(r.point, function(rs){
+  
+    var addComp = rs.addressComponents;
+    var position =  addComp.province + addComp.city +  addComp.district +  addComp.street +  addComp.streetNumber;
+    if (p.indexOf(addComp.province) >= 0 || p.indexOf(addComp.city) >= 0 || p.indexOf(addComp.district) >= 0){
+    gps = 1;
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {gps: gps}, function (data) {
+    var data = eval('(' + data + ')');
+     if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    } else{
+     gps = 2;
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {gps: gps}, function (data) {
+    var data = eval('(' + data + ')');
+     if(data.sta=='1'){
+//    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    show_message(0, '对不起,您不在本次活动范围,请期待我们下一次活动', 3000, 0);
+    gps = 0;
+    }
+    });
+    } else{
+    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+    gps = 0;
+    };
+    }, {
+    enableHighAccuracy: true
+    });
+    }
+    {/if} 
+	});
+ 
+ 
+ if(error_map==1){
+    var lo = "{$activity['statusd']}";
+    {if empty($_COOKIE['lat'][$aid]) || empty($_COOKIE['lng'][$aid])}
+    if (lo == 2){
+     wx.getLocation({
+            type: 'gcj02', //wgs84 或 gcj02
+                    success: function (res) {
+                    var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                    var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                     var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {lat: latitude,lng:longitude,type:1}, function (data) {
+    var data = eval('(' + data + ')');
+    if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    }
+    });
+    }
+    {/if}
+  {if empty($_COOKIE['gps'][$aid])}
+    var gps = 0;
+    var place = "{$activity['site']}";
+    if (lo == 1 && place != ''){
+    var p = place.split(",");
+            wx.getLocation({
+            type: 'gcj02', //wgs84 或 gcj02
+                    success: function (res) {
+                    var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                            var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                            var MJKD_LATLNG = latitude + ',' + longitude;
+                            var data = {
+                            location:MJKD_LATLNG,
+                                    key:"TRJBZ-RIEWU-ODUVS-BBWXX-ITXYZ-H4FXM",
+                                    get_poi:0
+                            }
+                    var url = "http://apis.map.qq.com/ws/geocoder/v1/?";
+                            data.output = "jsonp";
+                            $.ajax({
+                            type:"get",
+                                    dataType:'jsonp',
+                                    data:data,
+                                    jsonp:"callback",
+                                    jsonpCallback:"QQmap",
+                                    url:url,
+                                    success:function(json){
+                                            if (p.indexOf(json.result.address_component.province) >= 0 || p.indexOf(json.result.address_component.city) >= 0 || p.indexOf(json.result.address_component.district) >= 0){
+                                            gps = 1;
+                                            var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+                                            $.post(url, {gps: gps}, function (data) {
+                                            var data = eval('(' + data + ')');
+                                                    if (data.sta == '1'){
+                                            window.location.href = updateUrl(window.location.href, 'temp_time');
+                                            }
+                                            });
+                                    } else{
+                                            var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+                                            $.post(url, {gps: '2'}, function (data) {
+                                            });
+                                            show_message(0, '对不起,您不在本次活动范围,请期待我们下一次活动', 3000, 0);
+                                            gps = 0;
+                                    }
+                                    },
+                                    error : function(err){ show_message(0, '服务端错误，请刷新浏览器后重试', 3000, 0);
+                                            gps = 0; }
+                            });
+                    },
+                    fail: function(res) {
+                    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+                            gps = 0;
+                    }
+            });
+    }
+    {/if}
+}
+         
+            var sharedata = {
+                title: "{if $activity['share_title']}{$activity['share_title']}{else}{$activity['name']}{/if}",
+                desc: "{if $activity['share_desc']}{php echo str_replace("\r\n", "。", trim($activity['share_desc']));}{else}{php echo str_replace("\r\n", "<br/>", trim($activity['description']));}{/if}",
+                link: "{$shareurl}",
+                imgUrl: "{if $activity['share_img']}{php echo tomedia($activity['share_img'])}{else}{php echo tomedia($activity['image_logo'])}{/if}",
+                success: function () {
+                      $.get("{php echo $this->createMobileUrl('ajax_info', array('aid' => $aid, 'uuid' => $uuid))}", {op: 'share_status'}, function (ret) {
+                        if (ret.sta == 1) {
+                           window.location.href=updateUrl(window.location.href);
+                        } 
+
+                    }, 'json');
+                },
+                cancel: function () {
+                }
+            };
+            
+ {if $activity['share_type']!=2}
+  wx.onMenuShareTimeline(sharedata);
+ {/if}
+     
+ {if $activity['share_type']!=1}
+  wx.onMenuShareAppMessage(sharedata);
+ {/if}
+
+  wx.hideMenuItems({
+                menuList: [
+                    'menuItem:exposeArticle'
+                    , 'menuItem:share:qq'
+                    , 'menuItem:share:weiboApp'
+                    , 'menuItem:share:facebook'
+                     {if $activity['share_type']==2}
+                    , "menuItem:share:timeline"
+ {/if}
+      {if $activity['share_type']==1}
+                    , "menuItem:share:appMessage"
+ {/if}
+                    , 'menuItem:share:QZone'
+                ],
+                success: function (res) {
+                },
+                fail: function (res) {
+                }
+            });
+
+             });
+
+{else}
+{if $adinfo_red_share}
+         wx.ready(function () {
+             
+var lo = "{$activity['statusd']}";
+ wx.error(function (res) {
+               {if $activity['pattern']==1||$activity['pattern']==6||$activity['pattern']==12}
+                 $('#upload_type').val('1');
+               {/if}
+                   error_map=0;
+                   
+                    var lo = "{$activity['statusd']}";
+    {if empty($_COOKIE['lat'][$aid]) || empty($_COOKIE['lng'][$aid])}
+    if (lo == 2){
+    distance();
+    }
+    function distance(){
+    var geolocation = new BMap.Geolocation();
+    geolocation.getCurrentPosition(function(r){
+    if (this.getStatus() == BMAP_STATUS_SUCCESS){
+     if(r.accuracy==null){
+        show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+	return;
+     }
+    var position = {
+    lng: r.point.lng,
+    lat: r.point.lat,
+    }
+    positions(position);
+    } else {
+    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+    }
+    }, {enableHighAccuracy: true});
+    }
+    function positions(position){
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {lat: position.lat,lng:position.lng}, function (data) {
+    var data = eval('(' + data + ')');
+    if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    }
+    {/if}
+    {if empty($_COOKIE['gps'][$aid])}
+    var gps = 0;
+    var place = "{$activity['site']}";
+    if (lo == 1 && place != ''){
+    var p = place.split(",");
+    var geolocation = new BMap.Geolocation();
+    geolocation.getCurrentPosition(function(r) {
+    if (this.getStatus() == BMAP_STATUS_SUCCESS) {
+     
+     var mk = new BMap.Marker(r.point);
+         if(r.accuracy==null){
+          show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+	  return;
+	 }
+    locLng = r.point.lng;
+    locLat = r.point.lat;
+    var geoc = new BMap.Geocoder();
+    geoc.getLocation(r.point, function(rs){
+  
+    var addComp = rs.addressComponents;
+    var position =  addComp.province + addComp.city +  addComp.district +  addComp.street +  addComp.streetNumber;
+    if (p.indexOf(addComp.province) >= 0 || p.indexOf(addComp.city) >= 0 || p.indexOf(addComp.district) >= 0){
+    gps = 1;
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {gps: gps}, function (data) {
+    var data = eval('(' + data + ')');
+     if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    } else{
+     gps = 2;
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {gps: gps}, function (data) {
+    var data = eval('(' + data + ')');
+     if(data.sta=='1'){
+//    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    show_message(0, '对不起,您不在本次活动范围,请期待我们下一次活动', 3000, 0);
+    gps = 0;
+    }
+    });
+    } else{
+    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+    gps = 0;
+    };
+    }, {
+    enableHighAccuracy: true
+    });
+    }
+    {/if}
+	});
+     if(error_map==1){   
+    {if empty($_COOKIE['lat'][$aid]) || empty($_COOKIE['lng'][$aid])}
+    if (lo == 2){
+     wx.getLocation({
+            type: 'gcj02', //wgs84 或 gcj02
+                    success: function (res) {
+                    var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                    var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                     var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {lat: latitude,lng:longitude,type:1}, function (data) {
+    var data = eval('(' + data + ')');
+    if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    }
+    });
+    }
+    {/if}
+  {if empty($_COOKIE['gps'][$aid])}
+    var gps = 0;
+    var place = "{$activity['site']}";
+    if (lo == 1 && place != ''){
+    var p = place.split(",");
+            wx.getLocation({
+            type: 'gcj02', //wgs84 或 gcj02
+                    success: function (res) {
+                    var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                            var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                            var MJKD_LATLNG = latitude + ',' + longitude;
+                            var data = {
+                            location:MJKD_LATLNG,
+                                    key:"TRJBZ-RIEWU-ODUVS-BBWXX-ITXYZ-H4FXM",
+                                    get_poi:0
+                            }
+                    var url = "http://apis.map.qq.com/ws/geocoder/v1/?";
+                            data.output = "jsonp";
+                            $.ajax({
+                            type:"get",
+                                    dataType:'jsonp',
+                                    data:data,
+                                    jsonp:"callback",
+                                    jsonpCallback:"QQmap",
+                                    url:url,
+                                    success:function(json){
+                                            if (p.indexOf(json.result.address_component.province) >= 0 || p.indexOf(json.result.address_component.city) >= 0 || p.indexOf(json.result.address_component.district) >= 0){
+                                            gps = 1;
+                                            var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+                                            $.post(url, {gps: gps}, function (data) {
+                                            var data = eval('(' + data + ')');
+                                                    if (data.sta == '1'){
+                                            window.location.href = updateUrl(window.location.href, 'temp_time');
+                                            }
+                                            });
+                                    } else{
+                                            var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+                                            $.post(url, {gps: '2'}, function (data) {
+                                            });
+                                            show_message(0, '对不起,您不在本次活动范围,请期待我们下一次活动', 3000, 0);
+                                            gps = 0;
+                                    }
+                                    },
+                                    error : function(err){ show_message(0, '服务端错误，请刷新浏览器后重试', 3000, 0);
+                                            gps = 0; }
+                            });
+                    },
+                    fail: function(res) {
+                    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+                            gps = 0;
+                    }
+            });
+    }
+    {/if}
+    }     
+            var sharedata = {
+                title: "{$adinfo_red_share['share_title']}",
+                desc: "{php echo str_replace("\r\n", "。", trim($adinfo_red_share['share_desc']));}",
+                link: "{$shareurl_ad}",
+                imgUrl: "{php echo tomedia($adinfo_red_share['share_img'])}",
+                success: function () {
+                },
+                cancel: function () {
+                }
+            };
+
+  wx.onMenuShareTimeline(sharedata);
+  wx.onMenuShareAppMessage(sharedata);
+
+
+  wx.hideMenuItems({
+                menuList: [
+                    'menuItem:exposeArticle'
+                    , 'menuItem:share:qq'
+                    , 'menuItem:share:weiboApp'
+                    , 'menuItem:share:facebook'
+                    , 'menuItem:share:QZone'
+                ],
+                success: function (res) {
+                },
+                fail: function (res) {
+                }
+            });
+
+             });
+
+{else}
+ wx.ready(function () {
+  var lo = "{$activity['statusd']}";
+   wx.error(function (res) {
+               {if $activity['pattern']==1||$activity['pattern']==6||$activity['pattern']==12}
+                 $('#upload_type').val('1');
+               {/if}
+                  error_map=0;
+                    var lo = "{$activity['statusd']}";
+    {if empty($_COOKIE['lat'][$aid]) || empty($_COOKIE['lng'][$aid])}
+    if (lo == 2){
+    distance();
+    }
+    function distance(){
+    var geolocation = new BMap.Geolocation();
+    geolocation.getCurrentPosition(function(r){
+    if (this.getStatus() == BMAP_STATUS_SUCCESS){
+     if(r.accuracy==null){
+        show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+	return;
+     }
+    var position = {
+    lng: r.point.lng,
+    lat: r.point.lat,
+    }
+    positions(position);
+    } else {
+    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+    }
+    }, {enableHighAccuracy: true});
+    }
+    function positions(position){
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {lat: position.lat,lng:position.lng}, function (data) {
+    var data = eval('(' + data + ')');
+    if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    }
+    {/if}
+    {if empty($_COOKIE['gps'][$aid])}
+    var gps = 0;
+    var place = "{$activity['site']}";
+    if (lo == 1 && place != ''){
+    var p = place.split(",");
+    var geolocation = new BMap.Geolocation();
+    geolocation.getCurrentPosition(function(r) {
+    if (this.getStatus() == BMAP_STATUS_SUCCESS) {
+     
+     var mk = new BMap.Marker(r.point);
+         if(r.accuracy==null){
+         show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+	 return;
+	 }
+    locLng = r.point.lng;
+    locLat = r.point.lat;
+    var geoc = new BMap.Geocoder();
+    geoc.getLocation(r.point, function(rs){
+  
+    var addComp = rs.addressComponents;
+    var position =  addComp.province + addComp.city +  addComp.district +  addComp.street +  addComp.streetNumber;
+    if (p.indexOf(addComp.province) >= 0 || p.indexOf(addComp.city) >= 0 || p.indexOf(addComp.district) >= 0){
+    gps = 1;
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {gps: gps}, function (data) {
+    var data = eval('(' + data + ')');
+     if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    } else{
+     gps = 2;
+    var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {gps: gps}, function (data) {
+    var data = eval('(' + data + ')');
+     if(data.sta=='1'){
+//    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    show_message(0, '对不起,您不在本次活动范围,请期待我们下一次活动', 3000, 0);
+    gps = 0;
+    }
+    });
+    } else{
+    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+    gps = 0;
+    };
+    }, {
+    enableHighAccuracy: true
+    });
+    }
+    {/if}
+	});
+  if(error_map==1){
+    {if empty($_COOKIE['lat'][$aid]) || empty($_COOKIE['lng'][$aid])}
+    if (lo == 2){
+     wx.getLocation({
+            type: 'gcj02', //wgs84 或 gcj02
+                    success: function (res) {
+                    var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                    var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                     var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+    $.post(url, {lat: latitude,lng:longitude,type:1}, function (data) {
+    var data = eval('(' + data + ')');
+    if(data.sta=='1'){
+    window.location.href=updateUrl(window.location.href,'temp_time');
+    }
+    });
+    }
+    });
+    }
+    {/if}
+  {if empty($_COOKIE['gps'][$aid])}
+    var gps = 0;
+    var place = "{$activity['site']}";
+    if (lo == 1 && place != ''){
+    var p = place.split(",");
+            wx.getLocation({
+            type: 'gcj02', //wgs84 或 gcj02
+                    success: function (res) {
+                    var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                            var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                            var MJKD_LATLNG = latitude + ',' + longitude;
+                            var data = {
+                            location:MJKD_LATLNG,
+                                    key:"TRJBZ-RIEWU-ODUVS-BBWXX-ITXYZ-H4FXM",
+                                    get_poi:0
+                            }
+                    var url = "http://apis.map.qq.com/ws/geocoder/v1/?";
+                            data.output = "jsonp";
+                            $.ajax({
+                            type:"get",
+                                    dataType:'jsonp',
+                                    data:data,
+                                    jsonp:"callback",
+                                    jsonpCallback:"QQmap",
+                                    url:url,
+                                    success:function(json){
+                                            if (p.indexOf(json.result.address_component.province) >= 0 || p.indexOf(json.result.address_component.city) >= 0 || p.indexOf(json.result.address_component.district) >= 0){
+                                            gps = 1;
+                                            var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+                                            $.post(url, {gps: gps}, function (data) {
+                                            var data = eval('(' + data + ')');
+                                                    if (data.sta == '1'){
+                                            window.location.href = updateUrl(window.location.href, 'temp_time');
+                                            }
+                                            });
+                                    } else{
+                                            var url = "{php echo $this->createMobileUrl('setcookie', array('aid' => $aid))}";
+                                            $.post(url, {gps: '2'}, function (data) {
+                                            });
+                                            show_message(0, '对不起,您不在本次活动范围,请期待我们下一次活动', 3000, 0);
+                                            gps = 0;
+                                    }
+                                    },
+                                    error : function(err){ show_message(0, '服务端错误，请刷新浏览器后重试', 3000, 0);
+                                            gps = 0; }
+                            });
+                    },
+                    fail: function(res) {
+                    show_message(0, '获取当前位置失败,请确定您开启了定位服务', 3000, 0);
+                            gps = 0;
+                    }
+            });
+    }
+    {/if}
+    }
+    
+         wx.hideMenuItems({
+    menuList: [
+             'menuItem:share:appMessage'
+            , 'menuItem:share:timeline'
+            , 'menuItem:share:qq'
+            , 'menuItem:share:weiboApp'
+            , 'menuItem:share:facebook'
+            , 'menuItem:share:QZone'
+    ],
+            success: function (res) {
+            },
+            fail: function (res) {
+            }
+    });
+        });
+  {/if}      
+{/if}
+     {if $_W['account']['level'] < 4&&($activity['pattern']==1||$activity['pattern']==6||$activity['pattern']==12)}
+   $('#upload_type').val('1');
+{/if}                     
+      {if $red_info['status']==4}
+ show_message(0, "红包领取超时，已被退回", 5000, 1);
+    {/if}   
+       {if $error_message}
+ show_message(0, "{$error_message}", 6000, 1);
+    {/if}    
+        
+    function show_message(type, text, time, back_status){
+    $(".lodings").hide();
+    $(".code_ok").hide();
+    if (type == 1){
+    setTimeout(" window.location.href=updateUrl(window.location.href);", 4000);
+    $(".dialogs_ok").html('<span class="glyphicon glyphicon-ok-circle yess"></span>' + text);
+    }else if (type == 2){
+    $(".dialogs_ok").html('<span class="glyphicon glyphicon-ok-circle yess"></span>' + text);
+    }else{
+    $(".dialogs_ok").html('<span class="glyphicon glyphicon-remove-circle nos"></span>' + text);
+    }
+    $(".code_ok").show();
+    if (time){
+    setTimeout('$(".code_ok").hide();', time);
+    }
+    return 1;
+    }
+    
+    $(".guang").click(function(){
+    $(".code_ok").hide();
+    $(".code_tan").hide();
+    });
+                   
+    var music = document.getElementById("music_audio");
+    var music_ad = document.getElementById("music_ad"),music_ad_src;
+    var u = navigator.userAgent;
+    var isiOS = !!u.match(/\(i[^;]+; CPU.+Mac OS X/);
+//    if (isiOS) {
+//    window.addEventListener('touchstart', playfun, false);
+//    }
+//    function playfun() {
+//    music.load();
+//    music.play();
+//    window.removeEventListener('touchstart', playfun, false);
+//    }
+   {if empty($activity['statusd'])||($activity['statusd']==1&&$_COOKIE['gps'][$aid]) || ($activity['statusd']==2&&$_COOKIE['lat'][$aid]&&$_COOKIE['lng'][$aid])}
+   {if $red_info['status']!=4}
+   {if empty($_GPC['t'])||$red_info['status']}
+    setaudio();
+    {/if}  
+    {/if} 
+     {/if}
+
+               $("#music_audio").on('ended', function () {
+    if (isiOS) {
+   setTimeout('music_ad.src= music_ad_src;', 2000); 
+    }else{
+    setTimeout('music_ad.src= music_ad_src;', 2000);
+    music_ad.play();
+    }
+                  });
+                            
+                 function play_audio() {
+   if (isiOS) {
+       
+                            document.addEventListener("WeixinJSBridgeReady", function () {
+                                 music.play();
+                                 music_ad.src= '';
+                                 music_ad.load();
+                                 music_ad.play();
+                            }, false);
+
+                        }else{
+                         
+                        music.play();
+                    }
+    }               
+                            
+
+            function setaudio() {
+                var sendurl = "{php echo $this->createMobileUrl('ajax_info', array('aid' => $aid, 'uuid' => $uuid,'op' => 'get_audio'))}";
+                music.pause();
+                //$.ajaxSettings.async = false;
+                $.get(sendurl,function (ret) {
+                    if (ret.sta == 1) {
+                        music.src = ret.path;
+                        music_ad_src = ret.path_ad;
+                        music.volume = "{$activity['audio_volume']}";
+                        music_ad.volume = "{$activity['audio_volume']}";
+                    } 
+                }, 'json');
+//                 $.ajaxSettings.async = true;
+                 play_audio();
+            }
+            var url = "{php echo $this->createMobileUrl('ajax_info', array('aid' => $aid, 'uuid' => $uuid))}";
+              {if $red_info['status'] == 1}
+//  var toptime = setInterval(function () {
+//    $.get(url + "&op=get_red_new", function (ret) {
+//    if (ret.sta == 1) {
+//    $('.xiao').html(ret.content);
+//    }
+//    }, 'json');
+//    }, 2000);
+    
+    var gao = $(".zong").scrollTop();
+    if (gao == "0") {
+    $(".meikai").hide();
+    $(".kaila").show();
+    $(".huabu").animate({height: "32vw"}, 1000);
+    } else {
+    $(".zong").animate({scrollTop: 0}, 500, function () {
+    $(".meikai").hide();
+    $(".kaila").show();
+    $(".huabu").animate({height: "32vw"}, 1000);
+    });
+    }
+    {/if}
+            
+  
+    /*{if empty($red_info['status'])}
+    var get_red_status = setInterval(function () {
+    $.get(url + "&op=get_red_status", function (ret) {
+    if (ret.sta == 1) {
+    window.location.href = updateUrl(window.location.href);
+    }
+    }, 'json');
+    }, 2000);
+    {/if}*/
+
+   {if $red_info['status']==1&&empty($activity['coupon_open'])&&$activity['red_jump_link']}
+   var red_jump_time="{php echo $activity['red_jump_time']?$activity['red_jump_time']*1000:5000;}";
+    setTimeout(function () { window.location.href = "{$activity['red_jump_link']}"; }, red_jump_time);
+   {/if}
+
+
+            function getObjectURL(file) {
+            var url = null;
+            if (window.createObjectURL != undefined) {
+            url = window.createObjectURL(file);
+            } else if (window.URL != undefined) {
+            url = window.URL.createObjectURL(file);
+            } else if (window.webkitURL != undefined) {
+            url = window.webkitURL.createObjectURL(file);
+            }
+            return url;
+            }
+
+
+    function updateUrl(url, key){
+    var key = (key || 't') + '=';
+    var reg = new RegExp(key + '\\d+');
+    var timestamp = + new Date();
+    if (url.indexOf(key) > - 1){
+    return url.replace(reg, key + timestamp);
+    } else{
+    if (url.indexOf('\?') > - 1){
+    var urlArr = url.split('\?');
+    if (urlArr[1]){
+    return urlArr[0] + '?' + key + timestamp + '&' + urlArr[1];
+    } else{
+    return urlArr[0] + '?' + key + timestamp;
+    }
+    } else{
+    if (url.indexOf('#') > - 1){
+    return url.split('#')[0] + '?' + key + timestamp + location.hash;
+    } else{
+    return url + '?' + key + timestamp;
+    }
+    }
+    }
+    }
+
+
+
+</script>
+</body>
+</html>

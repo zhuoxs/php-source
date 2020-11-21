@@ -1,0 +1,161 @@
+{template 'common/header-gw'}
+<ol class="breadcrumb">
+	<li><a href="./?refresh"><i class="fa fa-home"></i></a></li>
+	<li><a href="{url 'system/welcome'}">系统</a></li>
+	<li class="active">计划任务</li>
+</ol>
+<ul class="nav nav-tabs">
+	<li {if $do == 'list'} class="active"{/if}><a href="{php echo url('system/cron/list');}">任务列表</a></li>
+	<li {if $do == 'post' && empty($id)} class="active"{/if}><a href="{php echo url('system/cron/post');}">添加任务</a></li>
+	{if $do == 'post'  && !empty($id)}<li class="active"><a href="{php echo url('system/cron/post');}">编辑任务</a></li>{/if}
+</ul>
+<div class="clearfix">
+	{if $do == 'post'}
+		<form class="form-horizontal form" id="form1" action="" method="post">
+			<input type="hidden" name="id" value="{$cron['cronid']}">
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label"><span class="text-danger">* </span>任务名称</label>
+				<div class="col-sm-10 col-xs-12">
+					<input type="text" class="form-control" placeholder="设置本任务的任务名称" name="name" value="{$cron['name']}"/>
+					<span class="help-block">设置本任务的任务名称</span>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label"><span class="text-danger">* </span> 任务脚本:</label>
+				<div class="col-sm-10 col-xs-12">
+					<input type="text" class="form-control" placeholder="设置本任务的执行程序文件名" name="filename" value="{$cron['filename']}"/>
+					<span class="help-block">设置本任务的执行程序文件名，请勿包含路径，系统计划任务位于 source/include/cron/ 目录中，插件计划任务位于 source/plugin/插件目录/cron/ 目录中</span>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label"><span class="text-danger"> </span> 是否可用:</label>
+				<div class="col-sm-10 col-xs-12">
+					<label class="radio-inline">
+						<input type="radio" name="available" value="1" {if $cron['available'] == 1}checked{/if}/> 可用
+					</label>
+					<label class="radio-inline">
+						<input type="radio" name="available" value="0" {if $cron['available'] == 0}checked{/if}/> 不可用
+					</label>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">每周:</label>
+				<div class="col-sm-10 col-xs-12">
+					<select name="weekday" class="form-control">
+						<option value="-1" {if $cron['weekday'] == '-1'}selected{/if}>*</option>
+						<option value="0" {if $cron['weekday'] == '0'}selected{/if}>周日</option>
+						<option value="1" {if $cron['weekday'] == '1'}selected{/if}>周一</option>
+						<option value="2" {if $cron['weekday'] == '2'}selected{/if}>周二</option>
+						<option value="3" {if $cron['weekday'] == '3'}selected{/if}>周三</option>
+						<option value="4" {if $cron['weekday'] == '4'}selected{/if}>周四</option>
+						<option value="5" {if $cron['weekday'] == '5'}selected{/if}>周五</option>
+						<option value="6" {if $cron['weekday'] == '6'}selected{/if}>周六</option>
+					</select>
+					<span class="help-block">设置星期几执行本任务，“*”为不限制，本设置会覆盖下面的“日”设定</span>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">每月:</label>
+				<div class="col-sm-10 col-xs-12">
+					<select name="day" class="form-control">
+						<option value="-1" {if $cron['day'] == '-1'}selected{/if}>*</option>
+						<?php
+							for($i = 1; $i < 32; $i ++) {
+								if($cron['day'] == $i) {
+									echo '<option selected value="'.$i.'">'.$i.'日</option>';
+								} else {
+									echo '<option value="'.$i.'">'.$i.'日</option>';
+								}
+							}
+						?>
+					</select>
+					<span class="help-block">设置哪一日执行本任务，“*”为不限制</span>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">小时:</label>
+				<div class="col-sm-10 col-xs-12">
+					<select name="hour" class="form-control">
+						<option value="-1" {if $cron['hour'] == '-1'}selected{/if}>*</option>
+						<?php
+							for($i = 0; $i < 24; $i ++) {
+								if($cron['hour'] == $i) {
+									echo '<option selected value="'.$i.'">'.$i.'时</option>';
+								} else {
+									echo '<option value="'.$i.'">'.$i.'时</option>';
+								}
+							}
+						?>
+					</select>
+					<span class="help-block">设置哪一小时执行本任务，“*”为不限制</span>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label">分钟:</label>
+				<div class="col-sm-10 col-xs-12">
+					<input type="text" name="minute" value="{$cron['minute']}" placeholder="设置哪些分钟执行本任务" class="form-control"/>
+					<span class="help-block">设置哪些分钟执行本任务，至多可以设置 12 个分钟值，多个值之间用半角逗号 "," 隔开，留空为不限制</span>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-12 col-sm-2 col-md-2 col-lg-1 control-label"></label>
+				<div class="col-sm-10 col-xs-12">
+					<input type="hidden" value="{$_W['token']}" name="token"/>
+					<input type="submit" value="提交" name="submit" class="btn btn-primary col-lg-1"/>
+				</div>
+			</div>
+		</form>
+	{elseif $do == 'list'}
+		<div class="panel panel-default">
+			<div class="table-responsive panel-body">
+				<table class="table table-hover">
+					<thead class="navbar-inner">
+					<tr>
+						<th style="width:50px;"></th>
+						<th style="width:150px;">名称</th>
+						<th style="width:200px;">可用</th>
+						<th style="width:100px;">所属模块</th>
+						<th style="min-width:180px;">时间</th>
+						<th style="min-width:300px;">上次执行时间</th>
+						<th style="min-width:300px;">下次执行时间</th>
+						<th style="min-width:300px;">操作</th>
+					</tr>
+					</thead>
+					<tbody>
+					<form action="{php echo url('system/cron/del')}" id="form1" method="post">
+						{loop $crons $cron}
+						<tr>
+							<td><input type="checkbox" name="cronid[]" value="{$cron['cronid']}"/> </td>
+							<td>{$cron['name']}</td>
+							<td>
+								{if $cron['available'] == 1}
+									<span class="label label-success">可用</span>
+								{else}
+									<span class="label label-danger">不可用</span>
+								{/if}
+
+							</td>
+							<td>{$cron['module']}</td>
+							<td>{$cron['cn']}</td>
+							<td>{$cron['lastrun']}</td>
+							<td>{$cron['nextrun']}</td>
+							<td>
+								<a title="编辑" href="{php echo url('system/cron/post', array('id' => $cron['cronid']))}">编辑</a>&nbsp;-&nbsp;
+								<a title="执行" href="{php echo url('system/cron/run', array('id' => $cron['cronid']))}">执行</a>
+							</td>
+						</tr>
+						{/loop}
+						<tr>
+							<td colspan="8">
+								<input type="hidden" value="{$_W['token']}" name="token"/>
+								<input type="submit" value="删除" name="submit" class="btn btn-primary" onclick="if(confirm('删除后将不可恢复,确定删除吗?')){return true;}return false;"/>
+							</td>
+						</tr>
+						</tbody>
+					</form>
+				</table>
+			</div>
+		</div>
+	{/if}
+</div>
+{template 'common/footer-gw'}
